@@ -16,11 +16,6 @@ import 'widgets/common.dart';
 import 'widgets/fandoghi.dart';
 import 'widgets/star_display.dart';
 import 'screens/home_screen.dart';
-import 'screens/learning_island.dart';
-import 'screens/stage_map.dart';
-import 'screens/profile_screen.dart';
-import 'screens/prize_box.dart';
-import 'screens/celebration_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -329,9 +324,10 @@ class _OnboardingState extends State<OnboardingPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Fandoghi(size: 120, animate: true, showBubble: false)
-                .animate()
-                .scale(curve: Curves.elasticOut),
+            Animate(
+              effects: const [ScaleEffect(curve: Curves.elasticOut)],
+              child: const Fandoghi(size: 120, animate: true, showBubble: false),
+            ),
             const SizedBox(height: 20),
             const Text(
               'سلام! من فندقی‌ام! 🌰',
