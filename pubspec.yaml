@@ -1,5 +1,5 @@
 name: kudakeiran
-description: A new Flutter project.
+description: Professional EdTech Startup for Kids.
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -10,9 +10,11 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.6
-  shared_preferences: ^2.2.2  # برای ذخیره امتیازات و پیشرفت کودک
-  audioplayers: ^5.2.1        # برای پخش صداهای آموزشی و تشویقی
-  google_fonts: ^6.1.0        # برای تایپوگرافی حرفه‌ای بدون نیاز به دانلود دستی فونت
+  google_fonts: ^6.1.0
+  flutter_animate: ^4.5.0
+  fl_chart: ^0.66.0
+  shared_preferences: ^2.2.2
+  confetti: ^0.7.0
 
 dev_dependencies:
   flutter_test:
@@ -21,4 +23,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
