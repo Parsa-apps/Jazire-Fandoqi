@@ -16,16 +16,19 @@ void main() async {
 }
 
 // ==========================================================
-// 🗄 GAME DATA (Phase 16, 34, 61)
-// ==========================================================
-class GameData {
+// class GameData {
   static late SharedPreferences _p;
   static int coins = 0, level = 1, streak = 0, totalCorrect = 0, totalWrong = 0, dailyMissions = 0, sessionSeconds = 0;
-  static String lastLogin = '', avatar = '😊';
+  static int weeklyPlayMinutes = 0, todayPlaySeconds = 0;
+  static String lastLogin = '', avatar = '😊', lastWeekReset = '';
   static List<String> achievements = [], stickers = [];
-  static Map<String, int> skills = {'math': 0, 'alphabet': 0, 'memory': 0, 'colors': 0, 'shapes': 0, 'animals': 0, 'counting': 0, 'pattern': 0, 'fruits': 0, 'concepts': 0};
+  static Map<String, int> skills = {
+    'math': 0, 'alphabet': 0, 'memory': 0, 'colors': 0, 'shapes': 0, 'animals': 0,
+    'counting': 0, 'pattern': 0, 'fruits': 0, 'concepts': 0, 'vocab': 0, 'body': 0,
+    'vehicles': 0, 'time': 0, 'weather': 0, 'emotions': 0, 'jobs': 0
+  };
   static int timeLimitMinutes = 60;
-  static bool treasureOpened = false;
+  static bool treasureOpened = false, goldenChestOpened = false, soundEnabled = true;
 
   static Future<void> load() async {
     _p = await SharedPreferences.getInstance();
@@ -36,8 +39,14 @@ class GameData {
     achievements = _p.getStringList('ach') ?? []; stickers = _p.getStringList('st') ?? [];
     timeLimitMinutes = _p.getInt('tl') ?? 60;
     treasureOpened = _p.getBool('tr') ?? false;
+    goldenChestOpened = _p.getBool('gc') ?? false;
+    soundEnabled = _p.getBool('sn') ?? true;
+    weeklyPlayMinutes = _p.getInt('wpm') ?? 0;
+    todayPlaySeconds = _p.getInt('tps') ?? 0;
+    lastWeekReset = _p.getString('lwr') ?? '';
     for (var k in skills.keys) skills[k] = _p.getInt('sk_$k') ?? 0;
     _checkStreak();
+    _checkWeekReset();
   }
 
   static Future<void> save() async {
@@ -47,6 +56,9 @@ class GameData {
     await _p.setInt('dm', dailyMissions); await _p.setInt('ss', sessionSeconds);
     await _p.setStringList('ach', achievements); await _p.setStringList('st', stickers);
     await _p.setInt('tl', timeLimitMinutes); await _p.setBool('tr', treasureOpened);
+    await _p.setBool('gc', goldenChestOpened); await _p.setBool('sn', soundEnabled);
+    await _p.setInt('wpm', weeklyPlayMinutes); await _p.setInt('tps', todayPlaySeconds);
+    await _p.setString('lwr', lastWeekReset);
     for (var k in skills.keys) await _p.setInt('sk_$k', skills[k] ?? 0);
   }
 
@@ -55,10 +67,19 @@ class GameData {
     String yesterday = DateTime.now().subtract(const Duration(days: 1)).toString().substring(0, 10);
     if (lastLogin == yesterday) streak++; else if (lastLogin != today) streak = 1;
     lastLogin = today;
-    // Reset daily missions if new day
     String savedDay = _p.getString('missionDay') ?? '';
-    if (savedDay != today) { dailyMissions = 0; treasureOpened = false; _p.setString('missionDay', today); }
+    if (savedDay != today) {
+      dailyMissions = 0; treasureOpened = false; todayPlaySeconds = 0;
+      _p.setString('missionDay', today);
+    }
     save();
+  }
+
+  static void _checkWeekReset() {
+    String currentWeek = "${DateTime.now().year}-W${((DateTime.now().dayOfYear) / 7).ceil()}";
+    if (lastWeekReset != currentWeek) {
+      weeklyPlayMinutes = 0; goldenChestOpened = false; lastWeekReset = currentWeek; save();
+    }
   }
 
   static void addCoins(int a) { coins += a; level = (coins ~/ 100) + 1; _autoAchieve(); save(); }
@@ -69,30 +90,51 @@ class GameData {
   static void doMission() { dailyMissions++; save(); }
   static void unlockAch(String id) { if (!achievements.contains(id)) { achievements.add(id); save(); } }
   static void buySticker(String id, int price) { if (coins >= price && !stickers.contains(id)) { coins -= price; stickers.add(id); save(); } }
+  static void addPlayTime() { todayPlaySeconds++; if (todayPlaySeconds % 60 == 0) { weeklyPlayMinutes++; save(); } }
 
   static void _autoAchieve() {
     if (coins >= 500) unlockAch("coin_500");
     if (coins >= 1000) unlockAch("coin_1000");
+    if (coins >= 5000) unlockAch("coin_5000");
+    if (streak >= 3) unlockAch("streak_3");
     if (streak >= 7) unlockAch("streak_7");
     if (streak >= 30) unlockAch("streak_30");
+    if (level >= 3) unlockAch("level_3");
     if (level >= 5) unlockAch("level_5");
     if (level >= 10) unlockAch("level_10");
+    if (level >= 20) unlockAch("level_20");
+    if (totalCorrect >= 50) unlockAch("correct_50");
     if (totalCorrect >= 100) unlockAch("correct_100");
+    if (totalCorrect >= 500) unlockAch("correct_500");
+    if (stickers.length >= 5) unlockAch("collector");
+    if (stickers.length >= 10) unlockAch("mega_collector");
   }
 
   static String getLevelName() {
-    if (level >= 10) return "قهرمان آموزش 🏆"; if (level >= 7) return "نابغه کوچولو 🧠";
-    if (level >= 5) return "یادگیرنده ⭐"; if (level >= 3) return "تلاشگر 💪"; return "نوآموز 🌱";
+    if (level >= 20) return "استاد بزرگ 👑";
+    if (level >= 15) return "افسانه 🌟";
+    if (level >= 10) return "قهرمان آموزش 🏆";
+    if (level >= 7) return "نابغه کوچولو 🧠";
+    if (level >= 5) return "یادگیرنده ⭐";
+    if (level >= 3) return "تلاشگر 💪";
+    return "نوآموز 🌱";
   }
 
   static String getMascot() {
-    if (level >= 7) return "🦸"; if (level >= 5) return "🧑‍🎓"; if (level >= 3) return "🧒"; return "👶";
+    if (level >= 15) return "🧙"; if (level >= 10) return "🦸";
+    if (level >= 7) return "🧑‍🎓"; if (level >= 5) return "🧒";
+    if (level >= 3) return "👦"; return "👶";
   }
 
   static bool surprise() => streak > 0 && streak % 3 == 0;
   static bool canOpenTreasure() => dailyMissions >= 3 && !treasureOpened;
+  static bool canOpenGoldenChest() => weeklyPlayMinutes >= 30 && !goldenChestOpened;
 }
 
+// Extension برای محاسبه روز سال
+extension DateTimeExt on DateTime {
+  int get dayOfYear => difference(DateTime(year, 1, 1)).inDays + 1;
+}
 // ==========================================================
 // 🧠 AI SYSTEMS (Phase 12, 14, 19, 50)
 // ==========================================================
@@ -550,6 +592,224 @@ class _ConState extends State<ConceptGame> {
       ])])));
 }
 
+// ==========================================================
+// 📚 VOCABULARY (Persian-English)
+// ==========================================================
+class VocabGame extends StatefulWidget { const VocabGame({super.key}); @override State<VocabGame> createState() => _VocState(); }
+class _VocState extends State<VocabGame> {
+  final vc = {"سیب":"Apple","کتاب":"Book","خانه":"House","آب":"Water","درخت":"Tree","خورشید":"Sun","ماه":"Moon","گل":"Flower","مدرسه":"School","دوست":"Friend"};
+  late String tn, ta; List<String> opts = []; int sc = 0;
+  @override void initState() { super.initState(); _gen(); }
+  void _gen() { var e = vc.entries.toList()..shuffle(); setState(() { tn = e.first.key; ta = e.first.value;
+    opts = e.take(4).map((x) => x.value).toList()..shuffle(); }); }
+  void _chk(String a) { if (a == ta) { HapticFeedback.mediumImpact(); GameData.addCoins(5); GameData.recordCorrect(); GameData.addSkill('vocab');
+    setState(() => sc += 5); Future.delayed(const Duration(milliseconds: 500), _gen);
+  } else { HapticFeedback.heavyImpact(); GameData.recordWrong(); }}
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: Text("لغات | $sc")),
+    body: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
+      Container(padding: const EdgeInsets.all(30), decoration: BoxDecoration(gradient: G.pu, borderRadius: BorderRadius.circular(20)),
+        child: Text(tn, style: const TextStyle(fontSize: 40, color: Colors.white, fontWeight: FontWeight.bold))),
+      const SizedBox(height: 20), const Text("انگلیسی این کلمه چیست؟", style: TextStyle(fontSize: 16)),
+      const SizedBox(height: 20),
+      Expanded(child: GridView.count(crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15,
+        children: opts.map((o) => BounceBtn(onTap: () => _chk(o),
+          child: Container(decoration: BoxDecoration(color: Colors.deepPurple, borderRadius: BorderRadius.circular(20)),
+            child: Center(child: Text(o, style: const TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold)))))).toList()))])));
+}
+
+// ==========================================================
+// 👤 BODY PARTS
+// ==========================================================
+class BodyGame extends StatefulWidget { const BodyGame({super.key}); @override State<BodyGame> createState() => _BdyState(); }
+class _BdyState extends State<BodyGame> {
+  final bp = {"چشم":"👁","دهان":"👄","گوش":"👂","دست":"✋","پا":"🦵","دماغ":"👃","مغز":"🧠","قلب":"❤️"};
+  late String tn, te; List<MapEntry<String, String>> opts = []; int sc = 0;
+  @override void initState() { super.initState(); _gen(); }
+  void _gen() { var e = bp.entries.toList()..shuffle(); setState(() { tn = e.first.key; te = e.first.value; opts = e.take(4).toList()..shuffle(); }); }
+  void _chk(String e) { if (e == te) { HapticFeedback.mediumImpact(); GameData.addCoins(4); GameData.recordCorrect(); GameData.addSkill('body');
+    setState(() => sc += 4); Future.delayed(const Duration(milliseconds: 500), _gen);
+  } else { HapticFeedback.heavyImpact(); GameData.recordWrong(); }}
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: Text("اعضای بدن | $sc")),
+    body: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
+      Text("«$tn» کدومه؟", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)), const SizedBox(height: 30),
+      Expanded(child: GridView.count(crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15,
+        children: opts.map((e) => BounceBtn(onTap: () => _chk(e.value),
+          child: Container(decoration: BoxDecoration(color: Colors.pink.shade50, borderRadius: BorderRadius.circular(20)),
+            child: Center(child: Text(e.value, style: const TextStyle(fontSize: 70)))))).toList()))])));
+}
+
+// ==========================================================
+// 🚗 VEHICLES
+// ==========================================================
+class VehicleGame extends StatefulWidget { const VehicleGame({super.key}); @override State<VehicleGame> createState() => _VhState(); }
+class _VhState extends State<VehicleGame> {
+  final vh = {"ماشین":"🚗","اتوبوس":"🚌","دوچرخه":"🚲","هواپیما":"✈️","قطار":"🚂","کشتی":"🚢","موتور":"🏍","بالگرد":"🚁"};
+  late String tn, te; List<MapEntry<String, String>> opts = []; int sc = 0;
+  @override void initState() { super.initState(); _gen(); }
+  void _gen() { var e = vh.entries.toList()..shuffle(); setState(() { tn = e.first.key; te = e.first.value; opts = e.take(4).toList()..shuffle(); }); }
+  void _chk(String e) { if (e == te) { HapticFeedback.mediumImpact(); GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkill('vehicles');
+    setState(() => sc += 3); Future.delayed(const Duration(milliseconds: 500), _gen);
+  } else { HapticFeedback.heavyImpact(); GameData.recordWrong(); }}
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: Text("وسایل نقلیه | $sc")),
+    body: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
+      Text("$tn کدومه؟", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)), const SizedBox(height: 30),
+      Expanded(child: GridView.count(crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15,
+        children: opts.map((e) => BounceBtn(onTap: () => _chk(e.value),
+          child: Container(decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(20)),
+            child: Center(child: Text(e.value, style: const TextStyle(fontSize: 70)))))).toList()))])));
+}
+
+// ==========================================================
+// 📅 DAYS & MONTHS
+// ==========================================================
+class TimeGame extends StatefulWidget { const TimeGame({super.key}); @override State<TimeGame> createState() => _TmState(); }
+class _TmState extends State<TimeGame> {
+  final days = ["شنبه","یکشنبه","دوشنبه","سه‌شنبه","چهارشنبه","پنج‌شنبه","جمعه"];
+  final months = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
+  bool isDayMode = true; late String question; late int correctIdx; List<String> opts = []; int sc = 0;
+  @override void initState() { super.initState(); _gen(); }
+  void _gen() { isDayMode = Random().nextBool(); var list = isDayMode ? days : months;
+    setState(() { correctIdx = Random().nextInt(list.length);
+      question = isDayMode ? "روز ${correctIdx + 1}م هفته چیه؟" : "ماه ${correctIdx + 1}م سال چیه؟";
+      opts = [list[correctIdx]]; while (opts.length < 4) { String r = list[Random().nextInt(list.length)]; if (!opts.contains(r)) opts.add(r); }
+      opts.shuffle(); }); }
+  void _chk(String a) { var list = isDayMode ? days : months;
+    if (a == list[correctIdx]) { HapticFeedback.mediumImpact(); GameData.addCoins(4); GameData.recordCorrect(); GameData.addSkill('time');
+      setState(() => sc += 4); Future.delayed(const Duration(milliseconds: 500), _gen);
+    } else { HapticFeedback.heavyImpact(); GameData.recordWrong(); }}
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: Text("روزها و ماه‌ها | $sc")),
+    body: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
+      Container(padding: const EdgeInsets.all(30), decoration: BoxDecoration(gradient: G.w, borderRadius: BorderRadius.circular(20)),
+        child: Text(question, style: const TextStyle(fontSize: 22, color: Colors.white, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
+      const SizedBox(height: 30),
+      Expanded(child: GridView.count(crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15,
+        children: opts.map((o) => BounceBtn(onTap: () => _chk(o),
+          child: Container(decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(20)),
+            child: Center(child: Text(o, style: const TextStyle(fontSize: 22, color: Colors.white, fontWeight: FontWeight.bold)))))).toList()))])));
+}
+
+// ==========================================================
+// ☀️ WEATHER
+// ==========================================================
+class WeatherGame extends StatefulWidget { const WeatherGame({super.key}); @override State<WeatherGame> createState() => _WtState(); }
+class _WtState extends State<WeatherGame> {
+  final wt = {"آفتابی":"☀️","بارانی":"🌧","برفی":"❄️","ابری":"☁️","طوفانی":"⛈","رنگین‌کمان":"🌈","بادی":"💨","مه":"🌫"};
+  late String tn, te; List<MapEntry<String, String>> opts = []; int sc = 0;
+  @override void initState() { super.initState(); _gen(); }
+  void _gen() { var e = wt.entries.toList()..shuffle(); setState(() { tn = e.first.key; te = e.first.value; opts = e.take(4).toList()..shuffle(); }); }
+  void _chk(String e) { if (e == te) { HapticFeedback.mediumImpact(); GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkill('weather');
+    setState(() => sc += 3); Future.delayed(const Duration(milliseconds: 500), _gen);
+  } else { HapticFeedback.heavyImpact(); GameData.recordWrong(); }}
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: Text("آب و هوا | $sc")),
+    body: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
+      Text("هوای «$tn» کدومه؟", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)), const SizedBox(height: 30),
+      Expanded(child: GridView.count(crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15,
+        children: opts.map((e) => BounceBtn(onTap: () => _chk(e.value),
+          child: Container(decoration: BoxDecoration(color: Colors.cyan.shade100, borderRadius: BorderRadius.circular(20)),
+            child: Center(child: Text(e.value, style: const TextStyle(fontSize: 70)))))).toList()))])));
+}
+
+// ==========================================================
+// 😊 EMOTIONS
+// ==========================================================
+class EmotionGame extends StatefulWidget { const EmotionGame({super.key}); @override State<EmotionGame> createState() => _EmState(); }
+class _EmState extends State<EmotionGame> {
+  final em = {"خوشحال":"😄","غمگین":"😢","عصبانی":"😡","تعجب":"😲","خواب‌آلود":"😴","عاشق":"😍","ترسیده":"😱","خجالتی":"😊"};
+  late String tn, te; List<MapEntry<String, String>> opts = []; int sc = 0;
+  @override void initState() { super.initState(); _gen(); }
+  void _gen() { var e = em.entries.toList()..shuffle(); setState(() { tn = e.first.key; te = e.first.value; opts = e.take(4).toList()..shuffle(); }); }
+  void _chk(String e) { if (e == te) { HapticFeedback.mediumImpact(); GameData.addCoins(4); GameData.recordCorrect(); GameData.addSkill('emotions');
+    setState(() => sc += 4); Future.delayed(const Duration(milliseconds: 500), _gen);
+  } else { HapticFeedback.heavyImpact(); GameData.recordWrong(); }}
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: Text("احساسات | $sc")),
+    body: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
+      Text("چهره «$tn» کدومه؟", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)), const SizedBox(height: 30),
+      Expanded(child: GridView.count(crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15,
+        children: opts.map((e) => BounceBtn(onTap: () => _chk(e.value),
+          child: Container(decoration: BoxDecoration(color: Colors.yellow.shade100, borderRadius: BorderRadius.circular(20)),
+            child: Center(child: Text(e.value, style: const TextStyle(fontSize: 70)))))).toList()))])));
+}
+
+// ==========================================================
+// 👨‍⚕️ JOBS
+// ==========================================================
+class JobGame extends StatefulWidget { const JobGame({super.key}); @override State<JobGame> createState() => _JbState(); }
+class _JbState extends State<JobGame> {
+  final jb = {"دکتر":"👨‍⚕️","معلم":"👨‍🏫","پلیس":"👮","آشپز":"👨‍🍳","خلبان":"👨‍✈️","کشاورز":"👨‍🌾","دانشمند":"👨‍🔬","نقاش":"👨‍🎨"};
+  late String tn, te; List<MapEntry<String, String>> opts = []; int sc = 0;
+  @override void initState() { super.initState(); _gen(); }
+  void _gen() { var e = jb.entries.toList()..shuffle(); setState(() { tn = e.first.key; te = e.first.value; opts = e.take(4).toList()..shuffle(); }); }
+  void _chk(String e) { if (e == te) { HapticFeedback.mediumImpact(); GameData.addCoins(4); GameData.recordCorrect(); GameData.addSkill('jobs');
+    setState(() => sc += 4); Future.delayed(const Duration(milliseconds: 500), _gen);
+  } else { HapticFeedback.heavyImpact(); GameData.recordWrong(); }}
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: Text("شغل‌ها | $sc")),
+    body: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
+      Text("$tn کدومه؟", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)), const SizedBox(height: 30),
+      Expanded(child: GridView.count(crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15,
+        children: opts.map((e) => BounceBtn(onTap: () => _chk(e.value),
+          child: Container(decoration: BoxDecoration(color: Colors.indigo.shade50, borderRadius: BorderRadius.circular(20)),
+            child: Center(child: Text(e.value, style: const TextStyle(fontSize: 70)))))).toList()))])));
+}
+
+// ==========================================================
+// 📊 STATISTICS PAGE
+// ==========================================================
+class StatsPage extends StatelessWidget { const StatsPage({super.key});
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: const Text("آمار کامل")),
+    body: SingleChildScrollView(padding: const EdgeInsets.all(20), child: Column(children: [
+      Card(color: Colors.amber.shade50, child: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
+        const Icon(Icons.emoji_events, size: 60, color: Colors.amber),
+        Text("${GameData.coins}", style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold)),
+        const Text("سکه‌های کل"),
+      ]))),
+      const SizedBox(height: 10),
+      Row(children: [
+        Expanded(child: Card(child: Padding(padding: const EdgeInsets.all(15), child: Column(children: [
+          const Icon(Icons.trending_up, color: Colors.blue), Text("لول ${GameData.level}"), Text(GameData.getLevelName(), style: const TextStyle(fontSize: 12))])))),
+        Expanded(child: Card(child: Padding(padding: const EdgeInsets.all(15), child: Column(children: [
+          const Icon(Icons.local_fire_department, color: Colors.orange), Text("${GameData.streak} روز"), const Text("پیاپی")])))),
+      ]),
+      Row(children: [
+        Expanded(child: Card(child: Padding(padding: const EdgeInsets.all(15), child: Column(children: [
+          const Icon(Icons.check_circle, color: Colors.green), Text("${GameData.totalCorrect}"), const Text("درست")])))),
+        Expanded(child: Card(child: Padding(padding: const EdgeInsets.all(15), child: Column(children: [
+          const Icon(Icons.timer, color: Colors.purple), Text("${GameData.weeklyPlayMinutes} دقیقه"), const Text("این هفته")])))),
+      ]),
+      const SizedBox(height: 20),
+      Card(child: Padding(padding: const EdgeInsets.all(15), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text("مدال‌ها", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text("${GameData.achievements.length} مدال کسب شده"),
+        const SizedBox(height: 10),
+        Wrap(spacing: 5, children: GameData.achievements.map((a) => const Chip(label: Text("🏅"), backgroundColor: Colors.amber)).toList()),
+      ]))),
+      const SizedBox(height: 10),
+      Card(child: Padding(padding: const EdgeInsets.all(15), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text("استیکرها", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text("${GameData.stickers.length} استیکر خریداری شده"),
+      ]))),
+    ])));
+}
+
+// ==========================================================
+// ⚙️ SETTINGS PAGE
+// ==========================================================
+class SettingsPage extends StatefulWidget { const SettingsPage({super.key}); @override State<SettingsPage> createState() => _StState(); }
+class _StState extends State<SettingsPage> {
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: const Text("تنظیمات")),
+    body: ListView(padding: const EdgeInsets.all(16), children: [
+      SwitchListTile(secondary: const Icon(Icons.volume_up), title: const Text("صداها و لرزش"), value: GameData.soundEnabled,
+        onChanged: (v) { setState(() => GameData.soundEnabled = v); GameData.save(); }),
+      ListTile(leading: const Icon(Icons.timer), title: Text("محدودیت زمانی: ${GameData.timeLimitMinutes} دقیقه"),
+        subtitle: Slider(value: GameData.timeLimitMinutes.toDouble(), min: 15, max: 120, divisions: 7,
+          onChanged: (v) { setState(() => GameData.timeLimitMinutes = v.toInt()); GameData.save(); })),
+      const Divider(),
+      ListTile(leading: const Icon(Icons.refresh, color: Colors.red), title: const Text("پاک کردن همه اطلاعات"),
+        onTap: () => showDialog(context: context, builder: (ctx) => AlertDialog(
+          title: const Text("مطمئنی؟"), content: const Text("همه امتیازات پاک می‌شن!"),
+          actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("لغو")),
+            ElevatedButton(onPressed: () async { await GameData._p.clear(); await GameData.load(); Navigator.pop(ctx); setState(() {}); }, child: const Text("پاک کن"))]))),
+    ]));
+}
 // ==========================================================
 // 🎨 DRAWING
 // ==========================================================
