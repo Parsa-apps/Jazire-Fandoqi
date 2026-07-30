@@ -39,7 +39,7 @@ class KudakeIranApp extends StatelessWidget {
 }
 
 // ============================================================
-// --- صفحه اسپلش (Splash Screen) با انیمیشن ---
+// --- صفحه اسپلش (Splash Screen) - اصلاح شده ---
 // ============================================================
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -60,28 +60,37 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFEB3B),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.auto_awesome, size: 120, color: Color(0xFF6C63FF))
-                .animate(onPlay: (controller) => controller.repeat())
-                .scale(duration: 1000.ms, curve: Curves.easeInOut)
-                .then()
-                .shake(hz: 4),
-            const SizedBox(height: 20),
-            Text("کودک ایران",
-                    style: GoogleFonts.vazirmatn(
-                        fontSize: 45,
-                        color: const Color(0xFF6C63FF),
-                        fontWeight: FontWeight.bold))
-                .animate()
-                .fadeIn(duration: 800.ms)
-                .slideY(begin: 1),
-            const SizedBox(height: 30),
-            const CircularProgressIndicator(color: Color(0xFF6C63FF)),
-          ],
+      // پس زمینه گرادیانی حرفه‌ای به جای رنگ زرد ساده
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF6C63FF), Color(0xFF8E85FF)],
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.auto_awesome, size: 120, color: Colors.white)
+                  .animate(onPlay: (controller) => controller.repeat())
+                  .scale(duration: 1000.ms, curve: Curves.easeInOut)
+                  .then()
+                  .shake(hz: 4),
+              const SizedBox(height: 20),
+              Text("کودک ایران",
+                      style: GoogleFonts.vazirmatn(
+                          fontSize: 45,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold))
+                  .animate()
+                  .fadeIn(duration: 800.ms)
+                  .slideY(begin: 1),
+              const SizedBox(height: 30),
+              const CircularProgressIndicator(color: Colors.white),
+            ],
+          ),
         ),
       ),
     );
@@ -89,7 +98,7 @@ class _SplashScreenState extends State<SplashScreen> {
 }
 
 // ============================================================
-// --- صفحه معرفی (Onboarding) با راهنمای تعاملی ---
+// --- صفحه معرفی (Onboarding) - باگ Color اصلاح شد ---
 // ============================================================
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -102,24 +111,25 @@ class _OnboardingPageState extends State<OnboardingPage> {
   final PageController _controller = PageController();
   int _currentPage = 0;
 
+  // اصلاح باگ اصلی: اضافه کردن const Color
   final List<Map<String, dynamic>> _pages = [
     {
       "icon": Icons.school_rounded,
       "title": "یادگیری شاد و آسان",
       "desc": "الفبا، اعداد و مهارت‌های پایه را با روش‌های نوین و جذاب به فرزندتان بیاموزید.",
-      "color": Color(0xFF6C63FF),
+      "color": const Color(0xFF6C63FF),
     },
     {
       "icon": Icons.videogame_asset_rounded,
       "title": "بازی و سرگرمی",
       "desc": "با ده‌ها بازی هدفمند، خلاقیت و هوش فرزند شما در حین بازی رشد می‌کند.",
-      "color": Color(0xFFFFB84D),
+      "color": const Color(0xFFFFB84D),
     },
     {
       "icon": Icons.family_restroom_rounded,
       "title": "پنل ویژه والدین",
       "desc": "همیشه در جریان پیشرفت فرزندتان باشید و روند یادگیری او را مدیریت کنید.",
-      "color": Color(0xFF4CAF50),
+      "color": const Color(0xFF4CAF50),
     },
   ];
 
@@ -130,7 +140,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // دکمه رد کردن در بالای صفحه
             Align(
               alignment: Alignment.topLeft,
               child: Padding(
@@ -142,7 +151,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 ),
               ),
             ),
-            // بدنه اصلی صفحات
             Expanded(
               child: PageView.builder(
                 controller: _controller,
@@ -157,10 +165,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 },
               ),
             ),
-
-            // بخش راهنما (سواپ کن) و ایندیکاتور
             _buildBottomSection(),
-
             const SizedBox(height: 20),
           ],
         ),
@@ -178,19 +183,19 @@ class _OnboardingPageState extends State<OnboardingPage> {
             padding: const EdgeInsets.all(30),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: pageData['color'].withOpacity(0.1),
+              color: (pageData['color'] as Color).withOpacity(0.1),
             ),
-            child: Icon(pageData['icon'], size: 100, color: pageData['color']),
+            child: Icon(pageData['icon'] as IconData, size: 100, color: pageData['color'] as Color),
           ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
           const SizedBox(height: 40),
           Text(
-            pageData['title'],
+            pageData['title'] as String,
             style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.5),
           const SizedBox(height: 15),
           Text(
-            pageData['desc'],
+            pageData['desc'] as String,
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 16, color: Colors.grey[600], height: 1.6),
           ).animate().fadeIn(delay: 400.ms),
@@ -200,14 +205,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   Widget _buildBottomSection() {
-    // اگر آخرین صفحه بود، دکمه "شروع" نمایش داده شود
     if (_currentPage == _pages.length - 1) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 30),
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: _pages[_currentPage]['color'],
+            backgroundColor: _pages[_currentPage]['color'] as Color,
             minimumSize: const Size(double.infinity, 55),
+            elevation: 8,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           ),
           onPressed: _finishOnboarding,
@@ -217,10 +222,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
       );
     }
 
-    // در غیر این صورت، راهنمای کشیدن نمایش داده شود
     return Column(
       children: [
-        // ایندیکاتور دات‌ها
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(
@@ -232,7 +235,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               height: 8,
               decoration: BoxDecoration(
                 color: _currentPage == index
-                    ? _pages[_currentPage]['color']
+                    ? _pages[_currentPage]['color'] as Color
                     : Colors.grey.shade300,
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -240,8 +243,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
           ),
         ),
         const SizedBox(height: 25),
-
-        // راهنمای متحرک (Swipe Guide)
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -266,7 +267,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
 }
 
 // ============================================================
-// --- داشبورد اصلی کودک (Kid Home) ---
+// --- داشبورد اصلی کودک (Kid Home) - قفل‌ها باز شد ---
 // ============================================================
 class KidDashboard extends StatefulWidget {
   const KidDashboard({super.key});
@@ -283,6 +284,12 @@ class _KidDashboardState extends State<KidDashboard> {
     super.initState();
     _confettiController = ConfettiController(duration: const Duration(seconds: 2));
     _loadData();
+  }
+  
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
   }
 
   _loadData() async {
@@ -322,10 +329,10 @@ class _KidDashboardState extends State<KidDashboard> {
             crossAxisSpacing: 15,
             mainAxisSpacing: 15,
             children: [
-              _menuItem("الفبای شاد", Icons.sort_by_alpha, Colors.purple, true),
-              _menuItem("بازی اعداد", Icons.calculate, Colors.green, true),
-              _menuItem("نقاشی کن", Icons.brush, Colors.pink, false),
-              _menuItem("درباره ما", Icons.info_outline, Colors.orange, true,
+              _menuItem("الفبای شاد", Icons.sort_by_alpha, Colors.purple),
+              _menuItem("بازی اعداد", Icons.calculate, Colors.green),
+              _menuItem("نقاشی کن", Icons.brush, Colors.pink),
+              _menuItem("درباره ما", Icons.info_outline, Colors.orange,
                   isAbout: true),
             ],
           ),
@@ -336,11 +343,7 @@ class _KidDashboardState extends State<KidDashboard> {
               blastDirectionality: BlastDirectionality.explosive,
               shouldLoop: false,
               colors: const [
-                Colors.green,
-                Colors.blue,
-                Colors.pink,
-                Colors.orange,
-                Colors.purple
+                Colors.green, Colors.blue, Colors.pink, Colors.orange, Colors.purple
               ],
             ),
           ),
@@ -354,8 +357,7 @@ class _KidDashboardState extends State<KidDashboard> {
     );
   }
 
-  Widget _menuItem(String title, IconData icon, Color color, bool isFree,
-      {bool isAbout = false}) {
+  Widget _menuItem(String title, IconData icon, Color color, {bool isAbout = false}) {
     return Card(
       elevation: 8,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
@@ -365,8 +367,6 @@ class _KidDashboardState extends State<KidDashboard> {
           if (isAbout) {
             Navigator.push(context,
                 MaterialPageRoute(builder: (context) => const AboutUsPage()));
-          } else if (!isFree) {
-            _showPremiumDialog();
           } else {
             _addReward();
           }
@@ -380,28 +380,8 @@ class _KidDashboardState extends State<KidDashboard> {
             const SizedBox(height: 10),
             Text(title,
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            if (!isFree)
-              const Padding(
-                padding: EdgeInsets.only(top: 5),
-                child: Icon(Icons.lock, size: 16, color: Colors.grey),
-              ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showPremiumDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("نسخه طلایی"),
-        content: const Text("برای دسترسی به این بخش لطفاً نسخه کامل را از کافه بازار تهیه کنید."),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("متوجه شدم"))
-        ],
       ),
     );
   }
@@ -419,7 +399,7 @@ class _KidDashboardState extends State<KidDashboard> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text("لطفاً برای تایید بزرگسال بودن، حاصل جمع را وارد کنید:"),
+            const Text("لطفاً برای تایید بزرگسال بودن، حاصل جمع را وارد کنید:"),
             const SizedBox(height: 10),
             Text("$n1 + $n2 = ?",
                 style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
@@ -499,13 +479,9 @@ class ParentPanel extends StatelessWidget {
                   borderData: FlBorderData(show: false),
                   lineBarsData: [
                     LineChartBarData(
-                      spots: [
-                        const FlSpot(0, 1),
-                        const FlSpot(1, 3),
-                        const FlSpot(2, 2),
-                        const FlSpot(3, 5),
-                        const FlSpot(4, 3),
-                        const FlSpot(5, 4),
+                      spots: const [
+                        FlSpot(0, 1), FlSpot(1, 3), FlSpot(2, 2),
+                        FlSpot(3, 5), FlSpot(4, 3), FlSpot(5, 4),
                       ],
                       isCurved: true,
                       color: const Color(0xFF6C63FF),
@@ -567,21 +543,15 @@ class AboutUsPage extends StatelessWidget {
             const SizedBox(height: 30),
             Text("Parsa Apps™",
                     style: GoogleFonts.exo2(
-                        fontSize: 40,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 3))
-                .animate()
-                .fadeIn(duration: 1.seconds)
-                .slideY(begin: 0.5),
+                        fontSize: 40, color: Colors.white,
+                        fontWeight: FontWeight.w900, letterSpacing: 3))
+                .animate().fadeIn(duration: 1.seconds).slideY(begin: 0.5),
             const SizedBox(height: 10),
             Text("مدیر عامل: فرشاد پارسا",
                     style: GoogleFonts.vazirmatn(
-                        fontSize: 20,
-                        color: Colors.amber,
+                        fontSize: 20, color: Colors.amber,
                         fontWeight: FontWeight.bold))
-                .animate()
-                .fadeIn(delay: 500.ms),
+                .animate().fadeIn(delay: 500.ms),
             const SizedBox(height: 40),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 25),
@@ -602,10 +572,7 @@ class AboutUsPage extends StatelessWidget {
             ),
             const SizedBox(height: 40),
             const Text("راه‌های ارتباطی و پشتیبانی",
-                style: TextStyle(
-                    color: Colors.white54,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold)),
+                style: TextStyle(color: Colors.white54, fontSize: 14, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -614,8 +581,7 @@ class AboutUsPage extends StatelessWidget {
                   icon: Icons.email_rounded,
                   label: "ایمیل",
                   color: Colors.redAccent,
-                  onTap: () => _launchURL(
-                      'mailto:farshadparsa2019@gmail.com?subject=پشتیبانی اپلیکیشن کودک ایران'),
+                  onTap: () => _launchURL('mailto:farshadparsa2019@gmail.com?subject=پشتیبانی اپلیکیشن کودک ایران'),
                 ),
                 const SizedBox(width: 25),
                 _contactButton(
@@ -634,10 +600,7 @@ class AboutUsPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Text("© 2024 Parsa Apps - تمامی حقوق محفوظ است",
-                  style: TextStyle(
-                      color: Colors.amberAccent,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold)),
+                  style: TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 30),
           ],
@@ -646,11 +609,7 @@ class AboutUsPage extends StatelessWidget {
     );
   }
 
-  Widget _contactButton(
-      {required IconData icon,
-      required String label,
-      required Color color,
-      required VoidCallback onTap}) {
+  Widget _contactButton({required IconData icon, required String label, required Color color, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -665,8 +624,7 @@ class AboutUsPage extends StatelessWidget {
             child: Icon(icon, color: color, size: 30),
           ),
           const SizedBox(height: 8),
-          Text(label,
-              style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+          Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
         ],
       ),
     );
