@@ -13,24 +13,26 @@ jobs:
 
       - name: Generate Android Structure & Build
         run: |
-          # ذخیره موقت فایل‌های تو
-          mkdir temp_lib
-          cp -r lib/* temp_lib/
-          cp pubspec.yaml temp_pubspec.yaml
+          # ۱. ساخت یک پوشه امن در بیرون از پروژه برای بک‌آپ
+          mkdir -p /tmp/kudakeiran_backup
           
-          # پاک کردن محیط برای جلوگیری از تداخل
+          # ۲. کپی کردن فایل‌های تو به اون پوشه امن
+          cp -r lib /tmp/kudakeiran_backup/
+          cp pubspec.yaml /tmp/kudakeiran_backup/
+          
+          # ۳. حالا با خیال راحت همه چیز رو پاک می‌کنیم تا فلاتر پروژه خام بسازه
+          rm -rf .!!
           rm -rf *
           
-          # ساخت پروژه استاندارد توسط خودِ فلاتر
+          # ۴. ساخت پروژه استاندارد فلاتر
           flutter create --project-name kudakeiran --platforms android .
           
-          # جایگزین کردن کدهای تو در پروژه ساخته شده
-          rm -rf lib
-          mv temp_lib lib
-          rm pubspec.yaml
-          mv temp_pubspec.yaml pubspec.yaml
+          # ۵. پاک کردن فایل‌های پیش‌فرض و برگرداندن فایل‌های اصلی تو از پوشه امن
+          rm -rf lib pubspec.yaml
+          cp -r /tmp/kudakeiran_backup/lib .
+          cp /tmp/kudakeiran_backup/pubspec.yaml .
           
-          # بیلد نهایی
+          # ۶. بیلد نهایی
           flutter pub get
           flutter build apk --release
 
