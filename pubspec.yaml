@@ -15,11 +15,23 @@ dependencies:
   fl_chart: ^0.66.0
   shared_preferences: ^2.2.2
   confetti: ^0.7.0
+  url_launcher: ^6.2.4  # برای باز کردن ایمیل و تلگرام
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.13.1 # ابزار ساخت آیکون
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: false
+  image_path: "assets/icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#FFEB3B"
+  adaptive_icon_foreground: "assets/icon.png"
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/icon.png
