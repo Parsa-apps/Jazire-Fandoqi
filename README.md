@@ -1,5 +1,3 @@
-# AI_PROJECT_RULES.md
-
 # PROJECT DEVELOPMENT RULES
 # Professional Android Application Development Standard
 
