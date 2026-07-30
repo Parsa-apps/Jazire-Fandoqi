@@ -382,9 +382,9 @@ class _OnboardingState extends State<OnboardingPage> {
                   style: TextStyle(
                       fontSize: 25, fontWeight: FontWeight.w900)),
               const SizedBox(height: 8),
-              const Text('بیا شخصیت خودت رو بسازیم.',
+              Text('بیا شخصیت خودت رو بسازیم.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 17)),
+                  style: const TextStyle(fontSize: 17)),
               const SizedBox(height: 20),
               TextField(
                   controller: _nameController,
@@ -1241,7 +1241,7 @@ class _VocState extends State<VocabGame> {
   void _chk(String a) { if (a == ta) { HapticFeedback.mediumImpact(); GameData.addCoins(5); GameData.addStars(1); GameData.recordCorrect(); ChildFeedback.correct(context); GameData.addSkill('vocab'); setState(() => sc += 5); Future.delayed(const Duration(milliseconds: 500), () { if (mounted) _gen(); }); } else { HapticFeedback.heavyImpact(); GameData.recordWrong(); ChildFeedback.tryAgain(context); } }
   @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: Text("لغات | $sc")), body: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
     Container(padding: const EdgeInsets.all(30), decoration: BoxDecoration(gradient: Gradients.purple, borderRadius: BorderRadius.circular(20)), child: Text(tn, style: const TextStyle(fontSize: 40, color: Colors.white, fontWeight: FontWeight.bold))),
-    const SizedBox(height: 20), const Text("انگلیسی این کلمه چیست؟", style: TextStyle(fontSize: 16)), const SizedBox(height: 20),
+    const SizedBox(height: 20), const Text("انگلیسی این کلمه چیست؟", style: TextStyle(fontSize: 16, color: Colors.white)), const SizedBox(height: 20),
     Expanded(child: GridView.count(crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15, children: opts.map((o) => BounceBtn(onTap: () => _chk(o), child: Container(decoration: BoxDecoration(color: Colors.deepPurple, borderRadius: BorderRadius.circular(20)), child: Center(child: Text(o, style: const TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold)))))).toList())),
   ])));
 }
@@ -1390,7 +1390,7 @@ class _SqState extends State<SequenceGame> {
     if (userOrder.length == numbers.length) { if (List.generate(userOrder.length, (i) => userOrder[i] == i + 1).every((e) => e)) { HapticFeedback.mediumImpact(); GameData.addCoins(8); GameData.addStars(2); GameData.recordCorrect(); ChildFeedback.correct(context); setState(() => sc += 8); Future.delayed(const Duration(milliseconds: 800), () { if (mounted) _gen(); }); } else { HapticFeedback.heavyImpact(); GameData.recordWrong(); ChildFeedback.tryAgain(context); Future.delayed(const Duration(milliseconds: 500), () { if (mounted) setState(() => userOrder = []); }); } }
   }
   @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: Text("ترتیب اعداد | $sc")), body: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
-    const Text("اعداد رو از ۱ تا ۶ به ترتیب کلیک کن", style: TextStyle(fontSize: 16), textAlign: TextAlign.center), const SizedBox(height: 20),
+    Text("اعداد رو از ۱ تا ۶ به ترتیب کلیک کن", style: const TextStyle(fontSize: 16), textAlign: TextAlign.center), const SizedBox(height: 20),
     Text("انتخاب شده: ${userOrder.join(' → ')}", style: const TextStyle(fontSize: 20, color: Colors.blue, fontWeight: FontWeight.bold)), const SizedBox(height: 30),
     Expanded(child: GridView.count(crossAxisCount: 3, crossAxisSpacing: 15, mainAxisSpacing: 15, children: numbers.map((n) => BounceBtn(onTap: () { if (!userOrder.contains(n)) _tap(n); }, child: Container(decoration: BoxDecoration(color: userOrder.contains(n) ? Colors.grey : Colors.orange, borderRadius: BorderRadius.circular(20)), child: Center(child: Text("$n", style: const TextStyle(fontSize: 50, color: Colors.white, fontWeight: FontWeight.bold)))))).toList())),
   ])));
@@ -1504,18 +1504,18 @@ class StatsPage extends StatelessWidget { const StatsPage({super.key}); @overrid
   Row(children: [ Expanded(child: Card(child: Padding(padding: const EdgeInsets.all(15), child: Column(children: [ const Icon(Icons.trending_up, color: Colors.blue), Text("لول ${GameData.level}"), Text(GameData.getLevelName(), style: const TextStyle(fontSize: 12))])))), Expanded(child: Card(child: Padding(padding: const EdgeInsets.all(15), child: Column(children: [ const Icon(Icons.local_fire_department, color: Colors.orange), Text("${GameData.streak} روز"), const Text("پیاپی")])))), ]),
   Row(children: [ Expanded(child: Card(child: Padding(padding: const EdgeInsets.all(15), child: Column(children: [ const Icon(Icons.check_circle, color: Colors.green), Text("${GameData.totalCorrect}"), const Text("درست")])))), Expanded(child: Card(child: Padding(padding: const EdgeInsets.all(15), child: Column(children: [ const Icon(Icons.timer, color: Colors.purple), Text("${GameData.weeklyPlayMinutes} دقیقه"), const Text("این هفته")])))), ]),
   const SizedBox(height: 20),
-  Card(child: Padding(padding: const EdgeInsets.all(15), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [ const Text("مدال‌ها", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), Text("${GameData.achievements.length} مدال کسب شده"), const SizedBox(height: 10), Wrap(spacing: 5, children: GameData.achievements.map((a) => const Chip(label: Text("🏅"), backgroundColor: Colors.amber)).toList()), ]))),
+  Card(child: Padding(padding: const EdgeInsets.all(15), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [ const Text("مدال‌ها", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)), Text("${GameData.achievements.length} مدال کسب شده"), const SizedBox(height: 10), Wrap(spacing: 5, children: GameData.achievements.map((a) => const Chip(label: Text("🏅"), backgroundColor: Colors.amber)).toList()), ]))),
 ])));
 }
 
 class TrophiesRoom extends StatelessWidget { const TrophiesRoom({super.key}); @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: const Text("اتاق افتخارات")), body: SingleChildScrollView(padding: const EdgeInsets.all(20), child: Column(children: [
-  Card(color: Colors.amber.shade50, child: Padding(padding: const EdgeInsets.all(20), child: Column(children: [ const Text("🏆 رکوردهای شما", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)), const SizedBox(height: 20),
+  Card(color: Colors.amber.shade50, child: Padding(padding: const EdgeInsets.all(20), child: Column(children: [ const Text("🏆 رکوردهای شما", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)), const SizedBox(height: 20),
     ListTile(leading: const Icon(Icons.speed, color: Colors.orange), title: const Text("رکورد مسابقه ریاضی"), trailing: Text("${GameData.mathRaceHighScore}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20))),
     ListTile(leading: const Icon(Icons.quiz, color: Colors.purple), title: const Text("رکورد مسابقه"), trailing: Text("${GameData.quizHighScore}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20))),
     ListTile(leading: const Icon(Icons.emoji_events, color: Colors.amber), title: const Text("بیشترین امتیاز"), trailing: Text("${GameData.highScore}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20))),
   ]))),
   const SizedBox(height: 20),
-  Card(color: Colors.blue.shade50, child: Padding(padding: const EdgeInsets.all(20), child: Column(children: [ const Text("🎖 آمار کلی", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), const SizedBox(height: 15),
+  Card(color: Colors.blue.shade50, child: Padding(padding: const EdgeInsets.all(20), child: Column(children: [ const Text("🎖 آمار کلی", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black)), const SizedBox(height: 15),
     Text("💰 ${GameData.coins} سکه جمع کردی", style: const TextStyle(fontSize: 16)),
     Text("⭐ ${GameData.stars} ستاره داری", style: const TextStyle(fontSize: 16)),
     Text("📈 به لول ${GameData.level} رسیدی", style: const TextStyle(fontSize: 16)),
@@ -1551,10 +1551,10 @@ class _ShopState extends State<Shop> {
 }
 
 class SubPage extends StatelessWidget { const SubPage({super.key}); @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: const Text("اشتراک ویژه")), body: Padding(padding: const EdgeInsets.all(30), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-  const Icon(Icons.workspace_premium, size: 80, color: Colors.amber), const SizedBox(height: 20), const Text("اشتراک ویژه کودک ایران", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold), textAlign: TextAlign.center), const SizedBox(height: 30),
+  const Icon(Icons.workspace_premium, size: 80, color: Colors.amber), const SizedBox(height: 20), const Text("اشتراک ویژه کودک ایران", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black), textAlign: TextAlign.center), const SizedBox(height: 30),
   Card(color: Colors.amber.shade50, child: Column(children: [ ListTile(leading: const Icon(Icons.check, color: Colors.green), title: const Text("همه بازی‌ها باز")), ListTile(leading: const Icon(Icons.check, color: Colors.green), title: const Text("بدون تبلیغات")), ListTile(leading: const Icon(Icons.check, color: Colors.green), title: const Text("بدون محدودیت زمانی")), ListTile(leading: const Icon(Icons.check, color: Colors.green), title: const Text("گزارش PDF")), ])),
-  const SizedBox(height: 20), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, minimumSize: const Size(double.infinity, 55)), onPressed: () => ScaffoldMessenger.of(c).showSnackBar(const SnackBar(content: Text("پرداخت آنلاین به‌زودی فعال می‌شود."))), child: const Text("خرید از کافه بازار (ماهانه ۴۹ هزار تومان)", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold))),
-  const SizedBox(height: 10), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, minimumSize: const Size(double.infinity, 55)), onPressed: () => ScaffoldMessenger.of(c).showSnackBar(const SnackBar(content: Text("پرداخت آنلاین به‌زودی فعال می‌شود."))), child: const Text("خرید سالانه ۳۹۹ هزار تومان (صرفه‌جویی ۳۰٪)", style: TextStyle(color: Colors.white))),
+  const SizedBox(height: 20), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, minimumSize: const Size(double.infinity, 55)), onPressed: () => ScaffoldMessenger.of(c).showSnackBar(const SnackBar(content: Text("پرداخت آنلاین به‌زودی فعال می‌شود."))), child: const Text("خرید از کافه بازار (ماهانه ۴۹ هزار تومان)", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+  const SizedBox(height: 10), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, minimumSize: const Size(double.infinity, 55)), onPressed: () => ScaffoldMessenger.of(c).showSnackBar(const SnackBar(content: Text("پرداخت آنلاین به‌زودی فعال می‌شود."))), child: const Text("خرید سالانه ۳۹۹ هزار تومان (صرفه‌جویی ۳۰٪)", style: TextStyle(color: Colors.white)),
 ])));
 }
 
@@ -1564,7 +1564,7 @@ class HelpCenter extends StatelessWidget { const HelpCenter({super.key}); final 
 
 class RateApp extends StatefulWidget { const RateApp({super.key}); @override State<RateApp> createState() => _RaState(); }
 class _RaState extends State<RateApp> { int rating = 0; @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: const Text("امتیاز به برنامه")), body: Padding(padding: const EdgeInsets.all(30), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-  const Icon(Icons.star, size: 100, color: Colors.amber), const SizedBox(height: 20), const Text("چقدر کودک ایران رو دوست داری؟", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold), textAlign: TextAlign.center), const SizedBox(height: 30),
+  const Icon(Icons.star, size: 100, color: Colors.amber), const SizedBox(height: 20), const Text("چقدر کودک ایران رو دوست داری؟", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black), textAlign: TextAlign.center), const SizedBox(height: 30),
   Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (i) => IconButton(icon: Icon(Icons.star, size: 45, color: i < rating ? Colors.amber : Colors.grey.shade300), onPressed: () => setState(() => rating = i + 1)))),
   const SizedBox(height: 30), if (rating > 0) Text(rating >= 4 ? "🎉 عالیه! ممنون از حمایتت" : "🙏 نظرت برامون مهمه", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
   const SizedBox(height: 40), ElevatedButton.icon(icon: const Icon(Icons.send), label: const Text("ثبت نظر در کافه بازار"), style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 55), backgroundColor: Colors.amber), onPressed: rating > 0 ? () async { await launchUrl(Uri.parse("bazaar://details?id=com.example.kudakeiran"), mode: LaunchMode.externalApplication); } : null),
@@ -1581,7 +1581,7 @@ class ParentPanel extends StatelessWidget { const ParentPanel({super.key}); @ove
   Card(child: ListTile(leading: const Icon(Icons.speed), title: const Text("نرخ موفقیت"), trailing: Text("${(GameData.successRate * 100).toStringAsFixed(0)}%"))),
   Card(child: ListTile(leading: const Icon(Icons.lightbulb, color: Colors.yellow), title: const Text("پیشنهاد"), subtitle: Text("بیشتر روی ${AI.weakSkill()} تمرین کنید"))),
   Card(child: ListTile(leading: const Icon(Icons.settings, color: Colors.blueGrey), title: const Text("تنظیمات والدین"), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(c, MaterialPageRoute(builder: (_) => const SettingsPage())))),
-  const SizedBox(height: 20), const Text("📊 مهارت‌ها", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+  const SizedBox(height: 20), const Text("📊 مهارت‌ها", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
   SizedBox(height: 200, child: BarChart(BarChartData(barGroups: GameData.skills.entries.toList().asMap().entries.map((e) => BarChartGroupData(x: e.key, barRods: [BarChartRodData(toY: e.value.value.toDouble(), color: Colors.indigo, width: 16)])).toList(),
     titlesData: FlTitlesData(leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30)), bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, m) { final n = ['ریاضی','الفبا','حافظه','رنگ','شکل','حیوان','شمارش','الگو','میوه','مفاهیم','لغات','بدن','ماشین','زمان','هوا','حس','شغل']; int idx = v.toInt(); if (idx < 0 || idx >= n.length) return const Text(''); return Text(n[idx], style: const TextStyle(fontSize: 8)); })), rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)), topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
     gridData: const FlGridData(show: false), borderData: FlBorderData(show: false),))),
@@ -1597,7 +1597,7 @@ class AboutPage extends StatelessWidget { const AboutPage({super.key});
     Text("مدیر عامل: فرشاد پارسا", style: GoogleFonts.vazirmatn(fontSize: 20, color: Colors.amber, fontWeight: FontWeight.bold)),
     const SizedBox(height: 30), Padding(padding: const EdgeInsets.symmetric(horizontal: 25), child: Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.amber.withOpacity(0.3))), child: Text("گروه برنامه‌نویسی پارسا با تکیه بر دانش روز، تجربه‌ای متفاوت برای شما خلق می‌کند.", textAlign: TextAlign.center, style: GoogleFonts.vazirmatn(color: Colors.white70, fontSize: 16, height: 1.8)))),
     const SizedBox(height: 30), Row(mainAxisAlignment: MainAxisAlignment.center, children: [ _b(Icons.email, "ایمیل", Colors.red, () => _o('mailto:farshadparsa2019@gmail.com')), const SizedBox(width: 20), _b(Icons.send, "تلگرام", Colors.blue, () => _o('https://t.me/Parsaappsadmin')), ]),
-    const SizedBox(height: 30), const Text("© 2024-2026 Parsa Apps", style: TextStyle(color: Colors.amberAccent)), const SizedBox(height: 20),
+    const SizedBox(height: 30), const Text("© 2024-2026 Parsa Apps", style: TextStyle(color: Colors.amberAccent, fontSize: 12)), const SizedBox(height: 20),
   ])));
   Widget _b(IconData i, String l, Color c, VoidCallback t) => GestureDetector(onTap: t, child: Column(children: [ Container(padding: const EdgeInsets.all(15), decoration: BoxDecoration(shape: BoxShape.circle, color: c.withOpacity(0.15), border: Border.all(color: c, width: 2)), child: Icon(i, color: c, size: 30)), const SizedBox(height: 5), Text(l, style: TextStyle(color: c, fontWeight: FontWeight.bold)), ]));
 }
