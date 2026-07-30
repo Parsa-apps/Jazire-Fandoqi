@@ -1,4 +1,4 @@
-name: KudakeIran Pro Build
+name: KudakeIran Ultimate Success
 on: [push]
 jobs:
   build:
@@ -11,35 +11,38 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: true
 
-      - name: Enterprise Build Engine
+      - name: Master Build Engine
         run: |
-          # ۱. رفتن به محیط ایزوله
-          cd /tmp
+          # ۱. پاکسازی کامل محیط کار
+          rm -rf /tmp/builder_app
           
-          # ۲. ساخت پروژه خام فلاتر
-          flutter create --project-name kudakeiran --platforms android builder_app
-          cd builder_app
+          # ۲. ساخت پروژه خام فلاتر در یک مسیر جدید
+          flutter create --project-name kudakeiran /tmp/builder_app
           
-          # ۳. اصلاح نسخه Kotlin برای سازگاری با پکیج های فاز ۸۵ (رفع ارور کد ۱)
-          sed -i 's/ext.kotlin_version = .*/ext.kotlin_version = "1.9.0"/' android/build.gradle
+          # ۳. ورود به پوشه ساخته شده
+          cd /tmp/builder_app
           
-          # ۴. جایگزینی کدهای اصلی استارتاپ
+          # ۴. اصلاح نسخه کاتلین (با روشی که اگر فایل نبود هم ارور ندهد)
+          if [ -f android/build.gradle ]; then
+            sed -i 's/ext.kotlin_version = .*/ext.kotlin_version = "1.9.0"/' android/build.gradle
+          fi
+          
+          # ۵. جایگزینی کدهای اصلی استارتاپ تو
           rm -rf lib
           cp -r $GITHUB_WORKSPACE/lib .
           cp $GITHUB_WORKSPACE/pubspec.yaml .
           
-          # ۵. بیلد APK با پاکسازی کش
+          # ۶. دریافت پکیج‌ها و بیلد نهایی
           flutter pub get
-          flutter build apk --release --split-per-abi
+          flutter build apk --release
 
-          # ۶. انتقال خروجی به فضای گیت‌هاب
-          mkdir -p $GITHUB_WORKSPACE/build_output
-          cp build/app/outputs/flutter-apk/app-release.apk $GITHUB_WORKSPACE/build_output/kudakeiran_v1_pro.apk
+          # ۷. انتقال فایل ساخته شده به پوشه خروجی گیت‌هاب
+          mkdir -p $GITHUB_WORKSPACE/output
+          cp build/app/outputs/flutter-apk/app-release.apk $GITHUB_WORKSPACE/output/kudakeiran_final.apk
 
-      - name: Upload Professional APK
+      - name: Upload Final APK
         uses: actions/upload-artifact@v4
         with:
-          name: KudakeIran_Enterprise_Release
-          path: build_output/kudakeiran_v1_pro.apk
+          name: KudakeIran-App-v1
+          path: output/kudakeiran_final.apk
