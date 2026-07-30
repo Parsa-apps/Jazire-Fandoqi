@@ -1,4 +1,4 @@
-name: Magic Auto Build APK
+name: Final Ultimate Build
 on: [push]
 jobs:
   build:
@@ -11,33 +11,28 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Generate Android Structure & Build
+      - name: Build APK in Clean Environment
         run: |
-          # ۱. ساخت یک پوشه امن در بیرون از پروژه برای بک‌آپ
-          mkdir -p /tmp/kudakeiran_backup
+          # ۱. ساخت یک پروژه کاملا جدید و سالم در یک پوشه جداگانه (خارج از محیط گیت‌هاب)
+          cd ..
+          flutter create --project-name kudakeiran --platforms android clean_app
           
-          # ۲. کپی کردن فایل‌های تو به اون پوشه امن
-          cp -r lib /tmp/kudakeiran_backup/
-          cp pubspec.yaml /tmp/kudakeiran_backup/
+          # ۲. کپی کردن کدهای تو از پوشه گیت‌هاب به درون آن پروژه سالم
+          # فایل های تو در پوشه $GITHUB_WORKSPACE هستند
+          cp -r $GITHUB_WORKSPACE/lib/* clean_app/lib/
+          cp $GITHUB_WORKSPACE/pubspec.yaml clean_app/pubspec.yaml
           
-          # ۳. حالا با خیال راحت همه چیز رو پاک می‌کنیم تا فلاتر پروژه خام بسازه
-          rm -rf .!!
-          rm -rf *
-          
-          # ۴. ساخت پروژه استاندارد فلاتر
-          flutter create --project-name kudakeiran --platforms android .
-          
-          # ۵. پاک کردن فایل‌های پیش‌فرض و برگرداندن فایل‌های اصلی تو از پوشه امن
-          rm -rf lib pubspec.yaml
-          cp -r /tmp/kudakeiran_backup/lib .
-          cp /tmp/kudakeiran_backup/pubspec.yaml .
-          
-          # ۶. بیلد نهایی
+          # ۳. رفتن به پوشه جدید و انجام عملیات بیلد
+          cd clean_app
           flutter pub get
           flutter build apk --release
-
+          
+          # ۴. کپی کردن فایل APK ساخته شده به مسیری که گیت‌هاب بتونه پیداش کنه
+          mkdir -p $GITHUB_WORKSPACE/output
+          cp build/app/outputs/flutter-apk/app-release.apk $GITHUB_WORKSPACE/output/
+          
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: KudakeIran-Final-App
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: KudakeIran-App
+          path: output/app-release.apk
