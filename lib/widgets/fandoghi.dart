@@ -25,19 +25,13 @@ class Fandoghi extends StatefulWidget {
   State<Fandoghi> createState() => _FandoghiState();
 }
 
-class _FandoghiState extends State<Fandoghi>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _blinkCtrl;
+class _FandoghiState extends State<Fandoghi> {
   bool _isBlinking = false;
   Timer? _blinkTimer;
 
   @override
   void initState() {
     super.initState();
-    _blinkCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 150),
-    );
     _blinkTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       if (mounted) {
         setState(() => _isBlinking = true);
@@ -51,7 +45,6 @@ class _FandoghiState extends State<Fandoghi>
   @override
   void dispose() {
     _blinkTimer?.cancel();
-    _blinkCtrl.dispose();
     super.dispose();
   }
 
