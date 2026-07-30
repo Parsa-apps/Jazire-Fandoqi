@@ -10,6 +10,9 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.6
+  shared_preferences: ^2.2.2  # برای ذخیره امتیازات و پیشرفت کودک
+  audioplayers: ^5.2.1        # برای پخش صداهای آموزشی و تشویقی
+  google_fonts: ^6.1.0        # برای تایپوگرافی حرفه‌ای بدون نیاز به دانلود دستی فونت
 
 dev_dependencies:
   flutter_test:
