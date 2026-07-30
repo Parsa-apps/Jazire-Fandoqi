@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:math';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   runApp(const KudakeIranApp());
@@ -14,19 +17,32 @@ class KudakeIranApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'KudakeIran',
       theme: ThemeData(
-        primarySwatch: Colors.indigo,
         useMaterial3: true,
-        fontFamily: 'Roboto', // اگر فونت فارسی اضافه کردی نامش را اینجا بنویس
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6C63FF)),
+        textTheme: GoogleFonts.vazirmatnTextTheme(), // فونت حرفه‌ای فارسی
       ),
       home: const SplashScreen(),
     );
   }
 }
 
-// --- صفحه شروع (Splash Screen) با تایمر هوشمند ---
+// --- مدیریت داده‌ها (Database) ---
+class AppData {
+  static int coins = 0;
+  static Future<void> loadProgress() async {
+    final prefs = await SharedPreferences.getInstance();
+    coins = prefs.getInt('coins') ?? 0;
+  }
+  static Future<void> addCoin() async {
+    coins += 10;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('coins', coins);
+  }
+}
+
+// --- صفحه شروع (Splash) ---
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
-
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
@@ -35,12 +51,10 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // بعد از ۳ ثانیه به صورت خودکار به صفحه Onboarding می‌رود
-    Timer(const Duration(seconds: 3), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const OnboardingPage()),
-      );
+    AppData.loadProgress().then((_) {
+      Timer(const Duration(seconds: 3), () {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const KidHomePage()));
+      });
     });
   }
 
@@ -52,17 +66,9 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.auto_awesome, size: 80, color: Colors.white),
+            const Icon(Icons.star, size: 100, color: Colors.yellowAccent),
             const SizedBox(height: 20),
-            const Text(
-              "KudakeIran",
-              style: TextStyle(
-                fontSize: 32,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 10),
+            Text("کودک ایران", style: GoogleFonts.vazirmatn(fontSize: 40, color: Colors.white, fontWeight: FontWeight.bold)),
             const CircularProgressIndicator(color: Colors.white),
           ],
         ),
@@ -71,96 +77,118 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
-// --- صفحه خوش‌آمدگویی (Onboarding) ---
-class OnboardingPage extends StatelessWidget {
-  const OnboardingPage({super.key});
-
+// --- صفحه اصلی کودک (Kid Home) ---
+class KidHomePage extends StatefulWidget {
+  const KidHomePage({super.key});
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        padding: const EdgeInsets.all(30),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.school, size: 100, color: Color(0xFF6C63FF)),
-            const SizedBox(height: 40),
-            const Text(
-              "یادگیری شاد، آینده روشن",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              "به دنیای آموزش و سرگرمی کودکان ایران خوش آمدید",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-            const SizedBox(height: 50),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6C63FF),
-                minimumSize: const Size(double.infinity, 50),
-              ),
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const KidHomePage()));
-              },
-              child: const Text("ورود به دنیای کودک", style: TextStyle(color: Colors.white)),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const ParentDashboard()));
-              },
-              child: const Text("پنل مخصوص والدین"),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  State<KidHomePage> createState() => _KidHomePageState();
 }
 
-// --- صفحه اصلی کودک (Kid Home) ---
-class KidHomePage extends StatelessWidget {
-  const KidHomePage({super.key});
-
+class _KidHomePageState extends State<KidHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("دنیای بازی و آموزش"),
-        backgroundColor: Colors.orangeAccent,
-      ),
-      body: GridView.count(
-        padding: const EdgeInsets.all(20),
-        crossAxisCount: 2,
-        mainAxisSpacing: 20,
-        crossAxisSpacing: 20,
-        children: [
-          _buildMenuCard(context, "آموزش الفبا", Icons.abc, Colors.blue),
-          _buildMenuCard(context, "اعداد", Icons.calculate, Colors.green),
-          _buildMenuCard(context, "نقاشی", Icons.palette, Colors.purple),
-          _buildMenuCard(context, "بازی‌ها", Icons.videogame_asset, Colors.red),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 200,
+            floating: false,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Text("امتیاز تو: ${AppData.coins} ⭐", style: const TextStyle(color: Colors.black)),
+              background: Container(color: Colors.yellow[200]),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.settings, color: Colors.black),
+                onPressed: () => _showParentalGate(context),
+              )
+            ],
+          ),
+          SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
+            delegate: SliverChildListDelegate([
+              _buildMenuCard(context, "آموزش الفبا", Icons.abc, Colors.blue, true),
+              _buildMenuCard(context, "اعداد طلایی", Icons.pin, Colors.green, false),
+              _buildMenuCard(context, "دفتر نقاشی", Icons.brush, Colors.orange, false),
+              _buildMenuCard(context, "جایزه‌ها", Icons.card_giftcard, Colors.red, false),
+            ]),
+          )
         ],
       ),
     );
   }
 
-  Widget _buildMenuCard(BuildContext context, String title, IconData icon, Color color) {
+  Widget _buildMenuCard(BuildContext context, String title, IconData icon, Color color, bool isFree) {
     return Card(
-      elevation: 5,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      margin: const EdgeInsets.all(15),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
       child: InkWell(
-        onTap: () {},
-        borderRadius: BorderRadius.circular(20),
+        onTap: () {
+          if (!isFree) {
+            _showPremiumDialog(context);
+          } else {
+            // اینجا بازی باز می‌شود و بعد از موفقیت:
+            setState(() { AppData.addCoin(); });
+          }
+        },
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 50, color: color),
-            const SizedBox(height: 10),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+            Icon(icon, size: 60, color: color),
+            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            if (!isFree) const Icon(Icons.lock, size: 20, color: Colors.grey)
           ],
         ),
+      ),
+    );
+  }
+
+  // --- سیستم هوشمند قفل والدین (Parental Gate) ---
+  void _showParentalGate(BuildContext context) {
+    int num1 = Random().nextInt(10) + 1;
+    int num2 = Random().nextInt(10) + 1;
+    int correctAnswer = num1 + num2;
+    TextEditingController answerController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("ورود والدین"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("برای تایید، حاصل جمع رو بنویس: $num1 + $num2 = ?"),
+            TextField(controller: answerController, keyboardType: TextInputType.number),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              if (int.tryParse(answerController.text) == correctAnswer) {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ParentDashboard()));
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("جواب اشتباهه!")));
+              }
+            },
+            child: const Text("ورود"),
+          )
+        ],
+      ),
+    );
+  }
+
+  void _showPremiumDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("نسخه طلایی"),
+        content: const Text("برای باز کردن این بخش و حمایت از ما، باید نسخه کامل رو از کافه بازار تهیه کنی."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("بعداً")),
+          ElevatedButton(onPressed: () {}, child: const Text("خرید از بازار")),
+        ],
       ),
     );
   }
@@ -169,13 +197,16 @@ class KidHomePage extends StatelessWidget {
 // --- پنل والدین (Parent Dashboard) ---
 class ParentDashboard extends StatelessWidget {
   const ParentDashboard({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("گزارش وضعیت برای والدین")),
-      body: const Center(
-        child: Text("اینجا لیست پیشرفت‌های فرزند شما نمایش داده می‌شود"),
+      appBar: AppBar(title: const Text("تنظیمات و گزارش پیشرفت")),
+      body: ListView(
+        children: const [
+          ListTile(leading: Icon(Icons.person), title: Text("نام کودک: نیما")),
+          ListTile(leading: Icon(Icons.bar_chart), title: Text("زمان یادگیری امروز: ۴۵ دقیقه")),
+          ListTile(leading: Icon(Icons.shopping_cart), title: Text("خرید نسخه کامل")),
+        ],
       ),
     );
   }
