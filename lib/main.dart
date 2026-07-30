@@ -25,6 +25,9 @@ class GameData {
   static int highScore = 0, mathRaceHighScore = 0, quizHighScore = 0;
   static String lastLogin = '', avatar = '😊', lastWeekReset = '', lastLuckyDate = '';
   static List<String> achievements = [], stickers = [];
+  // Separate progress for each daily challenge; a single activity must not
+  // complete unrelated challenges.
+  static Map<String, int> missionProgress = {'questions': 0, 'alphabet': 0, 'drawing': 0, 'colors': 0};
   static Map<String, int> skills = {
     'math': 0, 'alphabet': 0, 'memory': 0, 'colors': 0, 'shapes': 0, 'animals': 0,
     'counting': 0, 'pattern': 0, 'fruits': 0, 'concepts': 0, 'vocab': 0, 'body': 0,
@@ -43,6 +46,13 @@ class GameData {
     lastLogin = _p.getString('ll') ?? '';
     avatar = _p.getString('av') ?? '😊';
     dailyMissions = _p.getInt('dm') ?? 0;
+    for (final id in missionProgress.keys) {
+      missionProgress[id] = _p.getInt('mp_$id') ?? 0;
+    }
+    // Ignore the old shared counter: it could falsely mark all missions done.
+    dailyMissions = missionProgress.entries
+        .where((entry) => entry.value >= (missionTargets[entry.key] ?? 1))
+        .length;
     sessionSeconds = _p.getInt('ss') ?? 0;
     achievements = _p.getStringList('ach') ?? [];
     stickers = _p.getStringList('st') ?? [];
@@ -73,6 +83,9 @@ class GameData {
     await _p.setString('ll', lastLogin);
     await _p.setString('av', avatar);
     await _p.setInt('dm', dailyMissions);
+    for (final entry in missionProgress.entries) {
+      await _p.setInt('mp_${entry.key}', entry.value);
+    }
     await _p.setInt('ss', sessionSeconds);
     await _p.setStringList('ach', achievements);
     await _p.setStringList('st', stickers);
@@ -102,6 +115,9 @@ class GameData {
     String savedDay = _p.getString('missionDay') ?? '';
     if (savedDay != today) {
       dailyMissions = 0;
+      for (final id in missionProgress.keys) {
+        missionProgress[id] = 0;
+      }
       treasureOpened = false;
       todayPlaySeconds = 0;
       _p.setString('missionDay', today);
@@ -131,7 +147,27 @@ class GameData {
   static void recordWrong() { totalWrong++; save(); }
   static double get successRate => totalCorrect + totalWrong == 0 ? 0 : totalCorrect / (totalCorrect + totalWrong);
   static void addSkill(String s) { skills[s] = (skills[s] ?? 0) + 1; save(); }
-  static void doMission() { dailyMissions++; save(); }
+  static const Map<String, int> missionTargets = {
+    'questions': 5,
+    'alphabet': 1,
+    'drawing': 1,
+    'colors': 1,
+  };
+
+  static void progressMission(String id, {int amount = 1}) {
+    final target = missionTargets[id];
+    if (target == null) return;
+    missionProgress[id] = min(target, (missionProgress[id] ?? 0) + amount);
+    dailyMissions = missionProgress.entries
+        .where((entry) => entry.value >= (missionTargets[entry.key] ?? 1))
+        .length;
+    save();
+  }
+
+  static bool isMissionDone(String id) =>
+      (missionProgress[id] ?? 0) >= (missionTargets[id] ?? 1);
+
+  static int missionValue(String id) => missionProgress[id] ?? 0;
   static void unlockAch(String id) { if (!achievements.contains(id)) { achievements.add(id); save(); } }
   static void buySticker(String id, int price) { if (coins >= price && !stickers.contains(id)) { coins -= price; stickers.add(id); save(); } }
   static void addPlayTime() { todayPlaySeconds++; if (todayPlaySeconds % 60 == 0) { weeklyPlayMinutes++; save(); } }
@@ -499,8 +535,10 @@ class _DashState extends State<Dashboard> {
           flexibleSpace: FlexibleSpaceBar(
             background: Container(
               decoration: const BoxDecoration(gradient: G.p),
-              child: SafeArea(
-                child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              child: Stack(fit: StackFit.expand, children: [
+                Opacity(opacity: .34, child: Image.asset('assets/hero_kids.png', fit: BoxFit.cover)),
+                SafeArea(
+                  child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                   const SizedBox(height: 20),
                   Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                     Text(GameData.avatar, style: const TextStyle(fontSize: 40)),
@@ -509,8 +547,9 @@ class _DashState extends State<Dashboard> {
                   ]),
                   Text(GameData.getLevelName(), style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                   Text("لول ${GameData.level} | ${GameData.coins} ⭐ | 🔥 ${GameData.streak} روز", style: const TextStyle(color: Colors.white70)),
-                ]),
-              ),
+                  ]),
+                ),
+              ]),
             ),
           ),
           actions: [
@@ -545,69 +584,123 @@ class _DashState extends State<Dashboard> {
                 if (GameData.canOpenTreasure()) const Text("🎪 صندوق آماده!", style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
               ]),
               const SizedBox(height: 8),
-              _mi("۵ سوال حل کن", GameData.dailyMissions >= 5),
-              _mi("الفبا تمرین کن", GameData.dailyMissions >= 1),
-              _mi("نقاشی بکش", GameData.dailyMissions >= 2),
-              _mi("رنگ‌ها رو یاد بگیر", GameData.dailyMissions >= 3),
+              _mi("۵ سوال حل کن", 'questions', GameData.missionValue('questions'), 5),
+              _mi("الفبا تمرین کن", 'alphabet', GameData.missionValue('alphabet'), 1),
+              _mi("یک نقاشی بکش", 'drawing', GameData.missionValue('drawing'), 1),
+              _mi("رنگ‌ها رو یاد بگیر", 'colors', GameData.missionValue('colors'), 1),
             ]),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 10)),
-        SliverGrid(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, childAspectRatio: 0.9),
-          delegate: SliverChildListDelegate([
-            _m("الفبا", Icons.sort_by_alpha, G.pu, const AlphabetGame()),
-            _m("اعداد", Icons.calculate, G.s, const NumberGame()),
-            _m("حافظه", Icons.memory, const LinearGradient(colors: [Colors.teal, Colors.tealAccent]), const MemoryGame()),
-            _m("شمارش", Icons.pin, const LinearGradient(colors: [Colors.indigo, Colors.blue]), const CountingGame()),
-            _m("الگو", Icons.grid_view, const LinearGradient(colors: [Colors.deepPurple, Colors.purpleAccent]), const PatternGame()),
-            _m("رنگ‌ها", Icons.palette, G.w, const ColorGame()),
-            _m("اشکال", Icons.category, const LinearGradient(colors: [Colors.blue, Colors.lightBlue]), const ShapeGame()),
-            _m("حیوانات", Icons.pets, const LinearGradient(colors: [Colors.brown, Colors.orange]), const AnimalGame()),
-            _m("میوه‌ها", Icons.apple, const LinearGradient(colors: [Colors.red, Colors.redAccent]), const FruitGame()),
-            _m("مفاهیم", Icons.compare_arrows, const LinearGradient(colors: [Colors.cyan, Colors.lightBlueAccent]), const ConceptGame()),
-            _m("لغات", Icons.translate, const LinearGradient(colors: [Colors.deepPurple, Colors.deepPurpleAccent]), const VocabGame()),
-            _m("بدن", Icons.accessibility, const LinearGradient(colors: [Colors.pink, Colors.pinkAccent]), const BodyGame()),
-            _m("وسایل نقلیه", Icons.directions_car, const LinearGradient(colors: [Colors.blue, Colors.blueAccent]), const VehicleGame()),
-            _m("زمان", Icons.calendar_today, const LinearGradient(colors: [Colors.orange, Colors.deepOrange]), const TimeGame()),
-            _m("آب و هوا", Icons.cloud, const LinearGradient(colors: [Colors.cyan, Colors.blueAccent]), const WeatherGame()),
-            _m("احساسات", Icons.mood, const LinearGradient(colors: [Colors.yellow, Colors.amber]), const EmotionGame()),
-            _m("شغل‌ها", Icons.work, const LinearGradient(colors: [Colors.indigo, Colors.deepPurple]), const JobGame()),
-            _m("مسابقه", Icons.quiz, const LinearGradient(colors: [Colors.deepPurple, Colors.purple]), const QuizMaster()),
-            _m("ترتیب", Icons.sort, const LinearGradient(colors: [Colors.orange, Colors.deepOrange]), const SequenceGame()),
-            _m("مورد اضافه", Icons.help, const LinearGradient(colors: [Colors.pink, Colors.pinkAccent]), const OddOneOut()),
-            _m("مسابقه ریاضی", Icons.speed, const LinearGradient(colors: [Colors.red, Colors.deepOrange]), const MathRace()),
-            _m("داستان", Icons.book, const LinearGradient(colors: [Colors.brown, Colors.deepOrange]), const StoryTime()),
-            _m("سازها", Icons.music_note, const LinearGradient(colors: [Colors.purple, Colors.deepPurple]), const MusicGame()),
-            _m("فضا", Icons.rocket_launch, const LinearGradient(colors: [Colors.indigo, Colors.deepPurple]), const SpaceGame()),
-            _m("ورزش‌ها", Icons.sports_soccer, const LinearGradient(colors: [Colors.green, Colors.lightGreen]), const SportsGame()),
-            _m("چرخ شانس", Icons.casino, const LinearGradient(colors: [Colors.amber, Colors.orange]), const LuckyWheel()),
-            _m("نقاشی", Icons.brush, G.pk, const DrawingPage()),
-            _m("آمار", Icons.bar_chart, const LinearGradient(colors: [Colors.blueGrey, Colors.grey]), const StatsPage()),
-            _m("جوایز", Icons.emoji_events, const LinearGradient(colors: [Colors.amber, Colors.yellow]), const TrophiesRoom()),
-            _m("مدال‌ها", Icons.military_tech, const LinearGradient(colors: [Colors.amber, Colors.yellow]), const AchPage()),
-            _m("فروشگاه", Icons.shopping_bag, const LinearGradient(colors: [Colors.red, Colors.pink]), const Shop()),
-            _m("اشتراک", Icons.workspace_premium, const LinearGradient(colors: [Colors.amber, Colors.orange]), const SubPage()),
-            _m("راهنما", Icons.help_center, const LinearGradient(colors: [Colors.blue, Colors.cyan]), const HelpCenter()),
-            _m("امتیاز بده", Icons.thumb_up, const LinearGradient(colors: [Colors.green, Colors.teal]), const RateApp()),
-            _m("تنظیمات", Icons.settings, const LinearGradient(colors: [Colors.grey, Colors.blueGrey]), const SettingsPage()),
-            _m("درباره ما", Icons.info, const LinearGradient(colors: [Colors.blueGrey, Colors.grey]), const AboutPage()),
-          ]),
-        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 12)),
+        SliverToBoxAdapter(child: _worldStrip()),
+        const SliverToBoxAdapter(child: SizedBox(height: 8)),
+        SliverToBoxAdapter(child: _menuGroups()),
         const SliverToBoxAdapter(child: SizedBox(height: 20)),
       ]),
       Align(alignment: Alignment.topCenter, child: ConfettiWidget(confettiController: _conf, blastDirectionality: BlastDirectionality.explosive)),
     ]),
   );
 
-  Widget _mi(String t, bool d) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 2),
-    child: Row(children: [
-      Icon(d ? Icons.check_circle : Icons.circle_outlined, color: d ? Colors.green : Colors.grey, size: 18),
-      const SizedBox(width: 8),
-      Text(t, style: TextStyle(decoration: d ? TextDecoration.lineThrough : null, fontSize: 13)),
+  Widget _menuGroups() => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const Padding(padding: EdgeInsets.only(bottom: 8), child: Text('بازی‌ها و ماجراجویی‌ها', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900))),
+      _menuGroup('یادگیری پایه', 'الفبا، عددها، رنگ‌ها و مفاهیم', const Color(0xFF7B6CF6), [
+        _m("الفبا", Icons.sort_by_alpha, G.pu, const AlphabetGame()),
+        _m("اعداد", Icons.calculate, G.s, const NumberGame()),
+        _m("شمارش", Icons.pin, const LinearGradient(colors: [Colors.indigo, Colors.blue]), const CountingGame()),
+        _m("رنگ‌ها", Icons.palette, G.w, const ColorGame()),
+        _m("اشکال", Icons.category, const LinearGradient(colors: [Colors.blue, Colors.lightBlue]), const ShapeGame()),
+        _m("مفاهیم", Icons.compare_arrows, const LinearGradient(colors: [Colors.cyan, Colors.lightBlueAccent]), const ConceptGame()),
+        _m("لغات", Icons.translate, const LinearGradient(colors: [Colors.deepPurple, Colors.deepPurpleAccent]), const VocabGame()),
+      ], open: true),
+      _menuGroup('بازی‌های فکری', 'حافظه، الگو، مسابقه و چالش', const Color(0xFFFF8B72), [
+        _m("حافظه", Icons.memory, const LinearGradient(colors: [Colors.teal, Colors.tealAccent]), const MemoryGame()),
+        _m("الگو", Icons.grid_view, const LinearGradient(colors: [Colors.deepPurple, Colors.purpleAccent]), const PatternGame()),
+        _m("مسابقه", Icons.quiz, const LinearGradient(colors: [Colors.deepPurple, Colors.purple]), const QuizMaster()),
+        _m("ترتیب", Icons.sort, const LinearGradient(colors: [Colors.orange, Colors.deepOrange]), const SequenceGame()),
+        _m("مورد اضافه", Icons.help, const LinearGradient(colors: [Colors.pink, Colors.pinkAccent]), const OddOneOut()),
+        _m("مسابقه ریاضی", Icons.speed, const LinearGradient(colors: [Colors.red, Colors.deepOrange]), const MathRace()),
+        _m("چرخ شانس", Icons.casino, const LinearGradient(colors: [Colors.amber, Colors.orange]), const LuckyWheel()),
+      ]),
+      _menuGroup('دنیای اطراف من', 'حیوانات، طبیعت، بدن و دنیا', const Color(0xFF34BFA2), [
+        _m("حیوانات", Icons.pets, const LinearGradient(colors: [Colors.brown, Colors.orange]), const AnimalGame()),
+        _m("میوه‌ها", Icons.apple, const LinearGradient(colors: [Colors.red, Colors.redAccent]), const FruitGame()),
+        _m("بدن", Icons.accessibility, const LinearGradient(colors: [Colors.pink, Colors.pinkAccent]), const BodyGame()),
+        _m("وسایل نقلیه", Icons.directions_car, const LinearGradient(colors: [Colors.blue, Colors.blueAccent]), const VehicleGame()),
+        _m("زمان", Icons.calendar_today, const LinearGradient(colors: [Colors.orange, Colors.deepOrange]), const TimeGame()),
+        _m("آب و هوا", Icons.cloud, const LinearGradient(colors: [Colors.cyan, Colors.blueAccent]), const WeatherGame()),
+        _m("احساسات", Icons.mood, const LinearGradient(colors: [Colors.yellow, Colors.amber]), const EmotionGame()),
+        _m("شغل‌ها", Icons.work, const LinearGradient(colors: [Colors.indigo, Colors.deepPurple]), const JobGame()),
+        _m("فضا", Icons.rocket_launch, const LinearGradient(colors: [Colors.indigo, Colors.deepPurple]), const SpaceGame()),
+        _m("ورزش‌ها", Icons.sports_soccer, const LinearGradient(colors: [Colors.green, Colors.lightGreen]), const SportsGame()),
+      ]),
+      _menuGroup('خلاقیت و جایزه‌ها', 'داستان، موسیقی، نقاشی و افتخارها', const Color(0xFFFFB34D), [
+        _m("داستان", Icons.book, const LinearGradient(colors: [Colors.brown, Colors.deepOrange]), const StoryTime()),
+        _m("سازها", Icons.music_note, const LinearGradient(colors: [Colors.purple, Colors.deepPurple]), const MusicGame()),
+        _m("نقاشی", Icons.brush, G.pk, const DrawingPage()),
+        _m("جوایز", Icons.emoji_events, const LinearGradient(colors: [Colors.amber, Colors.yellow]), const TrophiesRoom()),
+        _m("مدال‌ها", Icons.military_tech, const LinearGradient(colors: [Colors.amber, Colors.yellow]), const AchPage()),
+        _m("فروشگاه", Icons.shopping_bag, const LinearGradient(colors: [Colors.red, Colors.pink]), const Shop()),
+        _m("آمار", Icons.bar_chart, const LinearGradient(colors: [Colors.blueGrey, Colors.grey]), const StatsPage()),
+      ]),
+      _menuGroup('برای بزرگ‌ترها', 'اشتراک، راهنما و تنظیمات', Colors.blueGrey, [
+        _m("اشتراک", Icons.workspace_premium, const LinearGradient(colors: [Colors.amber, Colors.orange]), const SubPage()),
+        _m("راهنما", Icons.help_center, const LinearGradient(colors: [Colors.blue, Colors.cyan]), const HelpCenter()),
+        _m("امتیاز بده", Icons.thumb_up, const LinearGradient(colors: [Colors.green, Colors.teal]), const RateApp()),
+        _m("تنظیمات", Icons.settings, const LinearGradient(colors: [Colors.grey, Colors.blueGrey]), const SettingsPage()),
+        _m("درباره ما", Icons.info, const LinearGradient(colors: [Colors.blueGrey, Colors.grey]), const AboutPage()),
+      ]),
     ]),
   );
+
+  Widget _menuGroup(String title, String subtitle, Color color, List<Widget> games, {bool open = false}) =>
+    Container(margin: const EdgeInsets.only(bottom: 12), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), boxShadow: [BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 10)]),
+      child: ExpansionTile(
+        initiallyExpanded: open, shape: const Border(), collapsedShape: const Border(),
+        leading: CircleAvatar(backgroundColor: color.withOpacity(.14), child: Icon(Icons.auto_awesome_rounded, color: color)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
+        subtitle: Text(subtitle, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+        children: [Padding(padding: const EdgeInsets.fromLTRB(8, 0, 8, 10), child: GridView.count(crossAxisCount: 3, childAspectRatio: .9, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), children: games))],
+      ),
+    );
+
+  Widget _worldStrip() => SizedBox(
+    height: 142,
+    child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 16), children: [
+      _worldCard('یاد بگیر', 'الفبا، اعداد و رنگ‌ها', 'assets/learn_world.png', const Color(0xFF7B6CF6)),
+      _worldCard('بازی کن', 'حافظه، الگو و سرگرمی', 'assets/play_world.png', const Color(0xFFFF8B72)),
+      _worldCard('کشف کن', 'دنیا را بشناس', 'assets/explore_world.png', const Color(0xFF34BFA2)),
+    ]),
+  );
+
+  Widget _worldCard(String title, String subtitle, String asset, Color color) => Container(
+    width: 228, margin: const EdgeInsets.only(right: 12), clipBehavior: Clip.antiAlias,
+    decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: color.withOpacity(.22), blurRadius: 12, offset: const Offset(0, 5))]),
+    child: Stack(children: [
+      Positioned(right: -8, bottom: -14, width: 132, child: Image.asset(asset)),
+      Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(title, style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 5), SizedBox(width: 105, child: Text(subtitle, style: const TextStyle(color: Colors.white, fontSize: 12, height: 1.35))),
+      ])),
+    ]),
+  );
+
+  Widget _mi(String title, String id, int value, int target) {
+    final done = GameData.isMissionDone(id);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(children: [
+        Icon(done ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+            color: done ? const Color(0xFF35B86B) : Colors.grey, size: 20),
+        const SizedBox(width: 8),
+        Expanded(child: Text(title,
+            style: TextStyle(decoration: done ? TextDecoration.lineThrough : null, fontSize: 13))),
+        if (!done && target > 1)
+          Text('$value/$target', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF6C63FF))),
+      ]),
+    );
+  }
 
   Widget _m(String t, IconData i, Gradient g, Widget pg) => Padding(
     padding: const EdgeInsets.all(6),
@@ -713,7 +806,7 @@ class _AlphaState extends State<AlphabetGame> {
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, mainAxisSpacing: 8, crossAxisSpacing: 8),
         itemCount: l.length,
         itemBuilder: (c, i) => BounceBtn(
-          onTap: () { setState(() => s = l[i]); GameData.addCoins(1); GameData.addSkill('alphabet'); GameData.doMission(); },
+          onTap: () { setState(() => s = l[i]); GameData.addCoins(1); GameData.addSkill('alphabet'); GameData.progressMission('alphabet'); },
           child: Container(
             decoration: BoxDecoration(
               color: s == l[i] ? Colors.purple : Colors.white,
@@ -772,7 +865,7 @@ class _NumState extends State<NumberGame> {
     if (a == ans) {
       HapticFeedback.mediumImpact();
       _cf.play();
-      GameData.addCoins(5); GameData.recordCorrect(); GameData.addSkill('math'); GameData.doMission();
+      GameData.addCoins(5); GameData.recordCorrect(); GameData.addSkill('math'); GameData.progressMission('questions');
       setState(() => sc += 5);
       if (sc >= 50) GameData.unlockAch("math_50");
       Future.delayed(const Duration(milliseconds: 800), _gen);
@@ -889,7 +982,7 @@ class _CountState extends State<CountingGame> {
   void _chk(int a) {
     if (a == target) {
       HapticFeedback.mediumImpact();
-      GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkill('counting'); GameData.doMission();
+      GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkill('counting'); GameData.progressMission('questions');
       setState(() => sc += 3);
       Future.delayed(const Duration(milliseconds: 500), _gen);
     } else {
@@ -999,7 +1092,7 @@ class _ColState extends State<ColorGame> {
   void _chk(Color c) {
     if (c == tc) {
       HapticFeedback.mediumImpact();
-      GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkill('colors'); GameData.doMission();
+      GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkill('colors'); GameData.progressMission('colors');
       setState(() => sc += 3);
       Future.delayed(const Duration(milliseconds: 500), _gen);
     } else {
@@ -1627,7 +1720,7 @@ class _QzState extends State<QuizMaster> {
     if (idx == questions[currentQ]['a']) {
       HapticFeedback.mediumImpact();
       _cf.play();
-      GameData.addCoins(10); GameData.recordCorrect(); GameData.doMission();
+      GameData.addCoins(10); GameData.recordCorrect(); GameData.progressMission('questions');
       setState(() => sc += 10);
     } else {
       HapticFeedback.heavyImpact();
@@ -1885,7 +1978,7 @@ class _StTState extends State<StoryTime> {
         ElevatedButton.icon(icon: const Icon(Icons.arrow_forward), label: const Text("قبلی"),
           onPressed: () => setState(() => idx = (idx - 1 + stories.length) % stories.length)),
         ElevatedButton.icon(icon: const Icon(Icons.arrow_back), label: const Text("بعدی"),
-          onPressed: () { setState(() => idx = (idx + 1) % stories.length); GameData.addCoins(5); GameData.doMission(); }),
+          onPressed: () { setState(() => idx = (idx + 1) % stories.length); GameData.addCoins(5); }),
       ]),
     ])),
   );
@@ -2125,7 +2218,7 @@ class _DrawState extends State<DrawingPage> {
   Widget build(BuildContext c) => Scaffold(
     appBar: AppBar(title: const Text("نقاشی"), backgroundColor: Colors.pink.shade100, actions: [
       IconButton(icon: const Icon(Icons.undo), onPressed: () { if (strokes.isNotEmpty) setState(() => strokes.removeLast()); }),
-      IconButton(icon: const Icon(Icons.delete_forever), onPressed: () => setState(() { strokes.clear(); GameData.doMission(); GameData.addCoins(2); })),
+      IconButton(icon: const Icon(Icons.delete_forever), onPressed: () => setState(() { strokes.clear(); GameData.addCoins(2); })),
     ]),
     body: Column(children: [
       SizedBox(height: 60, child: ListView.builder(scrollDirection: Axis.horizontal, itemCount: cl.length,
@@ -2136,7 +2229,13 @@ class _DrawState extends State<DrawingPage> {
       Expanded(child: GestureDetector(
         onPanStart: (_) => cur = [],
         onPanUpdate: (d) { RenderBox b = context.findRenderObject() as RenderBox; setState(() => cur.add(b.globalToLocal(d.globalPosition))); },
-        onPanEnd: (_) { strokes.add({'p': List<Offset?>.from(cur), 'c': col, 'w': w}); cur = []; },
+        onPanEnd: (_) {
+          if (cur.isNotEmpty) {
+            strokes.add({'p': List<Offset?>.from(cur), 'c': col, 'w': w});
+            GameData.progressMission('drawing');
+          }
+          cur = [];
+        },
         child: Container(color: Colors.white, child: CustomPaint(painter: DP(strokes, cur, col, w), size: Size.infinite)),
       )),
     ]),
