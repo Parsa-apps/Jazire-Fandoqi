@@ -16,1096 +16,678 @@ void main() async {
 }
 
 // ==========================================================
-// 🗄 DATABASE MANAGER (Phase 16, 34, 61)
+// 🗄 GAME DATA (Phase 16, 34, 61)
 // ==========================================================
 class GameData {
-  static late SharedPreferences _prefs;
-  static int coins = 0;
-  static int level = 1;
-  static int streak = 0;
-  static int totalCorrect = 0;
-  static int totalWrong = 0;
-  static String lastLoginDate = '';
-  static List<String> achievements = [];
-  static List<String> ownedStickers = [];
-  static String avatarFace = '😊';
-  static int dailyMissionsCompleted = 0;
-  static int totalSessionMinutes = 0;
-  static Map<String, int> skillScores = {'math': 0, 'alphabet': 0, 'memory': 0, 'colors': 0, 'shapes': 0, 'animals': 0};
+  static late SharedPreferences _p;
+  static int coins = 0, level = 1, streak = 0, totalCorrect = 0, totalWrong = 0, dailyMissions = 0, sessionSeconds = 0;
+  static String lastLogin = '', avatar = '😊';
+  static List<String> achievements = [], stickers = [];
+  static Map<String, int> skills = {'math': 0, 'alphabet': 0, 'memory': 0, 'colors': 0, 'shapes': 0, 'animals': 0, 'counting': 0, 'pattern': 0, 'fruits': 0, 'concepts': 0};
+  static int timeLimitMinutes = 60;
+  static bool treasureOpened = false;
 
   static Future<void> load() async {
-    _prefs = await SharedPreferences.getInstance();
-    coins = _prefs.getInt('coins') ?? 0;
-    level = _prefs.getInt('level') ?? 1;
-    streak = _prefs.getInt('streak') ?? 0;
-    totalCorrect = _prefs.getInt('totalCorrect') ?? 0;
-    totalWrong = _prefs.getInt('totalWrong') ?? 0;
-    lastLoginDate = _prefs.getString('lastLogin') ?? '';
-    avatarFace = _prefs.getString('avatar') ?? '😊';
-    dailyMissionsCompleted = _prefs.getInt('dailyMissions') ?? 0;
-    totalSessionMinutes = _prefs.getInt('sessionMin') ?? 0;
-    achievements = _prefs.getStringList('achievements') ?? [];
-    ownedStickers = _prefs.getStringList('stickers') ?? [];
-    for (var k in skillScores.keys) {
-      skillScores[k] = _prefs.getInt('skill_$k') ?? 0;
-    }
+    _p = await SharedPreferences.getInstance();
+    coins = _p.getInt('c') ?? 0; level = _p.getInt('l') ?? 1; streak = _p.getInt('s') ?? 0;
+    totalCorrect = _p.getInt('tc') ?? 0; totalWrong = _p.getInt('tw') ?? 0;
+    lastLogin = _p.getString('ll') ?? ''; avatar = _p.getString('av') ?? '😊';
+    dailyMissions = _p.getInt('dm') ?? 0; sessionSeconds = _p.getInt('ss') ?? 0;
+    achievements = _p.getStringList('ach') ?? []; stickers = _p.getStringList('st') ?? [];
+    timeLimitMinutes = _p.getInt('tl') ?? 60;
+    treasureOpened = _p.getBool('tr') ?? false;
+    for (var k in skills.keys) skills[k] = _p.getInt('sk_$k') ?? 0;
     _checkStreak();
   }
 
   static Future<void> save() async {
-    await _prefs.setInt('coins', coins);
-    await _prefs.setInt('level', level);
-    await _prefs.setInt('streak', streak);
-    await _prefs.setInt('totalCorrect', totalCorrect);
-    await _prefs.setInt('totalWrong', totalWrong);
-    await _prefs.setString('lastLogin', lastLoginDate);
-    await _prefs.setString('avatar', avatarFace);
-    await _prefs.setInt('dailyMissions', dailyMissionsCompleted);
-    await _prefs.setInt('sessionMin', totalSessionMinutes);
-    await _prefs.setStringList('achievements', achievements);
-    await _prefs.setStringList('stickers', ownedStickers);
-    for (var k in skillScores.keys) {
-      await _prefs.setInt('skill_$k', skillScores[k] ?? 0);
-    }
+    await _p.setInt('c', coins); await _p.setInt('l', level); await _p.setInt('s', streak);
+    await _p.setInt('tc', totalCorrect); await _p.setInt('tw', totalWrong);
+    await _p.setString('ll', lastLogin); await _p.setString('av', avatar);
+    await _p.setInt('dm', dailyMissions); await _p.setInt('ss', sessionSeconds);
+    await _p.setStringList('ach', achievements); await _p.setStringList('st', stickers);
+    await _p.setInt('tl', timeLimitMinutes); await _p.setBool('tr', treasureOpened);
+    for (var k in skills.keys) await _p.setInt('sk_$k', skills[k] ?? 0);
   }
 
   static void _checkStreak() {
     String today = DateTime.now().toString().substring(0, 10);
     String yesterday = DateTime.now().subtract(const Duration(days: 1)).toString().substring(0, 10);
-    if (lastLoginDate == yesterday) streak++;
-    else if (lastLoginDate != today) streak = 1;
-    lastLoginDate = today;
+    if (lastLogin == yesterday) streak++; else if (lastLogin != today) streak = 1;
+    lastLogin = today;
+    // Reset daily missions if new day
+    String savedDay = _p.getString('missionDay') ?? '';
+    if (savedDay != today) { dailyMissions = 0; treasureOpened = false; _p.setString('missionDay', today); }
     save();
   }
 
-  static void addCoins(int amount) {
-    coins += amount;
-    _checkLevelUp();
-    _checkAchievements();
-    save();
-  }
-
-  static void _checkLevelUp() {
-    int newLevel = (coins ~/ 100) + 1;
-    if (newLevel > level) level = newLevel;
-  }
-
-  static void _checkAchievements() {
-    if (coins >= 500) unlockAchievement("coin_500");
-    if (streak >= 7) unlockAchievement("streak_7");
-    if (level >= 5) unlockAchievement("level_5");
-  }
-
-  static void addSkillPoint(String skill) {
-    skillScores[skill] = (skillScores[skill] ?? 0) + 1;
-    save();
-  }
-
+  static void addCoins(int a) { coins += a; level = (coins ~/ 100) + 1; _autoAchieve(); save(); }
   static void recordCorrect() { totalCorrect++; save(); }
   static void recordWrong() { totalWrong++; save(); }
   static double get successRate => totalCorrect + totalWrong == 0 ? 0 : totalCorrect / (totalCorrect + totalWrong);
+  static void addSkill(String s) { skills[s] = (skills[s] ?? 0) + 1; save(); }
+  static void doMission() { dailyMissions++; save(); }
+  static void unlockAch(String id) { if (!achievements.contains(id)) { achievements.add(id); save(); } }
+  static void buySticker(String id, int price) { if (coins >= price && !stickers.contains(id)) { coins -= price; stickers.add(id); save(); } }
 
-  static void unlockAchievement(String id) {
-    if (!achievements.contains(id)) { achievements.add(id); save(); }
+  static void _autoAchieve() {
+    if (coins >= 500) unlockAch("coin_500");
+    if (coins >= 1000) unlockAch("coin_1000");
+    if (streak >= 7) unlockAch("streak_7");
+    if (streak >= 30) unlockAch("streak_30");
+    if (level >= 5) unlockAch("level_5");
+    if (level >= 10) unlockAch("level_10");
+    if (totalCorrect >= 100) unlockAch("correct_100");
   }
-
-  static void buySticker(String id, int price) {
-    if (coins >= price && !ownedStickers.contains(id)) {
-      coins -= price;
-      ownedStickers.add(id);
-      save();
-    }
-  }
-
-  static void completeDailyMission() { dailyMissionsCompleted++; save(); }
 
   static String getLevelName() {
-    if (level >= 10) return "قهرمان آموزش";
-    if (level >= 7) return "نابغه کوچولو";
-    if (level >= 5) return "یادگیرنده";
-    if (level >= 3) return "تلاشگر";
-    return "نوآموز";
+    if (level >= 10) return "قهرمان آموزش 🏆"; if (level >= 7) return "نابغه کوچولو 🧠";
+    if (level >= 5) return "یادگیرنده ⭐"; if (level >= 3) return "تلاشگر 💪"; return "نوآموز 🌱";
   }
 
-  static String getMascotEvolution() {
-    if (level >= 7) return "🦸";
-    if (level >= 5) return "🧑‍🎓";
-    if (level >= 3) return "🧒";
-    return "👶";
+  static String getMascot() {
+    if (level >= 7) return "🦸"; if (level >= 5) return "🧑‍🎓"; if (level >= 3) return "🧒"; return "👶";
   }
 
-  static bool shouldGetSurprise() => streak > 0 && streak % 3 == 0;
+  static bool surprise() => streak > 0 && streak % 3 == 0;
+  static bool canOpenTreasure() => dailyMissions >= 3 && !treasureOpened;
 }
 
 // ==========================================================
-// 🧠 DIFFICULTY ENGINE (Phase 14)
+// 🧠 AI SYSTEMS (Phase 12, 14, 19, 50)
 // ==========================================================
-class DifficultyEngine {
-  static int getDifficulty() {
-    if (GameData.successRate > 0.8) return 3;
-    if (GameData.successRate > 0.5) return 2;
-    return 1;
+class AI {
+  static int difficulty() { if (GameData.successRate > 0.8) return 3; if (GameData.successRate > 0.5) return 2; return 1; }
+  static String diffName() { switch (difficulty()) { case 3: return "سخت"; case 2: return "متوسط"; default: return "آسان"; } }
+  
+  static String mascotMsg() {
+    if (GameData.totalCorrect == 0) return "سلام! بیا بازی کنیم! 🎮";
+    if (GameData.successRate > 0.8) return "آفرین نابغه! 🌟";
+    if (GameData.successRate > 0.5) return "ادامه بده عالی میشی! 💪";
+    return "اشکال نداره! تمرین کن! 🎯";
   }
-  static String getDifficultyName() {
-    switch (getDifficulty()) {
-      case 3: return "سخت";
-      case 2: return "متوسط";
-      default: return "آسان";
-    }
+
+  static String weakSkill() {
+    var sorted = GameData.skills.entries.toList()..sort((a, b) => a.value.compareTo(b.value));
+    Map<String, String> names = {'math': 'ریاضی', 'alphabet': 'الفبا', 'memory': 'حافظه', 'colors': 'رنگ‌ها', 'shapes': 'اشکال', 'animals': 'حیوانات', 'counting': 'شمارش', 'pattern': 'الگو', 'fruits': 'میوه‌ها', 'concepts': 'مفاهیم'};
+    return names[sorted.first.key] ?? 'همه';
   }
+
+  static bool fatigued(int mistakes, Duration time) => mistakes > 5 && time.inMinutes > 15;
 }
 
 // ==========================================================
-// 🧸 MASCOT HELPER (Phase 12)
+// 🎨 THEME
 // ==========================================================
-class MascotHelper {
-  static String getMessage() {
-    if (GameData.totalCorrect == 0) return "سلام دوست من! بیا بازی کنیم! 🎮";
-    if (GameData.successRate > 0.8) return "آفرین! تو نابغه‌ای! 🌟";
-    if (GameData.successRate > 0.5) return "ادامه بده داری عالی میشی! 💪";
-    return "اشکال نداره! با تمرین بهتر میشی! 🎯";
-  }
-
-  static String getWeakSkill() {
-    var sorted = GameData.skillScores.entries.toList()..sort((a, b) => a.value.compareTo(b.value));
-    Map<String, String> names = {'math': 'ریاضی', 'alphabet': 'الفبا', 'memory': 'حافظه', 'colors': 'رنگ‌ها', 'shapes': 'اشکال', 'animals': 'حیوانات'};
-    return names[sorted.first.key] ?? 'همه بازی‌ها';
-  }
-
-  static bool isFatigued(int mistakes, Duration sessionTime) {
-    return mistakes > 5 && sessionTime.inMinutes > 15;
-  }
+class G {
+  static const p = LinearGradient(colors: [Color(0xFF6C63FF), Color(0xFF8E85FF)]);
+  static const s = LinearGradient(colors: [Color(0xFF4CAF50), Color(0xFF8BC34A)]);
+  static const w = LinearGradient(colors: [Color(0xFFFF9800), Color(0xFFFFB84D)]);
+  static const pu = LinearGradient(colors: [Color(0xFF9C27B0), Color(0xFFBA68C8)]);
+  static const pk = LinearGradient(colors: [Color(0xFFE91E63), Color(0xFFF48FB1)]);
 }
 
-// ==========================================================
-// 🎨 GRADIENTS (Phase 45)
-// ==========================================================
-class AppGradients {
-  static const primary = LinearGradient(colors: [Color(0xFF6C63FF), Color(0xFF8E85FF)]);
-  static const success = LinearGradient(colors: [Color(0xFF4CAF50), Color(0xFF8BC34A)]);
-  static const warning = LinearGradient(colors: [Color(0xFFFF9800), Color(0xFFFFB84D)]);
-  static const purple = LinearGradient(colors: [Color(0xFF9C27B0), Color(0xFFBA68C8)]);
-  static const pink = LinearGradient(colors: [Color(0xFFE91E63), Color(0xFFF48FB1)]);
+class BounceBtn extends StatefulWidget {
+  final Widget child; final VoidCallback onTap;
+  const BounceBtn({super.key, required this.child, required this.onTap});
+  @override State<BounceBtn> createState() => _BounceBtnState();
 }
-
-// ==========================================================
-// ⚡ BOUNCE BUTTON (Phase 44)
-// ==========================================================
-class BounceButton extends StatefulWidget {
-  final Widget child;
-  final VoidCallback onTap;
-  const BounceButton({super.key, required this.child, required this.onTap});
-  @override
-  State<BounceButton> createState() => _BounceButtonState();
-}
-
-class _BounceButtonState extends State<BounceButton> with SingleTickerProviderStateMixin {
+class _BounceBtnState extends State<BounceBtn> with SingleTickerProviderStateMixin {
   late AnimationController _c;
-  @override
-  void initState() {
-    super.initState();
-    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 150), lowerBound: 0.9, upperBound: 1.0)..value = 1.0;
-  }
-  @override
-  void dispose() { _c.dispose(); super.dispose(); }
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _c.reverse(),
-      onTapUp: (_) { _c.forward(); HapticFeedback.lightImpact(); widget.onTap(); },
-      onTapCancel: () => _c.forward(),
-      child: ScaleTransition(scale: _c, child: widget.child),
-    );
-  }
+  @override void initState() { super.initState(); _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 150), lowerBound: 0.9, upperBound: 1.0)..value = 1.0; }
+  @override void dispose() { _c.dispose(); super.dispose(); }
+  @override Widget build(BuildContext c) => GestureDetector(
+    onTapDown: (_) => _c.reverse(), onTapUp: (_) { _c.forward(); HapticFeedback.lightImpact(); widget.onTap(); }, onTapCancel: () => _c.forward(),
+    child: ScaleTransition(scale: _c, child: widget.child));
 }
 
-// ==========================================================
-// 🎨 APP
-// ==========================================================
 class KudakeIranApp extends StatelessWidget {
   const KudakeIranApp({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'کودک ایران',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6C63FF)),
-        textTheme: GoogleFonts.vazirmatnTextTheme(),
-      ),
-      home: const SplashScreen(),
-    );
-  }
+  @override Widget build(BuildContext c) => MaterialApp(
+    debugShowCheckedModeBanner: false, title: 'کودک ایران',
+    theme: ThemeData(useMaterial3: true, colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6C63FF)), textTheme: GoogleFonts.vazirmatnTextTheme()),
+    home: const SplashScreen());
 }
 
 // ==========================================================
-// 🚀 SPLASH (Phase 52)
+// 🚀 SPLASH
 // ==========================================================
-class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
-  @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    Timer(const Duration(seconds: 3), () {
-      Navigator.pushReplacement(context, PageRouteBuilder(
-        pageBuilder: (_, a, __) => const OnboardingPage(),
-        transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
-        transitionDuration: const Duration(milliseconds: 500),
-      ));
-    });
-  }
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(gradient: AppGradients.primary),
-        child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          const Icon(Icons.auto_awesome, size: 120, color: Colors.white)
-              .animate(onPlay: (c) => c.repeat()).scale(duration: 1000.ms).then().shake(),
-          const SizedBox(height: 20),
-          Text("کودک ایران", style: GoogleFonts.vazirmatn(fontSize: 45, color: Colors.white, fontWeight: FontWeight.bold))
-              .animate().fadeIn().slideY(begin: 1),
-          const SizedBox(height: 10),
-          const Text("Parsa Apps™", style: TextStyle(color: Colors.white70, fontSize: 14)),
-          const SizedBox(height: 30),
-          const CircularProgressIndicator(color: Colors.white),
-        ])),
-      ),
-    );
-  }
+class SplashScreen extends StatefulWidget { const SplashScreen({super.key}); @override State<SplashScreen> createState() => _SplashState(); }
+class _SplashState extends State<SplashScreen> {
+  @override void initState() { super.initState(); Timer(const Duration(seconds: 3), () => Navigator.pushReplacement(context, PageRouteBuilder(
+    pageBuilder: (_, a, __) => const OnboardingPage(), transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c)))); }
+  @override Widget build(BuildContext c) => Scaffold(body: Container(decoration: const BoxDecoration(gradient: G.p),
+    child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      const Icon(Icons.auto_awesome, size: 120, color: Colors.white).animate(onPlay: (c) => c.repeat()).scale(duration: 1000.ms).then().shake(),
+      const SizedBox(height: 20),
+      Text("کودک ایران", style: GoogleFonts.vazirmatn(fontSize: 45, color: Colors.white, fontWeight: FontWeight.bold)).animate().fadeIn().slideY(begin: 1),
+      const Text("Parsa Apps™", style: TextStyle(color: Colors.white70, fontSize: 14)),
+      const SizedBox(height: 30), const CircularProgressIndicator(color: Colors.white),
+    ]))));
 }
 
 // ==========================================================
-// 📖 ONBOARDING (Phase 53)
+// 📖 ONBOARDING
 // ==========================================================
-class OnboardingPage extends StatefulWidget {
-  const OnboardingPage({super.key});
-  @override
-  State<OnboardingPage> createState() => _OnboardingPageState();
-}
-
-class _OnboardingPageState extends State<OnboardingPage> {
-  final PageController _controller = PageController();
-  int _currentPage = 0;
-  final List<Map<String, dynamic>> _pages = [
-    {"icon": Icons.school_rounded, "title": "یادگیری هوشمند", "desc": "سختی تمرین‌ها به صورت خودکار با کودک تنظیم می‌شود.", "color": const Color(0xFF6C63FF)},
-    {"icon": Icons.videogame_asset_rounded, "title": "بازی و جایزه", "desc": "با موفقیت سکه بگیر و لول آپ کن!", "color": const Color(0xFFFFB84D)},
-    {"icon": Icons.family_restroom_rounded, "title": "پنل والدین", "desc": "گزارش کامل پیشرفت فرزندتان.", "color": const Color(0xFF4CAF50)},
+class OnboardingPage extends StatefulWidget { const OnboardingPage({super.key}); @override State<OnboardingPage> createState() => _OnboardingState(); }
+class _OnboardingState extends State<OnboardingPage> {
+  final PageController _ctrl = PageController(); int _page = 0;
+  final _data = [
+    {"i": Icons.school_rounded, "t": "یادگیری هوشمند", "d": "سختی تمرین با سطح کودک تنظیم می‌شود", "c": const Color(0xFF6C63FF)},
+    {"i": Icons.videogame_asset_rounded, "t": "بازی و جایزه", "d": "سکه بگیر و لول آپ کن!", "c": const Color(0xFFFFB84D)},
+    {"i": Icons.family_restroom_rounded, "t": "پنل والدین", "d": "گزارش دقیق پیشرفت فرزند", "c": const Color(0xFF4CAF50)},
   ];
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(child: Column(children: [
-        Align(alignment: Alignment.topLeft, child: TextButton(onPressed: _finish, child: const Text("رد کردن"))),
-        Expanded(child: PageView.builder(
-          controller: _controller,
-          onPageChanged: (i) => setState(() => _currentPage = i),
-          itemCount: _pages.length,
-          itemBuilder: (c, i) => Padding(padding: const EdgeInsets.all(30), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Container(padding: const EdgeInsets.all(30),
-              decoration: BoxDecoration(shape: BoxShape.circle, color: (_pages[i]['color'] as Color).withOpacity(0.1)),
-              child: Icon(_pages[i]['icon'], size: 100, color: _pages[i]['color'])).animate().scale(curve: Curves.elasticOut),
-            const SizedBox(height: 30),
-            Text(_pages[i]['title'], style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            Text(_pages[i]['desc'], textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: Colors.grey[600])),
-          ])),
-        )),
-        if (_currentPage == _pages.length - 1)
-          Padding(padding: const EdgeInsets.all(30), child: ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6C63FF), minimumSize: const Size(double.infinity, 55)),
-            onPressed: _finish,
-            child: const Text("شروع ماجراجویی", style: TextStyle(color: Colors.white, fontSize: 18)),
-          ))
-        else
-          Column(children: [
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(_pages.length, (i) => AnimatedContainer(
-              duration: const Duration(milliseconds: 300), margin: const EdgeInsets.symmetric(horizontal: 4),
-              width: _currentPage == i ? 25 : 8, height: 8,
-              decoration: BoxDecoration(color: _currentPage == i ? _pages[_currentPage]['color'] : Colors.grey.shade300, borderRadius: BorderRadius.circular(10)),
-            ))),
-            const SizedBox(height: 15),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              const Text("به چپ بکشید", style: TextStyle(color: Colors.grey)),
-              const Icon(Icons.arrow_back_ios, size: 14, color: Colors.grey).animate(onPlay: (c) => c.repeat(reverse: true)).slideX(begin: 0.5, end: -0.5),
-            ]),
-            const SizedBox(height: 20),
-          ]),
-      ])),
-    );
-  }
-  void _finish() => Navigator.pushReplacement(context, MaterialPageRoute(builder: (c) => const KidDashboard()));
+  @override Widget build(BuildContext c) => Scaffold(backgroundColor: Colors.white, body: SafeArea(child: Column(children: [
+    Align(alignment: Alignment.topLeft, child: TextButton(onPressed: _go, child: const Text("رد کردن"))),
+    Expanded(child: PageView.builder(controller: _ctrl, onPageChanged: (i) => setState(() => _page = i), itemCount: _data.length,
+      itemBuilder: (c, i) => Padding(padding: const EdgeInsets.all(30), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Container(padding: const EdgeInsets.all(30), decoration: BoxDecoration(shape: BoxShape.circle, color: (_data[i]['c'] as Color).withOpacity(0.1)),
+          child: Icon(_data[i]['i'] as IconData, size: 100, color: _data[i]['c'] as Color)).animate().scale(curve: Curves.elasticOut),
+        const SizedBox(height: 30), Text(_data[i]['t'] as String, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 10), Text(_data[i]['d'] as String, textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+      ])))),
+    if (_page == _data.length - 1)
+      Padding(padding: const EdgeInsets.all(30), child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6C63FF), minimumSize: const Size(double.infinity, 55)),
+        onPressed: _go, child: const Text("شروع ماجراجویی", style: TextStyle(color: Colors.white, fontSize: 18))))
+    else Column(children: [
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(_data.length, (i) => AnimatedContainer(duration: const Duration(milliseconds: 300), margin: const EdgeInsets.symmetric(horizontal: 4),
+        width: _page == i ? 25 : 8, height: 8, decoration: BoxDecoration(color: _page == i ? _data[_page]['c'] as Color : Colors.grey.shade300, borderRadius: BorderRadius.circular(10))))),
+      const SizedBox(height: 15),
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [const Text("به چپ بکشید", style: TextStyle(color: Colors.grey)),
+        const Icon(Icons.arrow_back_ios, size: 14, color: Colors.grey).animate(onPlay: (c) => c.repeat(reverse: true)).slideX(begin: 0.5, end: -0.5)]),
+      const SizedBox(height: 20),
+    ]),
+  ])));
+  void _go() => Navigator.pushReplacement(context, MaterialPageRoute(builder: (c) => const Dashboard()));
 }
 
 // ==========================================================
-// 🏠 KID DASHBOARD (Phase 54, 46, 62)
+// 🏠 DASHBOARD
 // ==========================================================
-class KidDashboard extends StatefulWidget {
-  const KidDashboard({super.key});
-  @override
-  State<KidDashboard> createState() => _KidDashboardState();
-}
+class Dashboard extends StatefulWidget { const Dashboard({super.key}); @override State<Dashboard> createState() => _DashState(); }
+class _DashState extends State<Dashboard> {
+  late ConfettiController _conf;
+  late Timer _sessionTimer;
+  int _sessionSec = 0;
 
-class _KidDashboardState extends State<KidDashboard> {
-  late ConfettiController _confetti;
-
-  @override
-  void initState() {
+  @override void initState() {
     super.initState();
-    _confetti = ConfettiController(duration: const Duration(seconds: 2));
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkSurprise());
+    _conf = ConfettiController(duration: const Duration(seconds: 2));
+    _sessionTimer = Timer.periodic(const Duration(seconds: 1), (_) { _sessionSec++; GameData.sessionSeconds++; if (_sessionSec >= GameData.timeLimitMinutes * 60) _showTimeLimit(); });
+    WidgetsBinding.instance.addPostFrameCallback((_) { _checkSurprise(); _checkTreasure(); });
   }
+  @override void dispose() { _conf.dispose(); _sessionTimer.cancel(); super.dispose(); }
 
-  @override
-  void dispose() { _confetti.dispose(); super.dispose(); }
+  void _checkSurprise() { if (GameData.surprise()) showDialog(context: context, builder: (c) => AlertDialog(
+    title: const Text("🎁 جایزه غافلگیرکننده!"), content: Text("${GameData.streak} روز پیاپی اومدی! ۵۰ سکه جایزه!"),
+    actions: [TextButton(onPressed: () { GameData.addCoins(50); setState(() {}); Navigator.pop(c); }, child: const Text("عالیه!"))])); }
 
-  void _checkSurprise() {
-    if (GameData.shouldGetSurprise()) {
-      showDialog(context: context, builder: (c) => AlertDialog(
-        title: const Text("🎁 جایزه غافلگیرکننده!"),
-        content: Text("تو ${GameData.streak} روز پیاپی اومدی! ۵۰ سکه جایزه گرفتی!"),
-        actions: [TextButton(onPressed: () { GameData.addCoins(50); setState(() {}); Navigator.pop(c); }, child: const Text("عالیه!"))],
-      ));
-    }
-  }
+  void _checkTreasure() { if (GameData.canOpenTreasure()) showDialog(context: context, builder: (c) => AlertDialog(
+    title: const Text("🎪 صندوق گنج!"), content: const Text("ماموریت‌های امروز رو کامل کردی! صندوق گنج رو باز کن!"),
+    actions: [TextButton(onPressed: () { GameData.addCoins(100); GameData.treasureOpened = true; GameData.save(); _conf.play(); setState(() {}); Navigator.pop(c); }, child: const Text("باز کن! 🎁"))])); }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF0F2F5),
-      body: Stack(children: [
-        CustomScrollView(slivers: [
-          SliverAppBar(
-            expandedHeight: 220, floating: false, pinned: true,
-            flexibleSpace: FlexibleSpaceBar(background: Container(
-              decoration: const BoxDecoration(gradient: AppGradients.primary),
-              child: SafeArea(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const SizedBox(height: 20),
-                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Text(GameData.avatarFace, style: const TextStyle(fontSize: 40)),
-                  const SizedBox(width: 10),
-                  Text(GameData.getMascotEvolution(), style: const TextStyle(fontSize: 40)),
-                ]),
-                Text(GameData.getLevelName(), style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                Text("لول ${GameData.level} | ${GameData.coins} ⭐", style: const TextStyle(color: Colors.white)),
-                Text("🔥 ${GameData.streak} روز پیاپی", style: const TextStyle(color: Colors.white70)),
-              ])),
-            )),
-            actions: [
-              IconButton(icon: const Icon(Icons.face), onPressed: () async { await Navigator.push(context, MaterialPageRoute(builder: (c) => const AvatarPage())); setState(() {}); }),
-              IconButton(icon: const Icon(Icons.settings), onPressed: _parentGate),
-            ],
-          ),
-          SliverToBoxAdapter(child: Container(
-            margin: const EdgeInsets.all(16), padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(20)),
-            child: Row(children: [
-              const Text("🧸", style: TextStyle(fontSize: 40)),
-              const SizedBox(width: 12),
-              Expanded(child: Text(MascotHelper.getMessage(), style: const TextStyle(fontSize: 14))),
-            ]),
-          )),
-          SliverToBoxAdapter(child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16), padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(20)),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text("🎯 ماموریت امروز:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 8),
-              _missionItem("۳ سوال ریاضی حل کن", GameData.dailyMissionsCompleted >= 3),
-              _missionItem("الفبا تمرین کن", GameData.dailyMissionsCompleted >= 1),
-              _missionItem("یک نقاشی بکش", GameData.dailyMissionsCompleted >= 2),
-            ]),
-          )),
-          const SliverToBoxAdapter(child: SizedBox(height: 10)),
-          SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 1),
-            delegate: SliverChildListDelegate([
-              _menuItem("الفبا", Icons.sort_by_alpha, AppGradients.purple, const AlphabetGame()),
-              _menuItem("اعداد", Icons.calculate, AppGradients.success, const NumberGame()),
-              _menuItem("حافظه", Icons.memory, const LinearGradient(colors: [Colors.teal, Colors.tealAccent]), const MemoryGame()),
-              _menuItem("نقاشی", Icons.brush, AppGradients.pink, const DrawingPage()),
-              _menuItem("رنگ‌ها", Icons.palette, AppGradients.warning, const ColorGame()),
-              _menuItem("اشکال", Icons.category, const LinearGradient(colors: [Colors.blue, Colors.lightBlue]), const ShapeGame()),
-              _menuItem("حیوانات", Icons.pets, const LinearGradient(colors: [Colors.brown, Colors.orange]), const AnimalGame()),
-              _menuItem("مدال‌ها", Icons.military_tech, const LinearGradient(colors: [Colors.amber, Colors.yellow]), const AchievementsPage()),
-              _menuItem("فروشگاه", Icons.shopping_bag, const LinearGradient(colors: [Colors.red, Colors.redAccent]), const StickerShop()),
-              _menuItem("درباره ما", Icons.info, const LinearGradient(colors: [Colors.grey, Colors.blueGrey]), const AboutUsPage()),
-            ]),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 20)),
+  void _showTimeLimit() { showDialog(context: context, builder: (c) => AlertDialog(
+    title: const Text("⏰ زمان تموم شد!"), content: const Text("وقت استراحته! فردا برگرد!"),
+    actions: [TextButton(onPressed: () { Navigator.pop(c); Navigator.pop(c); }, child: const Text("باشه"))])); }
+
+  @override Widget build(BuildContext c) => Scaffold(backgroundColor: const Color(0xFFF0F2F5), body: Stack(children: [
+    CustomScrollView(slivers: [
+      SliverAppBar(expandedHeight: 220, floating: false, pinned: true,
+        flexibleSpace: FlexibleSpaceBar(background: Container(decoration: const BoxDecoration(gradient: G.p),
+          child: SafeArea(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            const SizedBox(height: 20),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text(GameData.avatar, style: const TextStyle(fontSize: 40)), const SizedBox(width: 10), Text(GameData.getMascot(), style: const TextStyle(fontSize: 40))]),
+            Text(GameData.getLevelName(), style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+            Text("لول ${GameData.level} | ${GameData.coins} ⭐ | 🔥 ${GameData.streak} روز", style: const TextStyle(color: Colors.white70)),
+          ])))),
+        actions: [
+          IconButton(icon: const Icon(Icons.face), onPressed: () async { await Navigator.push(context, MaterialPageRoute(builder: (c) => const AvatarPage())); setState(() {}); }),
+          IconButton(icon: const Icon(Icons.settings), onPressed: _parentGate),
         ]),
-        Align(alignment: Alignment.topCenter, child: ConfettiWidget(confettiController: _confetti, blastDirectionality: BlastDirectionality.explosive)),
-      ]),
-    );
-  }
-
-  Widget _missionItem(String text, bool done) {
-    return Padding(padding: const EdgeInsets.symmetric(vertical: 3), child: Row(children: [
-      Icon(done ? Icons.check_circle : Icons.circle_outlined, color: done ? Colors.green : Colors.grey, size: 20),
-      const SizedBox(width: 8),
-      Text(text, style: TextStyle(decoration: done ? TextDecoration.lineThrough : null)),
-    ]));
-  }
-
-  Widget _menuItem(String title, IconData icon, Gradient gradient, Widget page) {
-    return Padding(padding: const EdgeInsets.all(8), child: BounceButton(
-      onTap: () async {
-        await Navigator.push(context, PageRouteBuilder(
-          pageBuilder: (_, a, __) => page,
-          transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: ScaleTransition(scale: Tween(begin: 0.9, end: 1.0).animate(a), child: c)),
-        ));
-        setState(() {});
-      },
-      child: Container(
-        decoration: BoxDecoration(gradient: gradient, borderRadius: BorderRadius.circular(25),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))]),
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(icon, size: 45, color: Colors.white).animate(onPlay: (c) => c.repeat()).shimmer(delay: 2.seconds),
+      // Mascot
+      SliverToBoxAdapter(child: Container(margin: const EdgeInsets.all(16), padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(20)),
+        child: Row(children: [const Text("🧸", style: TextStyle(fontSize: 40)), const SizedBox(width: 12), Expanded(child: Text(AI.mascotMsg()))]))),
+      // Daily Missions
+      SliverToBoxAdapter(child: Container(margin: const EdgeInsets.symmetric(horizontal: 16), padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(20)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [const Text("🎯 ماموریت امروز", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), const Spacer(),
+            if (GameData.canOpenTreasure()) const Text("🎪 صندوق آماده!", style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold))]),
           const SizedBox(height: 8),
-          Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-        ]),
-      ),
-    ));
-  }
+          _mi("۵ سوال حل کن", GameData.dailyMissions >= 5), _mi("الفبا تمرین کن", GameData.dailyMissions >= 1),
+          _mi("نقاشی بکش", GameData.dailyMissions >= 2), _mi("رنگ‌ها رو یاد بگیر", GameData.dailyMissions >= 3),
+        ]))),
+      const SliverToBoxAdapter(child: SizedBox(height: 10)),
+      // Menu Grid
+      SliverGrid(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, childAspectRatio: 0.9),
+        delegate: SliverChildListDelegate([
+          _m("الفبا", Icons.sort_by_alpha, G.pu, const AlphabetGame()),
+          _m("اعداد", Icons.calculate, G.s, const NumberGame()),
+          _m("حافظه", Icons.memory, const LinearGradient(colors: [Colors.teal, Colors.tealAccent]), const MemoryGame()),
+          _m("شمارش", Icons.pin, const LinearGradient(colors: [Colors.indigo, Colors.blue]), const CountingGame()),
+          _m("الگو", Icons.grid_view, const LinearGradient(colors: [Colors.deepPurple, Colors.purpleAccent]), const PatternGame()),
+          _m("رنگ‌ها", Icons.palette, G.w, const ColorGame()),
+          _m("اشکال", Icons.category, const LinearGradient(colors: [Colors.blue, Colors.lightBlue]), const ShapeGame()),
+          _m("حیوانات", Icons.pets, const LinearGradient(colors: [Colors.brown, Colors.orange]), const AnimalGame()),
+          _m("میوه‌ها", Icons.apple, const LinearGradient(colors: [Colors.red, Colors.redAccent]), const FruitGame()),
+          _m("مفاهیم", Icons.compare_arrows, const LinearGradient(colors: [Colors.cyan, Colors.lightBlueAccent]), const ConceptGame()),
+          _m("نقاشی", Icons.brush, G.pk, const DrawingPage()),
+          _m("مدال‌ها", Icons.military_tech, const LinearGradient(colors: [Colors.amber, Colors.yellow]), const AchPage()),
+          _m("فروشگاه", Icons.shopping_bag, const LinearGradient(colors: [Colors.red, Colors.pink]), const Shop()),
+          _m("اشتراک", Icons.workspace_premium, const LinearGradient(colors: [Colors.amber, Colors.orange]), const SubPage()),
+          _m("درباره ما", Icons.info, const LinearGradient(colors: [Colors.grey, Colors.blueGrey]), const AboutPage()),
+        ])),
+      const SliverToBoxAdapter(child: SizedBox(height: 20)),
+    ]),
+    Align(alignment: Alignment.topCenter, child: ConfettiWidget(confettiController: _conf, blastDirectionality: BlastDirectionality.explosive)),
+  ]));
 
-  void _parentGate() {
-    int n1 = Random().nextInt(10) + 1, n2 = Random().nextInt(10) + 1;
-    TextEditingController c = TextEditingController();
-    showDialog(context: context, builder: (ctx) => AlertDialog(
-      title: const Text("ورود والدین"),
-      content: Column(mainAxisSize: MainAxisSize.min, children: [
-        Text("$n1 + $n2 = ?", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-        TextField(controller: c, keyboardType: TextInputType.number, textAlign: TextAlign.center),
-      ]),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("انصراف")),
-        ElevatedButton(onPressed: () {
-          if (int.tryParse(c.text) == n1 + n2) { Navigator.pop(ctx); Navigator.push(context, MaterialPageRoute(builder: (c) => const ParentPanel())); }
-        }, child: const Text("تایید")),
-      ],
-    ));
-  }
+  Widget _mi(String t, bool d) => Padding(padding: const EdgeInsets.symmetric(vertical: 2), child: Row(children: [
+    Icon(d ? Icons.check_circle : Icons.circle_outlined, color: d ? Colors.green : Colors.grey, size: 18), const SizedBox(width: 8),
+    Text(t, style: TextStyle(decoration: d ? TextDecoration.lineThrough : null, fontSize: 13))]));
+
+  Widget _m(String t, IconData i, Gradient g, Widget pg) => Padding(padding: const EdgeInsets.all(6), child: BounceBtn(
+    onTap: () async { await Navigator.push(context, PageRouteBuilder(pageBuilder: (_, a, __) => pg,
+      transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: ScaleTransition(scale: Tween(begin: 0.9, end: 1.0).animate(a), child: c)))); setState(() {}); },
+    child: Container(decoration: BoxDecoration(gradient: g, borderRadius: BorderRadius.circular(20),
+      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 4))]),
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(i, size: 35, color: Colors.white).animate(onPlay: (c) => c.repeat()).shimmer(delay: 2.seconds),
+        const SizedBox(height: 6), Text(t, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+      ]))));
+
+  void _parentGate() { int n1 = Random().nextInt(10)+1, n2 = Random().nextInt(10)+1; TextEditingController ct = TextEditingController();
+    showDialog(context: context, builder: (cx) => AlertDialog(title: const Text("ورود والدین"),
+      content: Column(mainAxisSize: MainAxisSize.min, children: [Text("$n1 + $n2 = ?", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        TextField(controller: ct, keyboardType: TextInputType.number, textAlign: TextAlign.center)]),
+      actions: [TextButton(onPressed: () => Navigator.pop(cx), child: const Text("انصراف")),
+        ElevatedButton(onPressed: () { if (int.tryParse(ct.text) == n1+n2) { Navigator.pop(cx); Navigator.push(context, MaterialPageRoute(builder: (c) => const ParentPanel())); } }, child: const Text("تایید"))])); }
 }
 
 // ==========================================================
-// 🎭 AVATAR (Phase 25)
+// 🎭 AVATAR
 // ==========================================================
 class AvatarPage extends StatelessWidget {
   const AvatarPage({super.key});
-  final List<String> avatars = const ['😊','😎','🤩','🦁','🐱','🐶','🦊','🐼','🐸','🦄','🐻','🐯','🐰','🐷','🐨','🦓'];
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("انتخاب شخصیت")),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(20),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4, mainAxisSpacing: 10, crossAxisSpacing: 10),
-        itemCount: avatars.length,
-        itemBuilder: (c, i) => BounceButton(
-          onTap: () { GameData.avatarFace = avatars[i]; GameData.save(); Navigator.pop(context); },
-          child: Container(
-            decoration: BoxDecoration(
-              color: GameData.avatarFace == avatars[i] ? Colors.purple.shade100 : Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(20),
-              border: GameData.avatarFace == avatars[i] ? Border.all(color: Colors.purple, width: 3) : null,
-            ),
-            child: Center(child: Text(avatars[i], style: const TextStyle(fontSize: 40))),
-          ),
-        ),
-      ),
-    );
-  }
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: const Text("شخصیت")),
+    body: GridView.builder(padding: const EdgeInsets.all(20),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4, mainAxisSpacing: 10, crossAxisSpacing: 10),
+      itemCount: 16, itemBuilder: (c, i) { final a = ['😊','😎','🤩','🦁','🐱','🐶','🦊','🐼','🐸','🦄','🐻','🐯','🐰','🐷','🐨','🦓'][i];
+        return BounceBtn(onTap: () { GameData.avatar = a; GameData.save(); Navigator.pop(c); },
+          child: Container(decoration: BoxDecoration(color: GameData.avatar == a ? Colors.purple.shade100 : Colors.grey.shade100, borderRadius: BorderRadius.circular(20),
+            border: GameData.avatar == a ? Border.all(color: Colors.purple, width: 3) : null),
+            child: Center(child: Text(a, style: const TextStyle(fontSize: 40))))); }));
 }
 
 // ==========================================================
-// 🔤 ALPHABET GAME
+// 🔤 ALPHABET
 // ==========================================================
-class AlphabetGame extends StatefulWidget {
-  const AlphabetGame({super.key});
-  @override
-  State<AlphabetGame> createState() => _AlphabetGameState();
-}
-
-class _AlphabetGameState extends State<AlphabetGame> {
-  final letters = ["ا","ب","پ","ت","ث","ج","چ","ح","خ","د","ذ","ر","ز","ژ","س","ش","ص","ض","ط","ظ","ع","غ","ف","ق","ک","گ","ل","م","ن","و","ه","ی"];
-  String selected = "ا";
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("آموزش الفبا"), backgroundColor: Colors.purple.shade100),
-      body: Column(children: [
-        Expanded(flex: 2, child: Container(
-          margin: const EdgeInsets.all(20),
-          decoration: BoxDecoration(gradient: AppGradients.purple, borderRadius: BorderRadius.circular(30)),
-          child: Center(child: Text(selected, style: const TextStyle(fontSize: 180, color: Colors.white, fontWeight: FontWeight.bold)).animate(key: ValueKey(selected)).scale()),
-        )),
-        Expanded(flex: 3, child: GridView.builder(
-          padding: const EdgeInsets.all(10),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, mainAxisSpacing: 8, crossAxisSpacing: 8),
-          itemCount: letters.length,
-          itemBuilder: (c, i) => BounceButton(
-            onTap: () { setState(() => selected = letters[i]); GameData.addCoins(1); GameData.addSkillPoint('alphabet'); GameData.completeDailyMission(); },
-            child: Container(
-              decoration: BoxDecoration(
-                color: selected == letters[i] ? Colors.purple : Colors.white,
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 5)],
-              ),
-              child: Center(child: Text(letters[i], style: TextStyle(fontSize: 28, color: selected == letters[i] ? Colors.white : Colors.black, fontWeight: FontWeight.bold))),
-            ),
-          ),
-        )),
-      ]),
-    );
-  }
+class AlphabetGame extends StatefulWidget { const AlphabetGame({super.key}); @override State<AlphabetGame> createState() => _AlphaState(); }
+class _AlphaState extends State<AlphabetGame> {
+  final l = ["ا","ب","پ","ت","ث","ج","چ","ح","خ","د","ذ","ر","ز","ژ","س","ش","ص","ض","ط","ظ","ع","غ","ف","ق","ک","گ","ل","م","ن","و","ه","ی"];
+  String s = "ا";
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: const Text("الفبا"), backgroundColor: Colors.purple.shade100),
+    body: Column(children: [
+      Expanded(flex: 2, child: Container(margin: const EdgeInsets.all(20), decoration: BoxDecoration(gradient: G.pu, borderRadius: BorderRadius.circular(30)),
+        child: Center(child: Text(s, style: const TextStyle(fontSize: 160, color: Colors.white, fontWeight: FontWeight.bold)).animate(key: ValueKey(s)).scale()))),
+      Expanded(flex: 3, child: GridView.builder(padding: const EdgeInsets.all(10),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, mainAxisSpacing: 8, crossAxisSpacing: 8),
+        itemCount: l.length, itemBuilder: (c, i) => BounceBtn(onTap: () { setState(() => s = l[i]); GameData.addCoins(1); GameData.addSkill('alphabet'); GameData.doMission(); },
+          child: Container(decoration: BoxDecoration(color: s == l[i] ? Colors.purple : Colors.white, borderRadius: BorderRadius.circular(15),
+            boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 5)]),
+            child: Center(child: Text(l[i], style: TextStyle(fontSize: 26, color: s == l[i] ? Colors.white : Colors.black, fontWeight: FontWeight.bold)))))))]));
 }
 
 // ==========================================================
 // 🔢 NUMBER GAME
 // ==========================================================
-class NumberGame extends StatefulWidget {
-  const NumberGame({super.key});
-  @override
-  State<NumberGame> createState() => _NumberGameState();
-}
-
-class _NumberGameState extends State<NumberGame> {
-  int num1 = 0, num2 = 0, correct = 0, score = 0, mistakes = 0;
-  List<int> options = [];
-  late ConfettiController _confetti;
-  DateTime _sessionStart = DateTime.now();
-
-  @override
-  void initState() { super.initState(); _confetti = ConfettiController(duration: const Duration(seconds: 1)); _generate(); }
-  @override
-  void dispose() { _confetti.dispose(); super.dispose(); }
-
-  void _generate() {
-    final r = Random();
-    int diff = DifficultyEngine.getDifficulty();
-    int max = diff == 1 ? 5 : diff == 2 ? 10 : 20;
-    setState(() {
-      num1 = r.nextInt(max) + 1; num2 = r.nextInt(max) + 1;
-      correct = num1 + num2;
-      options = {correct, correct + r.nextInt(3) + 1, (correct - r.nextInt(3) - 1).abs(), correct + r.nextInt(5) + 2}.toList()..shuffle();
-      while (options.length < 4) options.add(correct + Random().nextInt(10));
-      options = options.take(4).toList()..shuffle();
-    });
-  }
-
-  void _check(int ans) {
-    if (MascotHelper.isFatigued(mistakes, DateTime.now().difference(_sessionStart))) {
-      showDialog(context: context, builder: (c) => AlertDialog(
-        title: const Text("🧸 یه استراحت کوچولو"),
-        content: const Text("خسته شدی! یه کم آب بخور و بعد برگرد."),
-        actions: [TextButton(onPressed: () { Navigator.pop(c); Navigator.pop(c); }, child: const Text("باشه"))],
-      ));
-      return;
-    }
-    if (ans == correct) {
-      HapticFeedback.mediumImpact();
-      _confetti.play();
-      GameData.addCoins(5); GameData.recordCorrect(); GameData.addSkillPoint('math'); GameData.completeDailyMission();
-      setState(() => score += 5);
-      if (score >= 50) GameData.unlockAchievement("math_master");
-      Future.delayed(const Duration(milliseconds: 800), _generate);
-    } else {
-      HapticFeedback.heavyImpact();
-      mistakes++; GameData.recordWrong();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("دوباره تلاش کن!"), backgroundColor: Colors.red));
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("اعداد | $score امتیاز | ${DifficultyEngine.getDifficultyName()}"), backgroundColor: Colors.green.shade100),
-      body: Stack(children: [
-        Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Container(padding: const EdgeInsets.all(30),
-            decoration: BoxDecoration(gradient: AppGradients.success, borderRadius: BorderRadius.circular(20)),
-            child: Text("$num1 + $num2 = ?", style: const TextStyle(fontSize: 50, fontWeight: FontWeight.bold, color: Colors.white))),
-          const SizedBox(height: 30),
-          GridView.count(shrinkWrap: true, crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15,
-            children: options.map((o) => BounceButton(
-              onTap: () => _check(o),
-              child: Container(
-                decoration: BoxDecoration(gradient: AppGradients.warning, borderRadius: BorderRadius.circular(20)),
-                child: Center(child: Text("$o", style: const TextStyle(fontSize: 40, color: Colors.white, fontWeight: FontWeight.bold))),
-              ),
-            )).toList(),
-          ),
-        ])),
-        Align(alignment: Alignment.topCenter, child: ConfettiWidget(confettiController: _confetti, blastDirectionality: BlastDirectionality.explosive)),
-      ]),
-    );
-  }
+class NumberGame extends StatefulWidget { const NumberGame({super.key}); @override State<NumberGame> createState() => _NumState(); }
+class _NumState extends State<NumberGame> {
+  int n1=0,n2=0,ans=0,sc=0,mis=0; List<int> opts=[]; late ConfettiController _cf; DateTime _st = DateTime.now();
+  @override void initState() { super.initState(); _cf = ConfettiController(duration: const Duration(seconds: 1)); _gen(); }
+  @override void dispose() { _cf.dispose(); super.dispose(); }
+  void _gen() { final r = Random(); int d = AI.difficulty(), mx = d==1?5:d==2?10:20;
+    setState(() { n1=r.nextInt(mx)+1; n2=r.nextInt(mx)+1; ans=n1+n2;
+      opts = {ans, ans+r.nextInt(3)+1, (ans-r.nextInt(3)-1).abs(), ans+r.nextInt(5)+2}.toList()..shuffle();
+      while (opts.length < 4) opts.add(ans+Random().nextInt(10)); opts = opts.take(4).toList()..shuffle(); }); }
+  void _chk(int a) {
+    if (AI.fatigued(mis, DateTime.now().difference(_st))) { showDialog(context: context, builder: (c) => AlertDialog(title: const Text("🧸 استراحت کن!"),
+      actions: [TextButton(onPressed: () { Navigator.pop(c); Navigator.pop(c); }, child: const Text("باشه"))])); return; }
+    if (a == ans) { HapticFeedback.mediumImpact(); _cf.play(); GameData.addCoins(5); GameData.recordCorrect(); GameData.addSkill('math'); GameData.doMission();
+      setState(() => sc+=5); if (sc>=50) GameData.unlockAch("math_50"); Future.delayed(const Duration(milliseconds: 800), _gen);
+    } else { HapticFeedback.heavyImpact(); mis++; GameData.recordWrong(); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("دوباره!"), backgroundColor: Colors.red)); }}
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: Text("اعداد | $sc | ${AI.diffName()}"), backgroundColor: Colors.green.shade100),
+    body: Stack(children: [Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Container(padding: const EdgeInsets.all(30), decoration: BoxDecoration(gradient: G.s, borderRadius: BorderRadius.circular(20)),
+        child: Text("$n1 + $n2 = ?", style: const TextStyle(fontSize: 50, fontWeight: FontWeight.bold, color: Colors.white))),
+      const SizedBox(height: 30),
+      GridView.count(shrinkWrap: true, crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15,
+        children: opts.map((o) => BounceBtn(onTap: () => _chk(o),
+          child: Container(decoration: BoxDecoration(gradient: G.w, borderRadius: BorderRadius.circular(20)),
+            child: Center(child: Text("$o", style: const TextStyle(fontSize: 40, color: Colors.white, fontWeight: FontWeight.bold)))))).toList())])),
+      Align(alignment: Alignment.topCenter, child: ConfettiWidget(confettiController: _cf, blastDirectionality: BlastDirectionality.explosive))]));
 }
 
 // ==========================================================
-// 🧩 MEMORY GAME
+// 🧩 MEMORY
 // ==========================================================
-class MemoryGame extends StatefulWidget {
-  const MemoryGame({super.key});
-  @override
-  State<MemoryGame> createState() => _MemoryGameState();
-}
-
-class _MemoryGameState extends State<MemoryGame> {
-  final List<String> emojis = ['🍎','🍌','🍇','🌸','🍎','🍌','🍇','🌸','🐶','🐱','🐶','🐱'];
-  List<bool> revealed = [];
-  int? firstIndex;
-  int matches = 0;
-
-  @override
-  void initState() { super.initState(); emojis.shuffle(); revealed = List.filled(emojis.length, false); }
-
-  void _tap(int index) {
-    if (revealed[index]) return;
-    HapticFeedback.lightImpact();
-    setState(() => revealed[index] = true);
-    if (firstIndex == null) { firstIndex = index; }
-    else {
-      if (emojis[firstIndex!] == emojis[index]) {
-        matches++; GameData.addCoins(10); GameData.recordCorrect(); GameData.addSkillPoint('memory');
-        if (matches == emojis.length ~/ 2) GameData.unlockAchievement("memory_king");
-        firstIndex = null;
-      } else {
-        GameData.recordWrong();
-        int fi = firstIndex!; firstIndex = null;
-        Future.delayed(const Duration(milliseconds: 600), () { setState(() { revealed[fi] = false; revealed[index] = false; }); });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("بازی حافظه | جفت: $matches"), backgroundColor: Colors.teal.shade100),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(20),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, mainAxisSpacing: 10, crossAxisSpacing: 10),
-        itemCount: emojis.length,
-        itemBuilder: (c, i) => BounceButton(
-          onTap: () => _tap(i),
-          child: Container(
-            decoration: BoxDecoration(gradient: revealed[i] ? const LinearGradient(colors: [Colors.white, Colors.white]) : const LinearGradient(colors: [Colors.teal, Colors.tealAccent]), borderRadius: BorderRadius.circular(15)),
-            child: Center(child: Text(revealed[i] ? emojis[i] : "❓", style: const TextStyle(fontSize: 40))),
-          ),
-        ),
-      ),
-    );
-  }
+class MemoryGame extends StatefulWidget { const MemoryGame({super.key}); @override State<MemoryGame> createState() => _MemState(); }
+class _MemState extends State<MemoryGame> {
+  final List<String> em = ['🍎','🍌','🍇','🌸','🍎','🍌','🍇','🌸','🐶','🐱','🐶','🐱']; List<bool> rv=[]; int? fi; int mt=0;
+  @override void initState() { super.initState(); em.shuffle(); rv = List.filled(em.length, false); }
+  void _tap(int i) { if (rv[i]) return; HapticFeedback.lightImpact(); setState(() => rv[i]=true);
+    if (fi==null) fi=i; else { if (em[fi!]==em[i]) { mt++; GameData.addCoins(10); GameData.recordCorrect(); GameData.addSkill('memory');
+      if (mt==em.length~/2) GameData.unlockAch("memory_king"); fi=null;
+    } else { GameData.recordWrong(); int f=fi!; fi=null; Future.delayed(const Duration(milliseconds: 600), () => setState(() { rv[f]=false; rv[i]=false; })); }}}
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: Text("حافظه | جفت: $mt"), backgroundColor: Colors.teal.shade100),
+    body: GridView.builder(padding: const EdgeInsets.all(20),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, mainAxisSpacing: 10, crossAxisSpacing: 10),
+      itemCount: em.length, itemBuilder: (c, i) => BounceBtn(onTap: () => _tap(i),
+        child: Container(decoration: BoxDecoration(color: rv[i]?Colors.white:Colors.teal, borderRadius: BorderRadius.circular(15)),
+          child: Center(child: Text(rv[i]?em[i]:"❓", style: const TextStyle(fontSize: 40)))))));
 }
 
 // ==========================================================
-// 🌈 COLOR GAME
+// 🔢 COUNTING
 // ==========================================================
-class ColorGame extends StatefulWidget {
-  const ColorGame({super.key});
-  @override
-  State<ColorGame> createState() => _ColorGameState();
-}
-
-class _ColorGameState extends State<ColorGame> {
-  final Map<String, Color> colors = {"قرمز": Colors.red, "آبی": Colors.blue, "سبز": Colors.green, "زرد": Colors.yellow, "بنفش": Colors.purple, "نارنجی": Colors.orange};
-  late String targetName;
-  late Color targetColor;
-  List<MapEntry<String, Color>> options = [];
-  int score = 0;
-
-  @override
-  void initState() { super.initState(); _generate(); }
-
-  void _generate() {
-    var entries = colors.entries.toList()..shuffle();
-    setState(() { targetName = entries.first.key; targetColor = entries.first.value; options = entries.take(4).toList()..shuffle(); });
-  }
-
-  void _check(Color c) {
-    if (c == targetColor) {
-      HapticFeedback.mediumImpact();
-      GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkillPoint('colors');
-      setState(() => score += 3);
-      Future.delayed(const Duration(milliseconds: 500), _generate);
-    } else { HapticFeedback.heavyImpact(); GameData.recordWrong(); }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("آموزش رنگ‌ها | $score"), backgroundColor: Colors.orange.shade100),
-      body: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
-        const Text("رنگ درست رو انتخاب کن:", style: TextStyle(fontSize: 18)),
-        const SizedBox(height: 20),
-        Container(padding: const EdgeInsets.all(30), decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(20)),
-          child: Text(targetName, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold))),
-        const SizedBox(height: 30),
-        Expanded(child: GridView.count(crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15,
-          children: options.map((e) => BounceButton(
-            onTap: () => _check(e.value),
-            child: Container(decoration: BoxDecoration(color: e.value, borderRadius: BorderRadius.circular(20))),
-          )).toList(),
-        )),
-      ])),
-    );
-  }
+class CountingGame extends StatefulWidget { const CountingGame({super.key}); @override State<CountingGame> createState() => _CountState(); }
+class _CountState extends State<CountingGame> {
+  int target=0, sc=0; List<int> opts=[]; String emoji='';
+  final emojis = ['🍎','🌟','⚽','🎈','🌺']; 
+  @override void initState() { super.initState(); _gen(); }
+  void _gen() { final r = Random(); setState(() { target = r.nextInt(8)+1; emoji = emojis[r.nextInt(emojis.length)];
+    opts = {target, target+1, (target-1).clamp(1,99), target+2}.toList()..shuffle(); }); }
+  void _chk(int a) { if (a==target) { HapticFeedback.mediumImpact(); GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkill('counting'); GameData.doMission();
+    setState(() => sc+=3); Future.delayed(const Duration(milliseconds: 500), _gen);
+  } else { HapticFeedback.heavyImpact(); GameData.recordWrong(); }}
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: Text("شمارش | $sc")),
+    body: Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      const Text("چندتاست؟", style: TextStyle(fontSize: 20)),
+      const SizedBox(height: 20),
+      Wrap(children: List.generate(target, (_) => Text(emoji, style: const TextStyle(fontSize: 50)))),
+      const SizedBox(height: 30),
+      GridView.count(shrinkWrap: true, crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15,
+        children: opts.map((o) => BounceBtn(onTap: () => _chk(o),
+          child: Container(decoration: BoxDecoration(color: Colors.indigo, borderRadius: BorderRadius.circular(20)),
+            child: Center(child: Text("$o", style: const TextStyle(fontSize: 40, color: Colors.white)))))).toList())])));
 }
 
 // ==========================================================
-// 🔷 SHAPE GAME
+// 🔷 PATTERN
 // ==========================================================
-class ShapeGame extends StatefulWidget {
-  const ShapeGame({super.key});
-  @override
-  State<ShapeGame> createState() => _ShapeGameState();
-}
-
-class _ShapeGameState extends State<ShapeGame> {
-  final Map<String, IconData> shapes = {"دایره": Icons.circle, "مربع": Icons.square, "مثلث": Icons.change_history, "ستاره": Icons.star, "قلب": Icons.favorite};
-  late String targetName;
-  late IconData targetIcon;
-  List<MapEntry<String, IconData>> options = [];
-  int score = 0;
-
-  @override
-  void initState() { super.initState(); _generate(); }
-
-  void _generate() {
-    var entries = shapes.entries.toList()..shuffle();
-    setState(() { targetName = entries.first.key; targetIcon = entries.first.value; options = entries.take(4).toList()..shuffle(); });
-  }
-
-  void _check(IconData i) {
-    if (i == targetIcon) {
-      HapticFeedback.mediumImpact();
-      GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkillPoint('shapes');
-      setState(() => score += 3);
-      Future.delayed(const Duration(milliseconds: 500), _generate);
-    } else { HapticFeedback.heavyImpact(); GameData.recordWrong(); }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("اشکال | $score"), backgroundColor: Colors.blue.shade100),
-      body: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
-        const Text("شکل درست رو انتخاب کن:", style: TextStyle(fontSize: 18)),
-        const SizedBox(height: 20),
-        Container(padding: const EdgeInsets.all(30), decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(20)),
-          child: Text(targetName, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold))),
-        const SizedBox(height: 30),
-        Expanded(child: GridView.count(crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15,
-          children: options.map((e) => BounceButton(
-            onTap: () => _check(e.value),
-            child: Container(decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.blue, width: 2)),
-              child: Icon(e.value, size: 80, color: Colors.blue)),
-          )).toList(),
-        )),
-      ])),
-    );
-  }
+class PatternGame extends StatefulWidget { const PatternGame({super.key}); @override State<PatternGame> createState() => _PatState(); }
+class _PatState extends State<PatternGame> {
+  List<String> pattern=[]; String answer=''; List<String> opts=[]; int sc=0;
+  final sets = [['🔴','🔵','🔴','🔵','?'], ['⭐','🌙','⭐','🌙','?'], ['🟢','🟢','🟡','🟢','🟢','?'], ['🔺','🔻','🔺','🔻','?']];
+  final answers = ['🔴','⭐','🟡','🔺'];
+  int idx = 0;
+  @override void initState() { super.initState(); _gen(); }
+  void _gen() { setState(() { idx = Random().nextInt(sets.length); pattern = List.from(sets[idx]); answer = answers[idx];
+    opts = [answer, '🟠', '🟣', '⬛']..shuffle(); }); }
+  void _chk(String a) { if (a==answer) { HapticFeedback.mediumImpact(); GameData.addCoins(5); GameData.recordCorrect(); GameData.addSkill('pattern');
+    setState(() => sc+=5); Future.delayed(const Duration(milliseconds: 500), _gen);
+  } else { HapticFeedback.heavyImpact(); GameData.recordWrong(); }}
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: Text("تشخیص الگو | $sc")),
+    body: Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      const Text("الگو رو کامل کن:", style: TextStyle(fontSize: 20)),
+      const SizedBox(height: 30),
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: pattern.map((e) => Text(e, style: const TextStyle(fontSize: 40))).toList()),
+      const SizedBox(height: 40),
+      GridView.count(shrinkWrap: true, crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15,
+        children: opts.map((o) => BounceBtn(onTap: () => _chk(o),
+          child: Container(decoration: BoxDecoration(color: Colors.deepPurple.shade100, borderRadius: BorderRadius.circular(20)),
+            child: Center(child: Text(o, style: const TextStyle(fontSize: 50)))))).toList())])));
 }
 
 // ==========================================================
-// 🐾 ANIMAL GAME
+// 🌈 COLOR
 // ==========================================================
-class AnimalGame extends StatefulWidget {
-  const AnimalGame({super.key});
-  @override
-  State<AnimalGame> createState() => _AnimalGameState();
-}
-
-class _AnimalGameState extends State<AnimalGame> {
-  final Map<String, String> animals = {"شیر": "🦁", "گربه": "🐱", "سگ": "🐶", "خرگوش": "🐰", "فیل": "🐘", "میمون": "🐵", "ببر": "🐯", "خرس": "🐻"};
-  late String targetName;
-  late String targetEmoji;
-  List<MapEntry<String, String>> options = [];
-  int score = 0;
-
-  @override
-  void initState() { super.initState(); _generate(); }
-
-  void _generate() {
-    var entries = animals.entries.toList()..shuffle();
-    setState(() { targetName = entries.first.key; targetEmoji = entries.first.value; options = entries.take(4).toList()..shuffle(); });
-  }
-
-  void _check(String e) {
-    if (e == targetEmoji) {
-      HapticFeedback.mediumImpact();
-      GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkillPoint('animals');
-      setState(() => score += 3);
-      Future.delayed(const Duration(milliseconds: 500), _generate);
-    } else { HapticFeedback.heavyImpact(); GameData.recordWrong(); }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("حیوانات | $score"), backgroundColor: Colors.brown.shade100),
-      body: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
-        const Text("حیوان درست رو انتخاب کن:", style: TextStyle(fontSize: 18)),
-        const SizedBox(height: 20),
-        Container(padding: const EdgeInsets.all(30), decoration: BoxDecoration(color: Colors.brown.shade50, borderRadius: BorderRadius.circular(20)),
-          child: Text(targetName, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold))),
-        const SizedBox(height: 30),
-        Expanded(child: GridView.count(crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15,
-          children: options.map((e) => BounceButton(
-            onTap: () => _check(e.value),
-            child: Container(decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(20)),
-              child: Center(child: Text(e.value, style: const TextStyle(fontSize: 80)))),
-          )).toList(),
-        )),
-      ])),
-    );
-  }
+class ColorGame extends StatefulWidget { const ColorGame({super.key}); @override State<ColorGame> createState() => _ColState(); }
+class _ColState extends State<ColorGame> {
+  final Map<String, Color> cl = {"قرمز": Colors.red, "آبی": Colors.blue, "سبز": Colors.green, "زرد": Colors.yellow, "بنفش": Colors.purple, "نارنجی": Colors.orange};
+  late String tn; late Color tc; List<MapEntry<String, Color>> opts=[]; int sc=0;
+  @override void initState() { super.initState(); _gen(); }
+  void _gen() { var e = cl.entries.toList()..shuffle(); setState(() { tn=e.first.key; tc=e.first.value; opts=e.take(4).toList()..shuffle(); }); }
+  void _chk(Color c) { if (c==tc) { HapticFeedback.mediumImpact(); GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkill('colors'); GameData.doMission();
+    setState(() => sc+=3); Future.delayed(const Duration(milliseconds: 500), _gen);
+  } else { HapticFeedback.heavyImpact(); GameData.recordWrong(); }}
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: Text("رنگ‌ها | $sc")),
+    body: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
+      Text("رنگ «$tn» کدومه؟", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+      const SizedBox(height: 30),
+      Expanded(child: GridView.count(crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15,
+        children: opts.map((e) => BounceBtn(onTap: () => _chk(e.value),
+          child: Container(decoration: BoxDecoration(color: e.value, borderRadius: BorderRadius.circular(20))))).toList()))])));
 }
 
 // ==========================================================
-// 🎨 DRAWING PAGE
+// 🔷 SHAPE
 // ==========================================================
-class DrawingPage extends StatefulWidget {
-  const DrawingPage({super.key});
-  @override
-  State<DrawingPage> createState() => _DrawingPageState();
-}
-
-class _DrawingPageState extends State<DrawingPage> {
-  List<Map<String, dynamic>> strokes = [];
-  List<Offset?> currentStroke = [];
-  Color selectedColor = Colors.red;
-  double strokeWidth = 5.0;
-  final colors = [Colors.red, Colors.blue, Colors.green, Colors.orange, Colors.purple, Colors.black, Colors.pink, Colors.brown];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("نقاشی کن"), backgroundColor: Colors.pink.shade100, actions: [
-        IconButton(icon: const Icon(Icons.undo), onPressed: () { if (strokes.isNotEmpty) setState(() => strokes.removeLast()); }),
-        IconButton(icon: const Icon(Icons.delete_forever), onPressed: () => setState(() { strokes.clear(); GameData.completeDailyMission(); GameData.addCoins(2); })),
-      ]),
-      body: Column(children: [
-        SizedBox(height: 60, child: ListView.builder(scrollDirection: Axis.horizontal, itemCount: colors.length,
-          itemBuilder: (c, i) => GestureDetector(onTap: () => setState(() => selectedColor = colors[i]),
-            child: Container(margin: const EdgeInsets.all(8), width: 40, height: 40,
-              decoration: BoxDecoration(color: colors[i], shape: BoxShape.circle,
-                border: selectedColor == colors[i] ? Border.all(color: Colors.black, width: 3) : null))))),
-        Slider(value: strokeWidth, min: 2, max: 20, onChanged: (v) => setState(() => strokeWidth = v)),
-        Expanded(child: GestureDetector(
-          onPanStart: (_) => currentStroke = [],
-          onPanUpdate: (d) { RenderBox box = context.findRenderObject() as RenderBox; setState(() => currentStroke.add(box.globalToLocal(d.globalPosition))); },
-          onPanEnd: (_) { strokes.add({'points': List<Offset?>.from(currentStroke), 'color': selectedColor, 'width': strokeWidth}); currentStroke = []; },
-          child: Container(color: Colors.white, child: CustomPaint(painter: MultiDrawPainter(strokes, currentStroke, selectedColor, strokeWidth), size: Size.infinite)),
-        )),
-      ]),
-    );
-  }
-}
-
-class MultiDrawPainter extends CustomPainter {
-  final List<Map<String, dynamic>> strokes;
-  final List<Offset?> current;
-  final Color currentColor;
-  final double currentWidth;
-  MultiDrawPainter(this.strokes, this.current, this.currentColor, this.currentWidth);
-  @override
-  void paint(Canvas canvas, Size size) {
-    for (var stroke in strokes) {
-      Paint p = Paint()..color = stroke['color']..strokeCap = StrokeCap.round..strokeWidth = stroke['width'];
-      List<Offset?> pts = stroke['points'];
-      for (int i = 0; i < pts.length - 1; i++) if (pts[i] != null && pts[i + 1] != null) canvas.drawLine(pts[i]!, pts[i + 1]!, p);
-    }
-    Paint cp = Paint()..color = currentColor..strokeCap = StrokeCap.round..strokeWidth = currentWidth;
-    for (int i = 0; i < current.length - 1; i++) if (current[i] != null && current[i + 1] != null) canvas.drawLine(current[i]!, current[i + 1]!, cp);
-  }
-  @override
-  bool shouldRepaint(covariant CustomPainter old) => true;
+class ShapeGame extends StatefulWidget { const ShapeGame({super.key}); @override State<ShapeGame> createState() => _ShpState(); }
+class _ShpState extends State<ShapeGame> {
+  final Map<String, IconData> sh = {"دایره": Icons.circle, "مربع": Icons.square, "مثلث": Icons.change_history, "ستاره": Icons.star, "قلب": Icons.favorite};
+  late String tn; late IconData ti; List<MapEntry<String, IconData>> opts=[]; int sc=0;
+  @override void initState() { super.initState(); _gen(); }
+  void _gen() { var e = sh.entries.toList()..shuffle(); setState(() { tn=e.first.key; ti=e.first.value; opts=e.take(4).toList()..shuffle(); }); }
+  void _chk(IconData i) { if (i==ti) { HapticFeedback.mediumImpact(); GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkill('shapes');
+    setState(() => sc+=3); Future.delayed(const Duration(milliseconds: 500), _gen);
+  } else { HapticFeedback.heavyImpact(); GameData.recordWrong(); }}
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: Text("اشکال | $sc")),
+    body: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
+      Text("شکل «$tn» کدومه؟", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+      const SizedBox(height: 30),
+      Expanded(child: GridView.count(crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15,
+        children: opts.map((e) => BounceBtn(onTap: () => _chk(e.value),
+          child: Container(decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.blue, width: 2)),
+            child: Icon(e.value, size: 70, color: Colors.blue)))).toList()))])));
 }
 
 // ==========================================================
-// 🛍 STICKER SHOP (Phase 26)
+// 🐾 ANIMAL
 // ==========================================================
-class StickerShop extends StatefulWidget {
-  const StickerShop({super.key});
-  @override
-  State<StickerShop> createState() => _StickerShopState();
+class AnimalGame extends StatefulWidget { const AnimalGame({super.key}); @override State<AnimalGame> createState() => _AniState(); }
+class _AniState extends State<AnimalGame> {
+  final Map<String, String> an = {"شیر":"🦁","گربه":"🐱","سگ":"🐶","خرگوش":"🐰","فیل":"🐘","میمون":"🐵","ببر":"🐯","خرس":"🐻"};
+  late String tn,te; List<MapEntry<String, String>> opts=[]; int sc=0;
+  @override void initState() { super.initState(); _gen(); }
+  void _gen() { var e = an.entries.toList()..shuffle(); setState(() { tn=e.first.key; te=e.first.value; opts=e.take(4).toList()..shuffle(); }); }
+  void _chk(String e) { if (e==te) { HapticFeedback.mediumImpact(); GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkill('animals');
+    setState(() => sc+=3); Future.delayed(const Duration(milliseconds: 500), _gen);
+  } else { HapticFeedback.heavyImpact(); GameData.recordWrong(); }}
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: Text("حیوانات | $sc")),
+    body: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
+      Text("$tn کدومه؟", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)), const SizedBox(height: 30),
+      Expanded(child: GridView.count(crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15,
+        children: opts.map((e) => BounceBtn(onTap: () => _chk(e.value),
+          child: Container(decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(20)),
+            child: Center(child: Text(e.value, style: const TextStyle(fontSize: 70)))))).toList()))])));
 }
 
-class _StickerShopState extends State<StickerShop> {
-  final List<Map<String, dynamic>> stickers = [
-    {"id": "st1", "emoji": "⭐", "price": 20}, {"id": "st2", "emoji": "🌟", "price": 30},
-    {"id": "st3", "emoji": "🎈", "price": 40}, {"id": "st4", "emoji": "🎁", "price": 50},
-    {"id": "st5", "emoji": "🏆", "price": 100}, {"id": "st6", "emoji": "👑", "price": 150},
-    {"id": "st7", "emoji": "💎", "price": 200}, {"id": "st8", "emoji": "🚀", "price": 80},
-  ];
+// ==========================================================
+// 🍎 FRUITS
+// ==========================================================
+class FruitGame extends StatefulWidget { const FruitGame({super.key}); @override State<FruitGame> createState() => _FrtState(); }
+class _FrtState extends State<FruitGame> {
+  final Map<String, String> fr = {"سیب":"🍎","موز":"🍌","انگور":"🍇","پرتقال":"🍊","توت‌فرنگی":"🍓","هندوانه":"🍉","گیلاس":"🍒","آناناس":"🍍"};
+  late String tn,te; List<MapEntry<String, String>> opts=[]; int sc=0;
+  @override void initState() { super.initState(); _gen(); }
+  void _gen() { var e = fr.entries.toList()..shuffle(); setState(() { tn=e.first.key; te=e.first.value; opts=e.take(4).toList()..shuffle(); }); }
+  void _chk(String e) { if (e==te) { HapticFeedback.mediumImpact(); GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkill('fruits');
+    setState(() => sc+=3); Future.delayed(const Duration(milliseconds: 500), _gen);
+  } else { HapticFeedback.heavyImpact(); GameData.recordWrong(); }}
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: Text("میوه‌ها | $sc")),
+    body: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
+      Text("$tn کدومه؟", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)), const SizedBox(height: 30),
+      Expanded(child: GridView.count(crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15,
+        children: opts.map((e) => BounceBtn(onTap: () => _chk(e.value),
+          child: Container(decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(20)),
+            child: Center(child: Text(e.value, style: const TextStyle(fontSize: 70)))))).toList()))])));
+}
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("فروشگاه استیکر | ${GameData.coins} ⭐"), backgroundColor: Colors.red.shade100),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, mainAxisSpacing: 10, crossAxisSpacing: 10),
-        itemCount: stickers.length,
-        itemBuilder: (c, i) {
-          bool owned = GameData.ownedStickers.contains(stickers[i]['id']);
-          bool canBuy = GameData.coins >= stickers[i]['price'];
-          return BounceButton(
-            onTap: () {
-              if (!owned && canBuy) {
-                GameData.buySticker(stickers[i]['id'], stickers[i]['price']);
-                setState(() {});
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("خریداری شد! 🎉"), backgroundColor: Colors.green));
-              } else if (!owned) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("سکه کافی نداری!"), backgroundColor: Colors.red));
-              }
-            },
-            child: Container(
-              decoration: BoxDecoration(color: owned ? Colors.green.shade100 : Colors.white, borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 5)]),
-              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Text(stickers[i]['emoji'], style: const TextStyle(fontSize: 40)),
-                const SizedBox(height: 5),
-                owned ? const Text("خریداری شده", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12))
-                    : Text("${stickers[i]['price']} ⭐", style: const TextStyle(fontWeight: FontWeight.bold)),
-              ]),
-            ),
-          );
-        },
-      ),
-    );
-  }
+// ==========================================================
+// ↔ CONCEPTS (Big/Small)
+// ==========================================================
+class ConceptGame extends StatefulWidget { const ConceptGame({super.key}); @override State<ConceptGame> createState() => _ConState(); }
+class _ConState extends State<ConceptGame> {
+  String q=''; bool ansIsBig=true; int sc=0;
+  final items = [{'q':'🐘 و 🐁 کدوم بزرگ‌تره؟','a':true}, {'q':'🌳 و 🌱 کدوم کوچک‌تره؟','a':false}, {'q':'🏔 و 🏠 کدوم بزرگ‌تره؟','a':true}, {'q':'🚗 و 🚲 کدوم کوچک‌تره؟','a':false}];
+  @override void initState() { super.initState(); _gen(); }
+  void _gen() { var r = items[Random().nextInt(items.length)]; setState(() { q=r['q'] as String; ansIsBig=r['a'] as bool; }); }
+  void _chk(bool b) { if (b==ansIsBig) { HapticFeedback.mediumImpact(); GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkill('concepts');
+    setState(() => sc+=3); Future.delayed(const Duration(milliseconds: 500), _gen);
+  } else { HapticFeedback.heavyImpact(); GameData.recordWrong(); }}
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: Text("مفاهیم | $sc")),
+    body: Padding(padding: const EdgeInsets.all(30), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Text(q, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+      const SizedBox(height: 40),
+      Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+        BounceBtn(onTap: () => _chk(true), child: Container(width: 120, height: 120, decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(20)),
+          child: const Center(child: Text("بزرگ‌تر", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold))))),
+        BounceBtn(onTap: () => _chk(false), child: Container(width: 120, height: 120, decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(20)),
+          child: const Center(child: Text("کوچک‌تر", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold))))),
+      ])])));
+}
+
+// ==========================================================
+// 🎨 DRAWING
+// ==========================================================
+class DrawingPage extends StatefulWidget { const DrawingPage({super.key}); @override State<DrawingPage> createState() => _DrawState(); }
+class _DrawState extends State<DrawingPage> {
+  List<Map<String, dynamic>> strokes=[]; List<Offset?> cur=[]; Color col=Colors.red; double w=5;
+  final cl = [Colors.red, Colors.blue, Colors.green, Colors.orange, Colors.purple, Colors.black, Colors.pink, Colors.brown];
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: const Text("نقاشی"), backgroundColor: Colors.pink.shade100, actions: [
+    IconButton(icon: const Icon(Icons.undo), onPressed: () { if (strokes.isNotEmpty) setState(() => strokes.removeLast()); }),
+    IconButton(icon: const Icon(Icons.delete_forever), onPressed: () => setState(() { strokes.clear(); GameData.doMission(); GameData.addCoins(2); }))]),
+    body: Column(children: [
+      SizedBox(height: 60, child: ListView.builder(scrollDirection: Axis.horizontal, itemCount: cl.length,
+        itemBuilder: (c, i) => GestureDetector(onTap: () => setState(() => col=cl[i]),
+          child: Container(margin: const EdgeInsets.all(8), width: 40, height: 40,
+            decoration: BoxDecoration(color: cl[i], shape: BoxShape.circle, border: col==cl[i]?Border.all(color: Colors.black, width: 3):null))))),
+      Slider(value: w, min: 2, max: 20, onChanged: (v) => setState(() => w=v)),
+      Expanded(child: GestureDetector(
+        onPanStart: (_) => cur=[], onPanUpdate: (d) { RenderBox b = context.findRenderObject() as RenderBox; setState(() => cur.add(b.globalToLocal(d.globalPosition))); },
+        onPanEnd: (_) { strokes.add({'p': List<Offset?>.from(cur), 'c': col, 'w': w}); cur=[]; },
+        child: Container(color: Colors.white, child: CustomPaint(painter: DP(strokes, cur, col, w), size: Size.infinite))))]));
+}
+class DP extends CustomPainter {
+  final List<Map<String, dynamic>> s; final List<Offset?> c; final Color cc; final double cw;
+  DP(this.s, this.c, this.cc, this.cw);
+  @override void paint(Canvas cv, Size sz) {
+    for (var st in s) { Paint p = Paint()..color=st['c']..strokeCap=StrokeCap.round..strokeWidth=st['w'];
+      List<Offset?> pts=st['p']; for (int i=0;i<pts.length-1;i++) if (pts[i]!=null&&pts[i+1]!=null) cv.drawLine(pts[i]!,pts[i+1]!,p); }
+    Paint cp = Paint()..color=cc..strokeCap=StrokeCap.round..strokeWidth=cw;
+    for (int i=0;i<c.length-1;i++) if (c[i]!=null&&c[i+1]!=null) cv.drawLine(c[i]!,c[i+1]!,cp); }
+  @override bool shouldRepaint(covariant CustomPainter o) => true;
+}
+
+// ==========================================================
+// 🛍 STICKER SHOP
+// ==========================================================
+class Shop extends StatefulWidget { const Shop({super.key}); @override State<Shop> createState() => _ShopState(); }
+class _ShopState extends State<Shop> {
+  final st = [{"id":"s1","e":"⭐","p":20},{"id":"s2","e":"🌟","p":30},{"id":"s3","e":"🎈","p":40},{"id":"s4","e":"🎁","p":50},
+    {"id":"s5","e":"🏆","p":100},{"id":"s6","e":"👑","p":150},{"id":"s7","e":"💎","p":200},{"id":"s8","e":"🚀","p":80},{"id":"s9","e":"🌈","p":60}];
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: Text("فروشگاه | ${GameData.coins} ⭐")),
+    body: GridView.builder(padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, mainAxisSpacing: 10, crossAxisSpacing: 10),
+      itemCount: st.length, itemBuilder: (c, i) { bool ow=GameData.stickers.contains(st[i]['id']); bool cb=GameData.coins>=(st[i]['p'] as int);
+        return BounceBtn(onTap: () { if (!ow&&cb) { GameData.buySticker(st[i]['id'] as String, st[i]['p'] as int); setState(() {}); } },
+          child: Container(decoration: BoxDecoration(color: ow?Colors.green.shade100:Colors.white, borderRadius: BorderRadius.circular(20),
+            boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 5)]),
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Text(st[i]['e'] as String, style: const TextStyle(fontSize: 40)), const SizedBox(height: 5),
+              ow?const Text("✅",style:TextStyle(fontSize:12)):Text("${st[i]['p']} ⭐",style: const TextStyle(fontWeight: FontWeight.bold))]))); }));
 }
 
 // ==========================================================
 // 🏅 ACHIEVEMENTS
 // ==========================================================
-class AchievementsPage extends StatelessWidget {
-  const AchievementsPage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    final all = [
-      {"id": "math_master", "title": "نابغه ریاضی", "desc": "۵۰ امتیاز ریاضی بگیر", "icon": "🧮"},
-      {"id": "memory_king", "title": "شاه حافظه", "desc": "بازی حافظه رو کامل کن", "icon": "🧠"},
-      {"id": "streak_7", "title": "۷ روز پیاپی", "desc": "۷ روز متوالی وارد شو", "icon": "🔥"},
-      {"id": "coin_500", "title": "ثروتمند", "desc": "۵۰۰ سکه جمع کن", "icon": "💰"},
-      {"id": "level_5", "title": "استاد", "desc": "به لول ۵ برس", "icon": "⭐"},
-    ];
-    return Scaffold(
-      appBar: AppBar(title: const Text("مدال‌های من")),
+class AchPage extends StatelessWidget { const AchPage({super.key});
+  @override Widget build(BuildContext c) {
+    final all = [{"id":"math_50","t":"ریاضیدان","d":"۵۰ امتیاز ریاضی","i":"🧮"},{"id":"memory_king","t":"شاه حافظه","d":"بازی حافظه کامل","i":"🧠"},
+      {"id":"streak_7","t":"۷ روز پیاپی","d":"۷ روز متوالی","i":"🔥"},{"id":"streak_30","t":"۳۰ روز پیاپی","d":"۳۰ روز متوالی","i":"🏅"},
+      {"id":"coin_500","t":"ثروتمند","d":"۵۰۰ سکه","i":"💰"},{"id":"coin_1000","t":"میلیونر","d":"۱۰۰۰ سکه","i":"💎"},
+      {"id":"level_5","t":"استاد","d":"لول ۵","i":"⭐"},{"id":"level_10","t":"افسانه","d":"لول ۱۰","i":"🏆"},{"id":"correct_100","t":"دقیق","d":"۱۰۰ جواب درست","i":"🎯"}];
+    return Scaffold(appBar: AppBar(title: const Text("مدال‌ها")),
       body: GameData.achievements.isEmpty ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        const Text("🏆", style: TextStyle(fontSize: 80)),
-        const SizedBox(height: 20),
-        const Text("هنوز مدالی نداری!", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
-        Text("بازی کن تا مدال بگیری", style: TextStyle(color: Colors.grey[600])),
-      ])) : ListView.builder(
-        padding: const EdgeInsets.all(16), itemCount: all.length,
-        itemBuilder: (c, i) {
-          bool unlocked = GameData.achievements.contains(all[i]['id']);
-          return Card(color: unlocked ? Colors.amber.shade50 : Colors.grey.shade100,
-            child: ListTile(
-              leading: Text(unlocked ? all[i]['icon']! : "🔒", style: const TextStyle(fontSize: 30)),
-              title: Text(all[i]['title']!, style: TextStyle(fontWeight: FontWeight.bold, color: unlocked ? Colors.black : Colors.grey)),
-              subtitle: Text(all[i]['desc']!),
-              trailing: unlocked ? const Icon(Icons.check_circle, color: Colors.green) : null,
-            ));
-        },
-      ),
-    );
-  }
+        const Text("🏆", style: TextStyle(fontSize: 80)), const Text("هنوز مدالی نداری!", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))]))
+      : ListView.builder(padding: const EdgeInsets.all(16), itemCount: all.length, itemBuilder: (c, i) { bool u=GameData.achievements.contains(all[i]['id']);
+        return Card(color: u?Colors.amber.shade50:Colors.grey.shade100, child: ListTile(
+          leading: Text(u?all[i]['i']!:"🔒", style: const TextStyle(fontSize: 30)),
+          title: Text(all[i]['t']!, style: TextStyle(fontWeight: FontWeight.bold, color: u?Colors.black:Colors.grey)),
+          subtitle: Text(all[i]['d']!), trailing: u?const Icon(Icons.check_circle, color: Colors.green):null)); })); }
 }
 
 // ==========================================================
-// 👨‍👩‍👧 PARENT PANEL
+// 💳 SUBSCRIPTION PAGE
 // ==========================================================
-class ParentPanel extends StatelessWidget {
-  const ParentPanel({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("پنل والدین")),
-      body: SingleChildScrollView(padding: const EdgeInsets.all(20), child: Column(children: [
-        Card(child: ListTile(leading: const Icon(Icons.star, color: Colors.amber), title: const Text("مجموع سکه"), trailing: Text("${GameData.coins}"))),
-        Card(child: ListTile(leading: const Icon(Icons.trending_up, color: Colors.blue), title: Text("سطح (${GameData.getLevelName()})"), trailing: Text("${GameData.level}"))),
-        Card(child: ListTile(leading: const Icon(Icons.local_fire_department, color: Colors.orange), title: const Text("روزهای پیاپی"), trailing: Text("${GameData.streak}"))),
-        Card(child: ListTile(leading: const Icon(Icons.check, color: Colors.green), title: const Text("جواب درست"), trailing: Text("${GameData.totalCorrect}"))),
-        Card(child: ListTile(leading: const Icon(Icons.close, color: Colors.red), title: const Text("جواب غلط"), trailing: Text("${GameData.totalWrong}"))),
-        Card(child: ListTile(leading: const Icon(Icons.speed, color: Colors.purple), title: const Text("نرخ موفقیت"), trailing: Text("${(GameData.successRate * 100).toStringAsFixed(0)}%"))),
-        Card(child: ListTile(leading: const Icon(Icons.lightbulb, color: Colors.yellow), title: const Text("پیشنهاد"), subtitle: Text("بیشتر روی ${MascotHelper.getWeakSkill()} تمرین کنید."))),
-        const SizedBox(height: 20),
-        const Text("📊 امتیاز مهارت‌ها", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 20),
-        SizedBox(height: 200, child: BarChart(BarChartData(
-          barGroups: GameData.skillScores.entries.toList().asMap().entries.map((e) => BarChartGroupData(x: e.key,
-            barRods: [BarChartRodData(toY: e.value.value.toDouble(), color: Colors.indigo, width: 20)])).toList(),
-          titlesData: FlTitlesData(
-            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30)),
-            bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, m) {
-              final names = ['ریاضی', 'الفبا', 'حافظه', 'رنگ', 'شکل', 'حیوان'];
-              return Text(names[v.toInt() % 6], style: const TextStyle(fontSize: 10));
-            })),
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          ),
-        ))),
-      ])),
-    );
-  }
+class SubPage extends StatelessWidget { const SubPage({super.key});
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: const Text("اشتراک طلایی")),
+    body: Padding(padding: const EdgeInsets.all(30), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      const Icon(Icons.workspace_premium, size: 100, color: Colors.amber).animate(onPlay: (c) => c.repeat()).shimmer(duration: 2.seconds),
+      const SizedBox(height: 20), const Text("نسخه طلایی", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+      const SizedBox(height: 10), const Text("با خرید اشتراک به تمام محتوا دسترسی پیدا کنید", textAlign: TextAlign.center),
+      const SizedBox(height: 20),
+      const Card(child: Column(children: [ListTile(leading: Icon(Icons.check, color: Colors.green), title: Text("تمام بازی‌ها")),
+        ListTile(leading: Icon(Icons.check, color: Colors.green), title: Text("بدون محدودیت زمانی")),
+        ListTile(leading: Icon(Icons.check, color: Colors.green), title: Text("گزارش PDF"))])),
+      const SizedBox(height: 20),
+      ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, minimumSize: const Size(double.infinity, 55)),
+        onPressed: () {}, child: const Text("خرید از کافه بازار (ماهانه ۴۹ هزار تومان)", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold))),
+      const SizedBox(height: 10),
+      ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, minimumSize: const Size(double.infinity, 55)),
+        onPressed: () {}, child: const Text("خرید سالانه ۳۹۹ هزار تومان (صرفه‌جویی ۳۰٪)", style: TextStyle(color: Colors.white))),
+    ])));
 }
 
 // ==========================================================
-// ℹ️ ABOUT US
+// 👨‍👩‍👧 PARENT
 // ==========================================================
-class AboutUsPage extends StatelessWidget {
-  const AboutUsPage({super.key});
-  Future<void> _open(String url) async { await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication); }
+class ParentPanel extends StatelessWidget { const ParentPanel({super.key});
+  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: const Text("پنل والدین")),
+    body: SingleChildScrollView(padding: const EdgeInsets.all(20), child: Column(children: [
+      Card(child: ListTile(leading: const Icon(Icons.star, color: Colors.amber), title: const Text("سکه"), trailing: Text("${GameData.coins}"))),
+      Card(child: ListTile(leading: const Icon(Icons.trending_up, color: Colors.blue), title: Text("سطح (${GameData.getLevelName()})"), trailing: Text("${GameData.level}"))),
+      Card(child: ListTile(leading: const Icon(Icons.local_fire_department, color: Colors.orange), title: const Text("روزهای پیاپی"), trailing: Text("${GameData.streak}"))),
+      Card(child: ListTile(leading: const Icon(Icons.check, color: Colors.green), title: const Text("جواب درست"), trailing: Text("${GameData.totalCorrect}"))),
+      Card(child: ListTile(leading: const Icon(Icons.close, color: Colors.red), title: const Text("جواب غلط"), trailing: Text("${GameData.totalWrong}"))),
+      Card(child: ListTile(leading: const Icon(Icons.speed), title: const Text("نرخ موفقیت"), trailing: Text("${(GameData.successRate*100).toStringAsFixed(0)}%"))),
+      Card(child: ListTile(leading: const Icon(Icons.lightbulb, color: Colors.yellow), title: const Text("پیشنهاد"), subtitle: Text("بیشتر روی ${AI.weakSkill()} تمرین کنید"))),
+      const SizedBox(height: 20), const Text("📊 مهارت‌ها", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+      SizedBox(height: 200, child: BarChart(BarChartData(
+        barGroups: GameData.skills.entries.toList().asMap().entries.map((e) => BarChartGroupData(x: e.key, barRods: [BarChartRodData(toY: e.value.value.toDouble(), color: Colors.indigo, width: 16)])).toList(),
+        titlesData: FlTitlesData(leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30)),
+          bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, m) {
+            final n = ['ریاضی','الفبا','حافظه','رنگ','شکل','حیوان','شمارش','الگو','میوه','مفاهیم']; return Text(n[v.toInt()%10], style: const TextStyle(fontSize: 8)); })),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)), topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)))))),
+    ])));
+}
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0F1E),
-      appBar: AppBar(backgroundColor: Colors.transparent, leading: const BackButton(color: Colors.white)),
-      body: SingleChildScrollView(child: Column(children: [
-        const Icon(Icons.workspace_premium, size: 100, color: Colors.amber).animate(onPlay: (c) => c.repeat()).shimmer(duration: 2.seconds),
-        Text("Parsa Apps™", style: GoogleFonts.exo2(fontSize: 40, color: Colors.white, fontWeight: FontWeight.w900)),
-        Text("مدیر عامل: فرشاد پارسا", style: GoogleFonts.vazirmatn(fontSize: 20, color: Colors.amber, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 30),
-        Padding(padding: const EdgeInsets.symmetric(horizontal: 25), child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.amber.withOpacity(0.3))),
-          child: Text("گروه برنامه‌نویسی پارسا با تکیه بر دانش روز و طراحی خلاقانه، تجربه‌ای متفاوت برای شما خلق می‌کند.",
-              textAlign: TextAlign.center, style: GoogleFonts.vazirmatn(color: Colors.white70, fontSize: 16, height: 1.8)),
-        )),
-        const SizedBox(height: 30),
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          _btn(Icons.email, "ایمیل", Colors.red, () => _open('mailto:farshadparsa2019@gmail.com')),
-          const SizedBox(width: 20),
-          _btn(Icons.send, "تلگرام", Colors.blue, () => _open('https://t.me/Parsaappsadmin')),
-        ]),
-        const SizedBox(height: 30),
-        const Text("© 2024 Parsa Apps", style: TextStyle(color: Colors.amberAccent)),
-        const SizedBox(height: 20),
-      ])),
-    );
-  }
-
-  Widget _btn(IconData icon, String label, Color color, VoidCallback onTap) {
-    return GestureDetector(onTap: onTap, child: Column(children: [
-      Container(padding: const EdgeInsets.all(15), decoration: BoxDecoration(shape: BoxShape.circle, color: color.withOpacity(0.15), border: Border.all(color: color, width: 2)),
-        child: Icon(icon, color: color, size: 30)),
-      const SizedBox(height: 5),
-      Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
-    ]));
-  }
+// ==========================================================
+// ℹ️ ABOUT
+// ==========================================================
+class AboutPage extends StatelessWidget { const AboutPage({super.key});
+  Future<void> _o(String u) async { await launchUrl(Uri.parse(u), mode: LaunchMode.externalApplication); }
+  @override Widget build(BuildContext c) => Scaffold(backgroundColor: const Color(0xFF0F0F1E),
+    appBar: AppBar(backgroundColor: Colors.transparent, leading: const BackButton(color: Colors.white)),
+    body: SingleChildScrollView(child: Column(children: [
+      const Icon(Icons.workspace_premium, size: 100, color: Colors.amber).animate(onPlay: (c) => c.repeat()).shimmer(duration: 2.seconds),
+      Text("Parsa Apps™", style: GoogleFonts.exo2(fontSize: 40, color: Colors.white, fontWeight: FontWeight.w900)),
+      Text("مدیر عامل: فرشاد پارسا", style: GoogleFonts.vazirmatn(fontSize: 20, color: Colors.amber, fontWeight: FontWeight.bold)),
+      const SizedBox(height: 30),
+      Padding(padding: const EdgeInsets.symmetric(horizontal: 25), child: Container(padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.amber.withOpacity(0.3))),
+        child: Text("گروه برنامه‌نویسی پارسا با تکیه بر دانش روز، تجربه‌ای متفاوت برای شما خلق می‌کند.",
+          textAlign: TextAlign.center, style: GoogleFonts.vazirmatn(color: Colors.white70, fontSize: 16, height: 1.8)))),
+      const SizedBox(height: 30),
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        _b(Icons.email, "ایمیل", Colors.red, () => _o('mailto:farshadparsa2019@gmail.com')),
+        const SizedBox(width: 20),
+        _b(Icons.send, "تلگرام", Colors.blue, () => _o('https://t.me/Parsaappsadmin'))]),
+      const SizedBox(height: 30), const Text("© 2024 Parsa Apps", style: TextStyle(color: Colors.amberAccent)), const SizedBox(height: 20)])));
+  Widget _b(IconData i, String l, Color c, VoidCallback t) => GestureDetector(onTap: t, child: Column(children: [
+    Container(padding: const EdgeInsets.all(15), decoration: BoxDecoration(shape: BoxShape.circle, color: c.withOpacity(0.15), border: Border.all(color: c, width: 2)),
+      child: Icon(i, color: c, size: 30)), const SizedBox(height: 5), Text(l, style: TextStyle(color: c, fontWeight: FontWeight.bold))]));
 }
