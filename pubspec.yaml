@@ -1,0 +1,41 @@
+name: kudakeiran
+description: Professional EdTech Startup for Kids.
+publish_to: 'none'
+version: 2.0.0+2
+
+environment:
+  sdk: '>=3.0.0 <5.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: any
+  google_fonts: any
+  flutter_animate: any
+  fl_chart: any
+  shared_preferences: any
+  confetti: any
+  url_launcher: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: any
+  flutter_launcher_icons: any
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: false
+  image_path: "assets/icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#FFEB3B"
+  adaptive_icon_foreground: "assets/icon.png"
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon.png
+    - assets/hero_kids.png
+    - assets/learn_world.png
+    - assets/play_world.png
+    - assets/explore_world.png

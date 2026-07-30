@@ -1,0 +1,64 @@
+name: KudakeIran Build
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Build APK and AAB
+        run: |
+          # ۱. پاکسازی و ساخت پروژه استاندارد
+          rm -rf /tmp/builder_app
+          flutter create --project-name kudakeiran --org com.parsaapps /tmp/builder_app
+          cd /tmp/builder_app
+
+          # ۲. جایگزینی کد و فایل‌ها (با زیرپوشه‌ها)
+          rm -rf lib assets
+          cp -r $GITHUB_WORKSPACE/lib .
+          cp -r $GITHUB_WORKSPACE/assets .
+          cp $GITHUB_WORKSPACE/pubspec.yaml .
+
+          # ۳. نصب پکیج‌ها
+          flutter pub get
+
+          # ۴. ساخت آیکون
+          dart run flutter_launcher_icons || echo "Icon generation skipped"
+
+          # ۵. آنالیز کد
+          flutter analyze || echo "Analyze warnings found"
+
+          # ۶. بیلد APK
+          flutter build apk --release
+
+          # ۷. بیلد AAB
+          flutter build appbundle --release
+
+          # ۸. انتقال فایل‌ها
+          mkdir -p $GITHUB_WORKSPACE/output
+          cp build/app/outputs/flutter-apk/app-release.apk $GITHUB_WORKSPACE/output/kudakeiran_v2.apk
+          cp build/app/outputs/bundle/release/app-release.aab $GITHUB_WORKSPACE/output/kudakeiran_v2.aab
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: KudakeIran-APK-v2
+          path: output/kudakeiran_v2.apk
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: KudakeIran-AAB-v2
+          path: output/kudakeiran_v2.aab
