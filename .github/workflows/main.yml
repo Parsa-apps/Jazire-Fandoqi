@@ -1,38 +1,45 @@
-name: Final Ultimate Build
+name: KudakeIran Pro Build
 on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          cache: true
 
-      - name: Build APK in Clean Environment
+      - name: Enterprise Build Engine
         run: |
-          # ۱. ساخت یک پروژه کاملا جدید و سالم در یک پوشه جداگانه (خارج از محیط گیت‌هاب)
-          cd ..
-          flutter create --project-name kudakeiran --platforms android clean_app
+          # ۱. رفتن به محیط ایزوله
+          cd /tmp
           
-          # ۲. کپی کردن کدهای تو از پوشه گیت‌هاب به درون آن پروژه سالم
-          # فایل های تو در پوشه $GITHUB_WORKSPACE هستند
-          cp -r $GITHUB_WORKSPACE/lib/* clean_app/lib/
-          cp $GITHUB_WORKSPACE/pubspec.yaml clean_app/pubspec.yaml
+          # ۲. ساخت پروژه خام فلاتر
+          flutter create --project-name kudakeiran --platforms android builder_app
+          cd builder_app
           
-          # ۳. رفتن به پوشه جدید و انجام عملیات بیلد
-          cd clean_app
+          # ۳. اصلاح نسخه Kotlin برای سازگاری با پکیج های فاز ۸۵ (رفع ارور کد ۱)
+          sed -i 's/ext.kotlin_version = .*/ext.kotlin_version = "1.9.0"/' android/build.gradle
+          
+          # ۴. جایگزینی کدهای اصلی استارتاپ
+          rm -rf lib
+          cp -r $GITHUB_WORKSPACE/lib .
+          cp $GITHUB_WORKSPACE/pubspec.yaml .
+          
+          # ۵. بیلد APK با پاکسازی کش
           flutter pub get
-          flutter build apk --release
-          
-          # ۴. کپی کردن فایل APK ساخته شده به مسیری که گیت‌هاب بتونه پیداش کنه
-          mkdir -p $GITHUB_WORKSPACE/output
-          cp build/app/outputs/flutter-apk/app-release.apk $GITHUB_WORKSPACE/output/
-          
-      - name: Upload APK
+          flutter build apk --release --split-per-abi
+
+          # ۶. انتقال خروجی به فضای گیت‌هاب
+          mkdir -p $GITHUB_WORKSPACE/build_output
+          cp build/app/outputs/flutter-apk/app-release.apk $GITHUB_WORKSPACE/build_output/kudakeiran_v1_pro.apk
+
+      - name: Upload Professional APK
         uses: actions/upload-artifact@v4
         with:
-          name: KudakeIran-App
-          path: output/app-release.apk
+          name: KudakeIran_Enterprise_Release
+          path: build_output/kudakeiran_v1_pro.apk
