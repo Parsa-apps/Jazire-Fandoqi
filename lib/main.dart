@@ -1542,7 +1542,6 @@ class _StState extends State<SettingsPage> { @override Widget build(BuildContext
   ListTile(leading: const Icon(Icons.refresh, color: Colors.red), title: const Text("پاک کردن همه اطلاعات"), onTap: () => showDialog(context: context, builder: (ctx) => AlertDialog(title: const Text("مطمئنی؟"), content: const Text("همه امتیازات پاک می‌شن!"), actions: [ TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("لغو")), ElevatedButton(onPressed: () async { await SharedPreferences.getInstance().then((p) => p.clear()); await GameData.load(); Navigator.pop(ctx); setState(() {}); }, child: const Text("پاک کن")) ]))),
 ]));
 }
-}
 
 class Shop extends StatefulWidget { const Shop({super.key}); @override State<Shop> createState() => _ShopState(); }
 class _ShopState extends State<Shop> {
@@ -1557,7 +1556,6 @@ class SubPage extends StatelessWidget { const SubPage({super.key}); @override Wi
   const SizedBox(height: 20), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, minimumSize: const Size(double.infinity, 55)), onPressed: () => ScaffoldMessenger.of(c).showSnackBar(const SnackBar(content: Text("پرداخت آنلاین به‌زودی فعال می‌شود."))), child: const Text("خرید از کافه بازار (ماهانه ۴۹ هزار تومان)", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold))),
   const SizedBox(height: 10), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, minimumSize: const Size(double.infinity, 55)), onPressed: () => ScaffoldMessenger.of(c).showSnackBar(const SnackBar(content: Text("پرداخت آنلاین به‌زودی فعال می‌شود."))), child: const Text("خرید سالانه ۳۹۹ هزار تومان (صرفه‌جویی ۳۰٪)", style: TextStyle(color: Colors.white))),
 ])));
-}
 }
 
 class HelpCenter extends StatelessWidget { const HelpCenter({super.key}); final faqs = const [{"q": "چطور سکه بگیرم؟", "a": "با بازی کردن و جواب درست دادن به سوالات سکه می‌گیری."},{"q": "چطور لول‌آپ کنم؟", "a": "هر ۱۰۰ سکه که جمع کنی یک لول بالا می‌ری."},{"q": "ستاره چیه؟", "a": "ستاره‌ها جایزه ویژه‌ان! با تکمیل مرحله‌ها ستاره می‌گیری."},{"q": "چرخ شانس چطور کار میکنه؟", "a": "هر روز یک بار می‌تونی چرخ رو بچرخونی و سکه رایگان بگیری."},{"q": "فندقی کیه؟", "a": "فندقی دوست فندقیت‌ه که کمکت میکنه یاد بگیری و بازی کنی!"},{"q": "مدال‌ها چطور باز می‌شن؟", "a": "با انجام کارهای خاص مثل ۷ روز پیاپی، ۵۰۰ سکه و... باز می‌شن."}];
@@ -1587,7 +1585,6 @@ class ParentPanel extends StatelessWidget { const ParentPanel({super.key}); @ove
   SizedBox(height: 200, child: BarChart(BarChartData(barGroups: GameData.skills.entries.toList().asMap().entries.map((e) => BarChartGroupData(x: e.key, barRods: [BarChartRodData(toY: e.value.value.toDouble(), color: Colors.indigo, width: 16)])).toList(),
     titlesData: FlTitlesData(leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30)), bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, m) { final n = ['ریاضی','الفبا','حافظه','رنگ','شکل','حیوان','شمارش','الگو','میوه','مفاهیم','لغات','بدن','ماشین','زمان','هوا','حس','شغل']; int idx = v.toInt(); if (idx < 0 || idx >= n.length) return const Text(''); return Text(n[idx], style: const TextStyle(fontSize: 8)); })), rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)), topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),)))),
 ])));
-}
 }
 
 class AboutPage extends StatelessWidget { const AboutPage({super.key});
