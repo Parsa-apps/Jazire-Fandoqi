@@ -4,24 +4,24 @@ publish_to: 'none'
 version: 2.0.0+2
 
 environment:
-  sdk: '>=3.0.0 <5.0.0'
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: any
-  google_fonts: any
-  flutter_animate: any
-  fl_chart: any
-  shared_preferences: any
-  confetti: any
-  url_launcher: any
+  cupertino_icons: ^1.0.6
+  google_fonts: ^6.1.0
+  flutter_animate: ^4.3.0
+  fl_chart: ^0.66.0
+  shared_preferences: ^2.2.2
+  confetti: ^0.7.0
+  url_launcher: ^6.2.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: any
-  flutter_launcher_icons: any
+  flutter_lints: ^3.0.1
+  flutter_launcher_icons: ^0.13.1
 
 flutter_launcher_icons:
   android: "launcher_icon"
