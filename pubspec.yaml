@@ -35,3 +35,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icon.png
+    - assets/hero_kids.png
+    - assets/learn_world.png
+    - assets/play_world.png
+    - assets/explore_world.png
