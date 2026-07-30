@@ -13,9 +13,9 @@ void main() async {
     for (final line in analyzeOut.split('\n')) {
       final trimmed = line.trim();
       if (trimmed.isEmpty) continue;
-      if (trimmed.contains('error •') || trimmed.contains('Error') || trimmed.contains('error') || trimmed.contains('Exception') || trimmed.contains('lib/')) {
+      if (trimmed.startsWith('error •') || trimmed.contains(' error • ')) {
         print("::error title=Analyze Error ${++errCount}::$trimmed");
-        if (errCount >= 20) break;
+        if (errCount >= 10) break;
       }
     }
     if (errCount == 0) {
@@ -27,21 +27,25 @@ void main() async {
     final buildOut = "${buildRes.stdout}\n${buildRes.stderr}";
     print(buildOut);
 
-    errCount = 0;
-    for (final line in buildOut.split('\n')) {
-      final trimmed = line.trim();
-      if (trimmed.isEmpty) continue;
-      if (trimmed.contains('Error') || trimmed.contains('error') || trimmed.contains('Exception') || trimmed.contains('Failed') || trimmed.contains('lib/') || trimmed.contains('what went wrong') || trimmed.contains('FAILURE')) {
-        print("::error title=Build Error ${++errCount}::$trimmed");
-        if (errCount >= 20) break;
+    if (buildRes.exitCode == 0) {
+      print("::notice title=Build Success::APK built successfully (exitCode 0)!");
+    } else {
+      errCount = 0;
+      for (final line in buildOut.split('\n')) {
+        final trimmed = line.trim();
+        if (trimmed.isEmpty) continue;
+        if (trimmed.contains('Error') || trimmed.contains('error') || trimmed.contains('Exception') || trimmed.contains('Failed') || trimmed.contains('lib/') || trimmed.contains('what went wrong') || trimmed.contains('FAILURE')) {
+          print("::error title=Build Error ${++errCount}::$trimmed");
+          if (errCount >= 8) break;
+        }
       }
-    }
 
-    final lines = buildOut.split('\n').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-    final tailCount = lines.length > 20 ? 20 : lines.length;
-    for (int i = 1; i <= tailCount; i++) {
-      final line = lines[lines.length - tailCount + i - 1];
-      print("::error title=Log Tail $i::$line");
+      final lines = buildOut.split('\n').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      final tailCount = lines.length > 5 ? 5 : lines.length;
+      for (int i = 1; i <= tailCount; i++) {
+        final line = lines[lines.length - tailCount + i - 1];
+        print("::error title=Log Tail $i::$line");
+      }
     }
 
   } catch (e, st) {
