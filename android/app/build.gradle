@@ -1,25 +1,30 @@
-def flutterRoot = localProperties.getProperty('flutter.sdk')
-if (flutterRoot == null) {
-    throw new GradleException("Flutter SDK not found.")
+buildscript {
+    ext.kotlin_version = '1.9.0'
+    repositories {
+        google()
+        mavenCentral()
     }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.2.1'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
 
-    apply plugin: 'com.android.application'
-    apply plugin: 'kotlin-android'
-    apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
 
-    android {
-        compileSdkVersion 34
-            namespace "com.example.kudakeiran"
+rootProject.buildDir = '../build'
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(':app')
+}
 
-                defaultConfig {
-                        applicationId "com.example.kudakeiran"
-                                minSdkVersion 21
-                                        targetSdkVersion 34
-                                                versionCode 1
-                                                        versionName "1.0"
-                                                            }
-                                                            }
-
-                                                            dependencies {
-                                                                implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-                                                                }
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}
