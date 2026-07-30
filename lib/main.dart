@@ -89,45 +89,178 @@ class _SplashScreenState extends State<SplashScreen> {
 }
 
 // ============================================================
-// --- صفحه معرفی (Onboarding) ---
+// --- صفحه معرفی (Onboarding) با راهنمای تعاملی ---
 // ============================================================
-class OnboardingPage extends StatelessWidget {
+class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
+
+  @override
+  State<OnboardingPage> createState() => _OnboardingPageState();
+}
+
+class _OnboardingPageState extends State<OnboardingPage> {
+  final PageController _controller = PageController();
+  int _currentPage = 0;
+
+  final List<Map<String, dynamic>> _pages = [
+    {
+      "icon": Icons.school_rounded,
+      "title": "یادگیری شاد و آسان",
+      "desc": "الفبا، اعداد و مهارت‌های پایه را با روش‌های نوین و جذاب به فرزندتان بیاموزید.",
+      "color": Color(0xFF6C63FF),
+    },
+    {
+      "icon": Icons.videogame_asset_rounded,
+      "title": "بازی و سرگرمی",
+      "desc": "با ده‌ها بازی هدفمند، خلاقیت و هوش فرزند شما در حین بازی رشد می‌کند.",
+      "color": Color(0xFFFFB84D),
+    },
+    {
+      "icon": Icons.family_restroom_rounded,
+      "title": "پنل ویژه والدین",
+      "desc": "همیشه در جریان پیشرفت فرزندتان باشید و روند یادگیری او را مدیریت کنید.",
+      "color": Color(0xFF4CAF50),
+    },
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        padding: const EdgeInsets.all(40),
+      backgroundColor: Colors.white,
+      body: SafeArea(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.rocket_launch, size: 150, color: Color(0xFF6C63FF))
-                .animate()
-                .slideX(),
-            const SizedBox(height: 40),
-            const Text("به دنیای شاد یادگیری خوش آمدید",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+            // دکمه رد کردن در بالای صفحه
+            Align(
+              alignment: Alignment.topLeft,
+              child: Padding(
+                padding: const EdgeInsets.all(15.0),
+                child: TextButton(
+                  onPressed: _finishOnboarding,
+                  child: const Text("رد کردن",
+                      style: TextStyle(color: Colors.grey, fontSize: 16)),
+                ),
+              ),
+            ),
+            // بدنه اصلی صفحات
+            Expanded(
+              child: PageView.builder(
+                controller: _controller,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentPage = index;
+                  });
+                },
+                itemCount: _pages.length,
+                itemBuilder: (context, index) {
+                  return _buildPageContent(_pages[index]);
+                },
+              ),
+            ),
+
+            // بخش راهنما (سواپ کن) و ایندیکاتور
+            _buildBottomSection(),
+
             const SizedBox(height: 20),
-            const Text(
-              "همراه با فرشاد پارسا، آموزش را برای فرزندتان لذت‌بخش کنید",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey),
-            ),
-            const SizedBox(height: 50),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6C63FF),
-                  minimumSize: const Size(double.infinity, 60),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
-              onPressed: () => Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (context) => const KidDashboard())),
-              child: const Text("شروع ماجراجویی",
-                  style: TextStyle(color: Colors.white, fontSize: 20)),
-            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildPageContent(Map<String, dynamic> pageData) {
+    return Padding(
+      padding: const EdgeInsets.all(30.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(30),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: pageData['color'].withOpacity(0.1),
+            ),
+            child: Icon(pageData['icon'], size: 100, color: pageData['color']),
+          ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
+          const SizedBox(height: 40),
+          Text(
+            pageData['title'],
+            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.5),
+          const SizedBox(height: 15),
+          Text(
+            pageData['desc'],
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 16, color: Colors.grey[600], height: 1.6),
+          ).animate().fadeIn(delay: 400.ms),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomSection() {
+    // اگر آخرین صفحه بود، دکمه "شروع" نمایش داده شود
+    if (_currentPage == _pages.length - 1) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 30),
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _pages[_currentPage]['color'],
+            minimumSize: const Size(double.infinity, 55),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          ),
+          onPressed: _finishOnboarding,
+          child: const Text("ورود به دنیای کودک",
+              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        ).animate().fadeIn().slideY(begin: 1),
+      );
+    }
+
+    // در غیر این صورت، راهنمای کشیدن نمایش داده شود
+    return Column(
+      children: [
+        // ایندیکاتور دات‌ها
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(
+            _pages.length,
+            (index) => AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: _currentPage == index ? 25 : 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: _currentPage == index
+                    ? _pages[_currentPage]['color']
+                    : Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 25),
+
+        // راهنمای متحرک (Swipe Guide)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text("برای ادامه به سمت چپ بکشید",
+                style: TextStyle(color: Colors.grey, fontSize: 14)),
+            const SizedBox(width: 8),
+            const Icon(Icons.arrow_back_ios, size: 14, color: Colors.grey)
+                .animate(onPlay: (controller) => controller.repeat(reverse: true))
+                .slideX(begin: 0.5, end: -0.5, duration: 800.ms),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _finishOnboarding() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const KidDashboard()),
     );
   }
 }
