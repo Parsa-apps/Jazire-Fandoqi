@@ -1,4 +1,4 @@
-name: KudakeIran Ultimate Success
+name: KudakeIran Icon Build
 on: [push]
 jobs:
   build:
@@ -12,37 +12,34 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Master Build Engine
+      - name: Build with Custom Icon
         run: |
-          # ۱. پاکسازی کامل محیط کار
+          # ۱. پاکسازی و ساخت پروژه استاندارد
           rm -rf /tmp/builder_app
-          
-          # ۲. ساخت پروژه خام فلاتر در یک مسیر جدید
           flutter create --project-name kudakeiran /tmp/builder_app
-          
-          # ۳. ورود به پوشه ساخته شده
           cd /tmp/builder_app
           
-          # ۴. اصلاح نسخه کاتلین (با روشی که اگر فایل نبود هم ارور ندهد)
-          if [ -f android/build.gradle ]; then
-            sed -i 's/ext.kotlin_version = .*/ext.kotlin_version = "1.9.0"/' android/build.gradle
-          fi
-          
-          # ۵. جایگزینی کدهای اصلی استارتاپ تو
-          rm -rf lib
+          # ۲. جایگزینی کد و فایل ها
+          rm -rf lib assets
           cp -r $GITHUB_WORKSPACE/lib .
+          cp -r $GITHUB_WORKSPACE/assets .
           cp $GITHUB_WORKSPACE/pubspec.yaml .
           
-          # ۶. دریافت پکیج‌ها و بیلد نهایی
+          # ۳. نصب پکیج‌ها
           flutter pub get
+          
+          # ۴. ساخت خودکار آیکون از عکس آپلود شده (نقطه جادویی)
+          dart run flutter_launcher_icons
+          
+          # ۵. بیلد نهایی APK
           flutter build apk --release
 
-          # ۷. انتقال فایل ساخته شده به پوشه خروجی گیت‌هاب
+          # ۶. انتقال فایل به خروجی
           mkdir -p $GITHUB_WORKSPACE/output
-          cp build/app/outputs/flutter-apk/app-release.apk $GITHUB_WORKSPACE/output/kudakeiran_final.apk
+          cp build/app/outputs/flutter-apk/app-release.apk $GITHUB_WORKSPACE/output/kudakeiran_branded.apk
 
       - name: Upload Final APK
         uses: actions/upload-artifact@v4
         with:
-          name: KudakeIran-App-v1
-          path: output/kudakeiran_final.apk
+          name: KudakeIran-Branded-App
+          path: output/kudakeiran_branded.apk
