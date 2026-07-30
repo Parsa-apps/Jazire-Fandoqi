@@ -1,18 +1,41 @@
-name: Build APK
+name: Magic Auto Build APK
 on: [push]
 jobs:
   build:
-      runs-on: ubuntu-latest
-          steps:
-                - uses: actions/checkout@v4
-                      - uses: subosito/flutter-action@v2
-                              with:
-                                        flutter-version: '3.19.0'
-                                                  channel: 'stable'
-                                                        - run: flutter pub get
-                                                              - run: flutter build apk --release
-                                                                    - name: Upload APK
-                                                                            uses: actions/upload-artifact@v4
-                                                                                    with:
-                                                                                              name: release-apk
-                                                                                                        path: build/app/outputs/flutter-apk/app-release.apk
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Generate Android Structure & Build
+        run: |
+          # ذخیره موقت فایل‌های تو
+          mkdir temp_lib
+          cp -r lib/* temp_lib/
+          cp pubspec.yaml temp_pubspec.yaml
+          
+          # پاک کردن محیط برای جلوگیری از تداخل
+          rm -rf *
+          
+          # ساخت پروژه استاندارد توسط خودِ فلاتر
+          flutter create --project-name kudakeiran --platforms android .
+          
+          # جایگزین کردن کدهای تو در پروژه ساخته شده
+          rm -rf lib
+          mv temp_lib lib
+          rm pubspec.yaml
+          mv temp_pubspec.yaml pubspec.yaml
+          
+          # بیلد نهایی
+          flutter pub get
+          flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: KudakeIran-Final-App
+          path: build/app/outputs/flutter-apk/app-release.apk
