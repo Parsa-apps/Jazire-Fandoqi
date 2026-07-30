@@ -25,6 +25,8 @@ class GameData {
   static int highScore = 0, mathRaceHighScore = 0, quizHighScore = 0;
   static String lastLogin = '', avatar = '😊', lastWeekReset = '', lastLuckyDate = '', lastSurpriseClaimDate = '';
   static bool onboardingSeen = false;
+  static String childName = '';
+  static int childAge = 5;
   static List<String> achievements = [], stickers = [];
   // Separate progress for each daily challenge; a single activity must not
   // complete unrelated challenges.
@@ -70,6 +72,8 @@ class GameData {
     lastLuckyDate = _p.getString('lld') ?? '';
     lastSurpriseClaimDate = _p.getString('lscd') ?? '';
     onboardingSeen = _p.getBool('onboardingSeen') ?? false;
+    childName = _p.getString('childName') ?? '';
+    childAge = _p.getInt('childAge') ?? 5;
     String today = DateTime.now().toString().substring(0, 10);
     luckyWheelSpunToday = lastLuckyDate == today;
     for (var k in skills.keys) skills[k] = _p.getInt('sk_$k') ?? 0;
@@ -105,6 +109,8 @@ class GameData {
     await _p.setString('lld', lastLuckyDate);
     await _p.setString('lscd', lastSurpriseClaimDate);
     await _p.setBool('onboardingSeen', onboardingSeen);
+    await _p.setString('childName', childName);
+    await _p.setInt('childAge', childAge);
     for (var k in skills.keys) await _p.setInt('sk_$k', skills[k] ?? 0);
   }
 
@@ -273,6 +279,30 @@ class AI {
 }
 
 // ==========================================================
+// 🌟 KIND CHILD FEEDBACK
+// ==========================================================
+class ChildFeedback {
+  static final _praise = ['آفرین! عالی بود! 🌟', 'باریکلا قهرمان! 🥳', 'درست گفتی! ادامه بده! 🚀'];
+  static final _tryAgain = ['نزدیک بودی! یک‌بار دیگه امتحان کن 🌈', 'اشکال نداره عزیزم، با دقت نگاه کن 💛', 'تو می‌تونی! دوباره تلاش کن ✨'];
+
+  static void correct(BuildContext context) => _show(context, _praise[Random().nextInt(_praise.length)], const Color(0xFF2EAF63));
+  static void tryAgain(BuildContext context) => _show(context, _tryAgain[Random().nextInt(_tryAgain.length)], const Color(0xFFFF8A4C));
+
+  static void _show(BuildContext context, String message, Color color) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: color,
+        duration: const Duration(milliseconds: 1150),
+        margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        content: Text(message, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      ));
+  }
+}
+
+// ==========================================================
 // 🎨 GRADIENTS
 // ==========================================================
 class G {
@@ -324,7 +354,14 @@ class KudakeIranApp extends StatelessWidget {
     theme: ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6C63FF)),
+      scaffoldBackgroundColor: const Color(0xFFFFFBFF),
       textTheme: GoogleFonts.vazirmatnTextTheme(),
+      appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0, surfaceTintColor: Colors.transparent),
+      elevatedButtonTheme: ElevatedButtonThemeData(style: ElevatedButton.styleFrom(
+        elevation: 3, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+      )),
     ),
     home: const SplashScreen(),
   );
@@ -393,12 +430,21 @@ class OnboardingPage extends StatefulWidget {
 
 class _OnboardingState extends State<OnboardingPage> {
   final PageController _ctrl = PageController();
+  final TextEditingController _nameController = TextEditingController();
   int _page = 0;
+  int _selectedAge = 5;
   final _data = [
     {"i": Icons.school_rounded, "t": "یادگیری هوشمند", "d": "سختی تمرین با سطح کودک تنظیم می‌شود", "c": const Color(0xFF6C63FF)},
     {"i": Icons.videogame_asset_rounded, "t": "بازی و جایزه", "d": "سکه بگیر و لول آپ کن!", "c": const Color(0xFFFFB84D)},
     {"i": Icons.family_restroom_rounded, "t": "پنل والدین", "d": "گزارش دقیق پیشرفت فرزند", "c": const Color(0xFF4CAF50)},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController.text = GameData.childName;
+    _selectedAge = GameData.childAge;
+  }
 
   @override
   Widget build(BuildContext c) => Scaffold(
@@ -413,7 +459,7 @@ class _OnboardingState extends State<OnboardingPage> {
             itemCount: _data.length,
             itemBuilder: (c, i) => Padding(
               padding: const EdgeInsets.all(30),
-              child: Column(
+              child: i == 2 ? _profileForm() : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
@@ -464,14 +510,41 @@ class _OnboardingState extends State<OnboardingPage> {
     ),
   );
 
+  Widget _profileForm() => SingleChildScrollView(
+    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      const Text('سلام دوست کوچولو! 👋', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900)),
+      const SizedBox(height: 8),
+      const Text('بیا شخصیت خودت را برای ماجراجویی بسازیم.', textAlign: TextAlign.center, style: TextStyle(fontSize: 17)),
+      const SizedBox(height: 20),
+      TextField(controller: _nameController, textAlign: TextAlign.center, textInputAction: TextInputAction.done,
+        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        decoration: InputDecoration(labelText: 'اسمت چیه؟', hintText: 'مثلاً آوا', prefixIcon: const Icon(Icons.face_rounded), border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)))),
+      const SizedBox(height: 18),
+      const Align(alignment: Alignment.centerRight, child: Text('چند سالته؟', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+      const SizedBox(height: 8),
+      Wrap(spacing: 8, children: List.generate(8, (i) { final age = i + 3; return ChoiceChip(label: Text('$age سال', style: const TextStyle(fontSize: 16)), selected: _selectedAge == age, onSelected: (_) => setState(() => _selectedAge = age)); })),
+      const SizedBox(height: 18),
+      const Align(alignment: Alignment.centerRight, child: Text('آواتار مورد علاقه‌ات را انتخاب کن', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+      const SizedBox(height: 8),
+      Wrap(spacing: 8, runSpacing: 8, alignment: WrapAlignment.center, children: ['😊', '😎', '🤩', '🦁', '🐱', '🦊', '🐼', '🦄'].map((avatar) => GestureDetector(
+        onTap: () => setState(() => GameData.avatar = avatar),
+        child: AnimatedContainer(duration: const Duration(milliseconds: 180), width: 48, height: 48, alignment: Alignment.center,
+          decoration: BoxDecoration(color: GameData.avatar == avatar ? const Color(0xFFE7E4FF) : Colors.grey.shade100, shape: BoxShape.circle, border: Border.all(color: GameData.avatar == avatar ? const Color(0xFF6C63FF) : Colors.transparent, width: 2)),
+          child: Text(avatar, style: const TextStyle(fontSize: 29))),
+      )).toList()),
+    ]),
+  );
+
   void _go() {
+    GameData.childName = _nameController.text.trim().isEmpty ? 'قهرمان کوچولو' : _nameController.text.trim();
+    GameData.childAge = _selectedAge;
     GameData.onboardingSeen = true;
     GameData.save();
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (c) => const Dashboard()));
   }
 
   @override
-  void dispose() { _ctrl.dispose(); super.dispose(); }
+  void dispose() { _ctrl.dispose(); _nameController.dispose(); super.dispose(); }
 }
 
 // ==========================================================
@@ -593,7 +666,7 @@ class _DashState extends State<Dashboard> {
             child: Row(children: [
               const Text("🧸", style: TextStyle(fontSize: 40)),
               const SizedBox(width: 12),
-              Expanded(child: Text(AI.mascotMsg())),
+              Expanded(child: Text(GameData.childName.isEmpty ? AI.mascotMsg() : 'سلام ${GameData.childName}! ${AI.mascotMsg()}')),
             ]),
           ),
         ),
@@ -889,15 +962,14 @@ class _NumState extends State<NumberGame> {
     if (a == ans) {
       HapticFeedback.mediumImpact();
       _cf.play();
-      GameData.addCoins(5); GameData.recordCorrect(); GameData.addSkill('math'); GameData.progressMission('questions');
+      GameData.addCoins(5); GameData.recordCorrect(); ChildFeedback.correct(context); GameData.addSkill('math'); GameData.progressMission('questions');
       setState(() => sc += 5);
       if (sc >= 50) GameData.unlockAch("math_50");
       Future.delayed(const Duration(milliseconds: 800), () { if (mounted) _gen(); });
     } else {
       HapticFeedback.heavyImpact();
       mis++;
-      GameData.recordWrong();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("دوباره!"), backgroundColor: Colors.red));
+      GameData.recordWrong(); ChildFeedback.tryAgain(context);
     }
   }
 
@@ -946,11 +1018,11 @@ class _MemState extends State<MemoryGame> {
     } else {
       if (em[fi!] == em[i]) {
         mt++;
-        GameData.addCoins(10); GameData.recordCorrect(); GameData.addSkill('memory');
+        GameData.addCoins(10); GameData.recordCorrect(); ChildFeedback.correct(context); GameData.addSkill('memory');
         if (mt == em.length ~/ 2) GameData.unlockAch("memory_king");
         fi = null;
       } else {
-        GameData.recordWrong();
+        GameData.recordWrong(); ChildFeedback.tryAgain(context);
         int f = fi!;
         fi = null;
         Future.delayed(const Duration(milliseconds: 600), () { if (mounted) setState(() { rv[f] = false; rv[i] = false; }); });
@@ -1006,12 +1078,12 @@ class _CountState extends State<CountingGame> {
   void _chk(int a) {
     if (a == target) {
       HapticFeedback.mediumImpact();
-      GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkill('counting'); GameData.progressMission('questions');
+      GameData.addCoins(3); GameData.recordCorrect(); ChildFeedback.correct(context); GameData.addSkill('counting'); GameData.progressMission('questions');
       setState(() => sc += 3);
       Future.delayed(const Duration(milliseconds: 500), () { if (mounted) _gen(); });
     } else {
       HapticFeedback.heavyImpact();
-      GameData.recordWrong();
+      GameData.recordWrong(); ChildFeedback.tryAgain(context);
     }
   }
 
@@ -1064,12 +1136,12 @@ class _PatState extends State<PatternGame> {
   void _chk(String a) {
     if (a == answer) {
       HapticFeedback.mediumImpact();
-      GameData.addCoins(5); GameData.recordCorrect(); GameData.addSkill('pattern');
+      GameData.addCoins(5); GameData.recordCorrect(); ChildFeedback.correct(context); GameData.addSkill('pattern');
       setState(() => sc += 5);
       Future.delayed(const Duration(milliseconds: 500), () { if (mounted) _gen(); });
     } else {
       HapticFeedback.heavyImpact();
-      GameData.recordWrong();
+      GameData.recordWrong(); ChildFeedback.tryAgain(context);
     }
   }
 
@@ -1116,12 +1188,12 @@ class _ColState extends State<ColorGame> {
   void _chk(Color c) {
     if (c == tc) {
       HapticFeedback.mediumImpact();
-      GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkill('colors'); GameData.progressMission('colors');
+      GameData.addCoins(3); GameData.recordCorrect(); ChildFeedback.correct(context); GameData.addSkill('colors'); GameData.progressMission('colors');
       setState(() => sc += 3);
       Future.delayed(const Duration(milliseconds: 500), () { if (mounted) _gen(); });
     } else {
       HapticFeedback.heavyImpact();
-      GameData.recordWrong();
+      GameData.recordWrong(); ChildFeedback.tryAgain(context);
     }
   }
 
@@ -1165,12 +1237,12 @@ class _ShpState extends State<ShapeGame> {
   void _chk(IconData i) {
     if (i == ti) {
       HapticFeedback.mediumImpact();
-      GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkill('shapes');
+      GameData.addCoins(3); GameData.recordCorrect(); ChildFeedback.correct(context); GameData.addSkill('shapes');
       setState(() => sc += 3);
       Future.delayed(const Duration(milliseconds: 500), () { if (mounted) _gen(); });
     } else {
       HapticFeedback.heavyImpact();
-      GameData.recordWrong();
+      GameData.recordWrong(); ChildFeedback.tryAgain(context);
     }
   }
 
@@ -1214,12 +1286,12 @@ class _AniState extends State<AnimalGame> {
   void _chk(String e) {
     if (e == te) {
       HapticFeedback.mediumImpact();
-      GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkill('animals');
+      GameData.addCoins(3); GameData.recordCorrect(); ChildFeedback.correct(context); GameData.addSkill('animals');
       setState(() => sc += 3);
       Future.delayed(const Duration(milliseconds: 500), () { if (mounted) _gen(); });
     } else {
       HapticFeedback.heavyImpact();
-      GameData.recordWrong();
+      GameData.recordWrong(); ChildFeedback.tryAgain(context);
     }
   }
 
@@ -1263,12 +1335,12 @@ class _FrtState extends State<FruitGame> {
   void _chk(String e) {
     if (e == te) {
       HapticFeedback.mediumImpact();
-      GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkill('fruits');
+      GameData.addCoins(3); GameData.recordCorrect(); ChildFeedback.correct(context); GameData.addSkill('fruits');
       setState(() => sc += 3);
       Future.delayed(const Duration(milliseconds: 500), () { if (mounted) _gen(); });
     } else {
       HapticFeedback.heavyImpact();
-      GameData.recordWrong();
+      GameData.recordWrong(); ChildFeedback.tryAgain(context);
     }
   }
 
@@ -1317,12 +1389,12 @@ class _ConState extends State<ConceptGame> {
   void _chk(bool b) {
     if (b == ansIsBig) {
       HapticFeedback.mediumImpact();
-      GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkill('concepts');
+      GameData.addCoins(3); GameData.recordCorrect(); ChildFeedback.correct(context); GameData.addSkill('concepts');
       setState(() => sc += 3);
       Future.delayed(const Duration(milliseconds: 500), () { if (mounted) _gen(); });
     } else {
       HapticFeedback.heavyImpact();
-      GameData.recordWrong();
+      GameData.recordWrong(); ChildFeedback.tryAgain(context);
     }
   }
 
@@ -1372,12 +1444,12 @@ class _VocState extends State<VocabGame> {
   void _chk(String a) {
     if (a == ta) {
       HapticFeedback.mediumImpact();
-      GameData.addCoins(5); GameData.recordCorrect(); GameData.addSkill('vocab');
+      GameData.addCoins(5); GameData.recordCorrect(); ChildFeedback.correct(context); GameData.addSkill('vocab');
       setState(() => sc += 5);
       Future.delayed(const Duration(milliseconds: 500), () { if (mounted) _gen(); });
     } else {
       HapticFeedback.heavyImpact();
-      GameData.recordWrong();
+      GameData.recordWrong(); ChildFeedback.tryAgain(context);
     }
   }
 
@@ -1424,12 +1496,12 @@ class _BdyState extends State<BodyGame> {
   void _chk(String e) {
     if (e == te) {
       HapticFeedback.mediumImpact();
-      GameData.addCoins(4); GameData.recordCorrect(); GameData.addSkill('body');
+      GameData.addCoins(4); GameData.recordCorrect(); ChildFeedback.correct(context); GameData.addSkill('body');
       setState(() => sc += 4);
       Future.delayed(const Duration(milliseconds: 500), () { if (mounted) _gen(); });
     } else {
       HapticFeedback.heavyImpact();
-      GameData.recordWrong();
+      GameData.recordWrong(); ChildFeedback.tryAgain(context);
     }
   }
 
@@ -1473,12 +1545,12 @@ class _VhState extends State<VehicleGame> {
   void _chk(String e) {
     if (e == te) {
       HapticFeedback.mediumImpact();
-      GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkill('vehicles');
+      GameData.addCoins(3); GameData.recordCorrect(); ChildFeedback.correct(context); GameData.addSkill('vehicles');
       setState(() => sc += 3);
       Future.delayed(const Duration(milliseconds: 500), () { if (mounted) _gen(); });
     } else {
       HapticFeedback.heavyImpact();
-      GameData.recordWrong();
+      GameData.recordWrong(); ChildFeedback.tryAgain(context);
     }
   }
 
@@ -1536,12 +1608,12 @@ class _TmState extends State<TimeGame> {
     var list = isDayMode ? days : months;
     if (a == list[correctIdx]) {
       HapticFeedback.mediumImpact();
-      GameData.addCoins(4); GameData.recordCorrect(); GameData.addSkill('time');
+      GameData.addCoins(4); GameData.recordCorrect(); ChildFeedback.correct(context); GameData.addSkill('time');
       setState(() => sc += 4);
       Future.delayed(const Duration(milliseconds: 500), () { if (mounted) _gen(); });
     } else {
       HapticFeedback.heavyImpact();
-      GameData.recordWrong();
+      GameData.recordWrong(); ChildFeedback.tryAgain(context);
     }
   }
 
@@ -1586,12 +1658,12 @@ class _WtState extends State<WeatherGame> {
   void _chk(String e) {
     if (e == te) {
       HapticFeedback.mediumImpact();
-      GameData.addCoins(3); GameData.recordCorrect(); GameData.addSkill('weather');
+      GameData.addCoins(3); GameData.recordCorrect(); ChildFeedback.correct(context); GameData.addSkill('weather');
       setState(() => sc += 3);
       Future.delayed(const Duration(milliseconds: 500), () { if (mounted) _gen(); });
     } else {
       HapticFeedback.heavyImpact();
-      GameData.recordWrong();
+      GameData.recordWrong(); ChildFeedback.tryAgain(context);
     }
   }
 
@@ -1635,12 +1707,12 @@ class _EmState extends State<EmotionGame> {
   void _chk(String e) {
     if (e == te) {
       HapticFeedback.mediumImpact();
-      GameData.addCoins(4); GameData.recordCorrect(); GameData.addSkill('emotions');
+      GameData.addCoins(4); GameData.recordCorrect(); ChildFeedback.correct(context); GameData.addSkill('emotions');
       setState(() => sc += 4);
       Future.delayed(const Duration(milliseconds: 500), () { if (mounted) _gen(); });
     } else {
       HapticFeedback.heavyImpact();
-      GameData.recordWrong();
+      GameData.recordWrong(); ChildFeedback.tryAgain(context);
     }
   }
 
@@ -1684,12 +1756,12 @@ class _JbState extends State<JobGame> {
   void _chk(String e) {
     if (e == te) {
       HapticFeedback.mediumImpact();
-      GameData.addCoins(4); GameData.recordCorrect(); GameData.addSkill('jobs');
+      GameData.addCoins(4); GameData.recordCorrect(); ChildFeedback.correct(context); GameData.addSkill('jobs');
       setState(() => sc += 4);
       Future.delayed(const Duration(milliseconds: 500), () { if (mounted) _gen(); });
     } else {
       HapticFeedback.heavyImpact();
-      GameData.recordWrong();
+      GameData.recordWrong(); ChildFeedback.tryAgain(context);
     }
   }
 
@@ -1747,11 +1819,11 @@ class _QzState extends State<QuizMaster> {
     if (idx == questions[currentQ]['a']) {
       HapticFeedback.mediumImpact();
       _cf.play();
-      GameData.addCoins(10); GameData.recordCorrect(); GameData.progressMission('questions');
+      GameData.addCoins(10); GameData.recordCorrect(); ChildFeedback.correct(context); GameData.progressMission('questions');
       setState(() => sc += 10);
     } else {
       HapticFeedback.heavyImpact();
-      GameData.recordWrong();
+      GameData.recordWrong(); ChildFeedback.tryAgain(context);
     }
 
     if (currentQ < questions.length - 1) {
@@ -1824,12 +1896,12 @@ class _SqState extends State<SequenceGame> {
     if (userOrder.length == numbers.length) {
       if (List.generate(userOrder.length, (i) => userOrder[i] == i + 1).every((e) => e)) {
         HapticFeedback.mediumImpact();
-        GameData.addCoins(8); GameData.recordCorrect();
+        GameData.addCoins(8); GameData.recordCorrect(); ChildFeedback.correct(context);
         setState(() => sc += 8);
         Future.delayed(const Duration(milliseconds: 800), () { if (mounted) _gen(); });
       } else {
         HapticFeedback.heavyImpact();
-        GameData.recordWrong();
+        GameData.recordWrong(); ChildFeedback.tryAgain(context);
         Future.delayed(const Duration(milliseconds: 500), () { if (mounted) setState(() => userOrder = []); });
       }
     }
@@ -1876,11 +1948,11 @@ class _OoState extends State<OddOneOut> {
   void _tap(int i) {
     if (i == sets[idx]['odd']) {
       HapticFeedback.mediumImpact();
-      GameData.addCoins(5); GameData.recordCorrect();
+      GameData.addCoins(5); GameData.recordCorrect(); ChildFeedback.correct(context);
       setState(() { sc += 5; idx = (idx + 1) % sets.length; });
     } else {
       HapticFeedback.heavyImpact();
-      GameData.recordWrong();
+      GameData.recordWrong(); ChildFeedback.tryAgain(context);
     }
   }
 
@@ -1948,12 +2020,12 @@ class _MrState extends State<MathRace> {
     if (_gameEnded) return;
     if (a == ans) {
       HapticFeedback.mediumImpact();
-      GameData.addCoins(2); GameData.recordCorrect();
+      GameData.addCoins(2); GameData.recordCorrect(); ChildFeedback.correct(context);
       setState(() => sc++);
       _gen();
     } else {
       HapticFeedback.heavyImpact();
-      GameData.recordWrong();
+      GameData.recordWrong(); ChildFeedback.tryAgain(context);
     }
   }
 
@@ -2014,7 +2086,7 @@ class _StTState extends State<StoryTime> {
       const SizedBox(height: 20),
       Expanded(child: SingleChildScrollView(child: Container(padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(color: Colors.amber.shade50, borderRadius: BorderRadius.circular(20)),
-        child: Text(stories[idx]['text']!, style: const TextStyle(fontSize: 18, height: 1.8))))),
+        child: Text(stories[idx]['text']!, style: const TextStyle(fontSize: 21, height: 1.95, fontWeight: FontWeight.w500))))),
       const SizedBox(height: 20),
       Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
         ElevatedButton.icon(icon: const Icon(Icons.arrow_forward), label: const Text("قبلی"),
@@ -2052,12 +2124,12 @@ class _McState extends State<MusicGame> {
   void _chk(String e) {
     if (e == te) {
       HapticFeedback.mediumImpact();
-      GameData.addCoins(3); GameData.recordCorrect();
+      GameData.addCoins(3); GameData.recordCorrect(); ChildFeedback.correct(context);
       setState(() => sc += 3);
       Future.delayed(const Duration(milliseconds: 500), () { if (mounted) _gen(); });
     } else {
       HapticFeedback.heavyImpact();
-      GameData.recordWrong();
+      GameData.recordWrong(); ChildFeedback.tryAgain(context);
     }
   }
 
@@ -2101,12 +2173,12 @@ class _SpState extends State<SpaceGame> {
   void _chk(String e) {
     if (e == te) {
       HapticFeedback.mediumImpact();
-      GameData.addCoins(4); GameData.recordCorrect();
+      GameData.addCoins(4); GameData.recordCorrect(); ChildFeedback.correct(context);
       setState(() => sc += 4);
       Future.delayed(const Duration(milliseconds: 500), () { if (mounted) _gen(); });
     } else {
       HapticFeedback.heavyImpact();
-      GameData.recordWrong();
+      GameData.recordWrong(); ChildFeedback.tryAgain(context);
     }
   }
 
@@ -2155,12 +2227,12 @@ class _SgState extends State<SportsGame> {
   void _chk(String e) {
     if (e == te) {
       HapticFeedback.mediumImpact();
-      GameData.addCoins(3); GameData.recordCorrect();
+      GameData.addCoins(3); GameData.recordCorrect(); ChildFeedback.correct(context);
       setState(() => sc += 3);
       Future.delayed(const Duration(milliseconds: 500), () { if (mounted) _gen(); });
     } else {
       HapticFeedback.heavyImpact();
-      GameData.recordWrong();
+      GameData.recordWrong(); ChildFeedback.tryAgain(context);
     }
   }
 
@@ -2574,7 +2646,7 @@ class HelpCenter extends StatelessWidget {
       itemBuilder: (c, i) => Card(child: ExpansionTile(
         leading: const Icon(Icons.help_outline, color: Colors.blue),
         title: Text(faqs[i]['q']!, style: const TextStyle(fontWeight: FontWeight.bold)),
-        children: [Padding(padding: const EdgeInsets.all(16), child: Text(faqs[i]['a']!, style: const TextStyle(fontSize: 15, height: 1.6)))],
+        children: [Padding(padding: const EdgeInsets.all(16), child: Text(faqs[i]['a']!, style: const TextStyle(fontSize: 17, height: 1.8)))],
       )),
     ),
   );
