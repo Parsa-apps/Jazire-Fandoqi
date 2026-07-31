@@ -88,12 +88,13 @@ class _CelebrationPageState extends State<CelebrationPage>
                   shape: BoxShape.circle,
                 ),
               ).animate(onPlay: (c) => c.repeat())
-                  .float(
+                  .moveY(
                     duration: Duration(seconds: 2 + i % 3),
                     begin: 0,
                     end: -20,
                   )
-                  .fadeInOut(),
+                  .fadeIn()
+                  .fadeOut(),
             );
           }),
           // Confetti
