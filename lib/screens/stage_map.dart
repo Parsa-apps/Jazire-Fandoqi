@@ -222,9 +222,12 @@ class _StageMapScreenState extends State<StageMapScreen> {
                   ),
                 );
               } else {
-                Navigator.pushNamed(context, '/game/${stage.game}');
-                GameData.completeStage(stage.id);
-                setState(() {});
+                Navigator.pushNamed(context, '/game/${stage.game}')
+                    .then((_) {
+                  if (!mounted) return;
+                  GameData.completeStage(stage.id);
+                  setState(() {});
+                });
               }
             },
       child: AnimatedContainer(

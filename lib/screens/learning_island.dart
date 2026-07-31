@@ -300,7 +300,7 @@ class _LearningIslandState extends State<LearningIsland> {
       title: module.title,
       subtitle: module.subtitle,
       platformColor: module.color,
-      isLocked: module.isPremium && !GameData.stars >= 50,
+      isLocked: module.isPremium && GameData.stars < 50,
       onTap: () {
         if (module.isPremium && GameData.stars < 50) {
           _showPremiumDialog();

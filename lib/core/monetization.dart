@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'game_data.dart';
 
 /// Monetization helper for CafeBazaar & Myket
 class Monetization {
@@ -94,13 +95,16 @@ class Monetization {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              // Simulate successful purchase
-              // In real implementation: call Bazaar billing API
-              // GameData.addCoins(coins);
-              // GameData.addStars(stars);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('خرید موفق!')),
-              );
+              // TODO: Replace with real Bazaar/Myket billing call before
+              // release. Until then this grants the reward locally so the
+              // purchase flow is at least functionally correct.
+              if (coins > 0) GameData.addCoins(coins);
+              if (stars > 0) GameData.addStars(stars);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('خرید موفق!')),
+                );
+              }
             },
             child: const Text('خرید'),
           ),
