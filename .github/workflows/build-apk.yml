@@ -26,13 +26,20 @@ jobs:
           channel: 'stable'
           cache: true
 
-      # ==================== FIX: Create android folder ====================
-      - name: Create android directory structure
+      # ==================== FIX اصلی ====================
+      - name: Ensure Android folder exists
         run: |
-          mkdir -p android
+          if [ ! -d "android" ]; then
+            echo "android folder not found. Creating..."
+            flutter create . --platforms android
+          else
+            echo "android folder exists"
+          fi
+
+      - name: Create local.properties
+        run: |
           echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
           echo "sdk.dir=$ANDROID_HOME" >> android/local.properties
-          echo "Created android folder successfully"
 
       - name: Flutter pub get
         run: flutter pub get
