@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:async';
 import 'dart:math';
 import 'package:google_fonts/google_fonts.dart';
@@ -25,8 +26,6 @@ import 'screens/prize_box.dart';
 import 'screens/celebration_page.dart';
 import 'screens/subscription_page.dart';
 import 'screens/shop_page.dart';
-import 'screens/subscription_page.dart';
-import 'screens/shop_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,6 +41,15 @@ class KudakeIranApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'کودک ایران',
         theme: AppTheme.light,
+        locale: const Locale('fa', 'IR'),
+        supportedLocales: const [Locale('fa', 'IR')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        builder: (context, child) =>
+            Directionality(textDirection: TextDirection.rtl, child: child!),
         home: const SplashScreen(),
         onGenerateRoute: (settings) {
           final uri = settings.name ?? '';
@@ -1545,23 +1553,8 @@ class _StState extends State<SettingsPage> { @override Widget build(BuildContext
   SwitchListTile(secondary: const Icon(Icons.volume_up), title: const Text("صداها و لرزش"), value: GameData.soundEnabled, onChanged: (v) { setState(() => GameData.soundEnabled = v); GameData.save(); }),
   ListTile(leading: const Icon(Icons.timer), title: Text("محدودیت زمانی: ${GameData.timeLimitMinutes} دقیقه"), subtitle: Slider(value: GameData.timeLimitMinutes.toDouble(), min: 15, max: 120, divisions: 7, onChanged: (v) { setState(() => GameData.timeLimitMinutes = v.toInt()); GameData.save(); })),
   const Divider(),
-  ListTile(leading: const Icon(Icons.refresh, color: Colors.red), title: const Text("پاک کردن همه اطلاعات"), onTap: () => showDialog(context: context, builder: (ctx) => AlertDialog(title: const Text("مطمئنی؟"), content: const Text("همه امتیازات پاک می‌شن!"), actions: [ TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("لغو")), ElevatedButton(onPressed: () async { await SharedPreferences.getInstance().then((p) => p.clear()); await GameData.load(); Navigator.pop(ctx); setState(() {}); }, child: const Text("پاک کن")) ]))),
+  ListTile(leading: const Icon(Icons.refresh, color: Colors.red), title: const Text("پاک کردن همه اطلاعات"), onTap: () => showDialog(context: context, builder: (ctx) => AlertDialog(title: const Text("مطمئنی؟"), content: const Text("همه امتیازات پاک می‌شن!"), actions: [ TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("لغو")), ElevatedButton(onPressed: () async { await SharedPreferences.getInstance().then((p) => p.clear()); await GameData.load(); if (!mounted) return; Navigator.pop(ctx); setState(() {}); }, child: const Text("پاک کن")) ]))),
 ]));
-}
-
-class Shop extends StatefulWidget { const Shop({super.key}); @override State<Shop> createState() => _ShopState(); }
-class _ShopState extends State<Shop> {
-  final st = [{"id":"s1","e":"⭐","p":20},{"id":"s2","e":"🌟","p":30},{"id":"s3","e":"🎈","p":40},{"id":"s4","e":"🎁","p":50},{"id":"s5","e":"🏆","p":100},{"id":"s6","e":"👑","p":150},{"id":"s7","e":"💎","p":200},{"id":"s8","e":"🚀","p":80},{"id":"s9","e":"🌈","p":60}];
-  @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: Text("فروشگاه | ${GameData.coins} ⭐")), body: GridView.builder(padding: const EdgeInsets.all(16), gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, mainAxisSpacing: 10, crossAxisSpacing: 10), itemCount: st.length,
-    itemBuilder: (c, i) { bool ow = GameData.stickers.contains(st[i]['id']); bool cb = GameData.coins >= (st[i]['p'] as int); return BounceBtn(onTap: () { if (!ow && cb) { GameData.buySticker(st[i]['id'] as String, st[i]['p'] as int); setState(() {}); } }, child: Container(decoration: BoxDecoration(color: ow ? Colors.green.shade100 : Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 5)]), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [ Text(st[i]['e'] as String, style: const TextStyle(fontSize: 40)), const SizedBox(height: 5), ow ? const Text("✅", style: TextStyle(fontSize: 12)) : Text("${st[i]['p']} ⭐", style: const TextStyle(fontWeight: FontWeight.bold)), ]))); }));
-}
-
-class SubPage extends StatelessWidget { const SubPage({super.key}); @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: const Text("اشتراک ویژه")), body: Padding(padding: const EdgeInsets.all(30), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-  const Icon(Icons.workspace_premium, size: 80, color: Colors.amber), const SizedBox(height: 20), const Text("اشتراک ویژه کودک ایران", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold), textAlign: TextAlign.center), const SizedBox(height: 30),
-  Card(color: Colors.amber.shade50, child: Column(children: [ ListTile(leading: const Icon(Icons.check, color: Colors.green), title: const Text("همه بازی‌ها باز")), ListTile(leading: const Icon(Icons.check, color: Colors.green), title: const Text("بدون تبلیغات")), ListTile(leading: const Icon(Icons.check, color: Colors.green), title: const Text("بدون محدودیت زمانی")), ListTile(leading: const Icon(Icons.check, color: Colors.green), title: const Text("گزارش PDF")), ])),
-  const SizedBox(height: 20), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, minimumSize: const Size(double.infinity, 55)), onPressed: () => ScaffoldMessenger.of(c).showSnackBar(const SnackBar(content: Text("پرداخت آنلاین به‌زودی فعال می‌شود."))), child: const Text("خرید از کافه بازار (ماهانه ۴۹ هزار تومان)", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold))),
-  const SizedBox(height: 10), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, minimumSize: const Size(double.infinity, 55)), onPressed: () => ScaffoldMessenger.of(c).showSnackBar(const SnackBar(content: Text("پرداخت آنلاین به‌زودی فعال می‌شود."))), child: const Text("خرید سالانه ۳۹۹ هزار تومان (صرفه‌جویی ۳۰٪)", style: TextStyle(color: Colors.white))),
-])));
 }
 
 class HelpCenter extends StatelessWidget { const HelpCenter({super.key}); final faqs = const [{"q": "چطور سکه بگیرم؟", "a": "با بازی کردن و جواب درست دادن به سوالات سکه می‌گیری."},{"q": "چطور لول‌آپ کنم؟", "a": "هر ۱۰۰ سکه که جمع کنی یک لول بالا می‌ری."},{"q": "ستاره چیه؟", "a": "ستاره‌ها جایزه ویژه‌ان! با تکمیل مرحله‌ها ستاره می‌گیری."},{"q": "چرخ شانس چطور کار میکنه؟", "a": "هر روز یک بار می‌تونی چرخ رو بچرخونی و سکه رایگان بگیری."},{"q": "فندقی کیه؟", "a": "فندقی دوست فندقیت‌ه که کمکت میکنه یاد بگیری و بازی کنی!"},{"q": "مدال‌ها چطور باز می‌شن؟", "a": "با انجام کارهای خاص مثل ۷ روز پیاپی، ۵۰۰ سکه و... باز می‌شن."}];
@@ -1573,7 +1566,7 @@ class _RaState extends State<RateApp> { int rating = 0; @override Widget build(B
   const Icon(Icons.star, size: 100, color: Colors.amber), const SizedBox(height: 20), const Text("چقدر کودک ایران رو دوست داری؟", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold), textAlign: TextAlign.center), const SizedBox(height: 30),
   Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (i) => IconButton(icon: Icon(Icons.star, size: 45, color: i < rating ? Colors.amber : Colors.grey.shade300), onPressed: () => setState(() => rating = i + 1)))),
   const SizedBox(height: 30), if (rating > 0) Text(rating >= 4 ? "🎉 عالیه! ممنون از حمایتت" : "🙏 نظرت برامون مهمه", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-  const SizedBox(height: 40), ElevatedButton.icon(icon: const Icon(Icons.send), label: const Text("ثبت نظر در کافه بازار"), style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 55), backgroundColor: Colors.amber), onPressed: rating > 0 ? () async { await launchUrl(Uri.parse("bazaar://details?id=com.example.kudakeiran"), mode: LaunchMode.externalApplication); } : null),
+  const SizedBox(height: 40), ElevatedButton.icon(icon: const Icon(Icons.send), label: const Text("ثبت نظر در کافه بازار"), style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 55), backgroundColor: Colors.amber), onPressed: rating > 0 ? () async { await launchUrl(Uri.parse("bazaar://details?id=com.parsaapps.kudakeiran"), mode: LaunchMode.externalApplication); } : null),
 ])));
 }
 

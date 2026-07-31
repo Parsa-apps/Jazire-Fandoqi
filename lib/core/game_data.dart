@@ -179,6 +179,7 @@ class GameData {
       }
       treasureOpened = false;
       todayPlaySeconds = 0;
+      openedPrizes.removeWhere((id) => id.startsWith('daily_'));
       _p.setString('missionDay', today);
     }
     save();
@@ -193,6 +194,7 @@ class GameData {
     if (lastWeekReset != currentWeek) {
       weeklyPlayMinutes = 0;
       goldenChestOpened = false;
+      openedPrizes.removeWhere((id) => id.startsWith('weekly_'));
       lastWeekReset = currentWeek;
       save();
     }
