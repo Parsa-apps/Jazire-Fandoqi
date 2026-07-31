@@ -300,8 +300,10 @@ class _PrizeBoxScreenState extends State<PrizeBoxScreen>
                   style: const TextStyle(fontSize: 40),
                 ).animate(onPlay: isClaimed
                     ? (c) {}
-                    : (c) => c.repeat(reverse: true)).float(
+                    : (c) => c.repeat(reverse: true)).moveY(
                   duration: Duration(seconds: 2 + i % 2),
+                  begin: -3,
+                  end: 3,
                 ),
                 const SizedBox(height: 8),
                 Text(

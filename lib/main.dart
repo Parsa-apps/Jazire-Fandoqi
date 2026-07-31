@@ -23,6 +23,8 @@ void main() async {
   runApp(const KudakeIranApp());
 }
 
+typedef MyApp = KudakeIranApp;
+
 class KudakeIranApp extends StatelessWidget {
   const KudakeIranApp({super.key});
 
@@ -1371,8 +1373,8 @@ class _QzState extends State<QuizMaster> {
       LinearProgressIndicator(value: (currentQ + 1) / questions.length, backgroundColor: Colors.grey.shade200, color: Colors.deepPurple, minHeight: 10),
       const SizedBox(height: 20), Container(padding: const EdgeInsets.all(25), decoration: BoxDecoration(gradient: Gradients.purple, borderRadius: BorderRadius.circular(20)), child: Text(questions[currentQ]['q'] as String, style: const TextStyle(fontSize: 22, color: Colors.white, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
       const SizedBox(height: 30), Text("امتیاز: $sc", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), const SizedBox(height: 20),
-      Expanded(child: ListView.builder(itemCount: (questions[currentQ]['opts'] as List).length, itemBuilder: (c, i) => Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: BounceBtn(onTap: () => _answer(i), child: Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.deepPurple.shade100, borderRadius: BorderRadius.circular(15)), child: Text((questions[currentQ]['opts'] as List)[i] as String, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.center))))),
-    ])),
+      Expanded(child: ListView.builder(itemCount: (questions[currentQ]['opts'] as List).length, itemBuilder: (c, i) => Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: BounceBtn(onTap: () => _answer(i), child: Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.deepPurple.shade100, borderRadius: BorderRadius.circular(15)), child: Text((questions[currentQ]['opts'] as List)[i] as String, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.center)))))),
+    )])),
     Align(alignment: Alignment.topCenter, child: ConfettiWidget(confettiController: _cf, blastDirectionality: BlastDirectionality.explosive)),
   ]));
 }
@@ -1481,7 +1483,7 @@ class _DrawState extends State<DrawingPage> {
     SizedBox(height: 60, child: ListView.builder(scrollDirection: Axis.horizontal, itemCount: cl.length, itemBuilder: (c, i) => GestureDetector(onTap: () => setState(() => col = cl[i]), child: Container(margin: const EdgeInsets.all(8), width: 40, height: 40, decoration: BoxDecoration(color: cl[i], shape: BoxShape.circle, border: col == cl[i] ? Border.all(color: Colors.black, width: 3) : null))))),
     Slider(value: w, min: 2, max: 20, onChanged: (v) => setState(() => w = v)),
     Expanded(child: GestureDetector(onPanStart: (_) => cur = [], onPanUpdate: (d) { RenderBox b = context.findRenderObject() as RenderBox; setState(() => cur.add(b.globalToLocal(d.globalPosition))); }, onPanEnd: (_) { if (cur.isNotEmpty) { setState(() { strokes.add({'p': List<Offset?>.from(cur), 'c': col, 'w': w}); cur = []; }); GameData.progressMission('drawing'); GameData.addStars(1); } },
-      child: Container(color: Colors.white, child: CustomPaint(painter: _DP(strokes, cur, col, w), size: Size.infinite))),
+      child: Container(color: Colors.white, child: CustomPaint(painter: _DP(strokes, cur, col, w), size: Size.infinite)))),
   ]));
 }
 class _DP extends CustomPainter {

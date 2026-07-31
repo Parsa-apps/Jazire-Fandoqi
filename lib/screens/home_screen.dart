@@ -254,7 +254,7 @@ class _HomeScreenState extends State<HomeScreen> {
           color: Colors.white,
           size: 28,
         ),
-      ).animate(onPlay: (c) => c.repeat(reverse: true)).float(
+      ).animate(onPlay: (c) => c.repeat(reverse: true)).moveY(
             duration: 2000.ms,
             begin: -2,
             end: 2,

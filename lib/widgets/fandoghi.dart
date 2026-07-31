@@ -184,7 +184,7 @@ class _FandoghiState extends State<Fandoghi> {
     if (widget.animate) {
       body = body
           .animate(onPlay: (c) => c.repeat(reverse: true))
-          .float(duration: 2000.ms, begin: -3, end: 3);
+          .moveY(duration: 2000.ms, begin: -3, end: 3);
     }
     return body;
   }

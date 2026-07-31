@@ -209,8 +209,10 @@ class _LearningIslandState extends State<LearningIsland> {
                   Text(
                     island.emoji,
                     style: const TextStyle(fontSize: 30),
-                  ).animate(onPlay: (c) => c.repeat(reverse: true)).float(
+                  ).animate(onPlay: (c) => c.repeat(reverse: true)).moveY(
                         duration: Duration(seconds: 2 + i % 3),
+                        begin: -3,
+                        end: 3,
                       ),
                   const SizedBox(height: 4),
                   Text(
