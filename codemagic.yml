@@ -1,26 +1,25 @@
 workflows:
-  android-workflow:
-    name: Android Build
+  android-apk:
+    name: Build Android APK
     max_build_duration: 60
-    instance_type: mac_mini_m2
+
     environment:
       flutter: stable
-      vars:
-        PACKAGE_NAME: "com.example.myapp"
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+          source: true
+
     scripts:
-      - name: Get Flutter packages
-        script: |
-          flutter packages pub get
+      - name: Get packages
+        script: flutter pub get
+
       - name: Build APK
-        script: |
-          flutter build apk --release
+        script: flutter build apk --release
+
     artifacts:
       - build/**/outputs/**/*.apk
-      - build/**/outputs/**/mapping.txt
-    publishing:
-      email:
-        recipients:
-          - your-email@example.com
-        notify:
-          success: true
-          failure: true
