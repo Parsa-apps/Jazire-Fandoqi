@@ -1374,7 +1374,7 @@ class _QzState extends State<QuizMaster> {
       const SizedBox(height: 20), Container(padding: const EdgeInsets.all(25), decoration: BoxDecoration(gradient: Gradients.purple, borderRadius: BorderRadius.circular(20)), child: Text(questions[currentQ]['q'] as String, style: const TextStyle(fontSize: 22, color: Colors.white, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
       const SizedBox(height: 30), Text("امتیاز: $sc", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), const SizedBox(height: 20),
       Expanded(child: ListView.builder(itemCount: (questions[currentQ]['opts'] as List).length, itemBuilder: (c, i) => Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: BounceBtn(onTap: () => _answer(i), child: Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.deepPurple.shade100, borderRadius: BorderRadius.circular(15)), child: Text((questions[currentQ]['opts'] as List)[i] as String, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.center)))))),
-    )])),
+    ])),
     Align(alignment: Alignment.topCenter, child: ConfettiWidget(confettiController: _cf, blastDirectionality: BlastDirectionality.explosive)),
   ]));
 }
