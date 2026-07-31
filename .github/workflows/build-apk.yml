@@ -1,4 +1,3 @@
-# .github/workflows/build-apk.yml
 name: Build APK & AAB - کودک دانا v3
 
 on:
@@ -27,13 +26,13 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Create android folder if missing
+        run: |
+          mkdir -p android
+          echo "sdk.dir=$ANDROID_HOME" > android/local.properties || true
+
       - name: Flutter pub get
         run: flutter pub get
-
-      - name: Create local.properties
-        run: |
-          echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
-          echo "flutter.buildMode=release" >> android/local.properties
 
       - name: Build APK (Release)
         run: flutter build apk --release
