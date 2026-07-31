@@ -229,6 +229,8 @@ class _ProfileTab extends StatelessWidget {
 }
 
 class _DashboardContent extends StatefulWidget {
+  const _DashboardContent();
+
   @override
   State<_DashboardContent> createState() => _DashboardContentState();
 }
