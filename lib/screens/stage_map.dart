@@ -5,7 +5,7 @@ import '../core/theme.dart';
 import '../widgets/fandoghi.dart';
 import '../widgets/common.dart';
 
-/// نقشه مرحله‌ها - نمایش پیشرفت کودک در مراحل مختلف
+/// نقشه جزیره جادویی - طراحی حرفه‌ای مثل تصویر تبلت
 class StageMapScreen extends StatefulWidget {
   const StageMapScreen({super.key});
   @override
@@ -15,23 +15,71 @@ class StageMapScreen extends StatefulWidget {
 class _StageMapScreenState extends State<StageMapScreen> {
   final ScrollController _scrollCtrl = ScrollController();
 
-  final List<_StageData> _stages = [
-    _StageData(id: 's1', title: 'شروع ماجرا', emoji: '🌱', stars: 3,
-        description: 'اولین قدم‌ها', color: const Color(0xFF4CAF50)),
-    _StageData(id: 's2', title: 'حروف الفبا', emoji: '🔤', stars: 3,
-        description: 'یادگیری حروف', color: const Color(0xFF9C27B0)),
-    _StageData(id: 's3', title: 'اعداد جادویی', emoji: '🔢', stars: 3,
-        description: 'شمارش و جمع', color: const Color(0xFF2196F3)),
-    _StageData(id: 's4', title: 'رنگین‌کمان', emoji: '🌈', stars: 3,
-        description: 'رنگ‌ها و اشکال', color: const Color(0xFFFF9800)),
-    _StageData(id: 's5', title: 'جنگل حیوانات', emoji: '🦁', stars: 3,
-        description: 'حیوانات و طبیعت', color: const Color(0xFF795548)),
-    _StageData(id: 's6', title: 'شهر فکری', emoji: '🧠', stars: 3,
-        description: 'بازی‌های حافظه', color: const Color(0xFFE91E63)),
-    _StageData(id: 's7', title: 'آسمان دانش', emoji: '🚀', stars: 3,
-        description: 'فضا و ستاره‌ها', color: const Color(0xFF3F51B5)),
-    _StageData(id: 's8', title: 'قصر قهرمان', emoji: '🏰', stars: 3,
-        description: 'چالش نهایی', color: const Color(0xFFFFD700)),
+  final List<_MagicStage> _stages = [
+    _MagicStage(
+      id: 's1',
+      title: 'شروع ماجرا',
+      emoji: '🌱',
+      color: const Color(0xFF22C55E),
+      game: 'الفبا',
+      description: 'اولین قدم‌ها',
+    ),
+    _MagicStage(
+      id: 's2',
+      title: 'الفبا جادویی',
+      emoji: '🔤',
+      color: const Color(0xFFEC4899),
+      game: 'الفبا',
+      description: 'حروف و کلمات',
+    ),
+    _MagicStage(
+      id: 's3',
+      title: 'اعداد جادویی',
+      emoji: '🔢',
+      color: const Color(0xFF3B82F6),
+      game: 'اعداد',
+      description: 'ریاضی و شمارش',
+    ),
+    _MagicStage(
+      id: 's4',
+      title: 'رنگین‌کمان',
+      emoji: '🌈',
+      color: const Color(0xFFF59E0B),
+      game: 'رنگ‌ها',
+      description: 'رنگ‌ها و اشکال',
+    ),
+    _MagicStage(
+      id: 's5',
+      title: 'جنگل حیوانات',
+      emoji: '🦁',
+      color: const Color(0xFF8B5CF6),
+      game: 'حیوانات',
+      description: 'حیوانات و طبیعت',
+    ),
+    _MagicStage(
+      id: 's6',
+      title: 'شهر فکری',
+      emoji: '🧠',
+      color: const Color(0xFF06B6D4),
+      game: 'حافظه',
+      description: 'بازی‌های حافظه',
+    ),
+    _MagicStage(
+      id: 's7',
+      title: 'آسمان دانش',
+      emoji: '🚀',
+      color: const Color(0xFF6366F1),
+      game: 'فضا',
+      description: 'فضا و ستاره‌ها',
+    ),
+    _MagicStage(
+      id: 's8',
+      title: 'قصر قهرمان',
+      emoji: '🏰',
+      color: const Color(0xFFF43F5E),
+      game: 'مسابقه',
+      description: 'چالش نهایی',
+    ),
   ];
 
   @override
@@ -49,10 +97,10 @@ class _StageMapScreenState extends State<StageMapScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF1A237E),
-              Color(0xFF283593),
-              Color(0xFF3949AB),
-              Color(0xFF5C6BC0),
+              Color(0xFF0EA5E9),
+              Color(0xFF22D3EE),
+              Color(0xFF4ADE80),
+              Color(0xFF16A34A),
             ],
           ),
         ),
@@ -60,7 +108,7 @@ class _StageMapScreenState extends State<StageMapScreen> {
           child: Column(
             children: [
               _buildHeader(),
-              Expanded(child: _buildMap()),
+              Expanded(child: _buildMagicalPath()),
             ],
           ),
         ),
@@ -73,34 +121,35 @@ class _StageMapScreenState extends State<StageMapScreen> {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          const FandoghiMini(size: 32),
-          const SizedBox(width: 10),
+          const FandoghiMini(size: 34),
+          const SizedBox(width: 12),
           const Expanded(
             child: Text(
-              'نقشه مرحله‌ها',
+              'نقشه جزیره جادویی',
               style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
                 color: Colors.white,
+                shadows: [Shadow(color: Colors.black26, blurRadius: 4)],
               ),
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(20),
+              color: Colors.white.withOpacity(0.25),
+              borderRadius: BorderRadius.circular(25),
             ),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.star_rounded, color: Colors.amber, size: 18),
-                const SizedBox(width: 4),
+                const Icon(Icons.star_rounded, color: Colors.amber, size: 20),
+                const SizedBox(width: 5),
                 Text(
                   '${GameData.completedStageCount}/${_stages.length}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
+                    fontSize: 15,
                   ),
                 ),
               ],
@@ -111,220 +160,237 @@ class _StageMapScreenState extends State<StageMapScreen> {
     );
   }
 
-  Widget _buildMap() {
-    return ListView.builder(
-      controller: _scrollCtrl,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      itemCount: _stages.length,
-      itemBuilder: (context, i) {
-        final stage = _stages[i];
-        final isCompleted = GameData.isStageCompleted(stage.id);
-        final isCurrent = i == GameData.completedStageCount;
-        final isLocked = i > GameData.completedStageCount;
-        final isEven = i % 2 == 0;
+  Widget _buildMagicalPath() {
+    return Stack(
+      children: [
+        // Background path
+        Positioned.fill(
+          child: CustomPaint(
+            painter: _PathPainter(),
+          ),
+        ),
 
-        return _buildStageNode(
-          stage: stage,
-          index: i,
-          isCompleted: isCompleted,
-          isCurrent: isCurrent,
-          isLocked: isLocked,
-          isEven: isEven,
-          isLast: i == _stages.length - 1,
-        );
-      },
+        // Stages
+        ListView.builder(
+          controller: _scrollCtrl,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          itemCount: _stages.length,
+          itemBuilder: (context, index) {
+            final stage = _stages[index];
+            final completed = GameData.isStageCompleted(stage.id);
+            final current = index == GameData.completedStageCount;
+            final locked = index > GameData.completedStageCount;
+
+            final isLeft = index % 2 == 0;
+
+            return Padding(
+              padding: EdgeInsets.only(
+                left: isLeft ? 20 : 120,
+                right: isLeft ? 120 : 20,
+                bottom: 32,
+              ),
+              child: _buildStageCard(
+                stage: stage,
+                isCompleted: completed,
+                isCurrent: current,
+                isLocked: locked,
+                isLeft: isLeft,
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 
-  Widget _buildStageNode({
-    required _StageData stage,
-    required int index,
+  Widget _buildStageCard({
+    required _MagicStage stage,
     required bool isCompleted,
     required bool isCurrent,
     required bool isLocked,
-    required bool isEven,
-    required bool isLast,
+    required bool isLeft,
   }) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: isEven
-              ? MainAxisAlignment.start
-              : MainAxisAlignment.end,
-          children: [
-            if (isEven) const SizedBox(width: 20),
-            if (!isEven) const Spacer(),
-            BounceBtn(
-              onTap: isLocked
-                  ? () {}
-                  : () => _onStageTap(stage, isCompleted),
-              child: Container(
-                width: 200,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isLocked
-                      ? Colors.grey.withOpacity(0.3)
-                      : isCompleted
-                          ? stage.color.withOpacity(0.9)
-                          : isCurrent
-                              ? Colors.white.withOpacity(0.95)
-                              : Colors.white.withOpacity(0.6),
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: isCurrent
-                      ? [
-                          BoxShadow(
-                            color: stage.color.withOpacity(0.5),
-                            blurRadius: 20,
-                            spreadRadius: 2,
-                          ),
-                        ]
-                      : [],
-                  border: isCurrent
-                      ? Border.all(color: stage.color, width: 3)
-                      : null,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          isLocked ? '🔒' : stage.emoji,
-                          style: const TextStyle(fontSize: 32),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                stage.title,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: isLocked
-                                      ? Colors.white54
-                                      : isCompleted
-                                          ? Colors.white
-                                          : Colors.black87,
-                                ),
-                              ),
-                              Text(
-                                stage.description,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: isLocked
-                                      ? Colors.white38
-                                      : isCompleted
-                                          ? Colors.white70
-                                          : Colors.black54,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: List.generate(3, (si) {
-                        return Icon(
-                          Icons.star_rounded,
-                          size: 18,
-                          color: isCompleted
-                              ? Colors.amber
-                              : Colors.grey.withOpacity(0.4),
-                        );
-                      }),
-                    ),
-                    if (isCompleted)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 6),
-                        child: Row(
-                          children: [
-                            Icon(Icons.check_circle,
-                                color: Colors.white, size: 14),
-                            SizedBox(width: 4),
-                            Text(
-                              'تکمیل شده',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (isCurrent)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 6),
-                        child: Text(
-                          '▶ شروع کن',
-                          style: TextStyle(
-                            color: Color(0xFF6C63FF),
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
+    return GestureDetector(
+      onTap: isLocked
+          ? null
+          : () {
+              if (isCompleted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${stage.title} قبلاً تکمیل شده!'),
+                    backgroundColor: stage.color,
+                  ),
+                );
+              } else {
+                Navigator.pushNamed(context, '/game/${stage.game}');
+                GameData.completeStage(stage.id);
+                setState(() {});
+              }
+            },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        width: 170,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isLocked
+                ? [Colors.grey.shade400, Colors.grey.shade600]
+                : isCompleted
+                    ? [stage.color, stage.color.withOpacity(0.85)]
+                    : [Colors.white, Colors.white.withOpacity(0.95)],
+          ),
+          borderRadius: BorderRadius.circular(26),
+          boxShadow: [
+            BoxShadow(
+              color: isCurrent
+                  ? stage.color.withOpacity(0.6)
+                  : Colors.black.withOpacity(0.15),
+              blurRadius: isCurrent ? 25 : 12,
+              offset: const Offset(0, 8),
+              spreadRadius: isCurrent ? 3 : 1,
             ),
-            if (!isEven) const SizedBox(width: 20),
-            if (isEven) const Spacer(),
+          ],
+          border: isCurrent
+              ? Border.all(color: stage.color, width: 4)
+              : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  isLocked ? '🔒' : stage.emoji,
+                  style: const TextStyle(fontSize: 34),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        stage.title,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          color: isLocked || isCompleted
+                              ? Colors.white
+                              : Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        stage.description,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isLocked || isCompleted
+                              ? Colors.white70
+                              : Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                ...List.generate(
+                  3,
+                  (i) => Icon(
+                    Icons.star_rounded,
+                    size: 18,
+                    color: isCompleted
+                        ? Colors.amber
+                        : Colors.grey.withOpacity(0.4),
+                  ),
+                ),
+                const Spacer(),
+                if (isCurrent)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: stage.color,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'شروع',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                if (isCompleted)
+                  const Icon(Icons.check_circle,
+                      color: Colors.white, size: 18),
+              ],
+            ),
           ],
         ),
-        // Connector line
-        if (!isLast)
-          Container(
-            width: 3,
-            height: 30,
-            margin: const EdgeInsets.symmetric(vertical: 4),
-            decoration: BoxDecoration(
-              color: isCompleted
-                  ? Colors.amber
-                  : Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(2),
-            ),
+      ).animate().fadeIn(delay: (80 * _stages.indexOf(stage)).ms).slideX(
+            begin: isLeft ? -0.3 : 0.3,
           ),
-      ],
-    ).animate().fadeIn(
-          delay: Duration(milliseconds: index * 80),
-        ).slideX(
-          begin: isEven ? -0.1 : 0.1,
-        );
-  }
-
-  void _onStageTap(_StageData stage, bool isCompleted) {
-    if (isCompleted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('مرحله "${stage.title}" قبلاً تکمیل شده! 🌟'),
-          backgroundColor: stage.color,
-        ),
-      );
-    } else {
-      // Navigate to the first game of this stage
-      Navigator.of(context).pushNamed('/game/${stage.title}');
-    }
+    );
   }
 }
 
-class _StageData {
+class _MagicStage {
   final String id;
   final String title;
   final String emoji;
-  final int stars;
-  final String description;
   final Color color;
+  final String game;
+  final String description;
 
-  _StageData({
+  _MagicStage({
     required this.id,
     required this.title,
     required this.emoji,
-    required this.stars,
-    required this.description,
     required this.color,
+    required this.game,
+    required this.description,
   });
+}
+
+class _PathPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.35)
+      ..strokeWidth = 5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final path = Path();
+
+    // Winding magical path
+    path.moveTo(size.width * 0.35, 40);
+    path.quadraticBezierTo(
+        size.width * 0.65, 120, size.width * 0.3, 200);
+    path.quadraticBezierTo(
+        size.width * 0.75, 290, size.width * 0.4, 370);
+    path.quadraticBezierTo(
+        size.width * 0.2, 460, size.width * 0.55, 550);
+    path.quadraticBezierTo(
+        size.width * 0.7, 640, size.width * 0.35, 730);
+    path.quadraticBezierTo(
+        size.width * 0.6, 820, size.width * 0.45, 920);
+
+    canvas.drawPath(path, paint);
+
+    // Decorative dots
+    final dotPaint = Paint()..color = Colors.white.withOpacity(0.6);
+    for (int i = 0; i < 12; i++) {
+      final t = i / 11;
+      final offset = path.computeMetrics().first.getTangentForOffset(
+          path.computeMetrics().first.length * t)!;
+      canvas.drawCircle(offset.position, 3.5, dotPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
