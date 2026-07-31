@@ -12,15 +12,21 @@ import 'package:url_launcher/url_launcher.dart';
 import 'core/game_data.dart';
 import 'core/ai_system.dart';
 import 'core/theme.dart';
+import 'core/monetization.dart';
 import 'widgets/common.dart';
 import 'widgets/fandoghi.dart';
 import 'widgets/star_display.dart';
+import 'widgets/island_platform.dart';
 import 'screens/home_screen.dart';
 import 'screens/learning_island.dart';
 import 'screens/stage_map.dart';
 import 'screens/profile_screen.dart';
 import 'screens/prize_box.dart';
 import 'screens/celebration_page.dart';
+import 'screens/subscription_page.dart';
+import 'screens/shop_page.dart';
+import 'screens/subscription_page.dart';
+import 'screens/shop_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

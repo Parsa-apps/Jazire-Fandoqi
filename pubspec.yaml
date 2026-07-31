@@ -1,7 +1,7 @@
 name: kudakeiran
-description: Professional EdTech Startup for Kids.
+description: اپلیکیشن آموزشی حرفه‌ای کودکان - کودک دانا | Smart Kid
 publish_to: 'none'
-version: 2.0.0+2
+version: 3.0.0+5
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

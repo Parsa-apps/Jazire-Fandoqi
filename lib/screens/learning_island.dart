@@ -4,8 +4,9 @@ import '../core/game_data.dart';
 import '../core/theme.dart';
 import '../widgets/fandoghi.dart';
 import '../widgets/common.dart';
+import '../widgets/island_platform.dart';
 
-/// جزیره یادگیری - صفحه اصلی با طراحی جزیره‌ای
+/// جزیره یادگیری حرفه‌ای - طراحی مثل تبلت Smart Kid
 class LearningIsland extends StatefulWidget {
   const LearningIsland({super.key});
   @override
@@ -13,74 +14,73 @@ class LearningIsland extends StatefulWidget {
 }
 
 class _LearningIslandState extends State<LearningIsland> {
-  int _selectedIsland = 0;
+  bool _isMagicMode = true; // Magic Island toggle
 
-  final List<_IslandData> _islands = [
-    _IslandData(
-      name: 'جزیره الفبا',
-      emoji: '🏝️',
-      color: const Color(0xFF6C63FF),
-      description: 'حروف و کلمات رو یاد بگیر',
-      games: [
-        _IslandGame('الفبا', '🔤', const Color(0xFF9C27B0)),
-        _IslandGame('لغات', '📚', const Color(0xFF7B1FA2)),
-        _IslandGame('داستان', '📖', const Color(0xFF6A1B9A)),
-      ],
+  final List<_FloatingModule> _modules = [
+    _FloatingModule(
+      animal: '🐱',
+      title: 'گربه مهربون',
+      subtitle: 'الفبا',
+      color: const Color(0xFFEC4899),
+      gameName: 'الفبا',
+      stars: 3,
     ),
-    _IslandData(
-      name: 'جزیره اعداد',
-      emoji: '🏖️',
-      color: const Color(0xFF4CAF50),
-      description: 'ریاضی و شمارش رو تمرین کن',
-      games: [
-        _IslandGame('اعداد', '🔢', const Color(0xFF388E3C)),
-        _IslandGame('شمارش', '🧮', const Color(0xFF2E7D32)),
-        _IslandGame('مسابقه ریاضی', '⚡', const Color(0xFF1B5E20)),
-      ],
+    _FloatingModule(
+      animal: '🐵',
+      title: 'میمون باهوش',
+      subtitle: 'ریاضیات',
+      color: const Color(0xFFF97316),
+      gameName: 'اعداد',
+      stars: 3,
     ),
-    _IslandData(
-      name: 'جزیره رنگ‌ها',
-      emoji: '🌴',
-      color: const Color(0xFFFF9800),
-      description: 'رنگ‌ها و اشکال رو بشناس',
-      games: [
-        _IslandGame('رنگ‌ها', '🎨', const Color(0xFFF57C00)),
-        _IslandGame('اشکال', '🔷', const Color(0xFFE65100)),
-        _IslandGame('نقاشی', '🖌️', const Color(0xFFBF360C)),
-      ],
+    _FloatingModule(
+      animal: '🐰',
+      title: 'خرگوش قصه‌گو',
+      subtitle: 'داستان‌ها',
+      color: const Color(0xFFFBBF24),
+      gameName: 'داستان',
+      stars: 2,
     ),
-    _IslandData(
-      name: 'جزیره حیوانات',
-      emoji: '🌊',
-      color: const Color(0xFF2196F3),
-      description: 'حیوانات و طبیعت رو بشناس',
-      games: [
-        _IslandGame('حیوانات', '🐾', const Color(0xFF1976D2)),
-        _IslandGame('میوه‌ها', '🍎', const Color(0xFF1565C0)),
-        _IslandGame('آب و هوا', '☀️', const Color(0xFF0D47A1)),
-      ],
+    _FloatingModule(
+      animal: '🐼',
+      title: 'پاندا دوست‌داشتنی',
+      subtitle: 'حافظه',
+      color: const Color(0xFF8B5CF6),
+      gameName: 'حافظه',
+      stars: 3,
     ),
-    _IslandData(
-      name: 'جزیره فکری',
-      emoji: '⛰️',
-      color: const Color(0xFFE91E63),
-      description: 'بازی‌های فکری و چالشی',
-      games: [
-        _IslandGame('حافظه', '🧠', const Color(0xFFC2185B)),
-        _IslandGame('الگو', '🔲', const Color(0xFFAD1457)),
-        _IslandGame('مسابقه', '🎯', const Color(0xFF880E4F)),
-      ],
+    _FloatingModule(
+      animal: '🐢',
+      title: 'لاک‌پشت باهوش',
+      subtitle: 'اشکال و رنگ',
+      color: const Color(0xFF22C55E),
+      gameName: 'اشکال',
+      stars: 2,
     ),
-    _IslandData(
-      name: 'جزیره دنیا',
-      emoji: '🌋',
-      color: const Color(0xFF795548),
-      description: 'دنیای اطراف رو کشف کن',
-      games: [
-        _IslandGame('بدن', '👤', const Color(0xFF5D4037)),
-        _IslandGame('شغل‌ها', '👷', const Color(0xFF4E342E)),
-        _IslandGame('فضا', '🚀', const Color(0xFF3E2723)),
-      ],
+    _FloatingModule(
+      animal: '🦋',
+      title: 'پروانه رنگارنگ',
+      subtitle: 'رنگ‌ها',
+      color: const Color(0xFF3B82F6),
+      gameName: 'رنگ‌ها',
+      stars: 3,
+    ),
+    _FloatingModule(
+      animal: '🤖',
+      title: 'دوست هوش مصنوعی',
+      subtitle: 'AI Buddy',
+      color: const Color(0xFF06B6D4),
+      gameName: 'مسابقه',
+      stars: 1,
+      isPremium: true,
+    ),
+    _FloatingModule(
+      animal: '🦆',
+      title: 'جوجه دانا',
+      subtitle: 'ماجراجویی',
+      color: const Color(0xFF14B8A6),
+      gameName: 'حیوانات',
+      stars: 2,
     ),
   ];
 
@@ -93,23 +93,22 @@ class _LearningIslandState extends State<LearningIsland> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF87CEEB), // Sky
-              Color(0xFFB0E0E6), // Light blue
-              Color(0xFF98FB98), // Light green
-              Color(0xFF228B22), // Dark green
+              Color(0xFF87CEEB),
+              Color(0xFFB0E0E6),
+              Color(0xFF98FB98),
+              Color(0xFF4ADE80),
             ],
-            stops: [0.0, 0.3, 0.6, 1.0],
+            stops: [0.0, 0.35, 0.65, 1.0],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
-              // Header with Fandoghi
-              _buildHeader(),
-              // Island selector
-              _buildIslandSelector(),
-              // Selected island content
-              Expanded(child: _buildIslandContent()),
+              _buildTopBar(),
+              const SizedBox(height: 8),
+              _buildMagicToggle(),
+              Expanded(child: _buildFloatingIsland()),
+              const SizedBox(height: 12),
             ],
           ),
         ),
@@ -117,9 +116,21 @@ class _LearningIslandState extends State<LearningIsland> {
     );
   }
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
+  Widget _buildTopBar() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Row(
         children: [
           const FandoghiMini(size: 32),
@@ -129,39 +140,38 @@ class _LearningIslandState extends State<LearningIsland> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'جزیره یادگیری',
+                  GameData.childName.isEmpty ? 'کودک دانا' : GameData.childName,
                   style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A5276),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF1E3A8A),
                   ),
                 ),
                 Text(
-                  '${GameData.completedStageCount} مرحله تکمیل شده',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF2471A3),
-                  ),
+                  'لول ${GameData.level} • ${GameData.stars} ستاره',
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
                 ),
               ],
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.8),
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFBBF24), Color(0xFFF59E0B)],
+              ),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.star_rounded, color: Colors.amber, size: 20),
+                const Icon(Icons.star_rounded, color: Colors.white, size: 18),
                 const SizedBox(width: 4),
                 Text(
                   '${GameData.stars}',
                   style: const TextStyle(
+                    color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFD4A017),
+                    fontSize: 15,
                   ),
                 ),
               ],
@@ -172,176 +182,111 @@ class _LearningIslandState extends State<LearningIsland> {
     );
   }
 
-  Widget _buildIslandSelector() {
-    return SizedBox(
-      height: 100,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        itemCount: _islands.length,
-        itemBuilder: (context, i) {
-          final island = _islands[i];
-          final isSelected = _selectedIsland == i;
-          return GestureDetector(
-            onTap: () => setState(() => _selectedIsland = i),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-              width: 90,
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? island.color
-                    : Colors.white.withOpacity(0.7),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: island.color.withOpacity(0.4),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ]
-                    : [],
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    island.emoji,
-                    style: const TextStyle(fontSize: 30),
-                  ).animate(onPlay: (c) => c.repeat(reverse: true)).float(
-                        duration: Duration(seconds: 2 + i % 3),
-                      ),
-                  const SizedBox(height: 4),
-                  Text(
-                    island.name.split(' ').last,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected ? Colors.white : Colors.black87,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+  Widget _buildMagicToggle() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _toggleButton('Magic Island', true),
+          _toggleButton('Free Play', false),
+        ],
       ),
     );
   }
 
-  Widget _buildIslandContent() {
-    final island = _islands[_selectedIsland];
-    return Container(
-      margin: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: island.color.withOpacity(0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+  Widget _toggleButton(String text, bool isMagic) {
+    final selected = _isMagicMode == isMagic;
+    return GestureDetector(
+      onTap: () => setState(() => _isMagicMode = isMagic),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFF6366F1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(25),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: selected ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
           ),
-        ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildFloatingIsland() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          // Island header
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [island.color, island.color.withOpacity(0.7)],
-              ),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
-              ),
-            ),
-            child: Row(
+          // Top row - 3 modules
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: _modules.take(3).map((m) => _buildPlatform(m)).toList(),
+          ),
+          const SizedBox(height: 30),
+
+          // Middle row - 3 modules
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: _modules.skip(3).take(3).map((m) => _buildPlatform(m)).toList(),
+          ),
+          const SizedBox(height: 30),
+
+          // Bottom row - remaining + AI
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: _modules.skip(6).map((m) => _buildPlatform(m)).toList(),
+          ),
+
+          const SizedBox(height: 40),
+
+          // Cute duck mascot at bottom
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(context, '/game/حیوانات'),
+            child: Column(
               children: [
-                Text(island.emoji, style: const TextStyle(fontSize: 40)),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        island.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        island.description,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 13,
-                        ),
+                const Text('🦆', style: TextStyle(fontSize: 60))
+                    .animate(onPlay: (c) => c.repeat(reverse: true))
+                    .float(duration: 1400.ms, begin: -6, end: 6),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
                       ),
                     ],
                   ),
+                  child: const Text(
+                    'جوجه دانا 🐥',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF166534),
+                    ),
+                  ),
                 ),
               ],
-            ),
-          ),
-          // Games grid
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.85,
-                ),
-                itemCount: island.games.length,
-                itemBuilder: (context, i) {
-                  final game = island.games[i];
-                  return BounceBtn(
-                    onTap: () => _launchGame(game.name),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: game.color.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: game.color.withOpacity(0.3),
-                          width: 2,
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: game.color.withOpacity(0.15),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Text(
-                              game.emoji,
-                              style: const TextStyle(fontSize: 32),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            game.name,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: game.color,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ).animate().fadeIn(delay: Duration(milliseconds: i * 100)).slideY(begin: 0.2),
-                  );
-                },
-              ),
             ),
           ),
         ],
@@ -349,32 +294,76 @@ class _LearningIslandState extends State<LearningIsland> {
     );
   }
 
-  void _launchGame(String gameName) {
-    // Navigate to the corresponding game via the home screen
-    Navigator.of(context).pushNamed('/game/$gameName');
+  Widget _buildPlatform(_FloatingModule module) {
+    return AnimalPlatform(
+      animalEmoji: module.animal,
+      title: module.title,
+      subtitle: module.subtitle,
+      platformColor: module.color,
+      isLocked: module.isPremium && !GameData.stars >= 50,
+      onTap: () {
+        if (module.isPremium && GameData.stars < 50) {
+          _showPremiumDialog();
+        } else {
+          Navigator.pushNamed(context, '/game/${module.gameName}');
+          GameData.addStars(1);
+          setState(() {});
+        }
+      },
+    );
+  }
+
+  void _showPremiumDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Row(
+          children: [
+            Icon(Icons.workspace_premium, color: Colors.amber, size: 28),
+            SizedBox(width: 8),
+            Text('ویژه کودک دانا'),
+          ],
+        ),
+        content: const Text(
+          'این ماژول برای کاربران ویژه است.\n\nبا خرید اشتراک ویژه، به تمام ماژول‌های هوش مصنوعی و محتوای انحصاری دسترسی پیدا کنید.',
+          textAlign: TextAlign.center,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('بعداً'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pushNamed(context, '/subscription');
+            },
+            child: const Text('خرید اشتراک'),
+          ),
+        ],
+      ),
+    );
   }
 }
 
-class _IslandData {
-  final String name;
-  final String emoji;
+class _FloatingModule {
+  final String animal;
+  final String title;
+  final String subtitle;
   final Color color;
-  final String description;
-  final List<_IslandGame> games;
+  final String gameName;
+  final int stars;
+  final bool isPremium;
 
-  _IslandData({
-    required this.name,
-    required this.emoji,
+  _FloatingModule({
+    required this.animal,
+    required this.title,
+    required this.subtitle,
     required this.color,
-    required this.description,
-    required this.games,
+    required this.gameName,
+    this.stars = 2,
+    this.isPremium = false,
   });
-}
-
-class _IslandGame {
-  final String name;
-  final String emoji;
-  final Color color;
-
-  _IslandGame(this.name, this.emoji, this.color);
 }

@@ -1,79 +1,122 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class ChildFeedback {
-  static final _praise = [
-    'آفرین! عالی بود! 🌟',
-    'باریکلا قهرمان! 🥳',
-    'درست گفتی! ادامه بده! 🚀',
-  ];
-  static final _tryAgain = [
-    'نزدیک بودی! یک‌بار دیگه امتحان کن 🌈',
-    'اشکال نداره عزیزم، با دقت نگاه کن 💛',
-    'تو می‌تونی! دوباره تلاش کن ✨',
-  ];
+/// Common reusable widgets for professional look
 
-  static void correct(BuildContext context) =>
-      _show(context, _praise[DateTime.now().millisecond % _praise.length],
-          const Color(0xFF2EAF63));
-  static void tryAgain(BuildContext context) =>
-      _show(context, _tryAgain[DateTime.now().millisecond % _tryAgain.length],
-          const Color(0xFFFF8A4C));
-
-  static void _show(BuildContext context, String message, Color color) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: color,
-        duration: const Duration(milliseconds: 1150),
-        margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        content: Text(message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-                fontSize: 16, fontWeight: FontWeight.bold)),
-      ));
-  }
-}
-
-class BounceBtn extends StatefulWidget {
+class BounceBtn extends StatelessWidget {
   final Widget child;
   final VoidCallback onTap;
-  const BounceBtn({super.key, required this.child, required this.onTap});
+  final double scale;
+
+  const BounceBtn({
+    super.key,
+    required this.child,
+    required this.onTap,
+    this.scale = 0.95,
+  });
+
   @override
-  State<BounceBtn> createState() => _BounceBtnState();
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      child: child,
+    );
+  }
 }
 
-class _BounceBtnState extends State<BounceBtn>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _c;
-  @override
-  void initState() {
-    super.initState();
-    _c = AnimationController(
-        vsync: this,
-        duration: const Duration(milliseconds: 150),
-        lowerBound: 0.9,
-        upperBound: 1.0)
-      ..value = 1.0;
-  }
+class FandoghiMini extends StatelessWidget {
+  final double size;
+  const FandoghiMini({super.key, this.size = 28});
 
   @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: const LinearGradient(
+          colors: [Color(0xFF8B5E3C), Color(0xFFD4A574)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          '🌰',
+          style: TextStyle(fontSize: size * 0.75),
+        ),
+      ),
+    );
   }
+}
+
+class StarDisplay extends StatelessWidget {
+  final int count;
+  final double size;
+  final Color color;
+
+  const StarDisplay({
+    super.key,
+    this.count = 0,
+    this.size = 20,
+    this.color = Colors.amber,
+  });
 
   @override
-  Widget build(BuildContext c) => GestureDetector(
-        onTapDown: (_) => _c.reverse(),
-        onTapUp: (_) {
-          _c.forward();
-          HapticFeedback.lightImpact();
-          widget.onTap();
-        },
-        onTapCancel: () => _c.forward(),
-        child: ScaleTransition(scale: _c, child: widget.child),
-      );
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(
+        5,
+        (i) => Icon(
+          i < count ? Icons.star_rounded : Icons.star_border_rounded,
+          color: color,
+          size: size,
+        ),
+      ),
+    );
+  }
+}
+
+class ProgressBar extends StatelessWidget {
+  final double progress;
+  final Color color;
+  final double height;
+
+  const ProgressBar({
+    super.key,
+    required this.progress,
+    this.color = const Color(0xFF6C63FF),
+    this.height = 8,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: FractionallySizedBox(
+        alignment: Alignment.centerLeft,
+        widthFactor: progress.clamp(0.0, 1.0),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: [color, color.withOpacity(0.7)]),
+            borderRadius: BorderRadius.circular(20),
+          ),
+        ),
+      ),
+    );
+  }
 }
