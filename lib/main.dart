@@ -1495,15 +1495,14 @@ class DrawingPage extends StatefulWidget { const DrawingPage({super.key}); @over
 class _DrawState extends State<DrawingPage> {
   List<Map<String, dynamic>> strokes = []; List<Offset?> cur = []; Color col = Colors.red; double w = 5;
   final cl = [Colors.red, Colors.blue, Colors.green, Colors.orange, Colors.purple, Colors.black, Colors.pink, Colors.brown];
-  final GlobalKey _canvasKey = GlobalKey();
   @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: const Text("نقاشی"), backgroundColor: Colors.pink.shade100, actions: [
     IconButton(icon: const Icon(Icons.undo), onPressed: () { if (strokes.isNotEmpty) setState(() => strokes.removeLast()); }),
     IconButton(icon: const Icon(Icons.delete_forever), onPressed: () => setState(() => strokes.clear())),
   ]), body: Column(children: [
     SizedBox(height: 60, child: ListView.builder(scrollDirection: Axis.horizontal, itemCount: cl.length, itemBuilder: (c, i) => GestureDetector(onTap: () => setState(() => col = cl[i]), child: Container(margin: const EdgeInsets.all(8), width: 40, height: 40, decoration: BoxDecoration(color: cl[i], shape: BoxShape.circle, border: col == cl[i] ? Border.all(color: Colors.black, width: 3) : null))))),
     Slider(value: w, min: 2, max: 20, onChanged: (v) => setState(() => w = v)),
-    Expanded(child: GestureDetector(onPanStart: (_) => cur = [], onPanUpdate: (d) { final box = _canvasKey.currentContext?.findRenderObject() as RenderBox?; if (box == null) return; setState(() => cur.add(box.globalToLocal(d.globalPosition))); }, onPanEnd: (_) { if (cur.isNotEmpty) { setState(() { strokes.add({'p': List<Offset?>.from(cur), 'c': col, 'w': w}); cur = []; }); GameData.progressMission('drawing'); GameData.addStars(1); } },
-      child: Container(key: _canvasKey, color: Colors.white, child: CustomPaint(painter: _DP(strokes, cur, col, w), size: Size.infinite)))),
+    Expanded(child: GestureDetector(onPanStart: (_) => cur = [], onPanUpdate: (d) { RenderBox b = context.findRenderObject() as RenderBox; setState(() => cur.add(b.globalToLocal(d.globalPosition))); }, onPanEnd: (_) { if (cur.isNotEmpty) { setState(() { strokes.add({'p': List<Offset?>.from(cur), 'c': col, 'w': w}); cur = []; }); GameData.progressMission('drawing'); GameData.addStars(1); } },
+      child: Container(color: Colors.white, child: CustomPaint(painter: _DP(strokes, cur, col, w), size: Size.infinite)))),
   ]));
 }
 class _DP extends CustomPainter {
@@ -1546,7 +1545,9 @@ class TrophiesRoom extends StatelessWidget { const TrophiesRoom({super.key}); @o
 
 class AchPage extends StatelessWidget { const AchPage({super.key}); @override Widget build(BuildContext c) {
   final all = [{"id":"math_50","t":"ریاضیدان","d":"۵۰ امتیاز ریاضی","i":"🧮"},{"id":"memory_king","t":"شاه حافظه","d":"بازی حافظه کامل","i":"🧠"},{"id":"streak_3","t":"۳ روز پیاپی","d":"۳ روز متوالی","i":"🔥"},{"id":"streak_7","t":"۷ روز پیاپی","d":"۷ روز متوالی","i":"🏆"},{"id":"streak_30","t":"۳۰ روز پیاپی","d":"۳۰ روز متوالی","i":"🏅"},{"id":"coin_500","t":"ثروتمند","d":"۵۰۰ سکه","i":"💰"},{"id":"coin_1000","t":"میلیونر","d":"۱۰۰۰ سکه","i":"💎"},{"id":"coin_5000","t":"مولتی‌میلیونر","d":"۵۰۰۰ سکه","i":"💠"},{"id":"level_3","t":"تلاشگر","d":"لول ۳","i":"⭐"},{"id":"level_5","t":"استاد","d":"لول ۵","i":"🌟"},{"id":"level_10","t":"افسانه","d":"لول ۱۰","i":"👑"},{"id":"level_20","t":"استاد بزرگ","d":"لول ۲۰","i":"🎖"},{"id":"correct_50","t":"دقیق","d":"۵۰ جواب درست","i":"🎯"},{"id":"correct_100","t":"ماهر","d":"۱۰۰ جواب درست","i":"🏹"},{"id":"correct_500","t":"استاد پاسخ","d":"۵۰۰ جواب درست","i":"🎪"},{"id":"collector","t":"کلکسیونر","d":"۵ استیکر","i":"🎁"},{"id":"mega_collector","t":"سوپر کلکسیونر","d":"۱۰ استیکر","i":"🎊"}];
-  return Scaffold(appBar: AppBar(title: const Text("مدال‌ها")), body: ListView.builder(padding: const EdgeInsets.all(16), itemCount: all.length, itemBuilder: (c, i) { bool u = GameData.achievements.contains(all[i]['id']); return Card(color: u ? Colors.amber.shade50 : Colors.grey.shade100, child: ListTile(leading: Text(all[i]['i'] as String, style: const TextStyle(fontSize: 30)), title: Text(all[i]['t'] as String, style: TextStyle(fontWeight: FontWeight.bold, color: u ? Colors.black : Colors.grey)), subtitle: Text(all[i]['d'] as String), trailing: u ? const Icon(Icons.check_circle, color: Colors.green) : const Icon(Icons.lock, color: Colors.grey))); }));
+  return Scaffold(appBar: AppBar(title: const Text("مدال‌ها")), body: GameData.achievements.isEmpty
+    ? const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [ Text("🏆", style: TextStyle(fontSize: 80)), Text("هنوز مدالی نداری!", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), ]))
+    : ListView.builder(padding: const EdgeInsets.all(16), itemCount: all.length, itemBuilder: (c, i) { bool u = GameData.achievements.contains(all[i]['id']); return Card(color: u ? Colors.amber.shade50 : Colors.grey.shade100, child: ListTile(leading: Text(all[i]['i'] as String, style: const TextStyle(fontSize: 30)), title: Text(all[i]['t'] as String, style: TextStyle(fontWeight: FontWeight.bold, color: u ? Colors.black : Colors.grey)), subtitle: Text(all[i]['d'] as String), trailing: u ? const Icon(Icons.check_circle, color: Colors.green) : const Icon(Icons.lock, color: Colors.grey))); }));
 }
 }
 

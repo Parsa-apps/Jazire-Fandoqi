@@ -386,15 +386,11 @@ class _PathPainter extends CustomPainter {
 
     // Decorative dots
     final dotPaint = Paint()..color = Colors.white.withOpacity(0.6);
-    final metrics = path.computeMetrics();
-    if (metrics.isEmpty) return;
-    final metric = metrics.first;
     for (int i = 0; i < 12; i++) {
       final t = i / 11;
-      final tangent = metric.getTangentForOffset(metric.length * t);
-      if (tangent != null) {
-        canvas.drawCircle(tangent.position, 3.5, dotPaint);
-      }
+      final offset = path.computeMetrics().first.getTangentForOffset(
+          path.computeMetrics().first.length * t)!;
+      canvas.drawCircle(offset.position, 3.5, dotPaint);
     }
   }
 
