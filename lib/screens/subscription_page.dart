@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../core/game_data.dart';
 import '../core/monetization.dart';
 
 class SubPage extends StatelessWidget {
@@ -165,14 +164,7 @@ class SubPage extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
-              // TODO: Replace with real CafeBazaar/Myket billing call before
-              // release and only activate premium after billing confirms.
-              await Monetization.activatePremium();
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('اشتراک با موفقیت فعال شد! 🎉')),
-                );
-              }
+              await Monetization.buySubscription(context, plan: plan);
             },
             child: const Text('تایید پرداخت'),
           ),
