@@ -29,7 +29,7 @@ extension FloatExtension on Animate {
       builder: (context, value, child) {
         final opacity = value < 0.5 ? value * 2 : (1.0 - value) * 2;
         return Opacity(
-          opacity: opacity.clamp(0.0, 1.0),
+          opacity: opacity.clamp(0.0, 1.0).toDouble(),
           child: child,
         );
       },

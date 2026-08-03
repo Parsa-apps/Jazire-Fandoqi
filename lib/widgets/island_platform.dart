@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../core/theme.dart';
 
 /// Floating platform widget - like the tablet screenshot
 class IslandPlatform extends StatelessWidget {

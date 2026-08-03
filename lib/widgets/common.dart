@@ -53,48 +53,13 @@ class ProgressBar extends StatelessWidget {
       ),
       child: FractionallySizedBox(
         alignment: Alignment.centerLeft,
-        widthFactor: progress.clamp(0.0, 1.0),
+        widthFactor: progress.clamp(0.0, 1.0).toDouble(),
         child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(colors: [color, color.withOpacity(0.7)]),
             borderRadius: BorderRadius.circular(20),
           ),
         ),
-      ),
-    );
-  }
-}
-class ChildFeedback {
-  static void correct(BuildContext context) {
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 8),
-            Text('آفرین! درست بود! 🎉', style: TextStyle(fontSize: 16)),
-          ],
-        ),
-        backgroundColor: Colors.green,
-        duration: Duration(milliseconds: 800),
-      ),
-    );
-  }
-
-  static void tryAgain(BuildContext context) {
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.error, color: Colors.white),
-            SizedBox(width: 8),
-            Text('دوباره تلاش کن! 💪', style: TextStyle(fontSize: 16)),
-          ],
-        ),
-        backgroundColor: Colors.redAccent,
-        duration: Duration(milliseconds: 800),
       ),
     );
   }

@@ -859,7 +859,7 @@ class _CountState extends State<CountingGame> {
       opts = {
         target,
         target + 1,
-        (target - 1).clamp(1, 99),
+        (target - 1).clamp(1, 99).toInt(),
         target + 2
       }.toList()
         ..shuffle();
@@ -1581,7 +1581,7 @@ class ParentPanel extends StatelessWidget { const ParentPanel({super.key}); @ove
   Card(child: ListTile(leading: const Icon(Icons.lightbulb, color: Colors.yellow), title: const Text("پیشنهاد"), subtitle: Text("بیشتر روی ${AI.weakSkill()} تمرین کنید"))),
   Card(child: ListTile(leading: const Icon(Icons.settings, color: Colors.blueGrey), title: const Text("تنظیمات والدین"), trailing: const Icon(Icons.chevron_left), onTap: () => Navigator.push(c, MaterialPageRoute(builder: (_) => const SettingsPage())))),
   const SizedBox(height: 20), const Text("📊 مهارت‌ها", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-  SizedBox(height: 200, child: BarChart(BarChartData(barGroups: GameData.skills.entries.toList().asMap().entries.map((e) => BarChartGroupData(x: e.key, barRods: [BarChartRodData(toY: e.value.value.toDouble(), color: Colors.indigo, width: 16)])).toList(),
+  SizedBox(height: 200, child: BarChart(BarChartData(barGroups: GameData.skills.entries.toList().asMap().entries.map((e) => BarChartGroupData(x: e.key.toDouble(), barRods: [BarChartRodData(toY: e.value.value.toDouble(), color: Colors.indigo, width: 16)])).toList(),
     titlesData: FlTitlesData(leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30)), bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, m) { final n = ['ریاضی','الفبا','حافظه','رنگ','شکل','حیوان','شمارش','الگو','میوه','مفاهیم','لغات','بدن','ماشین','زمان','هوا','حس','شغل']; int idx = v.toInt(); if (idx < 0 || idx >= n.length) return const Text(''); return Text(n[idx], style: const TextStyle(fontSize: 8)); })), rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)), topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),)))),
 ])));
 }
