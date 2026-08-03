@@ -57,10 +57,13 @@ class _ShopState extends State<Shop> {
               itemCount: items.length,
               itemBuilder: (context, i) {
                 final item = items[i];
-                final owned = GameData.stickers.contains(item.id) || (item.type == 'premium' && GameData.stars >= 100);
+                final owned = GameData.stickers.contains(item.id) || (item.type == 'premium' && GameData.aiBuddyUnlocked);
 
                 return BounceBtn(
-                  onTap: () => _buyItem(item),
+                  onTap: () {
+                    if (owned) return;
+                    _buyItem(item);
+                  },
                   child: Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -94,7 +97,7 @@ class _ShopState extends State<Shop> {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              '${item.price} سکه',
+                              item.type == 'premium' ? '۱۰۰ ستاره' : '${item.price} سکه',
                               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                             ),
                           ),
@@ -131,6 +134,12 @@ class _ShopState extends State<Shop> {
     }
 
     if (item.type == 'premium') {
+      if (GameData.aiBuddyUnlocked) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('این قابلیت قبلاً خریداری شده!')),
+        );
+        return;
+      }
       if (GameData.stars < 100) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('برای AI نامحدود حداقل ۱۰۰ ستاره نیاز است')),
@@ -138,6 +147,7 @@ class _ShopState extends State<Shop> {
         return;
       }
       GameData.stars -= 100;
+      GameData.aiBuddyUnlocked = true;
       Monetization.activatePremium();
     } else {
       GameData.coins -= item.price;

@@ -48,6 +48,7 @@ class GameData {
   static bool goldenChestOpened = false;
   static bool soundEnabled = true;
   static bool luckyWheelSpunToday = false;
+  static bool aiBuddyUnlocked = false;
 
   // Stage map progress
   static int currentStage = 1;
@@ -93,6 +94,7 @@ class GameData {
     lastLuckyDate = _p.getString('lld') ?? '';
     lastSurpriseClaimDate = _p.getString('lscd') ?? '';
     onboardingSeen = _p.getBool('onboardingSeen') ?? false;
+    aiBuddyUnlocked = _p.getBool('aiBuddy') ?? false;
     childName = _p.getString('childName') ?? '';
     childAge = _p.getInt('childAge') ?? 5;
 
@@ -146,6 +148,7 @@ class GameData {
     await _p.setString('lld', lastLuckyDate);
     await _p.setString('lscd', lastSurpriseClaimDate);
     await _p.setBool('onboardingSeen', onboardingSeen);
+    await _p.setBool('aiBuddy', aiBuddyUnlocked);
     await _p.setString('childName', childName);
     await _p.setInt('childAge', childAge);
     await _p.setInt('currentStage', currentStage);
