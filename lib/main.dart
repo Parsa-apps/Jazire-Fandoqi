@@ -1403,13 +1403,33 @@ class _SqState extends State<SequenceGame> {
   List<int> numbers = []; List<int> userOrder = []; int sc = 0;
   @override void initState() { super.initState(); _gen(); }
   void _gen() { setState(() { numbers = List.generate(6, (i) => i + 1)..shuffle(); userOrder = []; }); }
-  void _tap(int n) { if (userOrder.length >= numbers.length || userOrder.contains(n)) return; setState(() => userOrder.add(n));
-    if (userOrder.length == numbers.length) { if (List.generate(userOrder.length, (i) => userOrder[i] == i + 1).every((e) => e)) { HapticFeedback.mediumImpact(); GameData.addCoins(8); GameData.addStars(2); GameData.recordCorrect(); ChildFeedback.correct(context); setState(() => sc += 8); Future.delayed(const Duration(milliseconds: 800), () { if (mounted) _gen(); }); } else { HapticFeedback.heavyImpact(); GameData.recordWrong(); ChildFeedback.tryAgain(context); Future.delayed(const Duration(milliseconds: 500), () { if (mounted) setState(() => userOrder = []); }); } }
+  void _tap(int n) {
+    if (userOrder.contains(n)) return;
+    // اعداد باید دقیقاً به ترتیب از ۱ تا ۶ انتخاب شوند
+    if (n != userOrder.length + 1) {
+      HapticFeedback.heavyImpact();
+      GameData.recordWrong();
+      ChildFeedback.tryAgain(context);
+      setState(() => userOrder = []);
+      return;
+    }
+    setState(() => userOrder.add(n));
+    if (userOrder.length == numbers.length) {
+      HapticFeedback.mediumImpact();
+      GameData.addCoins(8);
+      GameData.addStars(2);
+      GameData.recordCorrect();
+      ChildFeedback.correct(context);
+      setState(() => sc += 8);
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted) _gen();
+      });
+    }
   }
   @override Widget build(BuildContext c) => Scaffold(appBar: AppBar(title: Text("ترتیب اعداد | $sc")), body: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
     const Text("اعداد رو از ۱ تا ۶ به ترتیب کلیک کن", style: TextStyle(fontSize: 16), textAlign: TextAlign.center), const SizedBox(height: 20),
     Text("انتخاب شده: ${userOrder.join(' → ')}", style: const TextStyle(fontSize: 20, color: Colors.blue, fontWeight: FontWeight.bold)), const SizedBox(height: 30),
-    Expanded(child: GridView.count(crossAxisCount: 3, crossAxisSpacing: 15, mainAxisSpacing: 15, children: numbers.map((n) => BounceBtn(onTap: () { if (!userOrder.contains(n)) _tap(n); }, child: Container(decoration: BoxDecoration(color: userOrder.contains(n) ? Colors.grey : Colors.orange, borderRadius: BorderRadius.circular(20)), child: Center(child: Text("$n", style: const TextStyle(fontSize: 50, color: Colors.white, fontWeight: FontWeight.bold)))))).toList())),
+    Expanded(child: GridView.count(crossAxisCount: 3, crossAxisSpacing: 15, mainAxisSpacing: 15, children: numbers.map((n) => BounceBtn(onTap: () => _tap(n), child: Container(decoration: BoxDecoration(color: userOrder.contains(n) ? Colors.grey : Colors.orange, borderRadius: BorderRadius.circular(20)), child: Center(child: Text("$n", style: const TextStyle(fontSize: 50, color: Colors.white, fontWeight: FontWeight.bold)))))).toList())),
   ])));
 }
 

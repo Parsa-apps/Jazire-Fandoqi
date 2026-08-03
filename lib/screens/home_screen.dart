@@ -59,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (GameData.surprise() && GameData.lastSurpriseClaimDate != today) {
       showDialog(
         context: context,
+        barrierDismissible: false,
         builder: (c) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           title: const Row(
