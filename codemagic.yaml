@@ -28,6 +28,8 @@ workflows:
           fi
       - name: Flutter pub get
         script: flutter pub get
+      - name: Generate launcher icons
+        script: dart run flutter_launcher_icons
       - name: Flutter analyze (non-blocking)
         script: flutter analyze || echo "Analyze finished with issues (non-blocking)"
       - name: Build APK (Release)
