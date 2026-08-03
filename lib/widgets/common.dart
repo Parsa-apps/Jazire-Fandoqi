@@ -99,3 +99,38 @@ class ChildFeedback {
     );
   }
 }
+class ChildFeedback {
+  static void correct(BuildContext context) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white),
+            SizedBox(width: 8),
+            Text('آفرین! درست بود! 🎉', style: TextStyle(fontSize: 16)),
+          ],
+        ),
+        backgroundColor: Colors.green,
+        duration: Duration(milliseconds: 800),
+      ),
+    );
+  }
+
+  static void tryAgain(BuildContext context) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.error, color: Colors.white),
+            SizedBox(width: 8),
+            Text('دوباره تلاش کن! 💪', style: TextStyle(fontSize: 16)),
+          ],
+        ),
+        backgroundColor: Colors.redAccent,
+        duration: Duration(milliseconds: 800),
+      ),
+    );
+  }
+}
