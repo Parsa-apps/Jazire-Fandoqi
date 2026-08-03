@@ -414,7 +414,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       .asMap()
                       .entries
                       .map((e) => BarChartGroupData(
-                            x: e.key,
+                            x: e.key.toDouble(),
                             barRods: [
                               BarChartRodData(
                                 toY: e.value.value.toDouble(),
