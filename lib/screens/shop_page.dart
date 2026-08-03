@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/game_data.dart';
+import '../core/monetization.dart';
 import '../widgets/common.dart';
 
 class Shop extends StatefulWidget {
@@ -137,6 +138,7 @@ class _ShopState extends State<Shop> {
         return;
       }
       GameData.stars -= 100;
+      Monetization.activatePremium();
     } else {
       GameData.coins -= item.price;
     }
