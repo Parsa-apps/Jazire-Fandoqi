@@ -1,7 +1,7 @@
 name: kudakeiran
 description: اپلیکیشن آموزشی حرفه‌ای کودکان - کودک دانا | Smart Kid
 publish_to: 'none'
-version: 3.1.0+7
+version: 3.1.1+8
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -29,12 +29,12 @@ dev_dependencies:
   flutter_launcher_icons: 0.13.1
 
 flutter_launcher_icons:
-  android: "launcher_icon"
+  android: true
   ios: false
   image_path: "assets/icon.png"
   min_sdk_android: 21
   adaptive_icon_background: "#FFEB3B"
-  adaptive_icon_foreground: "assets/icon.png"
+  adaptive_icon_foreground: "assets/icon_foreground.png"
 
 flutter:
   uses-material-design: true
