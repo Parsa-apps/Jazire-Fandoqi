@@ -445,8 +445,8 @@ class _Basket extends PositionComponent {
     }
     for (int i = 0; i < 3; i++) {
       canvas.drawLine(
-        Offset(-32, -5 + i * 10),
-        Offset(32, -5 + i * 10),
+        Offset(-32, -5.0 + i * 10),
+        Offset(32, -5.0 + i * 10),
         linePaint,
       );
     }
