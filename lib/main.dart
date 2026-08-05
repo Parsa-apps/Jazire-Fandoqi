@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'app/app_theme.dart';
 import 'core/game_data.dart';
 import 'features/splash/splash_screen.dart';
-import 'features/island/painters/water_painter.dart';
+import 'features/island/painters/island_painter.dart';
 
 void main() {
   runApp(const MaterialApp(
