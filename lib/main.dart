@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'app/app_theme.dart';
 import 'core/game_data.dart';
 import 'features/splash/splash_screen.dart';
-import 'features/profile/profile_screen.dart';
+import 'features/shop/shop_screen.dart';
 
 void main() {
   runApp(const MaterialApp(
