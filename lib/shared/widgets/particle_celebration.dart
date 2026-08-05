@@ -121,7 +121,7 @@ class _ParticlePainter extends CustomPainter {
       final dt = t;
       final x = cx + p.vx * dt;
       final y = cy + p.vy * dt + 0.5 * gravity * dt * dt;
-      final opacity = (1 - t).clamp(0.0, 1.0);
+      final opacity = (1 - t).clamp(0.0, 1.0).toDouble();
       final paint = Paint()
         ..color = p.color.withOpacity(opacity)
         ..style = PaintingStyle.fill;

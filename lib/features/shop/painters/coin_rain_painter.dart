@@ -43,10 +43,10 @@ class CoinRainPainter extends CustomPainter {
 
   void _drawSparkles(Canvas canvas, Size size) {
     for (final s in _sparkles) {
-      final t = ((progress - s.delay) / (1 - s.delay)).clamp(0.0, 1.0);
+      final t = ((progress - s.delay) / (1 - s.delay)).clamp(0.0, 1.0).toDouble();
       if (t <= 0) continue;
 
-      final opacity = (1 - t).clamp(0.0, 1.0);
+      final opacity = (1 - t).clamp(0.0, 1.0).toDouble();
       final dist = s.speed * t;
       final x = center.dx + cos(s.angle) * dist;
       final y = center.dy + sin(s.angle) * dist - 50 * t;
@@ -71,12 +71,12 @@ class CoinRainPainter extends CustomPainter {
 
   void _drawCoins(Canvas canvas, Size size) {
     for (final c in _coins) {
-      final t = ((progress - c.delay) / (1 - c.delay)).clamp(0.0, 1.0);
+      final t = ((progress - c.delay) / (1 - c.delay)).clamp(0.0, 1.0).toDouble();
       if (t <= 0) continue;
 
       final x = center.dx + c.x;
       final y = -50 + c.speed * t * 3;
-      final opacity = (1 - t * 0.7).clamp(0.0, 1.0);
+      final opacity = (1 - t * 0.7).clamp(0.0, 1.0).toDouble();
 
       if (y > size.height + 50) continue;
 

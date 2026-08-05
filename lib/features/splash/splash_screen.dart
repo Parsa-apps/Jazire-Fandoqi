@@ -263,9 +263,9 @@ class _SplashState extends State<SplashScreen>
                 Color(0xFFFFFFFF),
               ],
               stops: [
-                (_glowCtrl.value - 0.3).clamp(0.0, 1.0),
+                (_glowCtrl.value - 0.3).clamp(0.0, 1.0).toDouble(),
                 _glowCtrl.value,
-                (_glowCtrl.value + 0.3).clamp(0.0, 1.0),
+                (_glowCtrl.value + 0.3).clamp(0.0, 1.0).toDouble(),
               ],
             ).createShader(bounds);
           },

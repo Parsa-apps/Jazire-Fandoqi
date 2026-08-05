@@ -43,7 +43,7 @@ class _StageMapState extends State<StageMapScreen>
   ];
 
   // Computed path points (screen coordinates)
-  late List<Offset> _pathPoints;
+  List<Offset> _pathPoints = [];
 
   @override
   void initState() {
@@ -78,7 +78,7 @@ class _StageMapState extends State<StageMapScreen>
   void _scrollToCurrentStage() {
     final currentIdx = GameData.currentStage - 1;
     if (currentIdx > 0 && _scrollCtrl.hasClients) {
-      final targetY = (currentIdx * 160.0 - 200).clamp(0.0, _scrollCtrl.position.maxScrollExtent);
+      final targetY = (currentIdx * 160.0 - 200).clamp(0.0, _scrollCtrl.position.maxScrollExtent).toDouble();
       _scrollCtrl.animateTo(
         targetY,
         duration: const Duration(milliseconds: 800),
@@ -387,7 +387,7 @@ class _StageMapState extends State<StageMapScreen>
   }
 
   Widget _buildFandoghiGuide() {
-    final idx = (GameData.currentStage - 1).clamp(0, _stages.length - 1);
+    final idx = (GameData.currentStage - 1).clamp(0, _stages.length - 1).toInt();
     final currentStage = _stages[idx];
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),

@@ -303,7 +303,7 @@ class StarCatchFlameGame extends FlameGame {
 
   void moveBasket(double screenX) {
     if (!started || gameOver) return;
-    _basket.position.x = screenX.clamp(40.0, size.x - 40);
+    _basket.position.x = screenX.clamp(40.0, size.x - 40).toDouble();
   }
 
   @override
@@ -316,7 +316,7 @@ class StarCatchFlameGame extends FlameGame {
     
     // Increase difficulty
     final level = 1 + (_gameTime / 15).floor();
-    _spawnInterval = (1.2 - level * 0.08).clamp(0.4, 1.2);
+    _spawnInterval = (1.2 - level * 0.08).clamp(0.4, 1.2).toDouble();
     
     // Spawn items
     if (_spawnTimer >= _spawnInterval) {

@@ -795,7 +795,7 @@ class _ShopState extends State<ShopScreen>
 
         return Center(
           child: Opacity(
-            opacity: opacity.clamp(0.0, 1.0),
+            opacity: opacity.clamp(0.0, 1.0).toDouble(),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
