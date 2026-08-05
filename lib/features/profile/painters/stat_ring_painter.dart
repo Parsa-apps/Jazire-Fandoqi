@@ -79,7 +79,7 @@ class ActivityHeatmapPainter extends CustomPainter {
       final x = day * (cellW + gap);
       final y = week * (cellW + gap);
       final delay = (i / activity.length) * 0.5;
-      final localAnim = ((animProgress - delay) / (1 - delay)).clamp(0.0, 1.0);
+      final localAnim = ((animProgress - delay) / (1 - delay)).clamp(0.0, 1.0).toDouble();
       final intensity = activity[i];
 
       final rect = RRect.fromRectAndRadius(
@@ -93,7 +93,7 @@ class ActivityHeatmapPainter extends CustomPainter {
           const Color(0xFF5ABF5A), const Color(0xFF7AE67A),
         ];
         canvas.drawRRect(rect, Paint()
-          ..color = colors[(intensity - 1).clamp(0, 3)].withOpacity(0.8 * localAnim));
+          ..color = colors[(intensity - 1).clamp(0, 3).toInt()].withOpacity(0.8 * localAnim));
       }
     }
   }

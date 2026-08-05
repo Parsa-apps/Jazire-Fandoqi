@@ -508,7 +508,7 @@ class _DashboardState extends State<DashboardTab> {
   Widget _missionTile(String title, String id, int target, IconData icon) {
     final value = GameData.missionValue(id);
     final done = GameData.isMissionDone(id);
-    final progress = (value / target).clamp(0.0, 1.0);
+    final progress = (value / target).clamp(0.0, 1.0).toDouble();
     
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),

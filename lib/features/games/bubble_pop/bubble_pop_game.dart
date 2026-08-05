@@ -289,7 +289,7 @@ class BubblePopFlameGame extends FlameGame {
     _spawnTimer += dt;
 
     final level = 1 + (_gameTime / 20).floor();
-    _spawnInterval = (1.5 - level * 0.1).clamp(0.5, 1.5);
+    _spawnInterval = (1.5 - level * 0.1).clamp(0.5, 1.5).toDouble();
 
     if (_spawnTimer >= _spawnInterval) {
       _spawnTimer = 0;
@@ -384,7 +384,7 @@ class _Bubble extends PositionComponent {
 
   @override
   void render(Canvas canvas) {
-    final alpha = _popping ? (1.0 - _popTime / 0.2).clamp(0.0, 1.0) : 1.0;
+    final alpha = _popping ? (1.0 - _popTime / 0.2).clamp(0.0, 1.0).toDouble() : 1.0;
     canvas.save();
     canvas.translate(radius, radius);
     canvas.scale(_scale);
@@ -426,7 +426,7 @@ class _PopParticle extends PositionComponent {
 
   @override
   void render(Canvas canvas) {
-    final alpha = (1.0 - _time / 0.5).clamp(0.0, 1.0);
+    final alpha = (1.0 - _time / 0.5).clamp(0.0, 1.0).toDouble();
     for (final p in _particles) {
       final x = p.vx * _time;
       final y = p.vy * _time + 100 * _time * _time;
