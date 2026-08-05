@@ -120,7 +120,7 @@ class _IslandState extends State<LearningIsland>
             name: p.name,
             route: p.route,
             color: p.color,
-            floatDelay: p.delay,
+            floatDelay: p.delay.toDouble(),
             onTap: () => Navigator.pushNamed(context, p.route),
           ),
         ).animate().fadeIn(
