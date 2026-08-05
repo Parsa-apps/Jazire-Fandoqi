@@ -1,7 +1,7 @@
 name: kudakeiran
-description: اپلیکیشن آموزشی حرفه‌ای کودکان - کودک دانا | Smart Kid
+description: کودک ایران - اپلیکیشن فوق‌گرافیکی آموزشی کودکان
 publish_to: 'none'
-version: 3.1.0+7
+version: 4.0.0+1
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -11,16 +11,24 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  # نسخه‌ها پین‌شده برای سازگاری قطعی با Flutter 3.24.3 (ورک‌فلوی بیلد)
-  # نسخه‌های جدیدتر (مثل fl_chart 0.71) از API های Flutter 3.27 مثل
-  # Color.withValues استفاده می‌کنند و بیلد را می‌شکنند
-  cupertino_icons: 1.0.8
+  
+  # 🎨 UI & Graphics
   google_fonts: 6.2.1
   flutter_animate: 4.5.2
-  fl_chart: 0.69.2
+  shimmer: 3.0.0
+  
+  # 🎮 Game Engine
+  flame: 1.18.0
+  
+  # 💾 Storage
   shared_preferences: 2.3.2
+  
+  # 🎉 Effects
   confetti: 0.7.0
+  
+  # 🔗 Utils
   url_launcher: 6.3.0
+  fl_chart: 0.69.2
 
 dev_dependencies:
   flutter_test:
