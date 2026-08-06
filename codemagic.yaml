@@ -6,9 +6,6 @@ workflows:
     environment:
       flutter: stable
       java: 17
-      groups:
-        # در صورت نیاز به امضای نسخه انتشار، keystore را در این گروه قرار دهید
-        # - keystore_credentials
       vars:
         PACKAGE_NAME: "com.parsaapps.kudakeiran"
     triggering:
