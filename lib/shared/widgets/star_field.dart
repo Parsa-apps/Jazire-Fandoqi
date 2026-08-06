@@ -16,7 +16,7 @@ class StarFieldBackground extends StatefulWidget {
       Color(0xFF6C5CE7),
       Color(0xFFA29BFE),
       Color(0xFF00CEC9),
-      Color(0xFFFFDCB6E),
+      Color(0xFFFDCB6E),
       Color(0xFFFF7675),
       Color(0xFFFFFFFF),
     ],
