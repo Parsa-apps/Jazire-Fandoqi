@@ -1,0 +1,131 @@
+# =====================================================
+# Codemagic CI/CD Configuration
+# Project: کودک ایران (Kudake Iran)
+# Platform: Flutter Android (APK + AAB)
+# =====================================================
+
+workflows:
+  android-release:
+    name: Android Release (APK + AAB)
+    name: Build APK & AAB - کودک ایران
+    max_build_duration: 60
+    instance_type: linux_x2
+    instance_type: mac_pro_m1
+    environment:
+      flutter: stable
+      flutter: 3.24.3
+      java: 17
+      xcode: latest
+      groups:
+        # در صورت نیاز به امضای نسخه انتشار، keystore را در این گروه قرار دهید
+        # - keystore_credentials
+        - google_play
+      vars:
+        PACKAGE_NAME: "com.parsaapps.kudakeiran"
+        FLUTTER_VERSION: "3.24.3"
+      flutter_workspace: .
+
+    triggering:
+      events:
+        - push
+        - tag
+        - pull_request
+      branch_patterns:
+        - pattern: '*'
+        - pattern: "main"
+          include: true
+        - pattern: "master"
+          include: true
+        - pattern: "develop"
+          include: true
+
+    cache:
+      cache_paths:
+        - $FLUTTER_ROOT/.pub-cache
+        - $HOME/.gradle/caches
+        - $HOME/.gradle/wrapper
+
+    scripts:
+      - name: Ensure Android folder exists
+      # ---- Step 1: Flutter setup ----
+      - name: Flutter version info
+        script: flutter --version
+
+      # ---- Step 2: Android folder (if missing) ----
+      - name: Check Android folder
+        script: |
+          if [ ! -d "android" ]; then
+            flutter create . --platforms android \
+              --project-name kudakeiran --org com.parsaapps
+            echo "⚠️  android/ folder not found. Generating..."
+            flutter create . \
+              --platforms android \
+              --project-name kudakeiran \
+              --org com.parsaapps
+          else
+            echo "✅  android/ folder exists."
+          fi
+
+      # ---- Step 3: Dependencies ----
+      - name: Flutter pub get
+        script: flutter pub get
+
+      # ---- Step 4: Launcher icons ----
+      - name: Generate launcher icons
+        script: dart run flutter_launcher_icons
+      - name: Flutter analyze (non-blocking)
+        script: flutter analyze || echo "Analyze finished with issues (non-blocking)"
+        script: |
+          if [ -f "pubspec.yaml" ] && grep -q "flutter_launcher_icons" pubspec.yaml; then
+            dart run flutter_launcher_icons || echo "⚠️  Icon generation had issues (non-blocking)"
+          else
+            echo "⚠️  flutter_launcher_icons not configured, skipping."
+          fi
+
+      # ---- Step 5: Code analysis (non-blocking) ----
+      - name: Flutter analyze
+        script: flutter analyze --no-fatal-infos || echo "⚠️  Analyze finished with warnings (non-blocking)"
+
+      # ---- Step 6: Build APK ----
+      - name: Build APK (Release)
+        script: flutter build apk --release
+
+      # ---- Step 7: Build AAB ----
+      - name: Build AAB (Release)
+        script: flutter build appbundle --release
+
+      # ---- Step 8: List outputs ----
+      - name: Verify build outputs
+        script: |
+          echo "=== Build outputs ==="
+          echo "APK:"
+          ls -lh build/app/outputs/flutter-apk/*.apk 2>/dev/null || echo "  No APK found"
+          echo "AAB:"
+          ls -lh build/app/outputs/bundle/release/*.aab 2>/dev/null || echo "  No AAB found"
+
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
+      - build/app/outputs/bundle/release/app-release.aab
+
+    publishing:
+      # ---- Email notifications ----
+      email:
+        recipients:
+          - 52835407+farshadkurd@users.noreply.github.com
+        notify:
+          success: true
+          failure: true
+
+      # ---- Slack (optional - uncomment to use) ----
+      # slack:
+      #   channel: "#builds"
+      #   notify_on_build_start: true
+      #   notify:
+      #     success: true
+      #     failure: true
+
+      # ---- Google Play (requires google_play group) ----
+      # google_play:
+      #   credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+      #   track: internal
+      #   submit_as_draft: true
