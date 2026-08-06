@@ -339,7 +339,7 @@ class StarCatchFlameGame extends FlameGame {
     });
     
     // Check collisions
-    children.whereType<_FallingItem>().where((item) => !item.removed).toList().forEach((item) {
+    children.whereType<_FallingItem>().where((item) => !item.isRemoving).toList().forEach((item) {
       final dx = (item.position.x - _basket.position.x).abs();
       final dy = (item.position.y - _basket.position.y).abs();
       if (dx < 45 && dy < 35) {
