@@ -1,10 +1,11 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'package:kudakeiran/core/app_legal.dart';
-import 'package:kudakeiran/core/game_data.dart';
-import 'package:kudakeiran/features/about/about_screen.dart';
-import 'package:kudakeiran/features/home/home_screen.dart';
+import 'package:amoozesh_fandoghi/core/app_legal.dart';
+import 'package:amoozesh_fandoghi/core/game_data.dart';
+import 'package:amoozesh_fandoghi/features/about/about_screen.dart';
+import 'package:amoozesh_fandoghi/features/home/home_screen.dart';
 
 void main() {
   setUp(() {
