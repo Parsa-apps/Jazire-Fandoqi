@@ -18,28 +18,71 @@ class FandoghiCoachOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: ValueListenableBuilder<FandoghiCoachMessage?>(
-        valueListenable: FandoghiCoach.current,
-        builder: (context, message, _) {
-          return Stack(
-          fit: StackFit.expand,
-          children: [
-            child,
-            if (message != null)
-              Positioned(
-                left: 12,
-                right: 12,
-                bottom: 84,
-                child: IgnorePointer(
-                  child: SafeArea(
-                    top: false,
-                    child: _CoachBubble(message: message),
-                  ),
-                ),
-              ),
-          ],
+      child: ValueListenableBuilder<bool>(
+        valueListenable: FandoghiCoach.persistent,
+        builder: (context, showPersistent, _) {
+          return ValueListenableBuilder<FandoghiCoachMessage?>(
+            valueListenable: FandoghiCoach.current,
+            builder: (context, message, _) {
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  child,
+                  if (message != null)
+                    Positioned(
+                      left: 12,
+                      right: 12,
+                      bottom: 84,
+                      child: IgnorePointer(
+                        child: SafeArea(
+                          top: false,
+                          child: _CoachBubble(message: message),
+                        ),
+                      ),
+                    )
+                  else if (showPersistent)
+                    const _PersistentCoachButton(),
+                ],
+              );
+            },
           );
         },
+      ),
+    );
+  }
+}
+
+class _PersistentCoachButton extends StatelessWidget {
+  const _PersistentCoachButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      right: 12,
+      bottom: 84,
+      child: SafeArea(
+        top: false,
+        child: Semantics(
+          button: true,
+          label: 'باز کردن راهنمای فندقی',
+          child: Material(
+            color: Colors.white.withOpacity(0.96),
+            elevation: 8,
+            shadowColor: AppColors.primary.withOpacity(0.3),
+            shape: const CircleBorder(),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: FandoghiV2(
+                size: 64,
+                animate: true,
+                mood: FandoghiMood.happy,
+                onTap: () => FandoghiCoach.instruction(
+                  'هر وقت کمک خواستی روی من بزن! من راهنما و داور بازی‌های تو هستم 🌰',
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

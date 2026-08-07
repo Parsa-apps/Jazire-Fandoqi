@@ -32,8 +32,17 @@ class FandoghiCoach {
 
   static final ValueNotifier<FandoghiCoachMessage?> current =
       ValueNotifier<FandoghiCoachMessage?>(null);
+  static final ValueNotifier<bool> persistent = ValueNotifier<bool>(false);
   static Timer? _hideTimer;
   static int _nextId = 0;
+
+  static void enablePersistentPresence() {
+    persistent.value = true;
+  }
+
+  static void disablePersistentPresence() {
+    persistent.value = false;
+  }
 
   static void say(
     String text, {

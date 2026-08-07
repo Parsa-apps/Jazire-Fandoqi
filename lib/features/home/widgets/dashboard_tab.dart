@@ -30,6 +30,7 @@ class _DashboardState extends State<DashboardTab> {
     super.initState();
     _scrollCtrl.addListener(_onScroll);
     GameData.changes.addListener(_onDataChanged);
+    FandoghiCoach.enablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) FandoghiCoach.welcome();
     });
