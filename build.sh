@@ -19,7 +19,7 @@ flutter --version | head -1 || true
 # the Android shell deterministically before any build command.
 if [[ ! -d android ]]; then
   echo 'ساخت پوسته Android...'
-  flutter create . --platforms android --project-name kudakeiran --org com.parsaapps
+  flutter create . --platforms android --project-name amoozesh_fandoghi --org com.parsaapps
 fi
 
 echo 'دریافت وابستگی‌ها...'
