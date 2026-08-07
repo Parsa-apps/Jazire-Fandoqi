@@ -21,7 +21,7 @@ import 'features/parent/parent_panel.dart';
 import 'features/splash/splash_screen.dart';
 import 'shared/widgets/fandoghi_coach.dart';
 
-/// آموزش فندقی - Amoozesh Fandoghi
+/// آموزش فندقی - Kudake Iran
 /// آفلاین، فارسی و طراحی‌شده برای یادگیری امن کودکان.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

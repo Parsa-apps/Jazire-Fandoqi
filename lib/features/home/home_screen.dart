@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/app_colors.dart';
 import '../../core/game_data.dart';
-import '../../shared/widgets/fandoghi_welcome.dart';
 import '../island/island_screen.dart';
 import '../stage_map/stage_map_screen.dart';
 import '../profile/profile_screen.dart';
@@ -29,12 +28,6 @@ class _HomeState extends State<HomeScreen> {
     super.initState();
     _tabWidgets[0] = const DashboardTab();
     GameData.changes.addListener(_onDataChanged);
-    // نمایش انیمیشن خوش‌آمدگویی فندقی بعد از اولین فریم صفحه اصلی.
-    // فقط یک‌بار در هر اجرای اپ نمایش داده می‌شود.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      FandoghiWelcomeOverlay.start(context);
-    });
   }
 
   void _onDataChanged() {
