@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../app/app_colors.dart';
 import '../../../core/fandoghi_coach.dart';
+import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
 import '../../../shared/widgets/particle_celebration.dart';
