@@ -176,7 +176,7 @@ class _SplashState extends State<SplashScreen>
               child: FadeTransition(
                 opacity: _fadeCtrl,
                 child: Text(
-                  'Parsa Apps™',
+                  'ساخته‌شده توسط فرشاد پارسا',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.exo2(
                     fontSize: 14,

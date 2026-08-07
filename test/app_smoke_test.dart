@@ -1,12 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:kudakeiran/core/app_legal.dart';
 import 'package:kudakeiran/core/game_data.dart';
+import 'package:kudakeiran/features/about/about_screen.dart';
 import 'package:kudakeiran/features/home/home_screen.dart';
 
 void main() {
-  testWidgets('home dashboard renders the core child actions', (tester) async {
+  setUp(() {
     GoogleFonts.config.allowRuntimeFetching = false;
+  });
+
+  testWidgets('home dashboard renders the core child actions', (tester) async {
     GameData.resetForTesting();
     GameData.onboardingSeen = true;
 
@@ -16,5 +21,12 @@ void main() {
     expect(find.text('ماموریت‌های امروز'), findsOneWidget);
     expect(find.text('بازی‌های سریع'), findsOneWidget);
     expect(find.text('دسته‌بندی بازی‌ها'), findsOneWidget);
+  });
+
+  testWidgets('about screen exposes the supplied publisher details', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: AboutScreen()));
+    expect(find.text(AppLegal.developerName), findsOneWidget);
+    expect(find.text(AppLegal.supportEmail), findsOneWidget);
+    expect(find.text(AppLegal.telegramHandle), findsOneWidget);
   });
 }

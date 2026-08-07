@@ -7,6 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'app/app_theme.dart';
 import 'core/game_data.dart';
 import 'core/game_launch.dart';
+import 'features/about/about_screen.dart';
+import 'features/about/privacy_policy_screen.dart';
 import 'features/games/bubble_pop/bubble_pop_game.dart';
 import 'features/games/drawing/drawing_game.dart';
 import 'features/games/learning_quiz/learning_quiz_game.dart';
@@ -69,6 +71,8 @@ class KudakeIranApp extends StatelessWidget {
         '/bubble_pop': (context) => const BubblePopGame(),
         '/star_catch': (context) => const StarCatchGame(),
         '/parent': (context) => const ParentPanel(),
+        '/about': (context) => const AboutScreen(),
+        '/privacy': (context) => const PrivacyPolicyScreen(),
       },
       onGenerateRoute: (settings) {
         final name = settings.name ?? '';

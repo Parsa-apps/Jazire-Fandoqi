@@ -6,6 +6,12 @@
 > تست خودکار:
 > `flutter analyze` · `flutter test` · `flutter build appbundle --release`
 
+## 👤 سازنده و پشتیبانی
+
+- **سازنده/ناشر:** فرشاد پارسا
+- **ایمیل:** [farshadparsa2019@gmail.com](mailto:farshadparsa2019@gmail.com)
+- **تلگرام:** [@Parsaappsadmin](https://t.me/Parsaappsadmin)
+
 ## ✨ چه چیزهایی جدیده؟
 
 ### 🎨 سیستم گرافیکی کاملاً جدید
@@ -111,4 +117,4 @@ flutter run
 
 ---
 
-**ساخته شده با ❤️ توسط Parsa Apps™**
+**ساخته‌شده با ❤️ توسط فرشاد پارسا**

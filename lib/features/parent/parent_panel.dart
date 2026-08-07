@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../app/app_colors.dart';
+import '../../core/app_legal.dart';
 import '../../core/game_data.dart';
 
 /// ═══════════════════════════════════════════════
@@ -149,6 +150,17 @@ class _ParentPanelState extends State<ParentPanel> {
                 ),
               ],
             ),
+          ),
+          const Divider(height: 28),
+          ListTile(
+            leading: const Icon(Icons.info_outline_rounded),
+            title: Text(
+              'درباره و پشتیبانی',
+              style: GoogleFonts.vazirmatn(fontWeight: FontWeight.w600),
+            ),
+            subtitle: const Text(AppLegal.supportEmail),
+            trailing: const Icon(Icons.chevron_left_rounded),
+            onTap: () => Navigator.pushNamed(context, '/about'),
           ),
         ],
       ),
