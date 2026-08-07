@@ -29,47 +29,7 @@ class AlphabetAcademyGame extends StatefulWidget {
 }
 
 class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
-  static const _lessons = <_LetterLesson>[
-    _LetterLesson('آ', 'آهو', '🦌'),
-    _LetterLesson('ا', 'ابر', '☁️'),
-    _LetterLesson('ب', 'بادبادک', '🪁'),
-    _LetterLesson('پ', 'پروانه', '🦋'),
-    _LetterLesson('ت', 'توت', '🍓'),
-    _LetterLesson('ث', 'ثعلب', '🦊'),
-    _LetterLesson('ج', 'جوجه', '🐥'),
-    _LetterLesson('چ', 'چتر', '☂️'),
-    _LetterLesson('ح', 'حلزون', '🐌'),
-    _LetterLesson('خ', 'خروس', '🐓'),
-    _LetterLesson('د', 'دلفین', '🐬'),
-    _LetterLesson('ذ', 'زنبور', '🐝'),
-    _LetterLesson('ر', 'رنگین‌کمان', '🌈'),
-    _LetterLesson('ز', 'زرافه', '🦒'),
-    _LetterLesson('ژ', 'ژله', '🍮'),
-    _LetterLesson('س', 'سیب', '🍎'),
-    _LetterLesson('ش', 'شیر', '🦁'),
-    _LetterLesson('ص', 'صابون', '🧼'),
-    _LetterLesson('ض', 'ضبط', '🎙️'),
-    _LetterLesson('ط', 'طوطی', '🦜'),
-    _LetterLesson('ظ', 'ظرف', '🥣'),
-    _LetterLesson('ع', 'عروسک', '🪆'),
-    _LetterLesson('غ', 'غاز', '🪿'),
-    _LetterLesson('ف', 'فیل', '🐘'),
-    _LetterLesson('ق', 'قورباغه', '🐸'),
-    _LetterLesson('ک', 'کبوتر', '🕊️'),
-    _LetterLesson('گ', 'گل', '🌷'),
-    _LetterLesson('ل', 'لاله', '🌷'),
-    _LetterLesson('م', 'ماه', '🌙'),
-    _LetterLesson('ن', 'نارنگی', '🍊'),
-    _LetterLesson('و', 'ورزش', '⚽'),
-    _LetterLesson('ه', 'هواپیما', '✈️'),
-    _LetterLesson('ی', 'یخ', '🧊'),
-  ];
-
-  final GlobalKey _canvasKey = GlobalKey();
-  final List<List<Offset>> _strokes = <List<Offset>>[];
   int _lessonIndex = 0;
-  _TraceResult? _lastResult;
-  bool _checking = false;
 
   _LetterLesson get _lesson => _lessons[_lessonIndex];
 
@@ -80,7 +40,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         FandoghiCoach.instruction(
-          'به آکادمی الفبا خوش آمدی! اول حرف را ببین، بعد با انگشت روی راهنما بنویس ✍️',
+          'به آکادمی الفبا خوش آمدی! یک حرف انتخاب کن و بعد دکمه‌ی «تمرین نوشتن» را بزن ✍️',
         );
       }
     });
@@ -93,13 +53,330 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   }
 
   void _selectLesson(int index) {
+    setState(() => _lessonIndex = index);
+    FandoghiCoach.instruction(
+      'حرف «${_lessons[index].letter}» را انتخاب کردی؛ اسمش ${_lessons[index].word} است. حالا دکمه‌ی «تمرین نوشتن» را بزن ✍️',
+    );
+  }
+
+  Future<void> _openTraceScreen() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (_) => _TraceScreen(
+          lessons: _lessons,
+          initialIndex: _lessonIndex,
+          stageId: widget.stageId,
+          stageNumber: widget.stageNumber,
+        ),
+      ),
+    );
+    if (mounted) {
+      FandoghiCoach.instruction(
+        'خوب نوشتی! می‌توانی حرف دیگری را انتخاب کنی یا دوباره تمرین کنی 🌟',
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: DecoratedBox(
+        decoration: const BoxDecoration(gradient: AppGradients.nightSky),
+        child: SafeArea(
+          child: Column(
+            children: [
+              _topBar(),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                  child: Column(
+                    children: [
+                      _academyHero(),
+                      const SizedBox(height: 14),
+                      _lessonCard(),
+                      const SizedBox(height: 14),
+                      _letterPicker(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _topBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: 'برگشت',
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          ),
+          const Spacer(),
+          Text(
+            'آکادمی الفبا 🔤',
+            style: GoogleFonts.balooBhaijaan2(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            '${_lessonIndex + 1}/${_lessons.length}',
+            style: GoogleFonts.balooBhaijaan2(
+              color: Colors.white70,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _academyHero() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(26),
+      child: SizedBox(
+        height: 155,
+        width: double.infinity,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(
+              'assets/illustrations/alphabet_world.webp',
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+            ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.black.withOpacity(0.05), Colors.black.withOpacity(0.55)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+            Positioned(
+              right: 18,
+              bottom: 14,
+              left: 18,
+              child: Text(
+                'ببین • بگو • بنویس • تکرار کن',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.balooBhaijaan2(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  shadows: const [Shadow(color: Colors.black54, blurRadius: 8)],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _lessonCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: Colors.white.withOpacity(0.14)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 108,
+                height: 108,
+                decoration: BoxDecoration(
+                  gradient: AppGradients.candy,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.candy1.withOpacity(0.3),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    _lesson.letter,
+                    style: GoogleFonts.vazirmatn(
+                      color: Colors.white,
+                      fontSize: 68,
+                      fontWeight: FontWeight.w900,
+                      height: 1,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'حرف «${_lesson.letter}»',
+                      style: GoogleFonts.balooBhaijaan2(
+                        color: Colors.white,
+                        fontSize: 23,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      '${_lesson.emoji} مثلِ «${_lesson.word}»',
+                      style: GoogleFonts.balooBhaijaan2(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'برای تمرین نوشتن، دکمه‌ی زیر را بزن.',
+                      style: GoogleFonts.balooBhaijaan2(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _openTraceScreen,
+              icon: const Icon(Icons.draw_rounded, size: 20),
+              label: const Text('تمرین نوشتن ✍️'),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.primaryDark,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                textStyle: GoogleFonts.balooBhaijaan2(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _letterPicker() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'انتخاب حرف برای تمرین',
+            style: GoogleFonts.balooBhaijaan2(
+              color: Colors.white70,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 7,
+            runSpacing: 7,
+            children: List.generate(_lessons.length, (index) {
+              final selected = index == _lessonIndex;
+              return ChoiceChip(
+                label: Text(_lessons[index].letter),
+                selected: selected,
+                onSelected: (_) => _selectLesson(index),
+                selectedColor: AppColors.primary,
+                backgroundColor: Colors.white.withOpacity(0.1),
+                labelStyle: GoogleFonts.balooBhaijaan2(
+                  color: selected ? Colors.white : Colors.white70,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                ),
+                side: BorderSide(color: Colors.white.withOpacity(0.1)),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// صفحه‌ی تمام‌عرض نوشتن. هیچ ScrollView و لیست عمودی‌ای ندارد، پس
+/// وقتی بچه انگشتش را به هر سمتی (به‌ویژه بالا و پایین) می‌کشد،
+/// صفحه بالا و پایین نمی‌رود و فقط روی حرف کشیده می‌شود.
+class _TraceScreen extends StatefulWidget {
+  final List<_LetterLesson> lessons;
+  final int initialIndex;
+  final String? stageId;
+  final int? stageNumber;
+
+  const _TraceScreen({
+    required this.lessons,
+    required this.initialIndex,
+    this.stageId,
+    this.stageNumber,
+  });
+
+  @override
+  State<_TraceScreen> createState() => _TraceScreenState();
+}
+
+class _TraceScreenState extends State<_TraceScreen> {
+  final GlobalKey _canvasKey = GlobalKey();
+  final List<List<Offset>> _strokes = <List<Offset>>[];
+  late int _lessonIndex;
+  _TraceResult? _lastResult;
+  bool _checking = false;
+
+  _LetterLesson get _lesson => widget.lessons[_lessonIndex];
+
+  @override
+  void initState() {
+    super.initState();
+    _lessonIndex = widget.initialIndex;
+  }
+
+  void _selectLesson(int index) {
     setState(() {
       _lessonIndex = index;
       _strokes.clear();
       _lastResult = null;
     });
     FandoghiCoach.instruction(
-      'حرف «${_lessons[index].letter}» را نگاه کن؛ اسمش ${_lessons[index].word} است. حالا نوبت نوشتن توست ✍️',
+      'حرف «${widget.lessons[index].letter}» را نگاه کن؛ اسمش ${widget.lessons[index].word} است. حالا با انگشت بنویس ✍️',
     );
   }
 
@@ -122,7 +399,8 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
       _strokes.clear();
       _lastResult = null;
     });
-    FandoghiCoach.instruction('اشکالی ندارد؛ صفحه را تمیز کردیم. دوباره با آرامش بنویس 🌰');
+    FandoghiCoach.instruction(
+        'اشکالی ندارد؛ صفحه را تمیز کردیم. دوباره با آرامش بنویس 🌰');
   }
 
   void _undoTrace() {
@@ -136,7 +414,8 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   Future<void> _checkTrace() async {
     if (_checking) return;
     final renderObject = _canvasKey.currentContext?.findRenderObject();
-    final size = renderObject is RenderBox ? renderObject.size : const Size(320, 230);
+    final size =
+        renderObject is RenderBox ? renderObject.size : const Size(320, 230);
     setState(() => _checking = true);
     try {
       final result = await _evaluateTrace(size);
@@ -152,7 +431,8 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
         GameData.addCoins(8);
         GameData.addStars(1);
         if (widget.stageId != null) {
-          GameData.completeStage(widget.stageId!, stageNumber: widget.stageNumber);
+          GameData.completeStage(widget.stageId!,
+              stageNumber: widget.stageNumber);
         }
         FandoghiCoach.correct(
           'آفرین! فندقی دید که حرف «${_lesson.letter}» را با دقت نوشتی ✨',
@@ -188,11 +468,15 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
       width: size.width * 0.58,
       height: size.height * 0.73,
     );
-    final inside = points.where((point) => guide.inflate(28).contains(point)).length;
+    final inside =
+        points.where((point) => guide.inflate(28).contains(point)).length;
     final guideCoverage = inside / points.length;
     final glyphCoverage = await _glyphCoverage(size, points);
-    final movement = (totalLength / (size.shortestSide * 1.35)).clamp(0.0, 1.0);
-    final score = (glyphCoverage * 0.55 + guideCoverage * 0.25 + movement * 0.2)
+    final movement =
+        (totalLength / (size.shortestSide * 1.35)).clamp(0.0, 1.0);
+    final score = (glyphCoverage * 0.55 +
+            guideCoverage * 0.25 +
+            movement * 0.2)
         .clamp(0.0, 1.0)
         .toDouble();
     return _TraceResult(score: score, passed: score >= 0.5);
@@ -243,101 +527,57 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: AppGradients.nightSky),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _topBar(),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                  child: Column(
-                    children: [
-                      _academyHero(),
-                      const SizedBox(height: 14),
-                      _lessonCard(),
-                      const SizedBox(height: 14),
-                      _traceCard(),
-                      const SizedBox(height: 14),
-                      _letterPicker(),
-                    ],
+      backgroundColor: const Color(0xFFFFFCF4),
+      body: SafeArea(
+        // یک لایه‌ی GestureDetector تمام‌صفحه که بچه بتواند آزادانه
+        // با انگشت در همه‌ی جهت‌ها بکشد، بدون اینکه صفحه اسکرول شود.
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Container(
+                key: _canvasKey,
+                color: const Color(0xFFFFFCF4),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onPanStart: _startStroke,
+                  onPanUpdate: _updateStroke,
+                  child: CustomPaint(
+                    painter: _TracePainter(
+                      letter: _lesson.letter,
+                      strokes: _strokes,
+                    ),
+                    child: const SizedBox.expand(),
                   ),
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _topBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          IconButton(
-            tooltip: 'برگشت',
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-          ),
-          const Spacer(),
-          Text(
-            'آکادمی الفبا 🔤',
-            style: GoogleFonts.vazirmatn(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
             ),
-          ),
-          const Spacer(),
-          Text(
-            '${_lessonIndex + 1}/${_lessons.length}',
-            style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w800),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _academyHero() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(26),
-      child: SizedBox(
-        height: 155,
-        width: double.infinity,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.asset(
-              'assets/illustrations/alphabet_world.webp',
-              fit: BoxFit.cover,
-              alignment: Alignment.center,
-            ),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.black.withOpacity(0.05), Colors.black.withOpacity(0.55)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-            ),
+            // نوار بالا
             Positioned(
-              right: 18,
-              bottom: 14,
-              left: 18,
-              child: Text(
-                'ببین • بگو • بنویس • تکرار کن',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.vazirmatn(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  shadows: const [Shadow(color: Colors.black54, blurRadius: 8)],
-                ),
+              top: 0,
+              left: 0,
+              right: 0,
+              child: _traceTopBar(),
+            ),
+            // نوار پایین (ابزارها)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _traceBottomBar(),
+            ),
+            // پیام امتیاز
+            if (_lastResult != null)
+              Positioned(
+                top: 70,
+                left: 0,
+                right: 0,
+                child: Center(child: _resultBadge(_lastResult!)),
               ),
+            // پیش‌نمایش کوچک حرف
+            Positioned(
+              top: 70,
+              left: 12,
+              child: _letterPreview(),
             ),
           ],
         ),
@@ -345,213 +585,69 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     );
   }
 
-  Widget _lessonCard() {
+  Widget _traceTopBar() {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: Colors.white.withOpacity(0.14)),
+        color: Colors.white.withOpacity(0.92),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Container(
-            width: 108,
-            height: 108,
-            decoration: BoxDecoration(
-              gradient: AppGradients.candy,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.candy1.withOpacity(0.3),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                _lesson.letter,
-                style: GoogleFonts.vazirmatn(
-                  color: Colors.white,
-                  fontSize: 68,
-                  fontWeight: FontWeight.w900,
-                  height: 1,
-                ),
-              ),
+          IconButton(
+            tooltip: 'برگشت',
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(Icons.close_rounded, size: 28),
+            color: AppColors.primaryDark,
+          ),
+          const Spacer(),
+          Text(
+            'بنویس: «${_lesson.letter}»',
+            style: GoogleFonts.balooBhaijaan2(
+              color: AppColors.textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'حرف «${_lesson.letter}»',
-                  style: GoogleFonts.vazirmatn(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                  ),
+          const Spacer(),
+          // انتخاب‌گر سریع حرف
+          PopupMenuButton<int>(
+            tooltip: 'تغییر حرف',
+            icon: const Icon(Icons.menu_book_rounded, size: 24),
+            color: Colors.white,
+            onSelected: _selectLesson,
+            itemBuilder: (context) =>
+                List.generate(widget.lessons.length, (i) {
+              return PopupMenuItem<int>(
+                value: i,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.lessons[i].letter,
+                      style: GoogleFonts.balooBhaijaan2(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      widget.lessons[i].word,
+                      style: GoogleFonts.balooBhaijaan2(
+                        color: AppColors.textSecondary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 5),
-                Text(
-                  '${_lesson.emoji} مثلِ «${_lesson.word}»',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'حالا نوبت دست توست؛ روی راهنمای کم‌رنگ بنویس.',
-                  style: TextStyle(color: Colors.white70, height: 1.5),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _traceCard() {
-    final result = _lastResult;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.16),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.gesture_rounded, color: AppColors.primary),
-              const SizedBox(width: 8),
-              Text(
-                'تمرین نوشتن',
-                style: GoogleFonts.vazirmatn(
-                  color: AppColors.textPrimary,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const Spacer(),
-              IconButton(
-                tooltip: 'برگرداندن آخرین خط',
-                onPressed: _strokes.isEmpty ? null : _undoTrace,
-                icon: const Icon(Icons.undo_rounded),
-              ),
-              IconButton(
-                tooltip: 'پاک کردن',
-                onPressed: _strokes.isEmpty ? null : _clearTrace,
-                icon: const Icon(Icons.delete_outline_rounded),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Container(
-            key: _canvasKey,
-            height: 230,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFFCF4),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.primary.withOpacity(0.18), width: 2),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onPanStart: _startStroke,
-              onPanUpdate: _updateStroke,
-              child: CustomPaint(
-                painter: _TracePainter(
-                  letter: _lesson.letter,
-                  strokes: _strokes,
-                ),
-                child: const SizedBox.expand(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  result == null
-                      ? 'روی نقطه‌های کم‌رنگ حرکت کن.'
-                      : 'امتیاز تمرین: ${(result.score * 100).round()}٪',
-                  style: TextStyle(
-                    color: result?.passed == true ? AppColors.success : AppColors.textSecondary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              FilledButton.icon(
-                onPressed: _strokes.isEmpty || _checking
-                    ? null
-                    : () {
-                        _checkTrace();
-                      },
-                icon: const Icon(Icons.verified_rounded),
-                label: Text(_checking ? 'در حال بررسی…' : 'بررسی کن'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _letterPicker() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.12)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'انتخاب حرف برای تمرین دوباره',
-            style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            children: List.generate(_lessons.length, (index) {
-              final selected = index == _lessonIndex;
-              return ChoiceChip(
-                label: Text(_lessons[index].letter),
-                selected: selected,
-                onSelected: (_) => _selectLesson(index),
-                selectedColor: AppColors.primary,
-                backgroundColor: Colors.white.withOpacity(0.1),
-                labelStyle: TextStyle(
-                  color: selected ? Colors.white : Colors.white70,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 16,
-                ),
-                side: BorderSide(color: Colors.white.withOpacity(0.1)),
               );
             }),
           ),
@@ -559,7 +655,158 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
       ),
     );
   }
+
+  Widget _letterPreview() {
+    return Container(
+      width: 78,
+      height: 78,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        _lesson.letter,
+        style: GoogleFonts.vazirmatn(
+          color: AppColors.primary,
+          fontSize: 44,
+          fontWeight: FontWeight.w900,
+          height: 1,
+        ),
+      ),
+    );
+  }
+
+  Widget _resultBadge(_TraceResult r) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: r.passed ? AppColors.success : AppColors.primary.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.18),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            r.passed ? Icons.celebration_rounded : Icons.refresh_rounded,
+            color: Colors.white,
+            size: 20,
+          ),
+          const SizedBox(width: 7),
+          Text(
+            r.passed
+                ? 'آفرین! امتیاز: ${(r.score * 100).round()}٪'
+                : 'امتیاز: ${(r.score * 100).round()}٪ — دوباره تلاش کن',
+            style: GoogleFonts.balooBhaijaan2(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 17,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _traceBottomBar() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 6,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          IconButton.filledTonal(
+            tooltip: 'برگرداندن آخرین خط',
+            onPressed: _strokes.isEmpty ? null : _undoTrace,
+            icon: const Icon(Icons.undo_rounded, size: 22),
+          ),
+          const SizedBox(width: 6),
+          IconButton.filledTonal(
+            tooltip: 'پاک کردن همه',
+            onPressed: _strokes.isEmpty ? null : _clearTrace,
+            icon: const Icon(Icons.delete_outline_rounded, size: 22),
+          ),
+          const Spacer(),
+          FilledButton.icon(
+            onPressed: _strokes.isEmpty || _checking ? null : _checkTrace,
+            icon: const Icon(Icons.verified_rounded, size: 20),
+            label: Text(_checking ? 'در حال بررسی…' : 'بررسی کن'),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              textStyle: GoogleFonts.balooBhaijaan2(
+                fontWeight: FontWeight.w900,
+                fontSize: 17,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
+
+const _lessons = <_LetterLesson>[
+  _LetterLesson('آ', 'آهو', '🦌'),
+  _LetterLesson('ا', 'ابر', '☁️'),
+  _LetterLesson('ب', 'بادبادک', '🪁'),
+  _LetterLesson('پ', 'پروانه', '🦋'),
+  _LetterLesson('ت', 'توت', '🍓'),
+  _LetterLesson('ث', 'ثعلب', '🦊'),
+  _LetterLesson('ج', 'جوجه', '🐥'),
+  _LetterLesson('چ', 'چتر', '☂️'),
+  _LetterLesson('ح', 'حلزون', '🐌'),
+  _LetterLesson('خ', 'خروس', '🐓'),
+  _LetterLesson('د', 'دلفین', '🐬'),
+  _LetterLesson('ذ', 'زنبور', '🐝'),
+  _LetterLesson('ر', 'رنگین‌کمان', '🌈'),
+  _LetterLesson('ز', 'زرافه', '🦒'),
+  _LetterLesson('ژ', 'ژله', '🍮'),
+  _LetterLesson('س', 'سیب', '🍎'),
+  _LetterLesson('ش', 'شیر', '🦁'),
+  _LetterLesson('ص', 'صابون', '🧼'),
+  _LetterLesson('ض', 'ضبط', '🎙️'),
+  _LetterLesson('ط', 'طوطی', '🦜'),
+  _LetterLesson('ظ', 'ظرف', '🥣'),
+  _LetterLesson('ع', 'عروسک', '🪆'),
+  _LetterLesson('غ', 'غاز', '🪿'),
+  _LetterLesson('ف', 'فیل', '🐘'),
+  _LetterLesson('ق', 'قورباغه', '🐸'),
+  _LetterLesson('ک', 'کبوتر', '🕊️'),
+  _LetterLesson('گ', 'گل', '🌷'),
+  _LetterLesson('ل', 'لاله', '🌷'),
+  _LetterLesson('م', 'ماه', '🌙'),
+  _LetterLesson('ن', 'نارنگی', '🍊'),
+  _LetterLesson('و', 'ورزش', '⚽'),
+  _LetterLesson('ه', 'هواپیما', '✈️'),
+  _LetterLesson('ی', 'یخ', '🧊'),
+];
 
 class _LetterLesson {
   final String letter;
@@ -605,6 +852,7 @@ class _TracePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // راهنمای کم‌رنگ پشت خطوط کشیده‌شده
     final guidePainter = _guideTextPainter(
       letter,
       size,
@@ -612,6 +860,7 @@ class _TracePainter extends CustomPainter {
     );
     guidePainter.paint(canvas, _guideTextOffset(size, guidePainter));
 
+    // خط پایه‌ی نقطه‌چین
     final guidePaint = Paint()
       ..color = AppColors.primary.withOpacity(0.22)
       ..style = PaintingStyle.stroke
@@ -621,6 +870,7 @@ class _TracePainter extends CustomPainter {
       canvas.drawCircle(Offset(x, size.height * 0.88), 1.2, guidePaint);
     }
 
+    // خطوطی که بچه کشیده
     final strokePaint = Paint()
       ..color = AppColors.primaryDark
       ..style = PaintingStyle.stroke
