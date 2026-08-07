@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -53,6 +54,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   final List<List<Offset>> _strokes = <List<Offset>>[];
   int _lessonIndex = 0;
   _TraceResult? _lastResult;
+  bool _checking = false;
 
   _LetterLesson get _lesson => _lessons[_lessonIndex];
 
@@ -116,34 +118,46 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     });
   }
 
-  void _checkTrace() {
+  Future<void> _checkTrace() async {
+    if (_checking) return;
     final renderObject = _canvasKey.currentContext?.findRenderObject();
     final size = renderObject is RenderBox ? renderObject.size : const Size(320, 230);
-    final result = _evaluateTrace(size);
+    setState(() => _checking = true);
+    try {
+      final result = await _evaluateTrace(size);
+      if (!mounted) return;
 
-    setState(() => _lastResult = result);
-    GameData.recordAnswer(correct: result.passed, skill: 'alphabet');
-    if (result.passed) {
-      GameData.progressMission('alphabet');
-      GameData.addCoins(8);
-      GameData.addStars(1);
-      if (widget.stageId != null) {
-        GameData.completeStage(widget.stageId!, stageNumber: widget.stageNumber);
+      setState(() {
+        _lastResult = result;
+        _checking = false;
+      });
+      GameData.recordAnswer(correct: result.passed, skill: 'alphabet');
+      if (result.passed) {
+        GameData.progressMission('alphabet');
+        GameData.addCoins(8);
+        GameData.addStars(1);
+        if (widget.stageId != null) {
+          GameData.completeStage(widget.stageId!, stageNumber: widget.stageNumber);
+        }
+        FandoghiCoach.correct(
+          'آفرین! فندقی دید که حرف «${_lesson.letter}» را با دقت نوشتی ✨',
+        );
+      } else {
+        FandoghiCoach.say(
+          'هنوز کمی بیرون راهنما رفتی. از نقطه‌های کم‌رنگ آرام‌تر رد شو و دوباره امتحان کن 💪',
+          mood: FandoghiMood.thinking,
+          tone: FandoghiCoachTone.encouragement,
+          duration: const Duration(seconds: 4),
+        );
       }
-      FandoghiCoach.correct(
-        'آفرین! فندقی دید که حرف «${_lesson.letter}» را با دقت نوشتی ✨',
-      );
-    } else {
-      FandoghiCoach.say(
-        'هنوز کمی بیرون راهنما رفتی. از نقطه‌های کم‌رنگ آرام‌تر رد شو و دوباره امتحان کن 💪',
-        mood: FandoghiMood.thinking,
-        tone: FandoghiCoachTone.encouragement,
-        duration: const Duration(seconds: 4),
-      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _checking = false);
+      FandoghiCoach.judge('فندقی نتوانست این تمرین را بررسی کند؛ دوباره امتحان کن.');
     }
   }
 
-  _TraceResult _evaluateTrace(Size size) {
+  Future<_TraceResult> _evaluateTrace(Size size) async {
     final points = _strokes.expand((stroke) => stroke).toList();
     if (points.length < 8) return const _TraceResult(score: 0, passed: false);
 
@@ -160,10 +174,45 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
       height: size.height * 0.73,
     );
     final inside = points.where((point) => guide.inflate(28).contains(point)).length;
-    final coverage = inside / points.length;
+    final guideCoverage = inside / points.length;
+    final glyphCoverage = await _glyphCoverage(size, points);
     final movement = (totalLength / (size.shortestSide * 1.35)).clamp(0.0, 1.0);
-    final score = (coverage * 0.65 + movement * 0.35).clamp(0.0, 1.0);
-    return _TraceResult(score: score, passed: score >= 0.52);
+    final score = (glyphCoverage * 0.55 + guideCoverage * 0.25 + movement * 0.2)
+        .clamp(0.0, 1.0)
+        .toDouble();
+    return _TraceResult(score: score, passed: score >= 0.5);
+  }
+
+  Future<double> _glyphCoverage(Size size, List<Offset> points) async {
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    final painter = _guideTextPainter(_lesson.letter, size, Colors.white);
+    painter.paint(canvas, _guideTextOffset(size, painter));
+    final picture = recorder.endRecording();
+    final image = await picture.toImage(size.width.ceil(), size.height.ceil());
+    final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    if (data == null) return 0;
+
+    var hits = 0;
+    for (final point in points) {
+      final x = point.dx.round();
+      final y = point.dy.round();
+      var hit = false;
+      for (var dy = -5; dy <= 5 && !hit; dy += 2) {
+        for (var dx = -5; dx <= 5; dx += 2) {
+          final sampleX = x + dx;
+          final sampleY = y + dy;
+          if (sampleX < 0 || sampleY < 0 || sampleX >= image.width || sampleY >= image.height) continue;
+          final alphaIndex = (sampleY * image.width + sampleX) * 4 + 3;
+          if (data.getUint8(alphaIndex) > 8) {
+            hit = true;
+            break;
+          }
+        }
+      }
+      if (hit) hits++;
+    }
+    return hits / points.length;
   }
 
   @override
@@ -425,9 +474,13 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                 ),
               ),
               FilledButton.icon(
-                onPressed: _strokes.isEmpty ? null : _checkTrace,
+                onPressed: _strokes.isEmpty || _checking
+                    ? null
+                    : () {
+                        _checkTrace();
+                      },
                 icon: const Icon(Icons.verified_rounded),
-                label: const Text('بررسی کن'),
+                label: Text(_checking ? 'در حال بررسی…' : 'بررسی کن'),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -498,6 +551,27 @@ class _TraceResult {
   const _TraceResult({required this.score, required this.passed});
 }
 
+TextPainter _guideTextPainter(String letter, Size size, Color color) {
+  return TextPainter(
+    text: TextSpan(
+      text: letter,
+      style: GoogleFonts.vazirmatn(
+        color: color,
+        fontSize: math.min(size.width * 0.58, size.height * 0.75).toDouble(),
+        fontWeight: FontWeight.w900,
+      ),
+    ),
+    textDirection: TextDirection.rtl,
+  )..layout();
+}
+
+Offset _guideTextOffset(Size size, TextPainter painter) {
+  return Offset(
+    (size.width - painter.width) / 2,
+    (size.height - painter.height) * 0.45,
+  );
+}
+
 class _TracePainter extends CustomPainter {
   final String letter;
   final List<List<Offset>> strokes;
@@ -506,24 +580,12 @@ class _TracePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final guidePainter = TextPainter(
-      text: TextSpan(
-        text: letter,
-        style: GoogleFonts.vazirmatn(
-          color: AppColors.primary.withOpacity(0.16),
-          fontSize: math.min(size.width * 0.58, size.height * 0.75).toDouble(),
-          fontWeight: FontWeight.w900,
-        ),
-      ),
-      textDirection: TextDirection.rtl,
-    )..layout();
-    guidePainter.paint(
-      canvas,
-      Offset(
-        (size.width - guidePainter.width) / 2,
-        (size.height - guidePainter.height) * 0.45,
-      ),
+    final guidePainter = _guideTextPainter(
+      letter,
+      size,
+      AppColors.primary.withOpacity(0.16),
     );
+    guidePainter.paint(canvas, _guideTextOffset(size, guidePainter));
 
     final guidePaint = Paint()
       ..color = AppColors.primary.withOpacity(0.22)
