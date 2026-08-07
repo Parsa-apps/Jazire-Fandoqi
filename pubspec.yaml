@@ -1,4 +1,4 @@
-name: amoozeshfandoghi
+name: kudakeiran
 description: "آموزش فندقی - اپلیکیشن آموزشی آفلاین کودکان با شخصیت فندقی | سازنده: فرشاد پارسا"
 publish_to: 'none'
 version: 4.1.0+2
@@ -13,7 +13,7 @@ dependencies:
     sdk: flutter
   
   # 🎨 UI & Graphics
-  google_fonts: 6.1.0
+  google_fonts: 6.2.1
   flutter_animate: 4.5.2
   
   # 🎮 Game Engine
