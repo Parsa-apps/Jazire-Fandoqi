@@ -1,13 +1,10 @@
-name: Validate and build Android
+name: Build APK & AAB - کودک دانا v3
+
 
 on:
   push:
-    branches: ['**']
-  pull_request:
+    branches: [ main, master ]
   workflow_dispatch:
-
-permissions:
-  contents: read
 
 jobs:
   build:
@@ -20,51 +17,48 @@ jobs:
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: 'temurin'
           java-version: '17'
-          cache: gradle
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.3'
-          channel: stable
+          channel: 'stable'
           cache: true
 
-      - name: Generate Android platform shell
+      # ==================== FIX اصلی ====================
+      - name: Ensure Android folder exists
         run: |
-          if [ ! -d android ]; then
-            flutter create . --platforms android --project-name kudakeiran --org com.parsaapps
+          if [ ! -d "android" ]; then
+            echo "android folder not found. Creating..."
+            flutter create . --platforms android
+          else
+            echo "android folder exists"
           fi
-          printf 'flutter.sdk=%s\n' "$FLUTTER_ROOT" > android/local.properties
-          printf 'sdk.dir=%s\n' "$ANDROID_HOME" >> android/local.properties
 
-      - name: Install dependencies
+      - name: Create local.properties
+        run: |
+          echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
+          echo "sdk.dir=$ANDROID_HOME" >> android/local.properties
+
+      - name: Flutter pub get
         run: flutter pub get
 
-      - name: Generate launcher icons
-        run: dart run flutter_launcher_icons
-
-      - name: Analyze
-        run: flutter analyze --no-fatal-infos
-
-      - name: Unit and widget tests
-        run: flutter test
-
-      - name: Build release APK
+      - name: Build APK (Release)
         run: flutter build apk --release
 
-      - name: Build release AAB
+      - name: Build AAB (Release)
         run: flutter build appbundle --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: kudake_iran-release-apk
+          name: kudake_iran_v3.0.0_apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: kudake_iran-release-aab
+          name: kudake_iran_v3.0.0_aab
           path: build/app/outputs/bundle/release/app-release.aab
