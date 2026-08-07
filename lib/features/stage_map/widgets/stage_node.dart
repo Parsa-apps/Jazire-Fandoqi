@@ -82,10 +82,6 @@ class _StageNodeState extends State<StageNode>
           final pulseScale = widget.state == StageState.current
               ? 1.0 + sin(_pulseCtrl.value * pi) * 0.08
               : 1.0;
-          final pulseGlow = widget.state == StageState.current
-              ? 0.3 + sin(_pulseCtrl.value * pi) * 0.2
-              : 0.0;
-
           return Transform.scale(
             scale: (_isPressed ? 0.9 : 1.0) * pulseScale,
             child: child,

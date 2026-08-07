@@ -10,7 +10,6 @@ class CoinRainPainter extends CustomPainter {
   final Offset center;
   final List<_CoinParticle> _coins;
   final List<_Sparkle> _sparkles;
-  final _rng = Random(42);
 
   CoinRainPainter({
     required this.progress,

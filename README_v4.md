@@ -57,15 +57,18 @@ lib/
 │   ├── ai_system.dart          # هوش مصنوعی
 │   └── ...
 ├── features/
-│   ├── splash/
-│   │   └── splash_screen.dart
+│   ├── splash/                 # splash کوتاه و بدون network
+│   ├── onboarding/             # لقب اختیاری و سن تقریبی
 │   ├── home/
 │   │   ├── home_screen.dart
-│   │   └── widgets/
-│   │       └── dashboard_tab.dart
+│   │   └── widgets/dashboard_tab.dart
 │   └── games/
+│       ├── learning_quiz/      # مقصد واقعی موضوعات نقشه
+│       ├── drawing/             # بوم نقاشی آفلاین
+│       ├── memory_match/
+│       ├── bubble_pop/
 │       └── star_catch/
-│           └── star_catch_game.dart
+├── test/                       # تست منطق پیشرفت و smoke UI
 └── shared/
     └── widgets/
         ├── fandoghi_v2.dart

@@ -87,7 +87,7 @@ class _HomeState extends State<HomeScreen> {
               _navItem(0, Icons.home_rounded, 'خانه'),
               _navItem(1, Icons.explore_rounded, 'جزیره'),
               _navItemCenter(),
-              _navItem(3, Icons.card_giftcard_rounded, 'جایزه'),
+              _navItem(3, Icons.storefront_rounded, 'فروشگاه'),
               _navItem(4, Icons.person_rounded, 'پروفایل'),
             ],
           ),
