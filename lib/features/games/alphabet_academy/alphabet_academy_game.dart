@@ -205,29 +205,39 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     painter.paint(canvas, _guideTextOffset(size, painter));
     final picture = recorder.endRecording();
     final image = await picture.toImage(size.width.ceil(), size.height.ceil());
-    final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-    if (data == null) return 0;
+    try {
+      final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      if (data == null) return 0;
 
-    var hits = 0;
-    for (final point in points) {
-      final x = point.dx.round();
-      final y = point.dy.round();
-      var hit = false;
-      for (var dy = -5; dy <= 5 && !hit; dy += 2) {
-        for (var dx = -5; dx <= 5; dx += 2) {
-          final sampleX = x + dx;
-          final sampleY = y + dy;
-          if (sampleX < 0 || sampleY < 0 || sampleX >= image.width || sampleY >= image.height) continue;
-          final alphaIndex = (sampleY * image.width + sampleX) * 4 + 3;
-          if (data.getUint8(alphaIndex) > 8) {
-            hit = true;
-            break;
+      var hits = 0;
+      for (final point in points) {
+        final x = point.dx.round();
+        final y = point.dy.round();
+        var hit = false;
+        for (var dy = -5; dy <= 5 && !hit; dy += 2) {
+          for (var dx = -5; dx <= 5; dx += 2) {
+            final sampleX = x + dx;
+            final sampleY = y + dy;
+            if (sampleX < 0 ||
+                sampleY < 0 ||
+                sampleX >= image.width ||
+                sampleY >= image.height) {
+              continue;
+            }
+            final alphaIndex = (sampleY * image.width + sampleX) * 4 + 3;
+            if (data.getUint8(alphaIndex) > 8) {
+              hit = true;
+              break;
+            }
           }
         }
+        if (hit) hits++;
       }
-      if (hit) hits++;
+      return hits / points.length;
+    } finally {
+      image.dispose();
+      picture.dispose();
     }
-    return hits / points.length;
   }
 
   @override
