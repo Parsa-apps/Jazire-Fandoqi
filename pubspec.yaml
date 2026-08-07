@@ -1,5 +1,5 @@
-name: amoozesh_fandoghi
-description: "آموزش فندقی - اپلیکیشن آموزشی آفلاین کودکان با شخصیت فندقی | سازنده: فرشاد پارسا"
+name: kudakeiran
+description: "کودک ایران - اپلیکیشن آموزشی آفلاین کودکان | سازنده: فرشاد پارسا"
 publish_to: 'none'
 version: 4.1.0+2
 
@@ -31,17 +31,16 @@ dev_dependencies:
 
 flutter_launcher_icons:
   android: true
-  ios: true
-  image_path: "assets/icons/app_icon.png"
+  ios: false
+  image_path: "assets/icon.png"
   min_sdk_android: 21
-  adaptive_icon_background: "#7FD3B7"
-  adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"
+  adaptive_icon_background: "#FFEB3B"
+  adaptive_icon_foreground: "assets/icon_foreground.png"
 
 flutter:
   uses-material-design: true
   assets:
-    - assets/icons/app_icon.png
-    - assets/icons/app_icon_foreground.png
+    - assets/icon.png
     - assets/hero_kids.png
     - assets/learn_world.png
     - assets/play_world.png
@@ -55,4 +54,3 @@ flutter:
     - assets/illustrations/shapes_cards.webp
     - assets/illustrations/jobs_cards.webp
     - assets/illustrations/body_cards.webp
-    - assets/mascot/fandoghi_bunny.png
