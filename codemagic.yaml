@@ -21,7 +21,7 @@ workflows:
         script: |
           if [ ! -d "android" ]; then
             flutter create . --platforms android \
-              --project-name kudakeiran --org com.parsaapps
+              --project-name amoozesh_fandoghi --org com.parsaapps
           fi
       - name: Flutter pub get
         script: flutter pub get
