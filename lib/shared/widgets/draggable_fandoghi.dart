@@ -215,6 +215,8 @@ class _BunnyContainer extends StatelessWidget {
 
 /// A small animated arrow that nudges the user to drag.
 class _DragHint extends StatefulWidget {
+  const _DragHint();
+
   @override
   State<_DragHint> createState() => _DragHintState();
 }
