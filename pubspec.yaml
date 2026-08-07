@@ -1,5 +1,5 @@
 name: kudakeiran
-description: کودک ایران - اپلیکیشن آموزشی آفلاین کودکان | سازنده: فرشاد پارسا
+description: "کودک ایران - اپلیکیشن آموزشی آفلاین کودکان | سازنده: فرشاد پارسا"
 publish_to: 'none'
 version: 4.1.0+2
 
@@ -35,7 +35,7 @@ flutter_launcher_icons:
   image_path: "assets/icon.png"
   min_sdk_android: 21
   adaptive_icon_background: "#FFEB3B"
-  adaptive_icon_foreground: "assets/icon.png"
+  adaptive_icon_foreground: "assets/icon_foreground.png"
 
 flutter:
   uses-material-design: true
