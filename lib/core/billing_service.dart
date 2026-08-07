@@ -107,10 +107,13 @@ class BillingService {
       return const BillingResult.failure('شناسه محصول نامعتبر است');
     }
     try {
-      final dynamic raw = await _channel.invokeMethod<Object?>(method, <String, Object?>{
-        'productId': productId,
-        'consumable': consumable,
-      });
+      final arguments = method == 'restore'
+          ? null
+          : <String, Object?>{
+              'productId': productId,
+              'consumable': consumable,
+            };
+      final dynamic raw = await _channel.invokeMethod<Object?>(method, arguments);
       return _parse(raw);
     } on MissingPluginException {
       // ماژول نیتیو استور نصب نیست؛ در حالت توسعه خرید آزمایشی موفق است

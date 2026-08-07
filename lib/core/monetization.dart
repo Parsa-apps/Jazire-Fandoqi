@@ -21,10 +21,20 @@ class Monetization {
 
   static Future<bool> isPremium() async {
     final prefs = await SharedPreferences.getInstance();
-    if (kReleaseMode) {
-      return (prefs.getString(_receiptTokenKey) ?? '').isNotEmpty;
+    if (!kReleaseMode) {
+      return prefs.getBool(_subscriptionKey) ?? false;
     }
-    return prefs.getBool(_subscriptionKey) ?? false;
+
+    // Do not trust a cached flag/token in release: a subscription can expire
+    // or be refunded. Ask the store bridge for the current entitlement.
+    final restored = await BillingService.restorePurchases();
+    if (!restored.success ||
+        restored.purchaseToken == null ||
+        restored.purchaseToken!.isEmpty) {
+      return false;
+    }
+    await prefs.setString(_receiptTokenKey, restored.purchaseToken!);
+    return true;
   }
 
   /// Activates access only after a successful store result.

@@ -171,7 +171,10 @@ class GameData {
       _isLoaded = true;
       _persistenceAvailable = true;
       final changed = _rolloverDates();
-      if (changed) await _writeAll();
+      if (changed) {
+        await prefs.setString('missionDay', _dateKey());
+        await _writeAll();
+      }
       _notify();
     } catch (_) {
       // Allow the caller to show a recoverable fallback. A later retry is
@@ -260,7 +263,6 @@ class GameData {
       treasureOpened = false;
       todayPlaySeconds = 0;
       openedPrizes.removeWhere((id) => id.startsWith('daily_'));
-      _prefs?.setString('missionDay', today);
       changed = true;
     } else {
       _recalculateDailyMissions();
