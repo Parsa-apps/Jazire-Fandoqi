@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:amoozesh_fandoghi/core/ai_system.dart';
-import 'package:amoozesh_fandoghi/core/game_data.dart';
+import 'package:amoozeshfandoghi/core/ai_system.dart';
+import 'package:amoozeshfandoghi/core/game_data.dart';
 
 void main() {
   setUp(() {
