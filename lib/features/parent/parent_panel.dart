@@ -15,15 +15,24 @@ class ParentPanel extends StatefulWidget {
 
 class _ParentPanelState extends State<ParentPanel> {
   late bool _soundEnabled;
-  late bool _aiEnabled;
   late int _timeLimit;
 
   @override
   void initState() {
     super.initState();
     _soundEnabled = GameData.soundEnabled;
-    _aiEnabled = GameData.aiBuddyUnlocked;
     _timeLimit = GameData.timeLimitMinutes;
+    GameData.changes.addListener(_onDataChanged);
+  }
+
+  void _onDataChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    GameData.changes.removeListener(_onDataChanged);
+    super.dispose();
   }
 
   @override
@@ -79,25 +88,33 @@ class _ParentPanelState extends State<ParentPanel> {
             value: _soundEnabled,
             onChanged: (v) {
               setState(() => _soundEnabled = v);
-              GameData.soundEnabled = v;
-              GameData.save();
+              GameData.setSoundEnabled(v);
             },
             title: Text('صدا و افکت‌ها',
                 style: GoogleFonts.vazirmatn(fontWeight: FontWeight.w600)),
             subtitle: const Text('پخش صدا در بازی‌ها'),
           ),
 
-          // AI buddy toggle
-          SwitchListTile(
-            value: _aiEnabled,
-            onChanged: (v) {
-              setState(() => _aiEnabled = v);
-              GameData.aiBuddyUnlocked = v;
-              GameData.save();
-            },
-            title: Text('دستیار هوشمند (AI Buddy)',
-                style: GoogleFonts.vazirmatn(fontWeight: FontWeight.w600)),
-            subtitle: const Text('کمک‌رسان هوشمند در بازی‌ها'),
+          // AI is an entitlement, not a setting. The old switch let a child
+          // unlock a paid feature by simply toggling it in the parent panel.
+          ListTile(
+            leading: Icon(
+              GameData.aiBuddyUnlocked
+                  ? Icons.auto_awesome_rounded
+                  : Icons.lock_rounded,
+              color: GameData.aiBuddyUnlocked
+                  ? AppColors.primary
+                  : AppColors.textLight,
+            ),
+            title: Text(
+              'دستیار هوشمند (AI Buddy)',
+              style: GoogleFonts.vazirmatn(fontWeight: FontWeight.w600),
+            ),
+            subtitle: Text(
+              GameData.aiBuddyUnlocked
+                  ? 'فعال است'
+                  : 'با خرید یا باز کردن این قابلیت فعال می‌شود',
+            ),
           ),
 
           // Time limit
@@ -105,7 +122,9 @@ class _ParentPanelState extends State<ParentPanel> {
             leading: const Icon(Icons.timer_rounded),
             title: Text('محدودیت زمان بازی',
                 style: GoogleFonts.vazirmatn(fontWeight: FontWeight.w600)),
-            subtitle: Text('$_timeLimit دقیقه در روز'),
+            subtitle: Text(
+              '$_timeLimit دقیقه در روز • امروز ${GameData.todayPlaySeconds ~/ 60} دقیقه',
+            ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -114,18 +133,19 @@ class _ParentPanelState extends State<ParentPanel> {
                   onPressed: _timeLimit > 15
                       ? () {
                           setState(() => _timeLimit -= 15);
-                          GameData.timeLimitMinutes = _timeLimit;
-                          GameData.save();
+                          GameData.setTimeLimitMinutes(_timeLimit);
                         }
                       : null,
                 ),
                 IconButton(
                   icon: const Icon(Icons.add_circle_outline),
-                  onPressed: () {
-                    setState(() => _timeLimit += 15);
-                    GameData.timeLimitMinutes = _timeLimit;
-                    GameData.save();
-                  },
+                  onPressed: _timeLimit < 240
+                      ? () {
+                          setState(() => _timeLimit =
+                              (_timeLimit + 15).clamp(15, 240).toInt());
+                          GameData.setTimeLimitMinutes(_timeLimit);
+                        }
+                      : null,
                 ),
               ],
             ),

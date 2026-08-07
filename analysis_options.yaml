@@ -1,0 +1,14 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - build/**
+    - .dart_tool/**
+
+linter:
+  rules:
+    avoid_print: true
+    avoid_slow_async_io: true
+    cancel_subscriptions: true
+    close_sinks: true
+    use_build_context_synchronously: true

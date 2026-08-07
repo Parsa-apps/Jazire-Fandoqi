@@ -1,7 +1,7 @@
 name: kudakeiran
 description: کودک ایران - اپلیکیشن فوق‌گرافیکی آموزشی کودکان
 publish_to: 'none'
-version: 4.0.0+1
+version: 4.1.0+2
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -15,7 +15,6 @@ dependencies:
   # 🎨 UI & Graphics
   google_fonts: 6.2.1
   flutter_animate: 4.5.2
-  shimmer: 3.0.0
   
   # 🎮 Game Engine
   flame: 1.18.0
@@ -23,12 +22,6 @@ dependencies:
   # 💾 Storage
   shared_preferences: 2.3.2
   
-  # 🎉 Effects
-  confetti: 0.7.0
-  
-  # 🔗 Utils
-  url_launcher: 6.3.0
-  fl_chart: 0.69.2
 
 dev_dependencies:
   flutter_test:

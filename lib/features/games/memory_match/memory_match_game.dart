@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../app/app_colors.dart';
 import '../../../core/game_data.dart';
+import '../../../core/play_limit.dart';
 import '../../../shared/widgets/particle_celebration.dart';
 
 /// ═══════════════════════════════════════════════
@@ -13,13 +14,20 @@ import '../../../shared/widgets/particle_celebration.dart';
 /// Uses Flutter animations for smooth card flips
 /// ═══════════════════════════════════════════════
 class MemoryMatchGame extends StatefulWidget {
-  const MemoryMatchGame({super.key});
+  final String? stageId;
+  final int? stageNumber;
+
+  const MemoryMatchGame({
+    super.key,
+    this.stageId,
+    this.stageNumber,
+  });
+
   @override
   State<MemoryMatchGame> createState() => _MemoryState();
 }
 
-class _MemoryState extends State<MemoryMatchGame>
-    with TickerProviderStateMixin {
+class _MemoryState extends State<MemoryMatchGame> {
   // Game state
   late List<_CardData> _cards;
   int? _firstFlipped;
@@ -33,9 +41,8 @@ class _MemoryState extends State<MemoryMatchGame>
   bool _gameOver = false;
   bool _showCelebration = false;
   int _timeLeft = 120;
-
-  late AnimationController _timerCtrl;
-  late AnimationController _entryCtrl;
+  String _selectedLevel = 'medium';
+  int _gameToken = 0;
 
   // Card sets
   static const _animalSet = [
@@ -53,54 +60,31 @@ class _MemoryState extends State<MemoryMatchGame>
     ('🟣', 'بنفش'), ('🟠', 'نارنجی'), ('⚪', 'سفید'), ('⚫', 'سیاه'),
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    _timerCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    );
-    _entryCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..forward();
-  }
-
-  @override
-  void dispose() {
-    _timerCtrl.dispose();
-    _entryCtrl.dispose();
-    super.dispose();
-  }
-
   void _startGame(String type) {
-    List<(String, String)> dataSet;
-    int pairCount;
+    if (!canStartPlay(context)) return;
+    _gameToken++;
+    _selectedLevel = type;
 
+    List<(String, String)> dataSet;
     switch (type) {
       case 'easy':
         dataSet = _animalSet.sublist(0, 4);
-        pairCount = 4;
         _timeLeft = 60;
         break;
       case 'medium':
         dataSet = _fruitSet.sublist(0, 6);
-        pairCount = 6;
         _timeLeft = 90;
         break;
       case 'hard':
         dataSet = _colorSet;
-        pairCount = 8;
         _timeLeft = 120;
         break;
       default:
         dataSet = _animalSet.sublist(0, 6);
-        pairCount = 6;
         _timeLeft = 90;
     }
 
-    // Create pairs
-    _cards = [];
+    _cards = <_CardData>[];
     for (final (emoji, name) in dataSet) {
       _cards.add(_CardData(emoji: emoji, name: name));
       _cards.add(_CardData(emoji: emoji, name: name));
@@ -117,98 +101,107 @@ class _MemoryState extends State<MemoryMatchGame>
       _busy = false;
       _started = true;
       _gameOver = false;
+      _showCelebration = false;
     });
 
-    // Start timer
-    _timerCtrl.repeat();
-    _tick();
+    _tick(_gameToken);
   }
 
-  void _tick() async {
-    while (_timeLeft > 0 && _started && !_gameOver && mounted) {
-      await Future.delayed(const Duration(seconds: 1));
-      if (mounted && !_gameOver) {
-        setState(() => _timeLeft--);
-        if (_timeLeft <= 0) _endGame();
-      }
+  Future<void> _tick(int token) async {
+    while (token == _gameToken &&
+        _timeLeft > 0 &&
+        _started &&
+        !_gameOver &&
+        mounted) {
+      await Future<void>.delayed(const Duration(seconds: 1));
+      if (!mounted || token != _gameToken || _gameOver) return;
+      setState(() => _timeLeft--);
+      if (_timeLeft <= 0) _endGame(won: false);
     }
   }
 
   void _onCardTap(int index) {
-    if (_busy || _gameOver) return;
+    if (_busy || _gameOver || index < 0 || index >= _cards.length) return;
     if (_cards[index].isFlipped || _cards[index].isMatched) return;
 
     HapticFeedback.lightImpact();
+    if (_firstFlipped == null) {
+      setState(() {
+        _cards[index].isFlipped = true;
+        _firstFlipped = index;
+      });
+      return;
+    }
+
+    final token = _gameToken;
+    final firstIndex = _firstFlipped!;
+    var isMatch = false;
+    var won = false;
 
     setState(() {
       _cards[index].isFlipped = true;
+      _secondFlipped = index;
+      _moves++;
+      _busy = true;
+      isMatch = _cards[firstIndex].emoji == _cards[index].emoji;
 
-      if (_firstFlipped == null) {
-        _firstFlipped = index;
+      if (isMatch) {
+        _combo++;
+        final bonus = _combo > 2 ? _combo * 5 : 0;
+        _score += 10 + bonus;
+        _matches++;
+        _cards[firstIndex].isMatched = true;
+        _cards[index].isMatched = true;
+        _firstFlipped = null;
+        _secondFlipped = null;
+        _busy = false;
+        won = _matches == _cards.length ~/ 2;
       } else {
-        _secondFlipped = index;
-        _moves++;
-        _busy = true;
-
-        // Check match
-        if (_cards[_firstFlipped!].emoji == _cards[index].emoji) {
-          // Match!
-          _combo++;
-          final bonus = _combo > 2 ? _combo * 5 : 0;
-          _score += 10 + bonus;
-          _matches++;
-
-          _cards[_firstFlipped!].isMatched = true;
-          _cards[index].isMatched = true;
-
-          HapticFeedback.mediumImpact();
-
-          if (_matches == _cards.length ~/ 2) {
-            // All matched!
-            _showCelebration = true;
-            Future.delayed(const Duration(milliseconds: 1500), () {
-              if (mounted) setState(() => _showCelebration = false);
-            });
-            _endGame();
-          }
-
-          _firstFlipped = null;
-          _secondFlipped = null;
-          _busy = false;
-        } else {
-          // No match
-          _combo = 0;
-          HapticFeedback.heavyImpact();
-
-          Future.delayed(const Duration(milliseconds: 800), () {
-            if (mounted) {
-              setState(() {
-                _cards[_firstFlipped!].isFlipped = false;
-                _cards[index].isFlipped = false;
-                _firstFlipped = null;
-                _secondFlipped = null;
-                _busy = false;
-              });
-            }
-          });
-        }
+        _combo = 0;
       }
+    });
+
+    GameData.recordAnswer(correct: isMatch, skill: 'memory');
+    if (isMatch) {
+      HapticFeedback.mediumImpact();
+      if (won) {
+        setState(() => _showCelebration = true);
+        Future<void>.delayed(const Duration(milliseconds: 1500), () {
+          if (mounted && token == _gameToken) {
+            setState(() => _showCelebration = false);
+          }
+        });
+        _endGame(won: true);
+      }
+      return;
+    }
+
+    HapticFeedback.heavyImpact();
+    Future<void>.delayed(const Duration(milliseconds: 800), () {
+      if (!mounted || token != _gameToken || _gameOver) return;
+      setState(() {
+        _cards[firstIndex].isFlipped = false;
+        _cards[index].isFlipped = false;
+        _firstFlipped = null;
+        _secondFlipped = null;
+        _busy = false;
+      });
     });
   }
 
-  void _endGame() {
-    _timerCtrl.stop();
-    setState(() => _gameOver = true);
-
-    // Bonus for time remaining
-    final timeBonus = _timeLeft * 2;
+  void _endGame({required bool won}) {
+    if (_gameOver) return;
+    _gameOver = true;
+    final timeBonus = won ? _timeLeft * 2 : 0;
     _score += timeBonus;
 
-    // Save progress
+    if (mounted) setState(() {});
     GameData.addCoins(_score ~/ 2);
     GameData.addStars(_matches);
-    GameData.recordCorrect();
-    GameData.addSkill('memory');
+    GameData.updateHighScore(_score, 'quiz');
+    if (won && widget.stageId != null) {
+      GameData.completeStage(widget.stageId!, stageNumber: widget.stageNumber);
+    }
   }
 
   @override
@@ -271,7 +264,7 @@ class _MemoryState extends State<MemoryMatchGame>
           ),
           const Spacer(),
           _glassBtn(Icons.refresh_rounded, () {
-            if (_started) _startGame('medium');
+            if (_started) _startGame(_selectedLevel);
           }),
         ],
       ),

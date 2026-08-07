@@ -14,7 +14,6 @@ class StageNode extends StatefulWidget {
   final String title;
   final String emoji;
   final StageState state;
-  final String route;
   final VoidCallback? onTap;
 
   const StageNode({
@@ -23,7 +22,6 @@ class StageNode extends StatefulWidget {
     required this.title,
     required this.emoji,
     required this.state,
-    required this.route,
     this.onTap,
   });
 

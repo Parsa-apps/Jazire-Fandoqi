@@ -1,9 +1,6 @@
-import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../app/app_colors.dart';
 import '../../core/game_data.dart';
 import '../island/island_screen.dart';
@@ -22,22 +19,24 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeState();
 }
 
-class _HomeState extends State<HomeScreen> with TickerProviderStateMixin {
+class _HomeState extends State<HomeScreen> {
   int _currentTab = 0;
-  late AnimationController _navCtrl;
+  final List<Widget?> _tabWidgets = List<Widget?>.filled(5, null);
 
   @override
   void initState() {
     super.initState();
-    _navCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
+    _tabWidgets[0] = const DashboardTab();
+    GameData.changes.addListener(_onDataChanged);
+  }
+
+  void _onDataChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    _navCtrl.dispose();
+    GameData.changes.removeListener(_onDataChanged);
     super.dispose();
   }
 
@@ -46,22 +45,30 @@ class _HomeState extends State<HomeScreen> with TickerProviderStateMixin {
     return Scaffold(
       body: IndexedStack(
         index: _currentTab,
-        children: [
-          const DashboardTab(),
-          _buildIslandPlaceholder(),
-          _buildMapPlaceholder(),
-          _buildPrizePlaceholder(),
-          _buildProfilePlaceholder(),
-        ],
+        children: List<Widget>.generate(5, _tabFor),
       ),
       bottomNavigationBar: _buildBottomNav(),
     );
   }
 
+  Widget _tabFor(int index) {
+    final existing = _tabWidgets[index];
+    if (existing != null) return existing;
+    final widget = switch (index) {
+      1 => const LearningIsland(embedded: true),
+      2 => const StageMapScreen(embedded: true),
+      3 => const ShopScreen(embedded: true),
+      4 => const ProfileScreen(embedded: true),
+      _ => const DashboardTab(),
+    };
+    _tabWidgets[index] = widget;
+    return widget;
+  }
+
   Widget _buildBottomNav() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -91,6 +98,9 @@ class _HomeState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _navItem(int index, IconData icon, String label) {
     final selected = _currentTab == index;
+    final inactiveColor = Theme.of(context).brightness == Brightness.dark
+        ? Colors.white54
+        : AppColors.textLight;
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -113,7 +123,7 @@ class _HomeState extends State<HomeScreen> with TickerProviderStateMixin {
               duration: const Duration(milliseconds: 300),
               child: Icon(
                 icon,
-                color: selected ? AppColors.primary : AppColors.textLight,
+                color: selected ? AppColors.primary : inactiveColor,
                 size: selected ? 26 : 24,
               ),
             ),
@@ -122,7 +132,7 @@ class _HomeState extends State<HomeScreen> with TickerProviderStateMixin {
               label,
               style: TextStyle(
                 fontSize: 10,
-                color: selected ? AppColors.primary : AppColors.textLight,
+                color: selected ? AppColors.primary : inactiveColor,
                 fontWeight: selected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -175,54 +185,4 @@ class _HomeState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  // Placeholder tabs for island, map, prize, profile
-  Widget _buildIslandPlaceholder() => const LearningIsland();
-  Widget _buildMapPlaceholder() => const StageMapScreen();
-  Widget _buildPrizePlaceholder() => const ShopScreen();
-  Widget _buildProfilePlaceholder() => const ProfileScreen();
-}
-
-class _PlaceholderTab extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Gradient gradient;
-  const _PlaceholderTab({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.gradient,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(gradient: gradient),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 60, color: Colors.white.withOpacity(0.8)),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: GoogleFonts.vazirmatn(
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white.withOpacity(0.7),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

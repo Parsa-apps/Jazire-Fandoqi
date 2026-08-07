@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../app/app_colors.dart';
 import '../../../core/game_data.dart';
+import '../../../core/play_limit.dart';
 import '../../../shared/widgets/particle_celebration.dart';
 
 /// ═══════════════════════════════════════════════
@@ -13,7 +14,15 @@ import '../../../shared/widgets/particle_celebration.dart';
 /// Catch falling stars & letters with a basket
 /// ═══════════════════════════════════════════════
 class StarCatchGame extends StatefulWidget {
-  const StarCatchGame({super.key});
+  final String? stageId;
+  final int? stageNumber;
+
+  const StarCatchGame({
+    super.key,
+    this.stageId,
+    this.stageNumber,
+  });
+
   @override
   State<StarCatchGame> createState() => _StarCatchState();
 }
@@ -26,8 +35,13 @@ class _StarCatchState extends State<StarCatchGame> {
   void initState() {
     super.initState();
     _game = StarCatchFlameGame(
-      onScore: () => setState(() {}),
+      stageId: widget.stageId,
+      stageNumber: widget.stageNumber,
+      onScore: () {
+        if (mounted) setState(() {});
+      },
       onCelebrate: () {
+        if (!mounted) return;
         setState(() => _showCelebration = true);
         Future.delayed(const Duration(milliseconds: 1500), () {
           if (mounted) setState(() => _showCelebration = false);
@@ -171,8 +185,10 @@ class _StarCatchState extends State<StarCatchGame> {
                 ),
               ),
               onPressed: () {
-                _game.startGame();
-                setState(() {});
+                if (canStartPlay(context)) {
+                  _game.startGame();
+                  setState(() {});
+                }
               },
               child: const Text(
                 'شروع بازی! 🚀',
@@ -228,8 +244,10 @@ class _StarCatchState extends State<StarCatchGame> {
                     ),
                   ),
                   onPressed: () {
-                    _game.startGame();
-                    setState(() {});
+                    if (canStartPlay(context)) {
+                      _game.startGame();
+                      setState(() {});
+                    }
                   },
                   child: const Text(
                     'دوباره 🔄',
@@ -266,7 +284,9 @@ class _StarCatchState extends State<StarCatchGame> {
 class StarCatchFlameGame extends FlameGame {
   final VoidCallback onScore;
   final VoidCallback onCelebrate;
-  
+  final String? stageId;
+  final int? stageNumber;
+
   int score = 0;
   int lives = 3;
   bool gameOver = false;
@@ -278,7 +298,12 @@ class StarCatchFlameGame extends FlameGame {
   double _spawnInterval = 1.2;
   double _gameTime = 0;
   
-  StarCatchFlameGame({required this.onScore, required this.onCelebrate});
+  StarCatchFlameGame({
+    required this.onScore,
+    required this.onCelebrate,
+    this.stageId,
+    this.stageNumber,
+  });
 
   void startGame() {
     score = 0;
@@ -295,7 +320,10 @@ class StarCatchFlameGame extends FlameGame {
     
     // Add basket
     _basket = _Basket();
-    _basket.position = Vector2(size.x / 2, size.y - 80);
+    _basket.position = Vector2(
+      max(40, size.x / 2),
+      max(40, size.y - 80),
+    );
     add(_basket);
     
     onScore();
@@ -303,7 +331,8 @@ class StarCatchFlameGame extends FlameGame {
 
   void moveBasket(double screenX) {
     if (!started || gameOver) return;
-    _basket.position.x = screenX.clamp(40.0, size.x - 40).toDouble();
+    final maxX = max(40.0, size.x - 40);
+    _basket.position.x = screenX.clamp(40.0, maxX).toDouble();
   }
 
   @override
@@ -325,15 +354,16 @@ class StarCatchFlameGame extends FlameGame {
     }
     
     // Check for missed items
-    children.whereType<_FallingItem>().where((item) => item.position.y > size.y + 50).toList().forEach((item) {
+    children
+        .whereType<_FallingItem>()
+        .where((item) => item.position.y > size.y + 50)
+        .toList()
+        .forEach((item) {
       if (!item.isBad) {
+        GameData.recordAnswer(correct: false, skill: 'counting');
         lives--;
-        if (lives <= 0) {
-          gameOver = true;
-          GameData.addCoins(score);
-          GameData.addStars(score ~/ 5);
-          onScore();
-        }
+        HapticFeedback.heavyImpact();
+        if (lives <= 0) _finishGame();
       }
       item.removeFromParent();
     });
@@ -349,9 +379,10 @@ class StarCatchFlameGame extends FlameGame {
   }
 
   void _spawnItem(int level) {
+    if (size.x < 80) return;
     final x = _rng.nextDouble() * (size.x - 80) + 40;
     final speed = 130.0 + level * 18 + _rng.nextDouble() * 50;
-    final isBad = _rng.nextDouble() < 0.2 + level * 0.02;
+    final isBad = _rng.nextDouble() < (0.2 + level * 0.02).clamp(0.2, 0.65);
     
     if (isBad) {
       add(_FallingItem(
@@ -374,23 +405,32 @@ class StarCatchFlameGame extends FlameGame {
   }
 
   void _onCatch(_FallingItem item) {
+    if (gameOver) return;
     if (item.isBad) {
       lives--;
+      GameData.recordAnswer(correct: false, skill: 'counting');
       HapticFeedback.heavyImpact();
-      if (lives <= 0) {
-        gameOver = true;
-        GameData.addCoins(score);
-        GameData.addStars(score ~/ 5);
-      }
-      onScore();
+      if (lives <= 0) _finishGame();
     } else {
       score += 10;
+      GameData.recordAnswer(correct: true, skill: 'counting');
       HapticFeedback.lightImpact();
-      GameData.recordCorrect();
       if (score % 50 == 0) onCelebrate();
-      onScore();
     }
     item.removeFromParent();
+    onScore();
+  }
+
+  void _finishGame() {
+    if (gameOver) return;
+    gameOver = true;
+    GameData.addCoins(score);
+    GameData.addStars(score ~/ 5);
+    GameData.updateHighScore(score, 'quiz');
+    if (stageId != null && score >= 50) {
+      GameData.completeStage(stageId!, stageNumber: stageNumber);
+    }
+    onScore();
   }
 }
 

@@ -11,7 +11,6 @@ import '../../../app/app_colors.dart';
 class FloatingPlatform extends StatefulWidget {
   final String emoji;
   final String name;
-  final String route;
   final Color color;
   final double floatDelay;
   final bool isLocked;
@@ -21,7 +20,6 @@ class FloatingPlatform extends StatefulWidget {
     super.key,
     required this.emoji,
     required this.name,
-    required this.route,
     required this.color,
     this.floatDelay = 0,
     this.isLocked = false,

@@ -15,14 +15,19 @@ import 'painters/stat_ring_painter.dart';
 /// Avatar, stats, skill radar, achievements, history
 /// ═══════════════════════════════════════════════
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final bool embedded;
+
+  const ProfileScreen({
+    super.key,
+    this.embedded = false,
+  });
+
   @override
   State<ProfileScreen> createState() => _ProfileState();
 }
 
 class _ProfileState extends State<ProfileScreen>
     with TickerProviderStateMixin {
-  late AnimationController _entryCtrl;
   late AnimationController _radarCtrl;
   late AnimationController _ringCtrl;
   late AnimationController _barCtrl;
@@ -30,11 +35,6 @@ class _ProfileState extends State<ProfileScreen>
   @override
   void initState() {
     super.initState();
-    _entryCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..forward();
-
     _radarCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
@@ -60,11 +60,16 @@ class _ProfileState extends State<ProfileScreen>
     Future.delayed(const Duration(milliseconds: 700), () {
       if (mounted) _barCtrl.forward();
     });
+    GameData.changes.addListener(_onDataChanged);
+  }
+
+  void _onDataChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    _entryCtrl.dispose();
+    GameData.changes.removeListener(_onDataChanged);
     _radarCtrl.dispose();
     _ringCtrl.dispose();
     _barCtrl.dispose();
@@ -113,13 +118,15 @@ class _ProfileState extends State<ProfileScreen>
               ],
             ),
 
-            // Back button
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: _glassBtn(Icons.arrow_back_rounded, () => Navigator.pop(context)),
+            // Back button is only needed when this screen is pushed as a
+            // standalone route. HomeScreen owns navigation when embedded.
+            if (!widget.embedded)
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: _glassBtn(Icons.arrow_back_rounded, () => Navigator.pop(context)),
+                ),
               ),
-            ),
           ],
         ),
       ),

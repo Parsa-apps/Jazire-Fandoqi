@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../app/app_colors.dart';
 import '../../core/game_data.dart';
+import '../../core/game_launch.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
 import 'painters/path_painter.dart';
 import 'painters/map_background_painter.dart';
@@ -15,7 +16,13 @@ import 'widgets/stage_node.dart';
 /// Beautiful scrolling map with curved path
 /// ═══════════════════════════════════════════════
 class StageMapScreen extends StatefulWidget {
-  const StageMapScreen({super.key});
+  final bool embedded;
+
+  const StageMapScreen({
+    super.key,
+    this.embedded = false,
+  });
+
   @override
   State<StageMapScreen> createState() => _StageMapState();
 }
@@ -24,7 +31,6 @@ class _StageMapState extends State<StageMapScreen>
     with TickerProviderStateMixin {
   late ScrollController _scrollCtrl;
   late AnimationController _animCtrl;
-  late AnimationController _entryCtrl;
 
   // Stage definitions
   final List<_StageData> _stages = [
@@ -44,35 +50,43 @@ class _StageMapState extends State<StageMapScreen>
 
   // Computed path points (screen coordinates)
   List<Offset> _pathPoints = [];
+  double _computedWidth = 0;
+
+  double get _mapHeight => _stages.length * 160.0 + 300;
 
   @override
   void initState() {
     super.initState();
-    _scrollCtrl = ScrollController();
+    _scrollCtrl = ScrollController()..addListener(_onScroll);
+    GameData.changes.addListener(_onDataChanged);
     _animCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 20),
     )..repeat();
 
-    _entryCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..forward();
-
-    // Compute path points after layout
+    // Compute path points after layout.
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       _computePathPoints();
       _scrollToCurrentStage();
     });
   }
 
+  void _onScroll() {
+    if (mounted) setState(() {});
+  }
+
+  void _onDataChanged() {
+    if (mounted) setState(() {});
+  }
+
   void _computePathPoints() {
     final w = MediaQuery.of(context).size.width;
-    final totalH = _stages.length * 160.0 + 200;
-
+    _computedWidth = w;
     _pathPoints = _stages.map((s) {
-      return Offset(s.relX * w, s.relY * totalH);
+      return Offset(s.relX * w, s.relY * _mapHeight);
     }).toList();
+    if (mounted) setState(() {});
   }
 
   void _scrollToCurrentStage() {
@@ -89,19 +103,25 @@ class _StageMapState extends State<StageMapScreen>
 
   @override
   void dispose() {
+    GameData.changes.removeListener(_onDataChanged);
+    _scrollCtrl.removeListener(_onScroll);
     _scrollCtrl.dispose();
     _animCtrl.dispose();
-    _entryCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
-    final totalH = _stages.length * 160.0 + 300;
+    final totalH = _mapHeight;
+    if (_computedWidth != w) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _computedWidth != w) _computePathPoints();
+      });
+    }
 
     return AnimatedBuilder(
-      animation: Listenable.merge([_animCtrl, _entryCtrl]),
+      animation: _animCtrl,
       builder: (context, _) {
         return Scaffold(
           body: Stack(
@@ -116,19 +136,14 @@ class _StageMapState extends State<StageMapScreen>
               ),
 
               // ─── SCROLLABLE MAP ───
-              NotificationListener<ScrollNotification>(
-                onNotification: (_) {
-                  setState(() {}); // rebuild for parallax
-                  return false;
-                },
-                child: SingleChildScrollView(
-                  controller: _scrollCtrl,
-                  physics: const BouncingScrollPhysics(),
-                  child: SizedBox(
-                    height: totalH,
-                    width: w,
-                    child: Stack(
-                      children: [
+              SingleChildScrollView(
+                controller: _scrollCtrl,
+                physics: const BouncingScrollPhysics(),
+                child: SizedBox(
+                  height: totalH,
+                  width: w,
+                  child: Stack(
+                    children: [
                         // ─── PATH ───
                         if (_pathPoints.isNotEmpty)
                           CustomPaint(
@@ -149,7 +164,6 @@ class _StageMapState extends State<StageMapScreen>
                     ),
                   ),
                 ),
-              ),
 
               // ─── UI OVERLAY ───
               _buildUI(),
@@ -164,7 +178,7 @@ class _StageMapState extends State<StageMapScreen>
     // Progress based on completed stages
     final completed = GameData.completedStageCount;
     if (completed == 0) return 0;
-    return completed / _stages.length;
+    return (completed / _stages.length).clamp(0.0, 1.0).toDouble();
   }
 
   List<Widget> _buildStageNodes(double w, double totalH) {
@@ -174,8 +188,9 @@ class _StageMapState extends State<StageMapScreen>
       final nodeW = 72.0;
       final nodeH = 90.0;
 
+      final stageId = 'stage_${stage.number}';
       StageState state;
-      if (i + 1 < GameData.currentStage) {
+      if (GameData.isStageCompleted(stageId)) {
         state = StageState.completed;
       } else if (i + 1 == GameData.currentStage) {
         state = StageState.current;
@@ -191,7 +206,6 @@ class _StageMapState extends State<StageMapScreen>
           title: stage.title,
           emoji: stage.emoji,
           state: state,
-          route: '/game/${stage.gameName}',
           onTap: () => _onStageTap(stage),
         )
             .animate()
@@ -314,10 +328,13 @@ class _StageMapState extends State<StageMapScreen>
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                _glassBtn(Icons.arrow_back_rounded, () {
-                  HapticFeedback.lightImpact();
-                  Navigator.pop(context);
-                }),
+                if (!widget.embedded)
+                  _glassBtn(Icons.arrow_back_rounded, () {
+                    HapticFeedback.lightImpact();
+                    Navigator.pop(context);
+                  })
+                else
+                  const SizedBox(width: 44),
                 const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -387,6 +404,7 @@ class _StageMapState extends State<StageMapScreen>
   }
 
   Widget _buildFandoghiGuide() {
+    final allCompleted = GameData.currentStage > _stages.length;
     final idx = (GameData.currentStage - 1).clamp(0, _stages.length - 1).toInt();
     final currentStage = _stages[idx];
     return Container(
@@ -417,7 +435,9 @@ class _StageMapState extends State<StageMapScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'مرحله بعد: ${currentStage.title}',
+                  allCompleted
+                      ? 'همه مراحل را بردی! 🏆'
+                      : 'مرحله بعد: ${currentStage.title}',
                   style: GoogleFonts.vazirmatn(
                     fontWeight: FontWeight.w800,
                     fontSize: 14,
@@ -426,7 +446,9 @@ class _StageMapState extends State<StageMapScreen>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${currentStage.emoji} ${currentStage.gameName} رو بازی کن!',
+                  allCompleted
+                      ? 'تو قهرمان نقشه‌ای!'
+                      : '${currentStage.emoji} ${currentStage.gameName} رو بازی کن!',
                   style: TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
@@ -546,7 +568,15 @@ class _StageMapState extends State<StageMapScreen>
               ),
               onPressed: () {
                 Navigator.pop(ctx);
-                Navigator.pushNamed(context, '/game/${stage.gameName}');
+                Navigator.pushNamed(
+                  context,
+                  '/game/${stage.gameName}',
+                  arguments: GameLaunch(
+                    gameName: stage.gameName,
+                    stageId: 'stage_${stage.number}',
+                    stageNumber: stage.number,
+                  ),
+                );
               },
               child: Text(
                 stage.number < GameData.currentStage ? 'بازی مجدد 🔄' : 'شروع! 🚀',
