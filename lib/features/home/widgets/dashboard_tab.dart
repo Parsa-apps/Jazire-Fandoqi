@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../app/app_colors.dart';
+import '../../../core/ai_system.dart';
+import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
 import '../../../shared/widgets/glass_card.dart';
@@ -26,13 +28,26 @@ class _DashboardState extends State<DashboardTab> {
   @override
   void initState() {
     super.initState();
-    _scrollCtrl.addListener(() {
-      setState(() => _scrollOffset = _scrollCtrl.offset);
+    _scrollCtrl.addListener(_onScroll);
+    GameData.changes.addListener(_onDataChanged);
+    FandoghiCoach.enablePersistentPresence();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) FandoghiCoach.welcome();
     });
+  }
+
+  void _onScroll() {
+    if (mounted) setState(() => _scrollOffset = _scrollCtrl.offset);
+  }
+
+  void _onDataChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    GameData.changes.removeListener(_onDataChanged);
+    _scrollCtrl.removeListener(_onScroll);
     _scrollCtrl.dispose();
     super.dispose();
   }
@@ -655,7 +670,17 @@ class _DashboardState extends State<DashboardTab> {
           ],
         ),
       ).animate().scale(
-            delay: Duration(milliseconds: 100 * ['الفبا', 'اعداد', 'رنگ‌ها', 'حافظه', 'حیوانات', 'نقاشی'].indexOf(name)),
+            delay: Duration(
+              milliseconds: 100 *
+                  [
+                    'ستاره‌گیری',
+                    'حباب‌ترکان',
+                    'حافظه',
+                    'الفبا',
+                    'اعداد',
+                    'رنگ‌ها',
+                  ].indexOf(name).clamp(0, 5).toInt(),
+            ),
             duration: 400.ms,
             curve: Curves.elasticOut,
           ),
@@ -736,7 +761,12 @@ class _DashboardState extends State<DashboardTab> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(24),
-          onTap: () {},
+          onTap: () {
+            HapticFeedback.lightImpact();
+            if (games.isNotEmpty) {
+              Navigator.pushNamed(context, '/game/${games.first}');
+            }
+          },
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -788,21 +818,27 @@ class _DashboardState extends State<DashboardTab> {
                   runSpacing: 6,
                   children: games
                       .map(
-                        (g) => Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            g,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                        (g) => GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            Navigator.pushNamed(context, '/game/$g');
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              g,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ),
@@ -819,38 +855,65 @@ class _DashboardState extends State<DashboardTab> {
 
   // ─── FANDOGHI TIP ─────────────────────────────
   Widget _buildFandoghiTip() {
+    final coachText = GameData.totalCorrect == 0
+        ? 'من از اول تا آخر کنارت هستم؛ هر وقت آماده‌ای، یکی از بازی‌ها را انتخاب کن!'
+        : AI.mascotMsg();
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-      child: GlassCard(
-        padding: const EdgeInsets.all(20),
-        borderRadius: 28,
+      child: GradientGlassCard(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFF8E1), Color(0xFFFFECB3)],
+        ),
+        borderRadius: 30,
+        padding: const EdgeInsets.fromLTRB(16, 12, 20, 12),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const FandoghiV2(
-              size: 60,
+            FandoghiV2(
+              size: 104,
               animate: true,
-              mood: FandoghiMood.happy,
+              mood: GameData.successRate > 0.8
+                  ? FandoghiMood.excited
+                  : FandoghiMood.happy,
+              onTap: () => FandoghiCoach.say(
+                'من فندقی‌ام؛ راهنما، مربی و داور بازی‌های تو! روی هر بازی بزن تا با هم شروع کنیم 🌰',
+                mood: FandoghiMood.excited,
+                duration: const Duration(seconds: 4),
+              ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'نکته فندقی 🌰',
+                    'فندقی، مربی تو 🌰',
                     style: GoogleFonts.vazirmatn(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 15,
-                      color: AppColors.primary,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 17,
+                      color: AppColors.fandoghiDark,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
-                    'هر روز بازی کن و ستاره جمع کن! با هر ۱۰۰ سکه یه لول بالا میری! 🌟',
-                    style: TextStyle(
+                    coachText,
+                    style: const TextStyle(
                       fontSize: 13,
+                      color: AppColors.textPrimary,
+                      height: 1.55,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'برای راهنمایی روی من بزن!',
+                    style: TextStyle(
+                      fontSize: 11,
                       color: AppColors.textSecondary,
-                      height: 1.5,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
@@ -863,52 +926,69 @@ class _DashboardState extends State<DashboardTab> {
   }
 
   // ─── PARENT GATE ──────────────────────────────
-  void _parentGate(BuildContext context) {
+  Future<void> _parentGate(BuildContext context) async {
     final n1 = Random().nextInt(10) + 1;
     final n2 = Random().nextInt(10) + 1;
-    final ct = TextEditingController();
-    showDialog(
+    final controller = TextEditingController();
+    var errorText = '';
+
+    final approved = await showDialog<bool>(
       context: context,
-      builder: (cx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('🔒 ورود والدین'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '$n1 + $n2 = ?',
-              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: ct,
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              decoration: InputDecoration(
-                hintText: 'جواب',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: const Text('🔒 ورود والدین'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'این سؤال برای ورود بزرگ‌ترهاست.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '$n1 + $n2 = ?',
+                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'جواب',
+                  errorText: errorText.isEmpty ? null : errorText,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
               ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('انصراف'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (int.tryParse(controller.text) == n1 + n2) {
+                  Navigator.pop(dialogContext, true);
+                } else {
+                  setDialogState(() => errorText = 'جواب درست نیست. دوباره امتحان کنید.');
+                }
+              },
+              child: const Text('تایید'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(cx),
-            child: const Text('انصراف'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (int.tryParse(ct.text) == n1 + n2) {
-                Navigator.pop(cx);
-                Navigator.pushNamed(context, '/parent');
-              }
-            },
-            child: const Text('تایید'),
-          ),
-        ],
       ),
     );
+    controller.dispose();
+    if (approved == true && context.mounted) {
+      await Navigator.pushNamed(context, '/parent');
+    }
   }
 }

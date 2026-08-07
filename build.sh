@@ -1,61 +1,47 @@
-#!/bin/bash
-# ═══════════════════════════════════════════════
-# 🚀 KUDAKE IRAN — Build Script
-# ═══════════════════════════════════════════════
+#!/usr/bin/env bash
+# کودک ایران — reproducible local/CI validation and build
+set -Eeuo pipefail
 
-set -e
+BUILD_MODE="${BUILD_MODE:-debug}"
 
-echo "═══════════════════════════════════════"
-echo "🚀 کودک ایران v4.0 — Build Script"
-echo "═══════════════════════════════════════"
-echo ""
+printf '=======================================\n'
+printf 'کودک ایران — validation/build (%s)\n' "$BUILD_MODE"
+printf '=======================================\n'
 
-# Check Flutter
-if ! command -v flutter &> /dev/null; then
-    echo "❌ Flutter نصب نیست!"
-    echo "از https://flutter.dev نصب کن"
-    exit 1
+if ! command -v flutter >/dev/null 2>&1; then
+  echo 'Flutter نصب نیست. از کانال stable Flutter 3.24+ استفاده کنید.' >&2
+  exit 1
 fi
 
-echo "✅ Flutter: $(flutter --version | head -1)"
-echo ""
+flutter --version | head -1 || true
 
-# Step 1: Clean
-echo "🧹 مرحله ۱: پاکسازی..."
-flutter clean
-echo "✅ پاکسازی انجام شد"
-echo ""
+# The repository keeps platform folders out of the source snapshot. Generate
+# the Android shell deterministically before any build command.
+if [[ ! -d android ]]; then
+  echo 'ساخت پوسته Android...'
+  flutter create . --platforms android --project-name kudakeiran --org com.parsaapps
+fi
 
-# Step 2: Get dependencies
-echo "📦 مرحله ۲: نصب پکیج‌ها..."
+echo 'دریافت وابستگی‌ها...'
 flutter pub get
-echo "✅ پکیج‌ها نصب شد"
-echo ""
 
-# Step 3: Analyze
-echo "🔍 مرحله ۳: بررسی کد..."
-flutter analyze --no-fatal-infos 2>&1 | tail -20
-echo ""
+echo 'تولید آیکون‌ها...'
+dart run flutter_launcher_icons
 
-# Step 4: Build APK
-echo "📱 مرحله ۴: بیلد APK..."
-flutter build apk --debug
-echo ""
+echo 'تحلیل ایستا...'
+flutter analyze --no-fatal-infos
 
-if [ -f build/app/outputs/flutter-apk/app-debug.apk ]; then
-    echo "═══════════════════════════════════════"
-    echo "✅ بیلد موفق!"
-    echo "═══════════════════════════════════════"
-    echo ""
-    echo "📱 APK: build/app/outputs/flutter-apk/app-debug.apk"
-    echo "📏 حجم: $(du -h build/app/outputs/flutter-apk/app-debug.apk | cut -f1)"
-    echo ""
-    echo "برای نصب روی دستگاه:"
-    echo "  flutter install"
-    echo ""
-    echo "برای اجرا روی شبیه‌ساز:"
-    echo "  flutter run"
+echo 'تست‌ها...'
+flutter test
+
+if [[ "$BUILD_MODE" == "release" ]]; then
+  echo 'ساخت APK و AAB نسخه انتشار...'
+  flutter build apk --release
+  flutter build appbundle --release
+  echo 'APK: build/app/outputs/flutter-apk/app-release.apk'
+  echo 'AAB: build/app/outputs/bundle/release/app-release.aab'
 else
-    echo "❌ بیلد ناموفق!"
-    echo "خروجی بالا رو بررسی کن"
+  echo 'ساخت APK آزمایشی...'
+  flutter build apk --debug
+  echo 'APK: build/app/outputs/flutter-apk/app-debug.apk'
 fi

@@ -12,7 +12,13 @@ import 'painters/coin_rain_painter.dart';
 /// Categories, items, purchase animations
 /// ═══════════════════════════════════════════════
 class ShopScreen extends StatefulWidget {
-  const ShopScreen({super.key});
+  final bool embedded;
+
+  const ShopScreen({
+    super.key,
+    this.embedded = false,
+  });
+
   @override
   State<ShopScreen> createState() => _ShopState();
 }
@@ -31,7 +37,7 @@ class _ShopState extends State<ShopScreen>
   final _categories = [
     _Category('🎨', 'استیکرها', const Color(0xFF6C5CE7)),
     _Category('😎', 'آواتارها', const Color(0xFF00CEC9)),
-    _Category('🌟', 'قدرت‌ها', const Color(0xFFFFD700)),
+    _Category('🌟', 'آیتم‌ها', const Color(0xFFFFD700)),
     _Category('🎁', 'ویژه', const Color(0xFFE17055)),
   ];
 
@@ -53,16 +59,16 @@ class _ShopState extends State<ShopScreen>
       ShopItem('avatar_scientist', '🧑‍🔬', 'دانشمند', 220, 'آواتار دانشمند'),
     ],
     2: [ // Powers
-      ShopItem('power_double', '⚡', 'دوبرابر سکه', 300, 'سکه‌ها ۲ برابر میشن!'),
-      ShopItem('power_shield', '🛡️', 'محافظ جان', 200, 'یک جان اضافه'),
-      ShopItem('power_hint', '💡', 'راهنمایی', 100, 'جواب رو ببین'),
-      ShopItem('power_slow', '🐌', 'زمان بیشتر', 150, 'تایمر +۳۰ ثانیه'),
+      ShopItem('power_double', '⚡', 'نشان برق', 300, 'یک آیتم درخشان برای کلکسیون'),
+      ShopItem('power_shield', '🛡️', 'نشان محافظ', 200, 'نشان شجاعت برای پروفایل'),
+      ShopItem('power_hint', '💡', 'لامپ فکری', 100, 'آیتم بامزه برای کلکسیون'),
+      ShopItem('power_slow', '🐌', 'حلزون بامزه', 150, 'یک دوست کوچک و آرام'),
     ],
     3: [ // Special
       ShopItem('special_theme_night', '🌙', 'تم شب', 400, 'پس‌زمینه آسمان شب'),
       ShopItem('special_theme_ocean', '🌊', 'تم اقیانوس', 400, 'پس‌زمینه اقیانوس'),
       ShopItem('special_fandoghi_hat', '🎩', 'کلاه فندقی', 350, 'کلاه شیک برای فندقی'),
-      ShopItem('special_confetti', '🎊', 'کانفتی نامحدود', 500, 'جشن همیشگی!'),
+      ShopItem('special_confetti', '🎊', 'جعبه جشن', 500, 'یک آیتم شاد برای کلکسیون'),
     ],
   };
 
@@ -81,10 +87,16 @@ class _ShopState extends State<ShopScreen>
       vsync: this,
       duration: const Duration(milliseconds: 2000),
     )..repeat();
+    GameData.changes.addListener(_onDataChanged);
+  }
+
+  void _onDataChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    GameData.changes.removeListener(_onDataChanged);
     _purchaseCtrl.dispose();
     _coinBounceCtrl.dispose();
     _glowCtrl.dispose();
@@ -96,13 +108,17 @@ class _ShopState extends State<ShopScreen>
       _showSnackBar('سکه‌ت کافی نیست! 😅', Colors.red);
       return;
     }
-    if (GameData.stickers.contains(item.id)) {
+    if (GameData.hasItem(item.id)) {
       _showSnackBar('قبلاً خریدی! ✓', Colors.orange);
       return;
     }
 
-    // Deduct coins
-    GameData.buySticker(item.id, item.price);
+    // Deduct and persist atomically. The return value protects against a
+    // double tap or a stale modal opened before another purchase.
+    if (!GameData.buyItem(item.id, item.price)) {
+      _showSnackBar('این آیتم دیگر قابل خرید نیست.', Colors.orange);
+      return;
+    }
     HapticFeedback.heavyImpact();
 
     setState(() {
@@ -208,7 +224,10 @@ class _ShopState extends State<ShopScreen>
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  _glassBtn(Icons.arrow_back_rounded, () => Navigator.pop(context)),
+                  if (!widget.embedded)
+                    _glassBtn(Icons.arrow_back_rounded, () => Navigator.pop(context))
+                  else
+                    const SizedBox(width: 44),
                   const Spacer(),
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -388,7 +407,7 @@ class _ShopState extends State<ShopScreen>
 
   // ─── ITEM CARD ──────────────────────────────
   Widget _buildItemCard(ShopItem item, int index) {
-    final owned = GameData.stickers.contains(item.id);
+    final owned = GameData.hasItem(item.id);
     final canAfford = GameData.coins >= item.price;
     final catColor = _categories[_selectedCategory].color;
 
@@ -568,7 +587,7 @@ class _ShopState extends State<ShopScreen>
 
   // ─── ITEM DETAIL MODAL ──────────────────────
   void _showItemDetail(ShopItem item) {
-    final owned = GameData.stickers.contains(item.id);
+    final owned = GameData.hasItem(item.id);
     final canAfford = GameData.coins >= item.price;
 
     HapticFeedback.lightImpact();

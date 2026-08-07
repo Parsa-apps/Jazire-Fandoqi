@@ -1,10 +1,10 @@
 workflows:
   android-release:
-    name: Android Release (APK + AAB)
+    name: Android release validation
     max_build_duration: 60
-    instance_type: mac_mini_m2
+    instance_type: linux_x2
     environment:
-      flutter: stable
+      flutter: 3.24.3
       java: 17
       vars:
         PACKAGE_NAME: "com.parsaapps.kudakeiran"
@@ -14,10 +14,10 @@ workflows:
         - tag
         - pull_request
       branch_patterns:
-        - pattern: '*'
+        - pattern: '**'
           include: true
     scripts:
-      - name: Ensure Android folder exists
+      - name: Generate Android platform shell
         script: |
           if [ ! -d "android" ]; then
             flutter create . --platforms android \
@@ -27,11 +27,13 @@ workflows:
         script: flutter pub get
       - name: Generate launcher icons
         script: dart run flutter_launcher_icons
-      - name: Flutter analyze (non-blocking)
-        script: flutter analyze || echo "Analyze finished with issues (non-blocking)"
-      - name: Build APK (Release)
+      - name: Flutter analyze
+        script: flutter analyze --no-fatal-infos
+      - name: Flutter tests
+        script: flutter test
+      - name: Build APK (release)
         script: flutter build apk --release
-      - name: Build AAB (Release)
+      - name: Build AAB (release)
         script: flutter build appbundle --release
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk

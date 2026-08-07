@@ -14,7 +14,6 @@ class StageNode extends StatefulWidget {
   final String title;
   final String emoji;
   final StageState state;
-  final String route;
   final VoidCallback? onTap;
 
   const StageNode({
@@ -23,7 +22,6 @@ class StageNode extends StatefulWidget {
     required this.title,
     required this.emoji,
     required this.state,
-    required this.route,
     this.onTap,
   });
 
@@ -72,10 +70,8 @@ class _StageNodeState extends State<StageNode>
       onTapDown: (_) => setState(() => _isPressed = true),
       onTapUp: (_) {
         setState(() => _isPressed = false);
-        if (widget.state != StageState.locked) {
-          HapticFeedback.mediumImpact();
-          widget.onTap?.call();
-        }
+        HapticFeedback.lightImpact();
+        widget.onTap?.call();
       },
       onTapCancel: () => setState(() => _isPressed = false),
       child: AnimatedBuilder(
@@ -84,10 +80,6 @@ class _StageNodeState extends State<StageNode>
           final pulseScale = widget.state == StageState.current
               ? 1.0 + sin(_pulseCtrl.value * pi) * 0.08
               : 1.0;
-          final pulseGlow = widget.state == StageState.current
-              ? 0.3 + sin(_pulseCtrl.value * pi) * 0.2
-              : 0.0;
-
           return Transform.scale(
             scale: (_isPressed ? 0.9 : 1.0) * pulseScale,
             child: child,

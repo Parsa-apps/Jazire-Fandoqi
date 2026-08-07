@@ -1,10 +1,8 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../app/app_colors.dart';
-import '../../core/game_data.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
 import 'painters/sky_painter.dart';
 import 'painters/water_painter.dart';
@@ -16,7 +14,13 @@ import 'widgets/floating_platform.dart';
 /// A magical floating island with game platforms
 /// ═══════════════════════════════════════════════
 class LearningIsland extends StatefulWidget {
-  const LearningIsland({super.key});
+  final bool embedded;
+
+  const LearningIsland({
+    super.key,
+    this.embedded = false,
+  });
+
   @override
   State<LearningIsland> createState() => _IslandState();
 }
@@ -85,6 +89,39 @@ class _IslandState extends State<LearningIsland>
               // ─── LAYER 5: FLOATING PLATFORMS ───
               _buildPlatforms(context),
 
+              // A standalone island still needs a safe way home. When it is
+              // embedded in HomeScreen the app-level bottom navigation owns
+              // navigation, so no nested back button is shown.
+              if (!widget.embedded)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: Row(
+                        children: [
+                          _glassButton(
+                            Icons.arrow_back_rounded,
+                            () => Navigator.pop(context),
+                          ),
+                          const Spacer(),
+                          Text(
+                            'جزیره یادگیری 🏝️',
+                            style: GoogleFonts.vazirmatn(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const Spacer(),
+                          const SizedBox(width: 44),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         );
@@ -93,6 +130,22 @@ class _IslandState extends State<LearningIsland>
   }
 
   // ─── FLOATING PLATFORMS ───────────────────
+  Widget _glassButton(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.25),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withOpacity(0.2)),
+        ),
+        child: Icon(icon, color: Colors.white, size: 22),
+      ),
+    );
+  }
+
   Widget _buildPlatforms(BuildContext context) {
     final floatY = sin(_floatCtrl.value * pi) * 6;
     final h = MediaQuery.of(context).size.height;
@@ -118,7 +171,6 @@ class _IslandState extends State<LearningIsland>
           child: FloatingPlatform(
             emoji: p.emoji,
             name: p.name,
-            route: p.route,
             color: p.color,
             floatDelay: p.delay.toDouble(),
             onTap: () => Navigator.pushNamed(context, p.route),

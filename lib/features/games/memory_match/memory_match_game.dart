@@ -4,7 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../app/app_colors.dart';
+import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
+import '../../../core/play_limit.dart';
+import '../../../shared/widgets/fandoghi_v2.dart';
+import '../../../shared/widgets/illustration_tile.dart';
 import '../../../shared/widgets/particle_celebration.dart';
 
 /// ═══════════════════════════════════════════════
@@ -13,13 +17,20 @@ import '../../../shared/widgets/particle_celebration.dart';
 /// Uses Flutter animations for smooth card flips
 /// ═══════════════════════════════════════════════
 class MemoryMatchGame extends StatefulWidget {
-  const MemoryMatchGame({super.key});
+  final String? stageId;
+  final int? stageNumber;
+
+  const MemoryMatchGame({
+    super.key,
+    this.stageId,
+    this.stageNumber,
+  });
+
   @override
   State<MemoryMatchGame> createState() => _MemoryState();
 }
 
-class _MemoryState extends State<MemoryMatchGame>
-    with TickerProviderStateMixin {
+class _MemoryState extends State<MemoryMatchGame> {
   // Game state
   late List<_CardData> _cards;
   int? _firstFlipped;
@@ -33,77 +44,83 @@ class _MemoryState extends State<MemoryMatchGame>
   bool _gameOver = false;
   bool _showCelebration = false;
   int _timeLeft = 120;
+  String _selectedLevel = 'medium';
+  int _gameToken = 0;
 
-  late AnimationController _timerCtrl;
-  late AnimationController _entryCtrl;
+  static const String _memoryAsset =
+      'assets/illustrations/memory_cards.webp';
 
-  // Card sets
-  static const _animalSet = [
-    ('🦁', 'شیر'), ('🐱', 'گربه'), ('🐶', 'سگ'), ('🐰', 'خرگوش'),
-    ('🐘', 'فیل'), ('🐵', 'میمون'), ('🦊', 'روباه'), ('🐼', 'پاندا'),
-  ];
-
-  static const _fruitSet = [
-    ('🍎', 'سیب'), ('🍌', 'موز'), ('🍇', 'انگور'), ('🍊', 'پرتقال'),
-    ('🍓', 'توت‌فرنگی'), ('🍉', 'هندوانه'), ('🍒', 'گیلاس'), ('🍍', 'آناناس'),
-  ];
-
-  static const _colorSet = [
-    ('🔴', 'قرمز'), ('🔵', 'آبی'), ('🟢', 'سبز'), ('🟡', 'زرد'),
-    ('🟣', 'بنفش'), ('🟠', 'نارنجی'), ('⚪', 'سفید'), ('⚫', 'سیاه'),
+  // Generated, consistent illustrations replace emoji-only memory cards.
+  static const _memorySet = [
+    _MemoryItem('🚀', 'موشک', 0),
+    _MemoryItem('☂️', 'چتر', 1),
+    _MemoryItem('🪁', 'بادبادک', 2),
+    _MemoryItem('🤖', 'ربات', 3),
+    _MemoryItem('🦕', 'دایناسور', 4),
+    _MemoryItem('🚢', 'زیردریایی', 5),
+    _MemoryItem('🦋', 'پروانه', 6),
+    _MemoryItem('🌈', 'رنگین‌کمان', 7),
   ];
 
   @override
   void initState() {
     super.initState();
-    _timerCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    );
-    _entryCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..forward();
+    FandoghiCoach.enablePersistentPresence();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        FandoghiCoach.instruction(
+          'دو کارت شبیه هم را پیدا کن! من داور حافظه‌ات هستم و هر جفت درست را جشن می‌گیرم 🧠',
+        );
+      }
+    });
   }
 
   @override
   void dispose() {
-    _timerCtrl.dispose();
-    _entryCtrl.dispose();
+    FandoghiCoach.clear();
     super.dispose();
   }
 
   void _startGame(String type) {
-    List<(String, String)> dataSet;
-    int pairCount;
+    if (!canStartPlay(context)) return;
+    _gameToken++;
+    _selectedLevel = type;
 
+    List<_MemoryItem> dataSet;
     switch (type) {
       case 'easy':
-        dataSet = _animalSet.sublist(0, 4);
-        pairCount = 4;
+        dataSet = _memorySet.sublist(0, 4);
         _timeLeft = 60;
         break;
       case 'medium':
-        dataSet = _fruitSet.sublist(0, 6);
-        pairCount = 6;
+        dataSet = _memorySet.sublist(0, 6);
         _timeLeft = 90;
         break;
       case 'hard':
-        dataSet = _colorSet;
-        pairCount = 8;
+        dataSet = _memorySet;
         _timeLeft = 120;
         break;
       default:
-        dataSet = _animalSet.sublist(0, 6);
-        pairCount = 6;
+        dataSet = _memorySet.sublist(0, 6);
         _timeLeft = 90;
     }
 
-    // Create pairs
-    _cards = [];
-    for (final (emoji, name) in dataSet) {
-      _cards.add(_CardData(emoji: emoji, name: name));
-      _cards.add(_CardData(emoji: emoji, name: name));
+    _cards = <_CardData>[];
+    for (final item in dataSet) {
+      _cards.add(
+        _CardData(
+          emoji: item.emoji,
+          name: item.name,
+          imageIndex: item.imageIndex,
+        ),
+      );
+      _cards.add(
+        _CardData(
+          emoji: item.emoji,
+          name: item.name,
+          imageIndex: item.imageIndex,
+        ),
+      );
     }
     _cards.shuffle();
 
@@ -117,98 +134,121 @@ class _MemoryState extends State<MemoryMatchGame>
       _busy = false;
       _started = true;
       _gameOver = false;
+      _showCelebration = false;
     });
 
-    // Start timer
-    _timerCtrl.repeat();
-    _tick();
+    FandoghiCoach.instruction(
+      'کارت‌ها را با دقت نگاه کن؛ هر جفت درست یک امتیاز برایت دارد 🌰',
+    );
+    _tick(_gameToken);
   }
 
-  void _tick() async {
-    while (_timeLeft > 0 && _started && !_gameOver && mounted) {
-      await Future.delayed(const Duration(seconds: 1));
-      if (mounted && !_gameOver) {
-        setState(() => _timeLeft--);
-        if (_timeLeft <= 0) _endGame();
-      }
+  Future<void> _tick(int token) async {
+    while (token == _gameToken &&
+        _timeLeft > 0 &&
+        _started &&
+        !_gameOver &&
+        mounted) {
+      await Future<void>.delayed(const Duration(seconds: 1));
+      if (!mounted || token != _gameToken || _gameOver) return;
+      setState(() => _timeLeft--);
+      if (_timeLeft <= 0) _endGame(won: false);
     }
   }
 
   void _onCardTap(int index) {
-    if (_busy || _gameOver) return;
+    if (_busy || _gameOver || index < 0 || index >= _cards.length) return;
     if (_cards[index].isFlipped || _cards[index].isMatched) return;
 
     HapticFeedback.lightImpact();
+    if (_firstFlipped == null) {
+      setState(() {
+        _cards[index].isFlipped = true;
+        _firstFlipped = index;
+      });
+      return;
+    }
+
+    final token = _gameToken;
+    final firstIndex = _firstFlipped!;
+    var isMatch = false;
+    var won = false;
 
     setState(() {
       _cards[index].isFlipped = true;
+      _secondFlipped = index;
+      _moves++;
+      _busy = true;
+      isMatch = _cards[firstIndex].emoji == _cards[index].emoji;
 
-      if (_firstFlipped == null) {
-        _firstFlipped = index;
+      if (isMatch) {
+        _combo++;
+        final bonus = _combo > 2 ? _combo * 5 : 0;
+        _score += 10 + bonus;
+        _matches++;
+        _cards[firstIndex].isMatched = true;
+        _cards[index].isMatched = true;
+        _firstFlipped = null;
+        _secondFlipped = null;
+        _busy = false;
+        won = _matches == _cards.length ~/ 2;
       } else {
-        _secondFlipped = index;
-        _moves++;
-        _busy = true;
-
-        // Check match
-        if (_cards[_firstFlipped!].emoji == _cards[index].emoji) {
-          // Match!
-          _combo++;
-          final bonus = _combo > 2 ? _combo * 5 : 0;
-          _score += 10 + bonus;
-          _matches++;
-
-          _cards[_firstFlipped!].isMatched = true;
-          _cards[index].isMatched = true;
-
-          HapticFeedback.mediumImpact();
-
-          if (_matches == _cards.length ~/ 2) {
-            // All matched!
-            _showCelebration = true;
-            Future.delayed(const Duration(milliseconds: 1500), () {
-              if (mounted) setState(() => _showCelebration = false);
-            });
-            _endGame();
-          }
-
-          _firstFlipped = null;
-          _secondFlipped = null;
-          _busy = false;
-        } else {
-          // No match
-          _combo = 0;
-          HapticFeedback.heavyImpact();
-
-          Future.delayed(const Duration(milliseconds: 800), () {
-            if (mounted) {
-              setState(() {
-                _cards[_firstFlipped!].isFlipped = false;
-                _cards[index].isFlipped = false;
-                _firstFlipped = null;
-                _secondFlipped = null;
-                _busy = false;
-              });
-            }
-          });
-        }
+        _combo = 0;
       }
+    });
+
+    GameData.recordAnswer(correct: isMatch, skill: 'memory');
+    if (isMatch) {
+      FandoghiCoach.correct('جفت درست پیدا شد! حافظه‌ات عالی کار می‌کند 🧠🌟');
+      HapticFeedback.mediumImpact();
+      if (won) {
+        setState(() => _showCelebration = true);
+        Future<void>.delayed(const Duration(milliseconds: 1500), () {
+          if (mounted && token == _gameToken) {
+            setState(() => _showCelebration = false);
+          }
+        });
+        _endGame(won: true);
+      }
+      return;
+    }
+
+    FandoghiCoach.say(
+      'این دو کارت جفت نبودند؛ اشکالی ندارد، با دقت دوباره امتحان کن 💪',
+      mood: FandoghiMood.thinking,
+      tone: FandoghiCoachTone.encouragement,
+    );
+    HapticFeedback.heavyImpact();
+    Future<void>.delayed(const Duration(milliseconds: 800), () {
+      if (!mounted || token != _gameToken || _gameOver) return;
+      setState(() {
+        _cards[firstIndex].isFlipped = false;
+        _cards[index].isFlipped = false;
+        _firstFlipped = null;
+        _secondFlipped = null;
+        _busy = false;
+      });
     });
   }
 
-  void _endGame() {
-    _timerCtrl.stop();
-    setState(() => _gameOver = true);
-
-    // Bonus for time remaining
-    final timeBonus = _timeLeft * 2;
+  void _endGame({required bool won}) {
+    if (_gameOver) return;
+    _gameOver = true;
+    final timeBonus = won ? _timeLeft * 2 : 0;
     _score += timeBonus;
 
-    // Save progress
+    if (mounted) setState(() {});
     GameData.addCoins(_score ~/ 2);
     GameData.addStars(_matches);
-    GameData.recordCorrect();
-    GameData.addSkill('memory');
+    GameData.updateHighScore(_score, 'quiz');
+    if (won && widget.stageId != null) {
+      GameData.completeStage(widget.stageId!, stageNumber: widget.stageNumber);
+    }
+    FandoghiCoach.reward(
+      won
+          ? 'همه جفت‌ها را پیدا کردی! فندقی به قهرمان حافظه تبریک می‌گوید 🏆'
+          : 'زمان تمام شد؛ اشکالی ندارد، یک بار دیگر با هم تمرین می‌کنیم 💪',
+    );
   }
 
   @override
@@ -271,7 +311,7 @@ class _MemoryState extends State<MemoryMatchGame>
           ),
           const Spacer(),
           _glassBtn(Icons.refresh_rounded, () {
-            if (_started) _startGame('medium');
+            if (_started) _startGame(_selectedLevel);
           }),
         ],
       ),
@@ -412,25 +452,33 @@ class _MemoryState extends State<MemoryMatchGame>
                 colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
               ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            card.emoji,
-            style: const TextStyle(fontSize: 40),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            card.name,
-            style: GoogleFonts.vazirmatn(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          children: [
+            Expanded(
+              child: IllustrationTile(
+                asset: _memoryAsset,
+                index: card.imageIndex,
+                semanticLabel: card.name,
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
-          ),
-          if (card.isMatched)
-            const Icon(Icons.check_circle, color: Colors.white, size: 18),
-        ],
+            const SizedBox(height: 5),
+            Text(
+              card.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.vazirmatn(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 11,
+              ),
+            ),
+            if (card.isMatched)
+              const Icon(Icons.check_circle, color: Colors.white, size: 18),
+          ],
+        ),
       ),
     );
   }
@@ -647,13 +695,26 @@ class _MemoryState extends State<MemoryMatchGame>
 }
 
 // ─── Card Data ───────────────────────────────
+class _MemoryItem {
+  final String emoji;
+  final String name;
+  final int imageIndex;
+
+  const _MemoryItem(this.emoji, this.name, this.imageIndex);
+}
+
 class _CardData {
   final String emoji;
   final String name;
+  final int imageIndex;
   bool isFlipped = false;
   bool isMatched = false;
 
-  _CardData({required this.emoji, required this.name});
+  _CardData({
+    required this.emoji,
+    required this.name,
+    required this.imageIndex,
+  });
 }
 
 // ─── 3D Card Flip Widget ─────────────────────

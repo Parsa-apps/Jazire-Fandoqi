@@ -5,11 +5,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../app/app_colors.dart';
+import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
+import '../../../core/play_limit.dart';
 
 /// 🫧 BUBBLE POP — Flame Engine with Flutter GestureDetector
 class BubblePopGame extends StatefulWidget {
-  const BubblePopGame({super.key});
+  final String? stageId;
+  final int? stageNumber;
+
+  const BubblePopGame({
+    super.key,
+    this.stageId,
+    this.stageNumber,
+  });
+
   @override
   State<BubblePopGame> createState() => _BubblePopState();
 }
@@ -20,9 +30,27 @@ class _BubblePopState extends State<BubblePopGame> {
   @override
   void initState() {
     super.initState();
-    _game = BubblePopFlameGame(onUpdate: () {
-      if (mounted) setState(() {});
+    FandoghiCoach.enablePersistentPresence();
+    _game = BubblePopFlameGame(
+      stageId: widget.stageId,
+      stageNumber: widget.stageNumber,
+      onUpdate: () {
+        if (mounted) setState(() {});
+      },
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        FandoghiCoach.instruction(
+          'حباب هدف را پیدا کن و فقط همان را بترکان؛ من داور حباب‌ها هستم 🫧',
+        );
+      }
     });
+  }
+
+  @override
+  void dispose() {
+    FandoghiCoach.clear();
+    super.dispose();
   }
 
   @override
@@ -118,7 +146,9 @@ class _BubblePopState extends State<BubblePopGame> {
         padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
-      onPressed: onTap,
+      onPressed: () {
+        if (canStartPlay(context)) onTap();
+      },
       child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
     );
   }
@@ -145,7 +175,12 @@ class _BubblePopState extends State<BubblePopGame> {
               children: [
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                  onPressed: () { _game.startGame(_game.mode); setState(() {}); },
+                  onPressed: () {
+                    if (canStartPlay(context)) {
+                      _game.startGame(_game.mode);
+                      setState(() {});
+                    }
+                  },
                   child: const Text('دوباره 🔄', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
                 const SizedBox(width: 16),
@@ -187,6 +222,8 @@ enum BubbleMode { letters, numbers, colors }
 
 class BubblePopFlameGame extends FlameGame {
   final VoidCallback onUpdate;
+  final String? stageId;
+  final int? stageNumber;
 
   int score = 0;
   int combo = 0;
@@ -205,18 +242,30 @@ class BubblePopFlameGame extends FlameGame {
   double _gameTime = 0;
   final _rng = Random();
   final List<_BubbleData> _bubblePool = [];
+  int _nextTargetScore = 50;
 
-  BubblePopFlameGame({required this.onUpdate});
+  BubblePopFlameGame({
+    required this.onUpdate,
+    this.stageId,
+    this.stageNumber,
+  });
 
   void startGame(BubbleMode m) {
     mode = m;
     score = 0; combo = 0; bestCombo = 0; lives = 5;
     gameOver = false; started = true;
     _gameTime = 0; _spawnTimer = 0; _spawnInterval = 1.5;
+    _nextTargetScore = 50;
 
     children.whereType<_Bubble>().toList().forEach((c) => c.removeFromParent());
     children.whereType<_PopParticle>().toList().forEach((c) => c.removeFromParent());
     _pickTarget();
+    final modeName = switch (mode) {
+      BubbleMode.letters => 'حروف',
+      BubbleMode.numbers => 'اعداد',
+      BubbleMode.colors => 'رنگ‌ها',
+    };
+    FandoghiCoach.instruction('آماده‌ای؟ حباب‌های درستِ $modeName را بترکان! من حواسم هست 🌰');
     onUpdate();
   }
 
@@ -227,14 +276,14 @@ class BubblePopFlameGame extends FlameGame {
         _targetKey = letters[_rng.nextInt(letters.length)];
         targetEmoji = _targetKey;
         targetLabel = 'حرف';
-        _bubblePool..clear()..addAll(letters.map((l) => _BubbleData(l, l, l == _targetKey, _letterColor(l))));
+        _bubblePool..clear()..addAll(letters.map((l) => _BubbleData(l, l == _targetKey, _letterColor(l))));
         break;
       case BubbleMode.numbers:
         final numbers = List.generate(10, (i) => '${i + 1}');
         _targetKey = numbers[_rng.nextInt(numbers.length)];
         targetEmoji = _targetKey;
         targetLabel = 'عدد';
-        _bubblePool..clear()..addAll(numbers.map((n) => _BubbleData(n, n, n == _targetKey, _numberColor(n))));
+        _bubblePool..clear()..addAll(numbers.map((n) => _BubbleData(n, n == _targetKey, _numberColor(n))));
         break;
       case BubbleMode.colors:
         const colorNames = ['قرمز', 'آبی', 'سبز', 'زرد', 'بنفش', 'نارنجی'];
@@ -244,7 +293,7 @@ class BubblePopFlameGame extends FlameGame {
         _targetKey = colorValues[idx];
         targetEmoji = colorEmojis[idx];
         targetLabel = 'رنگ ${colorNames[idx]}';
-        _bubblePool..clear()..addAll(List.generate(colorNames.length, (i) => _BubbleData(colorEmojis[i], colorValues[i], i == idx, _colorFromName(colorValues[i]))));
+        _bubblePool..clear()..addAll(List.generate(colorNames.length, (i) => _BubbleData(colorEmojis[i], i == idx, _colorFromName(colorValues[i]))));
         break;
     }
   }
@@ -296,17 +345,28 @@ class BubblePopFlameGame extends FlameGame {
       _spawnBubble();
     }
 
-    if (lives <= 0) {
-      gameOver = true;
-      GameData.addCoins(score ~/ 2);
-      GameData.addStars(score ~/ 10);
-      GameData.recordCorrect();
-      onUpdate();
+    if (lives <= 0) _finishGame();
+  }
+
+  void _finishGame() {
+    if (gameOver) return;
+    gameOver = true;
+    GameData.addCoins(score ~/ 2);
+    GameData.addStars(score ~/ 10);
+    GameData.updateHighScore(score, 'quiz');
+    if (stageId != null && score >= 50) {
+      GameData.completeStage(stageId!, stageNumber: stageNumber);
     }
+    FandoghiCoach.reward(
+      score >= 50
+          ? 'چه مسابقه‌ای بود! امتیازت عالی شد؛ فندقی بهت افتخار می‌کند 🏆'
+          : 'خسته نباشی! با چند تمرین دیگر رکوردت را بهتر می‌کنی 💪',
+    );
+    onUpdate();
   }
 
   void _spawnBubble() {
-    if (size.x <= 0) return;
+    if (size.x < 80 || _bubblePool.isEmpty) return;
     final data = _bubblePool[_rng.nextInt(_bubblePool.length)];
     final x = 40.0 + _rng.nextDouble() * (size.x - 80);
     final speed = 50.0 + _rng.nextDouble() * 40 + (_gameTime / 10);
@@ -317,30 +377,59 @@ class BubblePopFlameGame extends FlameGame {
   }
 
   void _onBubblePop(bool isCorrect) {
+    GameData.recordAnswer(
+      correct: isCorrect,
+      skill: mode == BubbleMode.letters
+          ? 'alphabet'
+          : mode == BubbleMode.numbers
+              ? 'counting'
+              : 'colors',
+    );
     if (isCorrect) {
+      FandoghiCoach.correct('ترکاندی! این حباب هدف بود 🫧🌟');
       combo++;
       if (combo > bestCombo) bestCombo = combo;
       score += 10 + (combo > 3 ? combo * 2 : 0);
+      if (mode == BubbleMode.letters) GameData.progressMission('alphabet');
+      if (mode == BubbleMode.colors) GameData.progressMission('colors');
       HapticFeedback.lightImpact();
-      if (score % 50 == 0) _pickTarget();
+      if (score >= _nextTargetScore) {
+        _nextTargetScore += 50;
+        // Existing bubbles belong to the previous target. Removing them is
+        // less confusing than showing an old target after the HUD changes.
+        children.whereType<_Bubble>().toList().forEach((bubble) {
+          bubble.removeFromParent();
+        });
+        _pickTarget();
+        FandoghiCoach.instruction('هدف عوض شد! حالا دنبال ${targetEmoji} بگرد 🌰');
+      }
     } else {
+      FandoghiCoach.judge('اوه! این حباب هدف نبود؛ فندقی می‌گوید با دقت‌تر نگاه کن 👀');
       combo = 0;
       lives--;
       HapticFeedback.heavyImpact();
     }
+    if (lives <= 0) _finishGame();
     onUpdate();
   }
 
   void _onBubbleMiss(bool wasTarget) {
-    if (wasTarget) { combo = 0; lives--; HapticFeedback.heavyImpact(); onUpdate(); }
+    if (!wasTarget) return;
+    FandoghiCoach.judge('حباب هدف فرار کرد! دفعه بعد زودتر بترکانش 🫧');
+    GameData.recordAnswer(correct: false);
+    combo = 0;
+    lives--;
+    HapticFeedback.heavyImpact();
+    if (lives <= 0) _finishGame();
+    onUpdate();
   }
 }
 
 class _BubbleData {
-  final String display, key;
+  final String display;
   final bool isTarget;
   final Color color;
-  _BubbleData(this.display, this.key, this.isTarget, this.color);
+  _BubbleData(this.display, this.isTarget, this.color);
 }
 
 class _Bubble extends PositionComponent {

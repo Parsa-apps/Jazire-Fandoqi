@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../app/app_colors.dart';
+import '../../core/game_data.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
 import '../../shared/widgets/star_field.dart';
 
@@ -25,6 +26,7 @@ class _SplashState extends State<SplashScreen>
   late AnimationController _slideCtrl;
   late AnimationController _glowCtrl;
   late AnimationController _orbitCtrl;
+  Timer? _navigationTimer;
 
   @override
   void initState() {
@@ -62,11 +64,14 @@ class _SplashState extends State<SplashScreen>
     _glowCtrl.repeat(reverse: true);
     _orbitCtrl.repeat();
 
-    // Navigate after delay
-    Timer(const Duration(seconds: 4), () {
+    // Keep the first impression lively without holding the child on a
+    // loading screen for four seconds. First launch continues to onboarding;
+    // returning players go straight to the dashboard.
+    _navigationTimer = Timer(const Duration(milliseconds: 1400), () {
       if (!mounted) return;
       HapticFeedback.lightImpact();
-      Navigator.pushReplacementNamed(context, '/home');
+      final destination = GameData.onboardingSeen ? '/home' : '/onboarding';
+      Navigator.pushReplacementNamed(context, destination);
     });
   }
 
@@ -77,6 +82,7 @@ class _SplashState extends State<SplashScreen>
     _slideCtrl.dispose();
     _glowCtrl.dispose();
     _orbitCtrl.dispose();
+    _navigationTimer?.cancel();
     super.dispose();
   }
 
@@ -97,9 +103,11 @@ class _SplashState extends State<SplashScreen>
             
             // Main content
             Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
                   // Glowing ring behind Fandoghi
                   _buildGlowRing(),
                   
@@ -112,9 +120,10 @@ class _SplashState extends State<SplashScreen>
                       curve: Curves.elasticOut,
                     ),
                     child: const FandoghiV2(
-                      size: 110,
+                      size: 132,
                       animate: true,
                       mood: FandoghiMood.excited,
+                      message: 'سلام! من فندقی هستم؛ راهنمای کوچولوی تو 🌰',
                     ),
                   ),
                   
@@ -158,7 +167,8 @@ class _SplashState extends State<SplashScreen>
                     opacity: _fadeCtrl,
                     child: _buildLoadingDots(),
                   ),
-                ],
+                  ],
+                ),
               ),
             ),
             
@@ -170,7 +180,7 @@ class _SplashState extends State<SplashScreen>
               child: FadeTransition(
                 opacity: _fadeCtrl,
                 child: Text(
-                  'Parsa Apps™',
+                  'ساخته‌شده توسط فرشاد پارسا',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.exo2(
                     fontSize: 14,

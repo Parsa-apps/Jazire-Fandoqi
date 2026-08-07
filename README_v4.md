@@ -1,4 +1,16 @@
-# 🇮🇷 کودک ایران v4.0 — نسخه فوق‌گرافیکی
+# 🇮🇷 کودک ایران v4.1 — نسخه فوق‌گرافیکی و QA
+
+> این مستندات وضعیت محصول را توصیف می‌کنند؛ ادعای انتشار نهایی فقط بعد از
+> اجرای build release، تست روی دستگاه واقعی و اتصال SDK پرداخت قابل قبول است.
+>
+> تست خودکار:
+> `flutter analyze` · `flutter test` · `flutter build appbundle --release`
+
+## 👤 سازنده و پشتیبانی
+
+- **سازنده/ناشر:** فرشاد پارسا
+- **ایمیل:** [farshadparsa2019@gmail.com](mailto:farshadparsa2019@gmail.com)
+- **تلگرام:** [@Parsaappsadmin](https://t.me/Parsaappsadmin)
 
 ## ✨ چه چیزهایی جدیده؟
 
@@ -9,11 +21,12 @@
 - **Parallax Scrolling** — اسکرول پارالاکس در صفحه اصلی
 - **Gradient System** — سیستم گرادیانت حرفه‌ای
 
-### 🌰 فندقی v2 — شخصیت راهنما
-- انیمیشن شناور و پلک زدن
-- حالت‌های مختلف (خوشحال، هیجان‌زده، فکری، خواب)
-- بازوها و سایه
-- حباب گفتار
+### 🌰 فندقی v3 — مربی و داور مرکزی
+- حضور بزرگ فندقی از Splash و onboarding تا داشبورد
+- حباب پاپ‌آپ سراسری روی تمام routeها، بدون مسدودکردن لمس بازی
+- پیام جداگانه برای آموزش، پاسخ درست، پاسخ غلط، تشویق، داوری و نتیجه مسابقه
+- انیمیشن شناور، پلک‌زدن، حالت‌های خوشحال/هیجان‌زده/فکری/خواب/چشمک
+- لمس فندقی در داشبورد برای دریافت راهنمایی دوباره
 
 ### 🚀 Splash Screen
 - پس‌زمینه آسمان شب با ستاره‌های متحرک
@@ -48,18 +61,25 @@ lib/
 │   └── app_theme.dart          # تم Material 3
 ├── core/
 │   ├── game_data.dart          # ذخیره‌سازی
+│   ├── fandoghi_coach.dart     # کانال پیام مربی سراسری
+│   ├── fandoghi_models.dart    # حالت‌های فندقی
 │   ├── ai_system.dart          # هوش مصنوعی
 │   └── ...
 ├── features/
-│   ├── splash/
-│   │   └── splash_screen.dart
+│   ├── splash/                 # splash کوتاه و بدون network
+│   ├── onboarding/             # لقب اختیاری و سن تقریبی
 │   ├── home/
 │   │   ├── home_screen.dart
-│   │   └── widgets/
-│   │       └── dashboard_tab.dart
+│   │   └── widgets/dashboard_tab.dart
 │   └── games/
+│       ├── alphabet_academy/   # آموزش دیداری و تمرین نوشتن الفبا
+│       ├── learning_quiz/      # مقصد واقعی موضوعات نقشه
+│       ├── drawing/             # بوم نقاشی آفلاین
+│       ├── memory_match/
+│       ├── bubble_pop/
 │       └── star_catch/
-│           └── star_catch_game.dart
+├── test/                       # تست منطق پیشرفت و smoke UI
+├── assets/illustrations/        # sprite sheetهای WebP تولیدشده
 └── shared/
     └── widgets/
         ├── fandoghi_v2.dart
@@ -77,9 +97,7 @@ lib/
 | `flame` | موتور بازی 2D |
 | `flutter_animate` | انیمیشن‌های ساده |
 | `google_fonts` | فونت فارسی |
-| `shimmer` | افکت شیمر |
-| `confetti` | افکت کانفتی |
-| `shared_preferences` | ذخیره‌سازی محلی |
+| `shared_preferences` | ذخیره‌سازی محلی مقاوم و آفلاین |
 
 ---
 
@@ -104,4 +122,4 @@ flutter run
 
 ---
 
-**ساخته شده با ❤️ توسط Parsa Apps™**
+**ساخته‌شده با ❤️ توسط فرشاد پارسا**
