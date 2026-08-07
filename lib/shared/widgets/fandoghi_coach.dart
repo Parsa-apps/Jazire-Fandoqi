@@ -16,10 +16,12 @@ class FandoghiCoachOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<FandoghiCoachMessage?>(
-      valueListenable: FandoghiCoach.current,
-      builder: (context, message, _) {
-        return Stack(
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: ValueListenableBuilder<FandoghiCoachMessage?>(
+        valueListenable: FandoghiCoach.current,
+        builder: (context, message, _) {
+          return Stack(
           fit: StackFit.expand,
           children: [
             child,
@@ -36,8 +38,9 @@ class FandoghiCoachOverlay extends StatelessWidget {
                 ),
               ),
           ],
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

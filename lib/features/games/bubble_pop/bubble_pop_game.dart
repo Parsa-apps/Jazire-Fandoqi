@@ -47,6 +47,12 @@ class _BubblePopState extends State<BubblePopGame> {
   }
 
   @override
+  void dispose() {
+    FandoghiCoach.clear();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(

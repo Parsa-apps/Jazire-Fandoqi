@@ -74,6 +74,12 @@ class _MemoryState extends State<MemoryMatchGame> {
     });
   }
 
+  @override
+  void dispose() {
+    FandoghiCoach.clear();
+    super.dispose();
+  }
+
   void _startGame(String type) {
     if (!canStartPlay(context)) return;
     _gameToken++;

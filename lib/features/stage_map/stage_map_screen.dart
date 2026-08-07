@@ -104,6 +104,7 @@ class _StageMapState extends State<StageMapScreen>
 
   @override
   void dispose() {
+    FandoghiCoach.clear();
     GameData.changes.removeListener(_onDataChanged);
     _scrollCtrl.removeListener(_onScroll);
     _scrollCtrl.dispose();

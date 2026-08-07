@@ -59,6 +59,12 @@ class _StarCatchState extends State<StarCatchGame> {
   }
 
   @override
+  void dispose() {
+    FandoghiCoach.clear();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(

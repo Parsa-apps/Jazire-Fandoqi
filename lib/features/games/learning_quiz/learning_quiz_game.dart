@@ -61,6 +61,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
   @override
   void dispose() {
     _roundToken++;
+    FandoghiCoach.clear();
     super.dispose();
   }
 

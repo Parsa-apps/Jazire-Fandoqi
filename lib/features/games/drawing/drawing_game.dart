@@ -49,6 +49,12 @@ class _DrawingGameState extends State<DrawingGame> {
     });
   }
 
+  @override
+  void dispose() {
+    FandoghiCoach.clear();
+    super.dispose();
+  }
+
   void _startStroke(DragStartDetails details) {
     HapticFeedback.selectionClick();
     setState(() {
