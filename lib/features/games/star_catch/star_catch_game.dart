@@ -35,6 +35,7 @@ class _StarCatchState extends State<StarCatchGame> {
   @override
   void initState() {
     super.initState();
+    FandoghiCoach.enablePersistentPresence();
     _game = StarCatchFlameGame(
       stageId: widget.stageId,
       stageNumber: widget.stageNumber,

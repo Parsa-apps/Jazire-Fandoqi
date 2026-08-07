@@ -44,6 +44,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
   @override
   void initState() {
     super.initState();
+    FandoghiCoach.enablePersistentPresence();
     _questions = _questionsFor(widget.topic);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {

@@ -30,6 +30,7 @@ class _BubblePopState extends State<BubblePopGame> {
   @override
   void initState() {
     super.initState();
+    FandoghiCoach.enablePersistentPresence();
     _game = BubblePopFlameGame(
       stageId: widget.stageId,
       stageNumber: widget.stageNumber,

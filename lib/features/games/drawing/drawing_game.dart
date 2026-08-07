@@ -40,6 +40,7 @@ class _DrawingGameState extends State<DrawingGame> {
   @override
   void initState() {
     super.initState();
+    FandoghiCoach.enablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         FandoghiCoach.instruction(

@@ -65,6 +65,7 @@ class _MemoryState extends State<MemoryMatchGame> {
   @override
   void initState() {
     super.initState();
+    FandoghiCoach.enablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         FandoghiCoach.instruction(
