@@ -8,6 +8,7 @@ import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
+import '../../../shared/widgets/illustration_tile.dart';
 import '../../../shared/widgets/particle_celebration.dart';
 
 /// ═══════════════════════════════════════════════
@@ -46,20 +47,19 @@ class _MemoryState extends State<MemoryMatchGame> {
   String _selectedLevel = 'medium';
   int _gameToken = 0;
 
-  // Card sets
-  static const _animalSet = [
-    ('🦁', 'شیر'), ('🐱', 'گربه'), ('🐶', 'سگ'), ('🐰', 'خرگوش'),
-    ('🐘', 'فیل'), ('🐵', 'میمون'), ('🦊', 'روباه'), ('🐼', 'پاندا'),
-  ];
+  static const String _memoryAsset =
+      'assets/illustrations/memory_cards.webp';
 
-  static const _fruitSet = [
-    ('🍎', 'سیب'), ('🍌', 'موز'), ('🍇', 'انگور'), ('🍊', 'پرتقال'),
-    ('🍓', 'توت‌فرنگی'), ('🍉', 'هندوانه'), ('🍒', 'گیلاس'), ('🍍', 'آناناس'),
-  ];
-
-  static const _colorSet = [
-    ('🔴', 'قرمز'), ('🔵', 'آبی'), ('🟢', 'سبز'), ('🟡', 'زرد'),
-    ('🟣', 'بنفش'), ('🟠', 'نارنجی'), ('⚪', 'سفید'), ('⚫', 'سیاه'),
+  // Generated, consistent illustrations replace emoji-only memory cards.
+  static const _memorySet = [
+    _MemoryItem('🚀', 'موشک', 0),
+    _MemoryItem('☂️', 'چتر', 1),
+    _MemoryItem('🪁', 'بادبادک', 2),
+    _MemoryItem('🤖', 'ربات', 3),
+    _MemoryItem('🦕', 'دایناسور', 4),
+    _MemoryItem('🚢', 'زیردریایی', 5),
+    _MemoryItem('🦋', 'پروانه', 6),
+    _MemoryItem('🌈', 'رنگین‌کمان', 7),
   ];
 
   @override
@@ -86,29 +86,41 @@ class _MemoryState extends State<MemoryMatchGame> {
     _gameToken++;
     _selectedLevel = type;
 
-    List<(String, String)> dataSet;
+    List<_MemoryItem> dataSet;
     switch (type) {
       case 'easy':
-        dataSet = _animalSet.sublist(0, 4);
+        dataSet = _memorySet.sublist(0, 4);
         _timeLeft = 60;
         break;
       case 'medium':
-        dataSet = _fruitSet.sublist(0, 6);
+        dataSet = _memorySet.sublist(0, 6);
         _timeLeft = 90;
         break;
       case 'hard':
-        dataSet = _colorSet;
+        dataSet = _memorySet;
         _timeLeft = 120;
         break;
       default:
-        dataSet = _animalSet.sublist(0, 6);
+        dataSet = _memorySet.sublist(0, 6);
         _timeLeft = 90;
     }
 
     _cards = <_CardData>[];
-    for (final (emoji, name) in dataSet) {
-      _cards.add(_CardData(emoji: emoji, name: name));
-      _cards.add(_CardData(emoji: emoji, name: name));
+    for (final item in dataSet) {
+      _cards.add(
+        _CardData(
+          emoji: item.emoji,
+          name: item.name,
+          imageIndex: item.imageIndex,
+        ),
+      );
+      _cards.add(
+        _CardData(
+          emoji: item.emoji,
+          name: item.name,
+          imageIndex: item.imageIndex,
+        ),
+      );
     }
     _cards.shuffle();
 
@@ -440,25 +452,33 @@ class _MemoryState extends State<MemoryMatchGame> {
                 colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
               ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            card.emoji,
-            style: const TextStyle(fontSize: 40),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            card.name,
-            style: GoogleFonts.vazirmatn(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          children: [
+            Expanded(
+              child: IllustrationTile(
+                asset: _memoryAsset,
+                index: card.imageIndex,
+                semanticLabel: card.name,
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
-          ),
-          if (card.isMatched)
-            const Icon(Icons.check_circle, color: Colors.white, size: 18),
-        ],
+            const SizedBox(height: 5),
+            Text(
+              card.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.vazirmatn(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 11,
+              ),
+            ),
+            if (card.isMatched)
+              const Icon(Icons.check_circle, color: Colors.white, size: 18),
+          ],
+        ),
       ),
     );
   }
@@ -675,13 +695,26 @@ class _MemoryState extends State<MemoryMatchGame> {
 }
 
 // ─── Card Data ───────────────────────────────
+class _MemoryItem {
+  final String emoji;
+  final String name;
+  final int imageIndex;
+
+  const _MemoryItem(this.emoji, this.name, this.imageIndex);
+}
+
 class _CardData {
   final String emoji;
   final String name;
+  final int imageIndex;
   bool isFlipped = false;
   bool isMatched = false;
 
-  _CardData({required this.emoji, required this.name});
+  _CardData({
+    required this.emoji,
+    required this.name,
+    required this.imageIndex,
+  });
 }
 
 // ─── 3D Card Flip Widget ─────────────────────

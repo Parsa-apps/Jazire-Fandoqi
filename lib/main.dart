@@ -9,6 +9,7 @@ import 'core/game_data.dart';
 import 'core/game_launch.dart';
 import 'features/about/about_screen.dart';
 import 'features/about/privacy_policy_screen.dart';
+import 'features/games/alphabet_academy/alphabet_academy_game.dart';
 import 'features/games/bubble_pop/bubble_pop_game.dart';
 import 'features/games/drawing/drawing_game.dart';
 import 'features/games/learning_quiz/learning_quiz_game.dart';
@@ -70,6 +71,7 @@ class KudakeIranApp extends StatelessWidget {
         '/': (context) => const SplashScreen(),
         '/onboarding': (context) => const OnboardingScreen(),
         '/home': (context) => const HomeScreen(),
+        '/alphabet': (context) => const AlphabetAcademyGame(),
         '/memory_match': (context) => const MemoryMatchGame(),
         '/bubble_pop': (context) => const BubblePopGame(),
         '/star_catch': (context) => const StarCatchGame(),
@@ -104,6 +106,12 @@ class KudakeIranApp extends StatelessWidget {
   /// learning map misleading.
   Widget _gameFor(GameLaunch launch) {
     final name = launch.gameName.toLowerCase();
+    if (name.contains('الفبا') || name.contains('alphabet')) {
+      return AlphabetAcademyGame(
+        stageId: launch.stageId,
+        stageNumber: launch.stageNumber,
+      );
+    }
     if (name.contains('حافظه') || name.contains('memory')) {
       return MemoryMatchGame(
         stageId: launch.stageId,

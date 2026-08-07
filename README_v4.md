@@ -72,12 +72,14 @@ lib/
 │   │   ├── home_screen.dart
 │   │   └── widgets/dashboard_tab.dart
 │   └── games/
+│       ├── alphabet_academy/   # آموزش دیداری و تمرین نوشتن الفبا
 │       ├── learning_quiz/      # مقصد واقعی موضوعات نقشه
 │       ├── drawing/             # بوم نقاشی آفلاین
 │       ├── memory_match/
 │       ├── bubble_pop/
 │       └── star_catch/
 ├── test/                       # تست منطق پیشرفت و smoke UI
+├── assets/illustrations/        # sprite sheetهای WebP تولیدشده
 └── shared/
     └── widgets/
         ├── fandoghi_v2.dart

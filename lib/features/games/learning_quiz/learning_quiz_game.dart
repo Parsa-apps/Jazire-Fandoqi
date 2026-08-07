@@ -8,6 +8,7 @@ import '../../../app/app_colors.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
+import '../../../shared/widgets/illustration_tile.dart';
 
 /// A small, reusable quiz engine for all learning-map topics.
 ///
@@ -309,7 +310,19 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
       ),
       child: Column(
         children: [
-          Text(question.emoji, style: const TextStyle(fontSize: 56)),
+          if (question.imageAsset != null && question.imageIndex != null)
+            SizedBox(
+              width: 150,
+              height: 150,
+              child: IllustrationTile(
+                asset: question.imageAsset!,
+                index: question.imageIndex!,
+                semanticLabel: question.visualLabel,
+                borderRadius: BorderRadius.circular(22),
+              ),
+            )
+          else
+            Text(question.emoji, style: const TextStyle(fontSize: 56)),
           const SizedBox(height: 18),
           Text(
             question.prompt,
@@ -494,18 +507,88 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
     }
     if (topic.contains('رنگ') || topic.contains('color')) {
       return const [
-        _QuizQuestion('آسمان صاف معمولاً چه رنگی است؟', '🌤️', ['آبی', 'سبز', 'قرمز', 'بنفش'], 0, 'colors', 'colors'),
-        _QuizQuestion('چمن چه رنگی است؟', '🌱', ['زرد', 'سبز', 'صورتی', 'نارنجی'], 1, 'colors', 'colors'),
-        _QuizQuestion('رنگ خورشید را کدام گزینه نشان می‌دهد؟', '☀️', ['سیاه', 'زرد', 'آبی', 'بنفش'], 1, 'colors', 'colors'),
-        _QuizQuestion('کدام میوه قرمز است؟', '🍓', ['موز', 'خیار', 'توت‌فرنگی', 'نارگیل'], 2, 'colors', 'colors'),
-        _QuizQuestion('برف چه رنگی است؟', '❄️', ['سفید', 'سبز', 'قهوه‌ای', 'قرمز'], 0, 'colors', 'colors'),
+        _QuizQuestion(
+          'کدام چیز آبی است؟',
+          '🎈',
+          ['آبی', 'سبز', 'قرمز', 'زرد'],
+          0,
+          'colors',
+          'colors',
+          imageAsset: 'assets/illustrations/colors_cards.webp',
+          imageIndex: 1,
+          visualLabel: 'بادکنک آبی',
+        ),
+        _QuizQuestion(
+          'کدام چیز سبز است؟',
+          '🌿',
+          ['سبز', 'زرد', 'صورتی', 'نارنجی'],
+          0,
+          'colors',
+          'colors',
+          imageAsset: 'assets/illustrations/colors_cards.webp',
+          imageIndex: 2,
+          visualLabel: 'برگ سبز',
+        ),
+        _QuizQuestion(
+          'خورشید را کدام رنگ نشان می‌دهد؟',
+          '☀️',
+          ['سیاه', 'زرد', 'آبی', 'بنفش'],
+          1,
+          'colors',
+          'colors',
+          imageAsset: 'assets/illustrations/colors_cards.webp',
+          imageIndex: 3,
+          visualLabel: 'خورشید زرد',
+        ),
+        _QuizQuestion(
+          'کدام گل بنفش است؟',
+          '🌸',
+          ['بنفش', 'زرد', 'آبی', 'قرمز'],
+          0,
+          'colors',
+          'colors',
+          imageAsset: 'assets/illustrations/colors_cards.webp',
+          imageIndex: 4,
+          visualLabel: 'گل بنفش',
+        ),
+        _QuizQuestion(
+          'کدام چیز نارنجی است؟',
+          '🎃',
+          ['آبی', 'نارنجی', 'سبز', 'سفید'],
+          1,
+          'colors',
+          'colors',
+          imageAsset: 'assets/illustrations/colors_cards.webp',
+          imageIndex: 5,
+          visualLabel: 'کدو تنبل نارنجی',
+        ),
       ];
     }
     if (topic.contains('حیوان') || topic.contains('animal')) {
       return const [
-        _QuizQuestion('کدام حیوان می‌گوید «میو»؟', '🐾', ['سگ', 'گربه', 'گاو', 'مرغ'], 1, 'animals', null),
+        _QuizQuestion(
+          'کدام حیوان می‌گوید «میو»؟',
+          '🐾',
+          ['سگ', 'گربه', 'گاو', 'مرغ'],
+          1,
+          'animals',
+          null,
+          imageAsset: 'assets/illustrations/animals_cards.webp',
+          imageIndex: 5,
+          visualLabel: 'گربه کارتونی',
+        ),
         _QuizQuestion('کدام حیوان پرواز می‌کند؟', '🪽', ['ماهی', 'گنجشک', 'فیل', 'خرگوش'], 1, 'animals', null),
-        _QuizQuestion('بزرگ‌ترین حیوان خشکی کدام است؟', '🌿', ['فیل', 'گربه', 'موش', 'پروانه'], 0, 'animals', null),
+        _QuizQuestion(
+          'بزرگ‌ترین حیوان خشکی کدام است؟',
+          '🌿',
+          ['فیل', 'گربه', 'موش', 'پروانه'],
+          0,
+          'animals',
+          null,
+          imageAsset: 'assets/illustrations/animals_cards.webp',
+          imageIndex: 1,
+          visualLabel: 'فیل کارتونی',
+        ),
         _QuizQuestion('کدام حیوان در آب زندگی می‌کند؟', '🌊', ['ماهی', 'اسب', 'گوسفند', 'زنبور'], 0, 'animals', null),
         _QuizQuestion('کدام حیوان عسل می‌سازد؟', '🍯', ['زنبور', 'شیر', 'لاک‌پشت', 'روباه'], 0, 'animals', null),
       ];
@@ -521,38 +604,238 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
     }
     if (topic.contains('شغل') || topic.contains('job')) {
       return const [
-        _QuizQuestion('پزشک به چه کسی کمک می‌کند؟', '🩺', ['بیمار', 'درخت', 'ماشین', 'کتاب'], 0, 'jobs', null),
-        _QuizQuestion('آتش‌نشان چه کاری انجام می‌دهد؟', '🚒', ['خاموش کردن آتش', 'پختن نان', 'دوختن لباس', 'ساختن کفش'], 0, 'jobs', null),
-        _QuizQuestion('معلم کجا درس می‌دهد؟', '🏫', ['مدرسه', 'فرودگاه', 'باغ‌وحش', 'آشپزخانه'], 0, 'jobs', null),
-        _QuizQuestion('کشاورز با چه چیزی کار می‌کند؟', '🌾', ['زمین و گیاه', 'ستاره‌ها', 'کتابخانه', 'رودخانه'], 0, 'jobs', null),
-        _QuizQuestion('خلبان چه چیزی را هدایت می‌کند؟', '✈️', ['هواپیما', 'دوچرخه', 'قایق کاغذی', 'قطار اسباب‌بازی'], 0, 'jobs', null),
+        _QuizQuestion(
+          'پزشک به چه کسی کمک می‌کند؟',
+          '🩺',
+          ['بیمار', 'درخت', 'ماشین', 'کتاب'],
+          0,
+          'jobs',
+          null,
+          imageAsset: 'assets/illustrations/jobs_cards.webp',
+          imageIndex: 0,
+          visualLabel: 'پزشک کارتونی',
+        ),
+        _QuizQuestion(
+          'آتش‌نشان چه کاری انجام می‌دهد؟',
+          '🚒',
+          ['خاموش کردن آتش', 'پختن نان', 'دوختن لباس', 'ساختن کفش'],
+          0,
+          'jobs',
+          null,
+          imageAsset: 'assets/illustrations/jobs_cards.webp',
+          imageIndex: 1,
+          visualLabel: 'آتش‌نشان کارتونی',
+        ),
+        _QuizQuestion(
+          'معلم کجا درس می‌دهد؟',
+          '🏫',
+          ['مدرسه', 'فرودگاه', 'باغ‌وحش', 'آشپزخانه'],
+          0,
+          'jobs',
+          null,
+          imageAsset: 'assets/illustrations/jobs_cards.webp',
+          imageIndex: 2,
+          visualLabel: 'معلم کارتونی',
+        ),
+        _QuizQuestion(
+          'کشاورز با چه چیزی کار می‌کند؟',
+          '🌾',
+          ['زمین و گیاه', 'ستاره‌ها', 'کتابخانه', 'رودخانه'],
+          0,
+          'jobs',
+          null,
+          imageAsset: 'assets/illustrations/jobs_cards.webp',
+          imageIndex: 3,
+          visualLabel: 'کشاورز کارتونی',
+        ),
+        _QuizQuestion(
+          'خلبان چه چیزی را هدایت می‌کند؟',
+          '✈️',
+          ['هواپیما', 'دوچرخه', 'قایق کاغذی', 'قطار اسباب‌بازی'],
+          0,
+          'jobs',
+          null,
+          imageAsset: 'assets/illustrations/jobs_cards.webp',
+          imageIndex: 4,
+          visualLabel: 'خلبان کارتونی',
+        ),
       ];
     }
     if (topic.contains('شکل') || topic.contains('shape')) {
       return const [
-        _QuizQuestion('توپ بیشتر شبیه کدام شکل است؟', '⚽', ['دایره', 'مربع', 'مثلث', 'مستطیل'], 0, 'shapes', null),
-        _QuizQuestion('کدام شکل سه ضلع دارد؟', '🔺', ['دایره', 'مثلث', 'مربع', 'بیضی'], 1, 'shapes', null),
-        _QuizQuestion('کدام شکل چهار ضلع برابر دارد؟', '🟦', ['مربع', 'دایره', 'مثلث', 'خط'], 0, 'shapes', null),
-        _QuizQuestion('پنجره معمولاً شبیه چیست؟', '🪟', ['مستطیل', 'ستاره', 'دایره', 'مثلث'], 0, 'shapes', null),
-        _QuizQuestion('کدام گزینه گوشه ندارد؟', '⭕', ['دایره', 'مربع', 'مثلث', 'مستطیل'], 0, 'shapes', null),
+        _QuizQuestion(
+          'کدام شکل گرد است؟',
+          '⭕',
+          ['دایره', 'مربع', 'مثلث', 'مستطیل'],
+          0,
+          'shapes',
+          null,
+          imageAsset: 'assets/illustrations/shapes_cards.webp',
+          imageIndex: 0,
+          visualLabel: 'دایره',
+        ),
+        _QuizQuestion(
+          'کدام شکل سه ضلع دارد؟',
+          '🔺',
+          ['دایره', 'مثلث', 'مربع', 'بیضی'],
+          1,
+          'shapes',
+          null,
+          imageAsset: 'assets/illustrations/shapes_cards.webp',
+          imageIndex: 1,
+          visualLabel: 'مثلث',
+        ),
+        _QuizQuestion(
+          'کدام شکل چهار ضلع برابر دارد؟',
+          '🟦',
+          ['مربع', 'دایره', 'مثلث', 'خط'],
+          0,
+          'shapes',
+          null,
+          imageAsset: 'assets/illustrations/shapes_cards.webp',
+          imageIndex: 2,
+          visualLabel: 'مربع',
+        ),
+        _QuizQuestion(
+          'پنجره معمولاً شبیه چیست؟',
+          '🪟',
+          ['مستطیل', 'ستاره', 'دایره', 'مثلث'],
+          0,
+          'shapes',
+          null,
+          imageAsset: 'assets/illustrations/shapes_cards.webp',
+          imageIndex: 3,
+          visualLabel: 'مستطیل',
+        ),
+        _QuizQuestion(
+          'کدام گزینه گوشه ندارد؟',
+          '⭕',
+          ['دایره', 'مربع', 'مثلث', 'مستطیل'],
+          0,
+          'shapes',
+          null,
+          imageAsset: 'assets/illustrations/shapes_cards.webp',
+          imageIndex: 0,
+          visualLabel: 'دایره',
+        ),
       ];
     }
     if (topic.contains('میوه') || topic.contains('fruit')) {
       return const [
-        _QuizQuestion('کدام میوه پوست زرد دارد؟', '🍌', ['موز', 'هندوانه', 'انگور', 'توت'], 0, 'fruits', null),
-        _QuizQuestion('کدام میوه دانه‌های زیادی بیرونش دارد؟', '🍓', ['توت‌فرنگی', 'سیب', 'موز', 'پرتقال'], 0, 'fruits', null),
-        _QuizQuestion('کدام میوه گرد و نارنجی است؟', '🍊', ['پرتقال', 'خیار', 'هویج', 'کاهو'], 0, 'fruits', null),
-        _QuizQuestion('برای آبمیوه سیب از چه چیزی استفاده می‌کنیم؟', '🍏', ['سیب', 'نان', 'پنیر', 'برنج'], 0, 'fruits', null),
-        _QuizQuestion('هندوانه داخلش معمولاً چه رنگی است؟', '🍉', ['قرمز', 'آبی', 'بنفش', 'سیاه'], 0, 'fruits', null),
+        _QuizQuestion(
+          'کدام میوه پوست زرد دارد؟',
+          '🍌',
+          ['موز', 'هندوانه', 'انگور', 'توت'],
+          0,
+          'fruits',
+          null,
+          imageAsset: 'assets/illustrations/fruits_cards.webp',
+          imageIndex: 1,
+          visualLabel: 'موز کارتونی',
+        ),
+        _QuizQuestion(
+          'کدام میوه دانه‌های زیادی بیرونش دارد؟',
+          '🍓',
+          ['توت‌فرنگی', 'سیب', 'موز', 'پرتقال'],
+          0,
+          'fruits',
+          null,
+          imageAsset: 'assets/illustrations/fruits_cards.webp',
+          imageIndex: 5,
+          visualLabel: 'توت‌فرنگی کارتونی',
+        ),
+        _QuizQuestion(
+          'کدام میوه گرد و نارنجی است؟',
+          '🍊',
+          ['پرتقال', 'خیار', 'هویج', 'کاهو'],
+          0,
+          'fruits',
+          null,
+          imageAsset: 'assets/illustrations/fruits_cards.webp',
+          imageIndex: 3,
+          visualLabel: 'پرتقال کارتونی',
+        ),
+        _QuizQuestion(
+          'برای آبمیوه سیب از چه چیزی استفاده می‌کنیم؟',
+          '🍏',
+          ['سیب', 'نان', 'پنیر', 'برنج'],
+          0,
+          'fruits',
+          null,
+          imageAsset: 'assets/illustrations/fruits_cards.webp',
+          imageIndex: 0,
+          visualLabel: 'سیب کارتونی',
+        ),
+        _QuizQuestion(
+          'هندوانه داخلش معمولاً چه رنگی است؟',
+          '🍉',
+          ['قرمز', 'آبی', 'بنفش', 'سیاه'],
+          0,
+          'fruits',
+          null,
+          imageAsset: 'assets/illustrations/fruits_cards.webp',
+          imageIndex: 4,
+          visualLabel: 'هندوانه کارتونی',
+        ),
       ];
     }
     if (topic.contains('بدن') || topic.contains('body')) {
       return const [
-        _QuizQuestion('با کدام عضو می‌بینیم؟', '👀', ['چشم', 'گوش', 'پا', 'دست'], 0, 'body', null),
-        _QuizQuestion('با کدام عضو صداها را می‌شنویم؟', '👂', ['بینی', 'گوش', 'چشم', 'مو'], 1, 'body', null),
-        _QuizQuestion('برای راه رفتن از چه چیزی استفاده می‌کنیم؟', '🚶', ['پا', 'گوش', 'دندان', 'مو'], 0, 'body', null),
-        _QuizQuestion('کدام عضو برای بوییدن است؟', '👃', ['بینی', 'دست', 'زانو', 'چشم'], 0, 'body', null),
-        _QuizQuestion('با کدام عضو چیزی را می‌گیریم؟', '✋', ['دست', 'گوش', 'مو', 'شانه'], 0, 'body', null),
+        _QuizQuestion(
+          'با کدام عضو می‌بینیم؟',
+          '👀',
+          ['چشم', 'گوش', 'پا', 'دست'],
+          0,
+          'body',
+          null,
+          imageAsset: 'assets/illustrations/body_cards.webp',
+          imageIndex: 0,
+          visualLabel: 'چشم کارتونی',
+        ),
+        _QuizQuestion(
+          'با کدام عضو صداها را می‌شنویم؟',
+          '👂',
+          ['بینی', 'گوش', 'چشم', 'مو'],
+          1,
+          'body',
+          null,
+          imageAsset: 'assets/illustrations/body_cards.webp',
+          imageIndex: 1,
+          visualLabel: 'گوش کارتونی',
+        ),
+        _QuizQuestion(
+          'برای راه رفتن از چه چیزی استفاده می‌کنیم؟',
+          '🚶',
+          ['پا', 'گوش', 'دندان', 'مو'],
+          0,
+          'body',
+          null,
+          imageAsset: 'assets/illustrations/body_cards.webp',
+          imageIndex: 4,
+          visualLabel: 'پا کارتونی',
+        ),
+        _QuizQuestion(
+          'کدام عضو برای بوییدن است؟',
+          '👃',
+          ['بینی', 'دست', 'زانو', 'چشم'],
+          0,
+          'body',
+          null,
+          imageAsset: 'assets/illustrations/body_cards.webp',
+          imageIndex: 2,
+          visualLabel: 'بینی کارتونی',
+        ),
+        _QuizQuestion(
+          'با کدام عضو چیزی را می‌گیریم؟',
+          '✋',
+          ['دست', 'گوش', 'مو', 'شانه'],
+          0,
+          'body',
+          null,
+          imageAsset: 'assets/illustrations/body_cards.webp',
+          imageIndex: 3,
+          visualLabel: 'دست کارتونی',
+        ),
       ];
     }
 
@@ -591,6 +874,9 @@ class _QuizQuestion {
   final int correctIndex;
   final String skill;
   final String? missionId;
+  final String? imageAsset;
+  final int? imageIndex;
+  final String? visualLabel;
 
   const _QuizQuestion(
     this.prompt,
@@ -598,6 +884,9 @@ class _QuizQuestion {
     this.options,
     this.correctIndex,
     this.skill,
-    this.missionId,
-  );
+    this.missionId, {
+    this.imageAsset,
+    this.imageIndex,
+    this.visualLabel,
+  });
 }
