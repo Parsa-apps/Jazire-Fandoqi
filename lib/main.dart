@@ -21,7 +21,7 @@ import 'features/parent/parent_panel.dart';
 import 'features/splash/splash_screen.dart';
 import 'shared/widgets/fandoghi_coach.dart';
 
-/// کودک ایران - Kudake Iran
+/// آموزش فندقی - Amoozesh Fandoghi
 /// آفلاین، فارسی و طراحی‌شده برای یادگیری امن کودکان.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,16 +40,16 @@ Future<void> main() async {
     GameData.useMemoryFallback();
   }
 
-  runApp(const KudakeIranApp());
+  runApp(const AmoozeshFandoghiApp());
 }
 
-class KudakeIranApp extends StatelessWidget {
-  const KudakeIranApp({super.key});
+class AmoozeshFandoghiApp extends StatelessWidget {
+  const AmoozeshFandoghiApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'کودک ایران',
+      title: 'آموزش فندقی',
       debugShowCheckedModeBanner: false,
       locale: const Locale('fa'),
       supportedLocales: const [Locale('fa')],

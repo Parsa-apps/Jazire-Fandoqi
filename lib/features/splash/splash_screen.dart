@@ -280,7 +280,7 @@ class _SplashState extends State<SplashScreen>
             ).createShader(bounds);
           },
           child: Text(
-            'کودک ایران',
+            'آموزش فندقی',
             style: GoogleFonts.vazirmatn(
               fontSize: 48,
               fontWeight: FontWeight.w900,

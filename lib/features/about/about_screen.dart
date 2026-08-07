@@ -89,7 +89,7 @@ class AboutScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   const Text(
-                    'کودک ایران بدون حساب کاربری، تبلیغات، ردیابی و ارسال اطلاعات کودک به اینترنت طراحی شده است. لقب اختیاری، سن تقریبی و پیشرفت بازی فقط روی دستگاه ذخیره می‌شوند.',
+                    'آموزش فندقی بدون حساب کاربری، تبلیغات، ردیابی و ارسال اطلاعات کودک به اینترنت طراحی شده است. لقب اختیاری، سن تقریبی و پیشرفت بازی فقط روی دستگاه ذخیره می‌شوند.',
                     style: TextStyle(height: 1.7),
                   ),
                   const SizedBox(height: 10),
@@ -117,7 +117,7 @@ class AboutScreen extends StatelessWidget {
           const SizedBox(height: 16),
           const Center(
             child: Text(
-              'کودک ایران • نسخه ۴.۱.۰\nساخته‌شده با دقت برای کودکان ایران',
+              'آموزش فندقی • نسخه ۴.۱.۰\nساخته‌شده با دقت برای کودکان ایران',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.textSecondary,
@@ -172,7 +172,7 @@ class AboutScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'توسعه‌دهنده کودک ایران',
+                  'توسعه‌دهنده آموزش فندقی',
                   style: TextStyle(color: Colors.white70),
                 ),
               ],
