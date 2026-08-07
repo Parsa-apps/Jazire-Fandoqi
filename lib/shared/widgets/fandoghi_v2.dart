@@ -128,7 +128,11 @@ class _FandoghiState extends State<FandoghiV2>
       );
     }
 
-    return body;
+    return Semantics(
+      label: 'فندقی، مربی و راهنمای کودک',
+      button: widget.onTap != null,
+      child: body,
+    );
   }
 
   Widget _buildCharacter() {
