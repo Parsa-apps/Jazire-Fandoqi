@@ -50,7 +50,7 @@ class AboutScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _buildSection(
-            icon: Icons.telegram,
+            icon: Icons.send_rounded,
             title: 'پشتیبانی تلگرام',
             child: _contactRow(
               context,

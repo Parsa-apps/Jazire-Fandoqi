@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../app/app_colors.dart';
+import '../../../core/ai_system.dart';
+import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
 import '../../../shared/widgets/glass_card.dart';
@@ -28,6 +30,9 @@ class _DashboardState extends State<DashboardTab> {
     super.initState();
     _scrollCtrl.addListener(_onScroll);
     GameData.changes.addListener(_onDataChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) FandoghiCoach.welcome();
+    });
   }
 
   void _onScroll() {
@@ -849,38 +854,65 @@ class _DashboardState extends State<DashboardTab> {
 
   // ─── FANDOGHI TIP ─────────────────────────────
   Widget _buildFandoghiTip() {
+    final coachText = GameData.totalCorrect == 0
+        ? 'من از اول تا آخر کنارت هستم؛ هر وقت آماده‌ای، یکی از بازی‌ها را انتخاب کن!'
+        : AI.mascotMsg();
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-      child: GlassCard(
-        padding: const EdgeInsets.all(20),
-        borderRadius: 28,
+      child: GradientGlassCard(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFF8E1), Color(0xFFFFECB3)],
+        ),
+        borderRadius: 30,
+        padding: const EdgeInsets.fromLTRB(16, 12, 20, 12),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const FandoghiV2(
-              size: 60,
+            FandoghiV2(
+              size: 104,
               animate: true,
-              mood: FandoghiMood.happy,
+              mood: GameData.successRate > 0.8
+                  ? FandoghiMood.excited
+                  : FandoghiMood.happy,
+              onTap: () => FandoghiCoach.say(
+                'من فندقی‌ام؛ راهنما، مربی و داور بازی‌های تو! روی هر بازی بزن تا با هم شروع کنیم 🌰',
+                mood: FandoghiMood.excited,
+                duration: const Duration(seconds: 4),
+              ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'نکته فندقی 🌰',
+                    'فندقی، مربی تو 🌰',
                     style: GoogleFonts.vazirmatn(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 15,
-                      color: AppColors.primary,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 17,
+                      color: AppColors.fandoghiDark,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
-                    'هر روز بازی کن و ستاره جمع کن! با هر ۱۰۰ سکه یه لول بالا میری! 🌟',
-                    style: TextStyle(
+                    coachText,
+                    style: const TextStyle(
                       fontSize: 13,
+                      color: AppColors.textPrimary,
+                      height: 1.55,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'برای راهنمایی روی من بزن!',
+                    style: TextStyle(
+                      fontSize: 11,
                       color: AppColors.textSecondary,
-                      height: 1.5,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],

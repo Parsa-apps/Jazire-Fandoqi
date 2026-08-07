@@ -4,8 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../app/app_colors.dart';
+import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
+import '../../../shared/widgets/fandoghi_v2.dart';
 import '../../../shared/widgets/particle_celebration.dart';
 
 /// ═══════════════════════════════════════════════
@@ -60,6 +62,18 @@ class _MemoryState extends State<MemoryMatchGame> {
     ('🟣', 'بنفش'), ('🟠', 'نارنجی'), ('⚪', 'سفید'), ('⚫', 'سیاه'),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        FandoghiCoach.instruction(
+          'دو کارت شبیه هم را پیدا کن! من داور حافظه‌ات هستم و هر جفت درست را جشن می‌گیرم 🧠',
+        );
+      }
+    });
+  }
+
   void _startGame(String type) {
     if (!canStartPlay(context)) return;
     _gameToken++;
@@ -104,6 +118,9 @@ class _MemoryState extends State<MemoryMatchGame> {
       _showCelebration = false;
     });
 
+    FandoghiCoach.instruction(
+      'کارت‌ها را با دقت نگاه کن؛ هر جفت درست یک امتیاز برایت دارد 🌰',
+    );
     _tick(_gameToken);
   }
 
@@ -163,6 +180,7 @@ class _MemoryState extends State<MemoryMatchGame> {
 
     GameData.recordAnswer(correct: isMatch, skill: 'memory');
     if (isMatch) {
+      FandoghiCoach.correct('جفت درست پیدا شد! حافظه‌ات عالی کار می‌کند 🧠🌟');
       HapticFeedback.mediumImpact();
       if (won) {
         setState(() => _showCelebration = true);
@@ -176,6 +194,11 @@ class _MemoryState extends State<MemoryMatchGame> {
       return;
     }
 
+    FandoghiCoach.say(
+      'این دو کارت جفت نبودند؛ اشکالی ندارد، با دقت دوباره امتحان کن 💪',
+      mood: FandoghiMood.thinking,
+      tone: FandoghiCoachTone.encouragement,
+    );
     HapticFeedback.heavyImpact();
     Future<void>.delayed(const Duration(milliseconds: 800), () {
       if (!mounted || token != _gameToken || _gameOver) return;
@@ -202,6 +225,11 @@ class _MemoryState extends State<MemoryMatchGame> {
     if (won && widget.stageId != null) {
       GameData.completeStage(widget.stageId!, stageNumber: widget.stageNumber);
     }
+    FandoghiCoach.reward(
+      won
+          ? 'همه جفت‌ها را پیدا کردی! فندقی به قهرمان حافظه تبریک می‌گوید 🏆'
+          : 'زمان تمام شد؛ اشکالی ندارد، یک بار دیگر با هم تمرین می‌کنیم 💪',
+    );
   }
 
   @override

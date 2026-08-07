@@ -70,10 +70,8 @@ class _StageNodeState extends State<StageNode>
       onTapDown: (_) => setState(() => _isPressed = true),
       onTapUp: (_) {
         setState(() => _isPressed = false);
-        if (widget.state != StageState.locked) {
-          HapticFeedback.mediumImpact();
-          widget.onTap?.call();
-        }
+        HapticFeedback.lightImpact();
+        widget.onTap?.call();
       },
       onTapCancel: () => setState(() => _isPressed = false),
       child: AnimatedBuilder(

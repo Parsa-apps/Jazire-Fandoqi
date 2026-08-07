@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../app/app_colors.dart';
+import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
 import '../../../shared/widgets/particle_celebration.dart';
@@ -48,6 +49,13 @@ class _StarCatchState extends State<StarCatchGame> {
         });
       },
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        FandoghiCoach.instruction(
+          'ستاره‌ها را با سبد بگیر و از بمب‌ها دوری کن؛ من داور مسابقه‌ام ⭐',
+        );
+      }
+    });
   }
 
   @override
@@ -360,6 +368,7 @@ class StarCatchFlameGame extends FlameGame {
         .toList()
         .forEach((item) {
       if (!item.isBad) {
+        FandoghiCoach.judge('این ستاره جا ماند؛ فندقی می‌گوید حواست به سبد باشد ⭐');
         GameData.recordAnswer(correct: false, skill: 'counting');
         lives--;
         HapticFeedback.heavyImpact();
@@ -407,11 +416,13 @@ class StarCatchFlameGame extends FlameGame {
   void _onCatch(_FallingItem item) {
     if (gameOver) return;
     if (item.isBad) {
+      FandoghiCoach.judge('اوه! این بمب بود، نه ستاره! با دقت‌تر بگیر 💥');
       lives--;
       GameData.recordAnswer(correct: false, skill: 'counting');
       HapticFeedback.heavyImpact();
       if (lives <= 0) _finishGame();
     } else {
+      FandoghiCoach.correct('ستاره را گرفتی! امتیاز برای قهرمان من ⭐🌟');
       score += 10;
       GameData.recordAnswer(correct: true, skill: 'counting');
       HapticFeedback.lightImpact();
@@ -430,6 +441,11 @@ class StarCatchFlameGame extends FlameGame {
     if (stageId != null && score >= 50) {
       GameData.completeStage(stageId!, stageNumber: stageNumber);
     }
+    FandoghiCoach.reward(
+      score >= 50
+          ? 'بازی تمام شد و رکورد درخشانی ساختی! فندقی داوری‌ات را تأیید می‌کند 🏆'
+          : 'خسته نباشی! دفعه بعد ستاره‌های بیشتری می‌گیری 💪',
+    );
     onScore();
   }
 }

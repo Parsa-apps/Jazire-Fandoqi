@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../app/app_colors.dart';
+import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
 
@@ -36,6 +37,13 @@ class _BubblePopState extends State<BubblePopGame> {
         if (mounted) setState(() {});
       },
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        FandoghiCoach.instruction(
+          'حباب هدف را پیدا کن و فقط همان را بترکان؛ من داور حباب‌ها هستم 🫧',
+        );
+      }
+    });
   }
 
   @override
@@ -245,6 +253,12 @@ class BubblePopFlameGame extends FlameGame {
     children.whereType<_Bubble>().toList().forEach((c) => c.removeFromParent());
     children.whereType<_PopParticle>().toList().forEach((c) => c.removeFromParent());
     _pickTarget();
+    final modeName = switch (mode) {
+      BubbleMode.letters => 'حروف',
+      BubbleMode.numbers => 'اعداد',
+      BubbleMode.colors => 'رنگ‌ها',
+    };
+    FandoghiCoach.instruction('آماده‌ای؟ حباب‌های درستِ $modeName را بترکان! من حواسم هست 🌰');
     onUpdate();
   }
 
@@ -336,6 +350,11 @@ class BubblePopFlameGame extends FlameGame {
     if (stageId != null && score >= 50) {
       GameData.completeStage(stageId!, stageNumber: stageNumber);
     }
+    FandoghiCoach.reward(
+      score >= 50
+          ? 'چه مسابقه‌ای بود! امتیازت عالی شد؛ فندقی بهت افتخار می‌کند 🏆'
+          : 'خسته نباشی! با چند تمرین دیگر رکوردت را بهتر می‌کنی 💪',
+    );
     onUpdate();
   }
 
@@ -360,6 +379,7 @@ class BubblePopFlameGame extends FlameGame {
               : 'colors',
     );
     if (isCorrect) {
+      FandoghiCoach.correct('ترکاندی! این حباب هدف بود 🫧🌟');
       combo++;
       if (combo > bestCombo) bestCombo = combo;
       score += 10 + (combo > 3 ? combo * 2 : 0);
@@ -374,8 +394,10 @@ class BubblePopFlameGame extends FlameGame {
           bubble.removeFromParent();
         });
         _pickTarget();
+        FandoghiCoach.instruction('هدف عوض شد! حالا دنبال ${targetEmoji} بگرد 🌰');
       }
     } else {
+      FandoghiCoach.judge('اوه! این حباب هدف نبود؛ فندقی می‌گوید با دقت‌تر نگاه کن 👀');
       combo = 0;
       lives--;
       HapticFeedback.heavyImpact();
@@ -386,6 +408,7 @@ class BubblePopFlameGame extends FlameGame {
 
   void _onBubbleMiss(bool wasTarget) {
     if (!wasTarget) return;
+    FandoghiCoach.judge('حباب هدف فرار کرد! دفعه بعد زودتر بترکانش 🫧');
     GameData.recordAnswer(correct: false);
     combo = 0;
     lives--;

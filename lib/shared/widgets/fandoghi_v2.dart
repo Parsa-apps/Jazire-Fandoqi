@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../app/app_colors.dart';
+import '../../core/fandoghi_models.dart';
+
+export '../../core/fandoghi_models.dart';
 
 /// ═══════════════════════════════════════════════
 /// 🌰 Fandoghi V2 — Professional Animated Mascot
@@ -26,8 +29,6 @@ class FandoghiV2 extends StatefulWidget {
   @override
   State<FandoghiV2> createState() => _FandoghiState();
 }
-
-enum FandoghiMood { happy, excited, thinking, sleeping, wink }
 
 class _FandoghiState extends State<FandoghiV2>
     with TickerProviderStateMixin {
@@ -201,6 +202,34 @@ class _FandoghiState extends State<FandoghiV2>
             ),
           ),
           
+          // Coach badge — a small star makes the guide character memorable
+          // even when it is shown as a compact game HUD mascot.
+          Positioned(
+            bottom: s * 0.16,
+            right: s * 0.12,
+            child: Container(
+              width: s * 0.17,
+              height: s * 0.17,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFD166),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: s * 0.018),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.16),
+                    blurRadius: s * 0.06,
+                    offset: Offset(0, s * 0.02),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.star_rounded,
+                color: Colors.white,
+                size: s * 0.1,
+              ),
+            ),
+          ),
+
           // Cap
           Positioned(
             top: 0,

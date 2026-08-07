@@ -103,9 +103,11 @@ class _SplashState extends State<SplashScreen>
             
             // Main content
             Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
                   // Glowing ring behind Fandoghi
                   _buildGlowRing(),
                   
@@ -118,9 +120,10 @@ class _SplashState extends State<SplashScreen>
                       curve: Curves.elasticOut,
                     ),
                     child: const FandoghiV2(
-                      size: 110,
+                      size: 132,
                       animate: true,
                       mood: FandoghiMood.excited,
+                      message: 'سلام! من فندقی هستم؛ راهنمای کوچولوی تو 🌰',
                     ),
                   ),
                   
@@ -164,7 +167,8 @@ class _SplashState extends State<SplashScreen>
                     opacity: _fadeCtrl,
                     child: _buildLoadingDots(),
                   ),
-                ],
+                  ],
+                ),
               ),
             ),
             

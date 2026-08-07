@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../app/app_colors.dart';
+import '../../core/fandoghi_coach.dart';
 import '../../core/game_data.dart';
 import '../../core/game_launch.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
@@ -494,7 +495,11 @@ class _StageMapState extends State<StageMapScreen>
   }
 
   void _onStageTap(_StageData stage) {
-    if (stage.number > GameData.currentStage) return;
+    if (stage.number > GameData.currentStage) {
+      FandoghiCoach.judge('این مرحله هنوز قفل است؛ اول مرحله‌های قبلی را با هم کامل کنیم 🔒');
+      return;
+    }
+    FandoghiCoach.instruction('این مرحله را انتخاب کردی! آماده‌ای با فندقی شروع کنیم؟ 🗺️');
 
     showModalBottomSheet(
       context: context,

@@ -18,6 +18,7 @@ import 'features/home/home_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/parent/parent_panel.dart';
 import 'features/splash/splash_screen.dart';
+import 'shared/widgets/fandoghi_coach.dart';
 
 /// کودک ایران - Kudake Iran
 /// آفلاین، فارسی و طراحی‌شده برای یادگیری امن کودکان.
@@ -59,8 +60,10 @@ class KudakeIranApp extends StatelessWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
-      builder: (context, child) => _PlayTimeTracker(
-        child: child ?? const SizedBox.shrink(),
+      builder: (context, child) => FandoghiCoachOverlay(
+        child: _PlayTimeTracker(
+          child: child ?? const SizedBox.shrink(),
+        ),
       ),
       initialRoute: '/',
       routes: {

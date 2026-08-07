@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../app/app_colors.dart';
+import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
 
@@ -44,6 +45,17 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
   void initState() {
     super.initState();
     _questions = _questionsFor(widget.topic);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        if (GameData.isDailyLimitReached) {
+          FandoghiCoach.judge('زمان بازی امروز تمام شده؛ فردا دوباره با هم ادامه می‌دهیم ⏰');
+        } else {
+          FandoghiCoach.instruction(
+            'من داور این مسابقه‌ام! گزینه‌ای را انتخاب کن؛ بعد با هم جواب را بررسی می‌کنیم 🌰',
+          );
+        }
+      }
+    });
   }
 
   @override
@@ -72,7 +84,12 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
     if (question.missionId != null) {
       GameData.progressMission(question.missionId!);
     }
-    if (correct) HapticFeedback.mediumImpact();
+    if (correct) {
+      FandoghiCoach.correct('آفرین! «${question.options[optionIndex]}» جواب درست بود 🌟');
+      HapticFeedback.mediumImpact();
+    } else {
+      FandoghiCoach.incorrect(question.options[question.correctIndex]);
+    }
 
     Future<void>.delayed(const Duration(milliseconds: 850), () {
       if (!mounted || token != _roundToken || _finished) return;
@@ -104,10 +121,16 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
         stageNumber: widget.stageNumber,
       );
     }
+    FandoghiCoach.reward(
+      completed
+          ? 'مسابقه را عالی انجام دادی! من بهت افتخار می‌کنم؛ مرحله هم باز شد 🏆'
+          : 'تلاش خوبی بود! با یک تمرین دیگر می‌توانی مرحله را باز کنی 💪',
+    );
     setState(() {});
   }
 
   void _restart() {
+    FandoghiCoach.instruction('دوباره شروع کنیم! این بار فندقی هم حواسش به جواب‌ها هست 🌰');
     _roundToken++;
     setState(() {
       _questionIndex = 0;

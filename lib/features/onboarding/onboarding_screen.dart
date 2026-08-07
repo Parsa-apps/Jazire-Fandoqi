@@ -124,6 +124,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             size: 130,
             animate: true,
             mood: FandoghiMood.excited,
+            message: 'من فندقی‌ام؛ با هم کلی چیز جالب یاد می‌گیریم! 🌰',
           ),
           const SizedBox(height: 24),
           Text(

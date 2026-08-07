@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../app/app_colors.dart';
+import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 
 /// An offline drawing activity used by the daily mission and creative map.
@@ -35,6 +36,18 @@ class _DrawingGameState extends State<DrawingGame> {
     Color(0xFF9B59B6),
     Color(0xFF111827),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        FandoghiCoach.instruction(
+          'هر چیزی که دوست داری بکش! من فندقی داور خلاقیت تو هستم 🎨🌰',
+        );
+      }
+    });
+  }
 
   void _startStroke(DragStartDetails details) {
     HapticFeedback.selectionClick();
@@ -78,6 +91,7 @@ class _DrawingGameState extends State<DrawingGame> {
       if (widget.stageId != null) {
         GameData.completeStage(widget.stageId!, stageNumber: widget.stageNumber);
       }
+      FandoghiCoach.reward('نقاشی‌ات ثبت شد! فندقی به خلاقیتت امتیاز کامل می‌دهد 🎨🏆');
     }
     Navigator.pop(context);
   }
