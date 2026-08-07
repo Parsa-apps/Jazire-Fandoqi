@@ -1,7 +1,7 @@
 name: amoozesh_fandoghi
 description: "آموزش فندقی - اپلیکیشن آموزشی آفلاین کودکان با شخصیت فندقی | سازنده: فرشاد پارسا"
 publish_to: 'none'
-version: 4.1.0+2
+version: 4.1.1+3
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
