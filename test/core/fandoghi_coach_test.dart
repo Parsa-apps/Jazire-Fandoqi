@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:amoozeshfandoghi/core/fandoghi_coach.dart';
+import 'package:kudakeiran/core/fandoghi_coach.dart';
 
 void main() {
   tearDown(() {

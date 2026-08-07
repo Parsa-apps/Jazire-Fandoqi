@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:amoozeshfandoghi/core/ai_system.dart';
-import 'package:amoozeshfandoghi/core/game_data.dart';
+import 'package:kudakeiran/core/ai_system.dart';
+import 'package:kudakeiran/core/game_data.dart';
 
 void main() {
   setUp(() {
