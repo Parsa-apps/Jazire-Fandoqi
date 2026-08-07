@@ -121,16 +121,20 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
           const Spacer(),
           Text(
             'آکادمی الفبا 🔤',
-            style: GoogleFonts.vazirmatn(
+            style: GoogleFonts.balooBhaijaan2(
               color: Colors.white,
-              fontSize: 20,
+              fontSize: 22,
               fontWeight: FontWeight.w900,
             ),
           ),
           const Spacer(),
           Text(
             '${_lessonIndex + 1}/${_lessons.length}',
-            style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w800),
+            style: GoogleFonts.balooBhaijaan2(
+              color: Colors.white70,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ],
       ),
@@ -167,9 +171,9 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
               child: Text(
                 'ببین • بگو • بنویس • تکرار کن',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.vazirmatn(
+                style: GoogleFonts.balooBhaijaan2(
                   color: Colors.white,
-                  fontSize: 18,
+                  fontSize: 22,
                   fontWeight: FontWeight.w900,
                   shadows: const [Shadow(color: Colors.black54, blurRadius: 8)],
                 ),
@@ -227,25 +231,30 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                   children: [
                     Text(
                       'حرف «${_lesson.letter}»',
-                      style: GoogleFonts.vazirmatn(
+                      style: GoogleFonts.balooBhaijaan2(
                         color: Colors.white,
-                        fontSize: 22,
+                        fontSize: 23,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
                     const SizedBox(height: 5),
                     Text(
                       '${_lesson.emoji} مثلِ «${_lesson.word}»',
-                      style: const TextStyle(
+                      style: GoogleFonts.balooBhaijaan2(
                         color: Colors.white,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'برای تمرین نوشتن، دکمه‌ی زیر را بزن.',
-                      style: TextStyle(color: Colors.white70, height: 1.5),
+                      style: GoogleFonts.balooBhaijaan2(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        height: 1.5,
+                      ),
                     ),
                   ],
                 ),
@@ -257,15 +266,15 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
             width: double.infinity,
             child: FilledButton.icon(
               onPressed: _openTraceScreen,
-              icon: const Icon(Icons.draw_rounded),
+              icon: const Icon(Icons.draw_rounded, size: 20),
               label: const Text('تمرین نوشتن ✍️'),
               style: FilledButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: AppColors.primaryDark,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                textStyle: const TextStyle(
+                textStyle: GoogleFonts.balooBhaijaan2(
                   fontWeight: FontWeight.w900,
-                  fontSize: 17,
+                  fontSize: 18,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(18),
@@ -290,9 +299,13 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'انتخاب حرف برای تمرین',
-            style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w700),
+            style: GoogleFonts.balooBhaijaan2(
+              color: Colors.white70,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 10),
           Wrap(
@@ -306,7 +319,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                 onSelected: (_) => _selectLesson(index),
                 selectedColor: AppColors.primary,
                 backgroundColor: Colors.white.withOpacity(0.1),
-                labelStyle: TextStyle(
+                labelStyle: GoogleFonts.balooBhaijaan2(
                   color: selected ? Colors.white : Colors.white70,
                   fontWeight: FontWeight.w900,
                   fontSize: 16,
@@ -596,9 +609,9 @@ class _TraceScreenState extends State<_TraceScreen> {
           const Spacer(),
           Text(
             'بنویس: «${_lesson.letter}»',
-            style: GoogleFonts.vazirmatn(
+            style: GoogleFonts.balooBhaijaan2(
               color: AppColors.textPrimary,
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -606,7 +619,7 @@ class _TraceScreenState extends State<_TraceScreen> {
           // انتخاب‌گر سریع حرف
           PopupMenuButton<int>(
             tooltip: 'تغییر حرف',
-            icon: const Icon(Icons.menu_book_rounded),
+            icon: const Icon(Icons.menu_book_rounded, size: 24),
             color: Colors.white,
             onSelected: _selectLesson,
             itemBuilder: (context) =>
@@ -618,7 +631,7 @@ class _TraceScreenState extends State<_TraceScreen> {
                   children: [
                     Text(
                       widget.lessons[i].letter,
-                      style: GoogleFonts.vazirmatn(
+                      style: GoogleFonts.balooBhaijaan2(
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
                         color: AppColors.textPrimary,
@@ -627,7 +640,11 @@ class _TraceScreenState extends State<_TraceScreen> {
                     const SizedBox(width: 8),
                     Text(
                       widget.lessons[i].word,
-                      style: const TextStyle(color: AppColors.textSecondary),
+                      style: GoogleFonts.balooBhaijaan2(
+                        color: AppColors.textSecondary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ],
                 ),
@@ -674,11 +691,11 @@ class _TraceScreenState extends State<_TraceScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         color: r.passed ? AppColors.success : AppColors.primary.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.18),
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
@@ -689,16 +706,17 @@ class _TraceScreenState extends State<_TraceScreen> {
           Icon(
             r.passed ? Icons.celebration_rounded : Icons.refresh_rounded,
             color: Colors.white,
-            size: 18,
+            size: 20,
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 7),
           Text(
             r.passed
                 ? 'آفرین! امتیاز: ${(r.score * 100).round()}٪'
                 : 'امتیاز: ${(r.score * 100).round()}٪ — دوباره تلاش کن',
-            style: const TextStyle(
+            style: GoogleFonts.balooBhaijaan2(
               color: Colors.white,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w900,
+              fontSize: 17,
             ),
           ),
         ],
@@ -724,24 +742,28 @@ class _TraceScreenState extends State<_TraceScreen> {
           IconButton.filledTonal(
             tooltip: 'برگرداندن آخرین خط',
             onPressed: _strokes.isEmpty ? null : _undoTrace,
-            icon: const Icon(Icons.undo_rounded),
+            icon: const Icon(Icons.undo_rounded, size: 22),
           ),
           const SizedBox(width: 6),
           IconButton.filledTonal(
             tooltip: 'پاک کردن همه',
             onPressed: _strokes.isEmpty ? null : _clearTrace,
-            icon: const Icon(Icons.delete_outline_rounded),
+            icon: const Icon(Icons.delete_outline_rounded, size: 22),
           ),
           const Spacer(),
           FilledButton.icon(
             onPressed: _strokes.isEmpty || _checking ? null : _checkTrace,
-            icon: const Icon(Icons.verified_rounded),
+            icon: const Icon(Icons.verified_rounded, size: 20),
             label: Text(_checking ? 'در حال بررسی…' : 'بررسی کن'),
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               padding:
                   const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              textStyle: GoogleFonts.balooBhaijaan2(
+                fontWeight: FontWeight.w900,
+                fontSize: 17,
+              ),
             ),
           ),
         ],

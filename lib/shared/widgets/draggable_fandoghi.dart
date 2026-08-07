@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'fandoghi_bunny.dart';
 
@@ -180,17 +181,17 @@ class _BunnyContainerState extends State<_BunnyContainer> {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.85),
+                color: Colors.white.withOpacity(0.88),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.18),
-                    blurRadius: 18,
-                    offset: const Offset(0, 6),
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 22,
+                    offset: const Offset(0, 7),
                   ),
                   BoxShadow(
-                    color: const Color(0xFFFFB8C8).withOpacity(0.5),
-                    blurRadius: 24,
-                    spreadRadius: 2,
+                    color: const Color(0xFFFFB8C8).withOpacity(0.6),
+                    blurRadius: 28,
+                    spreadRadius: 3,
                   ),
                 ],
               ),
@@ -201,8 +202,8 @@ class _BunnyContainerState extends State<_BunnyContainer> {
           // Tiny drag hint that fades out after the first drag.
           if (_showHint)
             Positioned(
-              top: -8,
-              right: -8,
+              top: -6,
+              right: -6,
               child: _DragHint(),
             ),
         ],
@@ -257,17 +258,17 @@ class _DragHintState extends State<_DragHint>
                 ),
               ],
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text('بکش',
-                    style: TextStyle(
-                      fontSize: 11,
+                    style: GoogleFonts.balooBhaijaan2(
+                      fontSize: 13,
                       fontWeight: FontWeight.w900,
-                      color: Color(0xFFE91E63),
+                      color: const Color(0xFFE91E63),
                     )),
-                SizedBox(width: 2),
-                Text('👆', style: TextStyle(fontSize: 12)),
+                const SizedBox(width: 2),
+                const Text('👆', style: TextStyle(fontSize: 12)),
               ],
             ),
           ),
