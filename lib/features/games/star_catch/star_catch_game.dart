@@ -84,60 +84,51 @@ class _StarCatchState extends State<StarCatchGame> {
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Column(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // ردیف بالا: دکمه برگشت، امتیاز، جان
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _glassBtn(Icons.arrow_back_rounded, () => Navigator.pop(context)),
-                      // Score
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.35),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withOpacity(0.2)),
+                  _glassBtn(Icons.arrow_back_rounded, () => Navigator.pop(context)),
+                  // Score
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.35),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.star_rounded, color: Colors.amber, size: 22),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${_game.score}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.star_rounded, color: Colors.amber, size: 22),
-                            const SizedBox(width: 8),
-                            Text(
-                              '${_game.score}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Lives
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.35),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withOpacity(0.2)),
-                        ),
-                        child: Row(
-                          children: List.generate(3, (i) => Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 2),
-                            child: Text(
-                              i < _game.lives ? '❤️' : '🖤',
-                              style: const TextStyle(fontSize: 18),
-                            ),
-                          )),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 14),
-                  // ردیف پایین: نمایش هدف فعلی
-                  if (_game.started && !_game.gameOver)
-                    _buildTargetHud(),
+                  // Lives
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.35),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      children: List.generate(3, (i) => Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        child: Text(
+                          i < _game.lives ? '❤️' : '🖤',
+                          style: const TextStyle(fontSize: 18),
+                        ),
+                      )),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -172,60 +163,6 @@ class _StarCatchState extends State<StarCatchGame> {
     );
   }
 
-  Widget _buildTargetHud() {
-    final remaining = _game.catchesRequiredForNext - _game.correctCatchesOnTarget;
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.45),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: Colors.amber.withOpacity(0.6), width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.amber.withOpacity(0.25),
-              blurRadius: 14,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('🎯', style: TextStyle(fontSize: 20)),
-            const SizedBox(width: 8),
-            Text(
-              'فقط ${_game.targetEmoji} را بگیر!',
-              style: GoogleFonts.balooBhaijaan2(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            if (remaining > 1) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
-                decoration: BoxDecoration(
-                  color: Colors.amber,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '$remaining',
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildStartScreen() {
     return Container(
       color: Colors.black.withOpacity(0.6),
@@ -237,8 +174,8 @@ class _StarCatchState extends State<StarCatchGame> {
             const SizedBox(height: 20),
             Text(
               'ستاره‌گیری',
-              style: GoogleFonts.balooBhaijaan2(
-                fontSize: 32,
+              style: GoogleFonts.vazirmatn(
+                fontSize: 36,
                 fontWeight: FontWeight.w900,
                 color: Colors.white,
               ),
@@ -247,18 +184,17 @@ class _StarCatchState extends State<StarCatchGame> {
             Text(
               'ستاره‌ها رو با سبد بگیر!\nاز آیتم‌های قرمز دوری کن!',
               textAlign: TextAlign.center,
-              style: GoogleFonts.balooBhaijaan2(
-                fontSize: 16,
-                color: Colors.white.withOpacity(0.9),
-                fontWeight: FontWeight.w700,
-                height: 1.5,
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.white.withOpacity(0.85),
+                height: 1.6,
               ),
             ),
             const SizedBox(height: 40),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 18),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -269,12 +205,12 @@ class _StarCatchState extends State<StarCatchGame> {
                   setState(() {});
                 }
               },
-              child: Text(
+              child: const Text(
                 'شروع بازی! 🚀',
-                style: GoogleFonts.balooBhaijaan2(
+                style: TextStyle(
                   color: Colors.white,
-                  fontSize: 19,
-                  fontWeight: FontWeight.w900,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
@@ -295,8 +231,8 @@ class _StarCatchState extends State<StarCatchGame> {
             const SizedBox(height: 20),
             Text(
               'بازی تموم شد!',
-              style: GoogleFonts.balooBhaijaan2(
-                fontSize: 32,
+              style: GoogleFonts.vazirmatn(
+                fontSize: 36,
                 fontWeight: FontWeight.w900,
                 color: Colors.white,
               ),
@@ -304,10 +240,10 @@ class _StarCatchState extends State<StarCatchGame> {
             const SizedBox(height: 12),
             Text(
               'امتیاز: ${_game.score}',
-              style: GoogleFonts.balooBhaijaan2(
-                fontSize: 24,
+              style: const TextStyle(
+                fontSize: 28,
                 color: Colors.amber,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 30),
@@ -317,7 +253,7 @@ class _StarCatchState extends State<StarCatchGame> {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
                     ),
@@ -328,24 +264,24 @@ class _StarCatchState extends State<StarCatchGame> {
                       setState(() {});
                     }
                   },
-                  child: Text(
+                  child: const Text(
                     'دوباره 🔄',
-                    style: GoogleFonts.balooBhaijaan2(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900),
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
                 const SizedBox(width: 16),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white.withOpacity(0.2),
-                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
                     ),
                   ),
                   onPressed: () => Navigator.pop(context),
-                  child: Text(
+                  child: const Text(
                     'برگرد 🏠',
-                    style: GoogleFonts.balooBhaijaan2(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900),
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -368,24 +304,15 @@ class StarCatchFlameGame extends FlameGame {
 
   int score = 0;
   int lives = 3;
-  int combo = 0;
   bool gameOver = false;
   bool started = false;
-
+  
   late _Basket _basket;
   final _rng = Random();
   double _spawnTimer = 0;
   double _spawnInterval = 1.2;
   double _gameTime = 0;
-
-  /// آیتم هدف فعلی که بچه باید بگیرد. هر چند موفقیت عوض می‌شود.
-  String targetEmoji = '⭐';
-  String targetLabel = 'ستاره';
-  // چند گرفتن درست پشت سر هم = عوض شدن هدف.
-  int correctCatchesOnTarget = 0;
-  int catchesRequiredForNext = 3;
-  int _targetsCompleted = 0;
-
+  
   StarCatchFlameGame({
     required this.onScore,
     required this.onCelebrate,
@@ -401,13 +328,11 @@ class StarCatchFlameGame extends FlameGame {
     _spawnInterval = 1.2;
     _gameTime = 0;
     _spawnTimer = 0;
-    correctCatchesOnTarget = 0;
-    _targetsCompleted = 0;
-
+    
     // Remove old items
     children.whereType<_FallingItem>().toList().forEach((c) => c.removeFromParent());
     children.whereType<_Basket>().toList().forEach((c) => c.removeFromParent());
-
+    
     // Add basket
     _basket = _Basket();
     _basket.position = Vector2(
@@ -415,27 +340,8 @@ class StarCatchFlameGame extends FlameGame {
       max(40, size.y - 80),
     );
     add(_basket);
-
-    _pickTarget();
+    
     onScore();
-  }
-
-  /// انتخاب آیتم هدف جدید، متفاوت از هدف قبلی.
-  void _pickTarget() {
-    // ترکیب آیتم‌های خوب (نه بمب). بمب همیشه بد است.
-    const goodItems = ['⭐', '🌟', '✨', '💛', '🔮'];
-    const goodLabels = ['ستاره', 'ستاره‌ی درخشان', 'درخشش', 'قلبِ زرد', 'کریستال'];
-    String previous = targetEmoji;
-    int attempts = 0;
-    do {
-      final idx = _rng.nextInt(goodItems.length);
-      targetEmoji = goodItems[idx];
-      targetLabel = goodLabels[idx];
-      attempts++;
-    } while (targetEmoji == previous && attempts < 8);
-    correctCatchesOnTarget = 0;
-    // با پیشرفت، تعداد لازم برای تغییر هدف بیشتر می‌شود.
-    catchesRequiredForNext = (3 + _targetsCompleted ~/ 3).clamp(3, 7);
   }
 
   void moveBasket(double screenX) {
@@ -468,17 +374,13 @@ class StarCatchFlameGame extends FlameGame {
         .where((item) => item.position.y > size.y + 50)
         .toList()
         .forEach((item) {
-      if (item.isBad) {
-        // بمب‌ها اگه از پایین رد بشن، هیچ اتفاقی نمی‌افتد
-      } else if (item.emoji == targetEmoji) {
-        // فقط هدف اگه جا بمونه، life کم می‌کنه
-        FandoghiCoach.judge('$targetLabel $targetEmoji جا ماند؛ حواست به سبد باشد ⭐');
+      if (!item.isBad) {
+        FandoghiCoach.judge('این ستاره جا ماند؛ فندقی می‌گوید حواست به سبد باشد ⭐');
         GameData.recordAnswer(correct: false, skill: 'counting');
         lives--;
         HapticFeedback.heavyImpact();
         if (lives <= 0) _finishGame();
       }
-      // آیتم خوب غیرهدف: هیچ مجازاتی ندارد
       item.removeFromParent();
     });
     
@@ -521,39 +423,18 @@ class StarCatchFlameGame extends FlameGame {
   void _onCatch(_FallingItem item) {
     if (gameOver) return;
     if (item.isBad) {
-      FandoghiCoach.judge('اوه! این بمب بود، نه $targetLabel! با دقت‌تر بگیر 💥');
+      FandoghiCoach.judge('اوه! این بمب بود، نه ستاره! با دقت‌تر بگیر 💥');
       lives--;
       GameData.recordAnswer(correct: false, skill: 'counting');
       HapticFeedback.heavyImpact();
       if (lives <= 0) _finishGame();
-      } else if (item.emoji == targetEmoji) {
-        // آیتم درست = همان هدف فعلی
-        FandoghiCoach.correct('$targetLabel را گرفتی! امتیاز برای قهرمان من ${item.emoji}🌟');
-        score += 10;
-        combo++;
-        GameData.recordAnswer(correct: true, skill: 'counting');
-        HapticFeedback.lightImpact();
-        correctCatchesOnTarget++;
-        if (correctCatchesOnTarget >= catchesRequiredForNext) {
-          // وقتی به تعداد لازم رسید، هدف عوض می‌شود
-          _targetsCompleted++;
-          _pickTarget();
-          FandoghiCoach.instruction('هدف عوض شد! حالا فقط $targetEmoji را بگیر 🌰');
-        }
-        if (score % 50 == 0) onCelebrate();
-      } else {
-        // آیتم خوب ولی غیرهدف: فقط راهنمایی، بدون life کم
-        FandoghiCoach.say(
-          'این $targetLabel نبود؛ دنبال $targetEmoji بگرد 👀',
-          mood: FandoghiMood.thinking,
-          tone: FandoghiCoachTone.encouragement,
-          duration: const Duration(seconds: 2),
-        );
-        score += 2; // امتیاز کم برای شرکت در بازی
-        combo = 0; // کمبوی ناقص
-        GameData.recordAnswer(correct: false, skill: 'counting');
-        HapticFeedback.selectionClick();
-      }
+    } else {
+      FandoghiCoach.correct('ستاره را گرفتی! امتیاز برای قهرمان من ⭐🌟');
+      score += 10;
+      GameData.recordAnswer(correct: true, skill: 'counting');
+      HapticFeedback.lightImpact();
+      if (score % 50 == 0) onCelebrate();
+    }
     item.removeFromParent();
     onScore();
   }
