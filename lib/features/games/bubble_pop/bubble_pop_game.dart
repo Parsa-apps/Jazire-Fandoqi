@@ -96,29 +96,18 @@ class _BubblePopState extends State<BubblePopGame> {
 
   Widget _buildTargetDisplay() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.5),
+        color: Colors.black.withOpacity(0.4),
         borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Column(
         children: [
-          Text('🎯', style: const TextStyle(fontSize: 22)),
-          const SizedBox(width: 8),
-          Text(
-            'حباب ${_game.targetLabel} را بترکان!',
-            style: GoogleFonts.balooBhaijaan2(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            _game.targetEmoji,
-            style: const TextStyle(fontSize: 28, height: 1),
-          ),
+          Text('حباب‌های ${_game.targetLabel} رو بترکون!',
+            style: GoogleFonts.vazirmatn(color: Colors.white70, fontSize: 13)),
+          const SizedBox(height: 6),
+          Text(_game.targetEmoji, style: const TextStyle(fontSize: 36)),
         ],
       ),
     );
@@ -133,12 +122,11 @@ class _BubblePopState extends State<BubblePopGame> {
           children: [
             const Text('🫧', style: TextStyle(fontSize: 80)),
             const SizedBox(height: 20),
-            Text('حباب‌ترکان',
-              style: GoogleFonts.balooBhaijaan2(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white)),
+            Text('حباب‌ترکان', style: GoogleFonts.vazirmatn(fontSize: 36, fontWeight: FontWeight.w900, color: Colors.white)),
             const SizedBox(height: 12),
             Text('حباب‌های درست رو بترکون!\nحواست به حباب‌های اشتباه باشه!',
               textAlign: TextAlign.center,
-              style: GoogleFonts.balooBhaijaan2(fontSize: 16, color: Colors.white.withOpacity(0.9), fontWeight: FontWeight.w700, height: 1.5)),
+              style: TextStyle(fontSize: 17, color: Colors.white.withOpacity(0.85), height: 1.6)),
             const SizedBox(height: 40),
             _startButton('حروف الفبا 🔤', () => _game.startGame(BubbleMode.letters)),
             const SizedBox(height: 12),
@@ -155,14 +143,13 @@ class _BubblePopState extends State<BubblePopGame> {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primary,
-        padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
       onPressed: () {
         if (canStartPlay(context)) onTap();
       },
-      child: Text(text,
-        style: GoogleFonts.balooBhaijaan2(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900)),
+      child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
     );
   }
 
@@ -176,31 +163,31 @@ class _BubblePopState extends State<BubblePopGame> {
             Text(_game.score >= 100 ? '🏆' : '🎉', style: const TextStyle(fontSize: 80)),
             const SizedBox(height: 20),
             Text(_game.score >= 100 ? 'قهرمان!' : 'آفرین!',
-              style: GoogleFonts.balooBhaijaan2(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white)),
+              style: GoogleFonts.vazirmatn(fontSize: 36, fontWeight: FontWeight.w900, color: Colors.white)),
             const SizedBox(height: 12),
             Text('امتیاز: ${_game.score}',
-              style: GoogleFonts.balooBhaijaan2(fontSize: 24, color: Colors.amber, fontWeight: FontWeight.w900)),
+              style: const TextStyle(fontSize: 28, color: Colors.amber, fontWeight: FontWeight.bold)),
             Text('بهترین کمبو: ${_game.bestCombo}x',
-              style: GoogleFonts.balooBhaijaan2(fontSize: 17, color: Colors.orange, fontWeight: FontWeight.w800)),
+              style: const TextStyle(fontSize: 18, color: Colors.orange)),
             const SizedBox(height: 30),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                   onPressed: () {
                     if (canStartPlay(context)) {
                       _game.startGame(_game.mode);
                       setState(() {});
                     }
                   },
-                  child: Text('دوباره 🔄', style: GoogleFonts.balooBhaijaan2(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
+                  child: const Text('دوباره 🔄', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
                 const SizedBox(width: 16),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.white.withOpacity(0.2), padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.white.withOpacity(0.2), padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                   onPressed: () => Navigator.pop(context),
-                  child: Text('برگرد 🏠', style: GoogleFonts.balooBhaijaan2(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
+                  child: const Text('برگرد 🏠', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -249,11 +236,6 @@ class BubblePopFlameGame extends FlameGame {
   String targetEmoji = '';
   String targetLabel = '';
   String _targetKey = '';
-  // چند ترکاندن درست = عوض شدن هدف.
-  int _correctHitsOnTarget = 0;
-  // تعداد هدف‌های فعلی که باید درست بزنیم تا عوض شود.
-  int _hitsRequiredForNext = 2;
-  int _targetsCompleted = 0;
 
   double _spawnTimer = 0;
   double _spawnInterval = 1.5;
@@ -273,7 +255,7 @@ class BubblePopFlameGame extends FlameGame {
     score = 0; combo = 0; bestCombo = 0; lives = 5;
     gameOver = false; started = true;
     _gameTime = 0; _spawnTimer = 0; _spawnInterval = 1.5;
-    _nextTargetScore = 30; // هدف هر ۳۰ امتیاز عوض می‌شود تا تنوع بیشتر شود
+    _nextTargetScore = 50;
 
     children.whereType<_Bubble>().toList().forEach((c) => c.removeFromParent());
     children.whereType<_PopParticle>().toList().forEach((c) => c.removeFromParent());
@@ -288,58 +270,32 @@ class BubblePopFlameGame extends FlameGame {
   }
 
   void _pickTarget() {
-    // اطمینان از اینکه هدف جدید با هدف قبلی فرق می‌کند.
-    String? previousKey = _targetKey.isEmpty ? null : _targetKey;
-    int attempts = 0;
-    const maxAttempts = 20;
-
     switch (mode) {
       case BubbleMode.letters:
-        const letters = ['ا', 'ب', 'پ', 'ت', 'ث', 'ج', 'چ', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'ژ', 'س', 'ش'];
-        do {
-          _targetKey = letters[_rng.nextInt(letters.length)];
-          attempts++;
-        } while (previousKey != null && _targetKey == previousKey && attempts < maxAttempts);
+        const letters = ['ا', 'ب', 'پ', 'ت', 'ث', 'ج', 'چ', 'ح', 'خ', 'د'];
+        _targetKey = letters[_rng.nextInt(letters.length)];
         targetEmoji = _targetKey;
         targetLabel = 'حرف';
-        _bubblePool
-          ..clear()
-          ..addAll(letters.map((l) => _BubbleData(l, l == _targetKey, _letterColor(l))));
+        _bubblePool..clear()..addAll(letters.map((l) => _BubbleData(l, l == _targetKey, _letterColor(l))));
         break;
       case BubbleMode.numbers:
-        // اعداد ۱ تا ۱۵ برای تنوع بیشتر.
-        final numbers = List.generate(15, (i) => '${i + 1}');
-        do {
-          _targetKey = numbers[_rng.nextInt(numbers.length)];
-          attempts++;
-        } while (previousKey != null && _targetKey == previousKey && attempts < maxAttempts);
+        final numbers = List.generate(10, (i) => '${i + 1}');
+        _targetKey = numbers[_rng.nextInt(numbers.length)];
         targetEmoji = _targetKey;
         targetLabel = 'عدد';
-        _bubblePool
-          ..clear()
-          ..addAll(numbers.map((n) => _BubbleData(n, n == _targetKey, _numberColor(n))));
+        _bubblePool..clear()..addAll(numbers.map((n) => _BubbleData(n, n == _targetKey, _numberColor(n))));
         break;
       case BubbleMode.colors:
-        const colorNames = ['قرمز', 'آبی', 'سبز', 'زرد', 'بنفش', 'نارنجی', 'صورتی', 'قهوه‌ای'];
-        const colorEmojis = ['🔴', '🔵', '🟢', '🟡', '🟣', '🟠', '🩷', '🟤'];
-        const colorValues = ['red', 'blue', 'green', 'yellow', 'purple', 'orange', 'pink', 'brown'];
-        int idx;
-        do {
-          idx = _rng.nextInt(colorNames.length);
-          attempts++;
-        } while (previousKey != null && colorValues[idx] == previousKey && attempts < maxAttempts);
+        const colorNames = ['قرمز', 'آبی', 'سبز', 'زرد', 'بنفش', 'نارنجی'];
+        const colorEmojis = ['🔴', '🔵', '🟢', '🟡', '🟣', '🟠'];
+        const colorValues = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
+        final idx = _rng.nextInt(colorNames.length);
         _targetKey = colorValues[idx];
         targetEmoji = colorEmojis[idx];
         targetLabel = 'رنگ ${colorNames[idx]}';
-        _bubblePool
-          ..clear()
-          ..addAll(List.generate(colorNames.length, (i) => _BubbleData(colorEmojis[i], i == idx, _colorFromName(colorValues[i]))));
+        _bubblePool..clear()..addAll(List.generate(colorNames.length, (i) => _BubbleData(colorEmojis[i], i == idx, _colorFromName(colorValues[i]))));
         break;
     }
-    // شمارنده‌ی هدف جدید
-    _correctHitsOnTarget = 0;
-    // تعداد درست‌های لازم برای عوض شدن هدف، با پیشرفت بازی بیشتر می‌شود.
-    _hitsRequiredForNext = (1 + _targetsCompleted ~/ 2).clamp(1, 4);
   }
 
   Color _letterColor(String l) {
@@ -360,8 +316,6 @@ class BubblePopFlameGame extends FlameGame {
       case 'yellow': return const Color(0xFFFDD835);
       case 'purple': return const Color(0xFF8E24AA);
       case 'orange': return const Color(0xFFFF6D00);
-      case 'pink': return const Color(0xFFEC407A);
-      case 'brown': return const Color(0xFF795548);
       default: return Colors.grey;
     }
   }
@@ -439,17 +393,10 @@ class BubblePopFlameGame extends FlameGame {
       if (mode == BubbleMode.letters) GameData.progressMission('alphabet');
       if (mode == BubbleMode.colors) GameData.progressMission('colors');
       HapticFeedback.lightImpact();
-      // شمارش ترکاندن‌های درست روی هدف فعلی
-      _correctHitsOnTarget++;
-      // شرط اول: چند ترکاندن درست پشت سر هم = عوض شدن هدف (تجربه‌ی متنوع)
-      // شرط دوم: هر ۳۰ امتیاز هم هدف عوض شود (برای بازی طولانی)
-      final byHits = _correctHitsOnTarget >= _hitsRequiredForNext;
-      final byScore = score >= _nextTargetScore;
-      if (byHits || byScore) {
-        if (byScore) _nextTargetScore += 30;
-        _targetsCompleted++;
-        // حباب‌های قبلی مربوط به هدف قدیمی هستند؛ حذف‌شان می‌کنیم تا
-        // بچه با دیدن حباب‌های متفرقه گیج نشود.
+      if (score >= _nextTargetScore) {
+        _nextTargetScore += 50;
+        // Existing bubbles belong to the previous target. Removing them is
+        // less confusing than showing an old target after the HUD changes.
         children.whereType<_Bubble>().toList().forEach((bubble) {
           bubble.removeFromParent();
         });
