@@ -1,20 +1,28 @@
-import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../../app/app_colors.dart';
+
 import '../../core/fandoghi_models.dart';
+import 'fandoghi_bunny.dart';
 
 export '../../core/fandoghi_models.dart';
 
 /// ═══════════════════════════════════════════════
-/// 🌰 Fandoghi V2 — Professional Animated Mascot
-/// A cute hazelnut character with rich animations
+/// 🐰 Fandoghi V2 — Backwards-compatible wrapper.
+///
+/// The original V2 widget was a CustomPaint hazelnut. We replaced it
+/// with the cute [FandoghiBunny] image everywhere it was used, but
+/// kept the public API ([FandoghiV2]) so every existing call site
+/// (FandoghiV2(size: 80, animate: true, mood: …)) keeps compiling.
 /// ═══════════════════════════════════════════════
-class FandoghiV2 extends StatefulWidget {
+class FandoghiV2 extends StatelessWidget {
   final double size;
   final bool animate;
   final String? message;
   final VoidCallback? onTap;
+
+  /// Kept for API compatibility. The bunny has a single friendly
+  /// smile and ignores mood switches.
+  // ignore: unused_element_parameter
   final FandoghiMood mood;
 
   const FandoghiV2({
@@ -27,97 +35,17 @@ class FandoghiV2 extends StatefulWidget {
   });
 
   @override
-  State<FandoghiV2> createState() => _FandoghiState();
-}
-
-class _FandoghiState extends State<FandoghiV2>
-    with TickerProviderStateMixin {
-  late AnimationController _floatCtrl;
-  late AnimationController _blinkCtrl;
-  late AnimationController _bounceCtrl;
-  Timer? _blinkTimer;
-  bool _isBlinking = false;
-  final _rng = Random();
-
-  @override
-  void initState() {
-    super.initState();
-    
-    _floatCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2500),
-    );
-    
-    _blinkCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 150),
-    );
-    
-    _bounceCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-
-    if (widget.animate) {
-      _floatCtrl.repeat(reverse: true);
-      _startBlinking();
-    }
-  }
-
-  void _startBlinking() {
-    _blinkTimer = Timer.periodic(
-      Duration(milliseconds: 2500 + _rng.nextInt(2000)),
-      (_) {
-        if (mounted && !_isBlinking) {
-          setState(() => _isBlinking = true);
-          _blinkCtrl.forward().then((_) {
-            if (mounted) {
-              _blinkCtrl.reverse().then((_) {
-                if (mounted) setState(() => _isBlinking = false);
-              });
-            }
-          });
-        }
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    _floatCtrl.dispose();
-    _blinkCtrl.dispose();
-    _bounceCtrl.dispose();
-    _blinkTimer?.cancel();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     Widget body = GestureDetector(
-      onTap: () {
-        widget.onTap?.call();
-        _bounceCtrl.forward(from: 0);
-      },
-      child: AnimatedBuilder(
-        animation: Listenable.merge([_floatCtrl, _bounceCtrl]),
-        builder: (_, child) {
-          final floatY = widget.animate
-              ? sin(_floatCtrl.value * pi) * 6
-              : 0.0;
-          final bounce = 1.0 + sin(_bounceCtrl.value * pi) * 0.1;
-          return Transform.translate(
-            offset: Offset(0, -floatY),
-            child: Transform.scale(
-              scale: bounce,
-              child: child,
-            ),
-          );
-        },
-        child: _buildCharacter(),
+      onTap: onTap,
+      child: _BunnyWithFloat(
+        size: size,
+        animate: animate,
+        child: FandoghiBunny(size: size),
       ),
     );
 
-    if (widget.message != null && widget.message!.isNotEmpty) {
+    if (message != null && message!.isNotEmpty) {
       body = Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -130,321 +58,8 @@ class _FandoghiState extends State<FandoghiV2>
 
     return Semantics(
       label: 'فندقی، مربی و راهنمای کودک',
-      button: widget.onTap != null,
+      button: onTap != null,
       child: body,
-    );
-  }
-
-  Widget _buildCharacter() {
-    final s = widget.size;
-    
-    return SizedBox(
-      width: s,
-      height: s * 1.3,
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.center,
-        children: [
-          // Shadow
-          Positioned(
-            bottom: -2,
-            child: Container(
-              width: s * 0.5,
-              height: s * 0.08,
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(s),
-              ),
-            ),
-          ),
-          
-          // Body (hazelnut shape)
-          Positioned(
-            bottom: s * 0.05,
-            child: Container(
-              width: s * 0.72,
-              height: s * 0.85,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.fandoghiLight,
-                    AppColors.fandoghiBody,
-                    AppColors.fandoghiDark,
-                  ],
-                  stops: const [0.0, 0.5, 1.0],
-                ),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(s * 0.36),
-                  topRight: Radius.circular(s * 0.36),
-                  bottomLeft: Radius.circular(s * 0.2),
-                  bottomRight: Radius.circular(s * 0.2),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.fandoghiDark.withOpacity(0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          
-          // Body shine
-          Positioned(
-            bottom: s * 0.35,
-            left: s * 0.15,
-            child: Container(
-              width: s * 0.15,
-              height: s * 0.25,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(s),
-              ),
-            ),
-          ),
-          
-          // Coach badge — a small star makes the guide character memorable
-          // even when it is shown as a compact game HUD mascot.
-          Positioned(
-            bottom: s * 0.16,
-            right: s * 0.12,
-            child: Container(
-              width: s * 0.17,
-              height: s * 0.17,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFD166),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: s * 0.018),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.16),
-                    blurRadius: s * 0.06,
-                    offset: Offset(0, s * 0.02),
-                  ),
-                ],
-              ),
-              child: Icon(
-                Icons.star_rounded,
-                color: Colors.white,
-                size: s * 0.1,
-              ),
-            ),
-          ),
-
-          // Cap
-          Positioned(
-            top: 0,
-            child: Container(
-              width: s * 0.52,
-              height: s * 0.32,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF6D4C41),
-                    AppColors.fandoghiDark,
-                  ],
-                ),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(s * 0.2),
-                  topRight: Radius.circular(s * 0.2),
-                  bottomLeft: Radius.circular(s * 0.06),
-                  bottomRight: Radius.circular(s * 0.06),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          
-          // Cap highlight
-          Positioned(
-            top: s * 0.03,
-            left: s * 0.2,
-            child: Container(
-              width: s * 0.12,
-              height: s * 0.06,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(s),
-              ),
-            ),
-          ),
-          
-          // Eyes
-          Positioned(
-            top: s * 0.38,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildEye(s, isLeft: true),
-                SizedBox(width: s * 0.14),
-                _buildEye(s, isLeft: false),
-              ],
-            ),
-          ),
-          
-          // Mouth
-          Positioned(
-            top: s * 0.58,
-            child: _buildMouth(s),
-          ),
-          
-          // Cheeks
-          Positioned(
-            top: s * 0.5,
-            left: s * 0.1,
-            child: _buildCheek(s),
-          ),
-          Positioned(
-            top: s * 0.5,
-            right: s * 0.1,
-            child: _buildCheek(s),
-          ),
-          
-          // Arms (little stubs)
-          if (widget.mood == FandoghiMood.excited) ...[
-            Positioned(
-              top: s * 0.45,
-              left: -s * 0.08,
-              child: _buildArm(s, -0.4),
-            ),
-            Positioned(
-              top: s * 0.45,
-              right: -s * 0.08,
-              child: _buildArm(s, 0.4),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEye(double s, {required bool isLeft}) {
-    final isWink = widget.mood == FandoghiMood.wink && !isLeft;
-    final isSleeping = widget.mood == FandoghiMood.sleeping;
-    
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      width: s * 0.11,
-      height: (_isBlinking || isSleeping || isWink) ? s * 0.02 : s * 0.11,
-      decoration: BoxDecoration(
-        color: const Color(0xFF3E2723),
-        borderRadius: BorderRadius.circular(s * 0.06),
-      ),
-      child: (_isBlinking || isSleeping || isWink)
-          ? null
-          : Center(
-              child: Container(
-                width: s * 0.04,
-                height: s * 0.04,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-    );
-  }
-
-  Widget _buildMouth(double s) {
-    switch (widget.mood) {
-      case FandoghiMood.happy:
-        return Container(
-          width: s * 0.18,
-          height: s * 0.09,
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: const Color(0xFF3E2723),
-                width: s * 0.025,
-              ),
-            ),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(s * 0.1),
-              bottomRight: Radius.circular(s * 0.1),
-            ),
-          ),
-        );
-      case FandoghiMood.excited:
-        return Container(
-          width: s * 0.14,
-          height: s * 0.1,
-          decoration: BoxDecoration(
-            color: const Color(0xFF3E2723),
-            borderRadius: BorderRadius.circular(s * 0.06),
-          ),
-          child: Center(
-            child: Container(
-              width: s * 0.08,
-              height: s * 0.04,
-              decoration: BoxDecoration(
-                color: AppColors.danger,
-                borderRadius: BorderRadius.circular(s * 0.02),
-              ),
-            ),
-          ),
-        );
-      case FandoghiMood.thinking:
-        return Container(
-          width: s * 0.08,
-          height: s * 0.08,
-          decoration: BoxDecoration(
-            color: const Color(0xFF3E2723),
-            shape: BoxShape.circle,
-          ),
-        );
-      case FandoghiMood.sleeping:
-        return Text('💤', style: TextStyle(fontSize: s * 0.15));
-      case FandoghiMood.wink:
-        return Container(
-          width: s * 0.15,
-          height: s * 0.07,
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: const Color(0xFF3E2723),
-                width: s * 0.02,
-              ),
-            ),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(s * 0.08),
-              bottomRight: Radius.circular(s * 0.08),
-            ),
-          ),
-        );
-    }
-  }
-
-  Widget _buildCheek(double s) {
-    return Container(
-      width: s * 0.1,
-      height: s * 0.06,
-      decoration: BoxDecoration(
-        color: AppColors.fandoghiCheek.withOpacity(0.5),
-        shape: BoxShape.circle,
-      ),
-    );
-  }
-
-  Widget _buildArm(double s, double angle) {
-    return Transform.rotate(
-      angle: angle,
-      child: Container(
-        width: s * 0.06,
-        height: s * 0.2,
-        decoration: BoxDecoration(
-          color: AppColors.fandoghiBody,
-          borderRadius: BorderRadius.circular(s * 0.03),
-        ),
-      ),
     );
   }
 
@@ -464,7 +79,7 @@ class _FandoghiState extends State<FandoghiV2>
         ],
       ),
       child: Text(
-        widget.message!,
+        message!,
         textAlign: TextAlign.center,
         style: const TextStyle(
           fontSize: 14,
@@ -472,6 +87,56 @@ class _FandoghiState extends State<FandoghiV2>
           height: 1.5,
         ),
       ),
+    );
+  }
+}
+
+/// Gentle float animation so the bunny still feels alive even
+/// though it's an image now.
+class _BunnyWithFloat extends StatefulWidget {
+  final double size;
+  final bool animate;
+  final Widget child;
+  const _BunnyWithFloat({
+    required this.size,
+    required this.animate,
+    required this.child,
+  });
+
+  @override
+  State<_BunnyWithFloat> createState() => _BunnyWithFloatState();
+}
+
+class _BunnyWithFloatState extends State<_BunnyWithFloat>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  final _rng = Random();
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 2200 + _rng.nextInt(600)),
+    );
+    if (widget.animate) _ctrl.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, child) {
+        final dy = widget.animate ? sin(_ctrl.value * pi) * 4 : 0.0;
+        return Transform.translate(offset: Offset(0, -dy), child: child);
+      },
+      child: widget.child,
     );
   }
 }

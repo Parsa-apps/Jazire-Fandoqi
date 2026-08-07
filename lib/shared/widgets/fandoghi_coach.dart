@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_colors.dart';
 import '../../core/fandoghi_coach.dart';
-import 'fandoghi_v2.dart';
+import 'draggable_fandoghi.dart';
+import 'fandoghi_bunny.dart';
 
 /// Global speech-bubble layer mounted by MaterialApp.builder.
 /// It ignores pointer events so it can never block a game button or gesture.
+///
+/// This is now also the home of the always-on, freely-draggable bunny
+/// mascot. The bunny lives in the global [FandoghiPosition] notifier so
+/// it stays exactly where the child left it on every page.
 class FandoghiCoachOverlay extends StatelessWidget {
   final Widget child;
 
@@ -28,11 +33,14 @@ class FandoghiCoachOverlay extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   child,
+                  // The draggable bunny mascot (always present, even when
+                  // a bubble is shown, so the user can keep dragging it).
+                  const Positioned.fill(child: _DraggableMascot()),
                   if (message != null)
                     Positioned(
                       left: 12,
                       right: 12,
-                      bottom: 84,
+                      bottom: 96,
                       child: IgnorePointer(
                         child: SafeArea(
                           top: false,
@@ -41,7 +49,7 @@ class FandoghiCoachOverlay extends StatelessWidget {
                       ),
                     )
                   else if (showPersistent)
-                    const _PersistentCoachButton(),
+                    const SizedBox.shrink(),
                 ],
               );
             },
@@ -52,37 +60,17 @@ class FandoghiCoachOverlay extends StatelessWidget {
   }
 }
 
-class _PersistentCoachButton extends StatelessWidget {
-  const _PersistentCoachButton();
+/// The always-on, freely-draggable bunny. Tap = instruction prompt,
+/// drag = move anywhere on the screen.
+class _DraggableMascot extends StatelessWidget {
+  const _DraggableMascot();
 
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      right: 12,
-      bottom: 84,
-      child: SafeArea(
-        top: false,
-        child: Semantics(
-          button: true,
-          label: 'باز کردن راهنمای فندقی',
-          child: Material(
-            color: Colors.white.withOpacity(0.96),
-            elevation: 8,
-            shadowColor: AppColors.primary.withOpacity(0.3),
-            shape: const CircleBorder(),
-            child: Padding(
-              padding: const EdgeInsets.all(4),
-              child: FandoghiV2(
-                size: 64,
-                animate: true,
-                mood: FandoghiMood.happy,
-                onTap: () => FandoghiCoach.instruction(
-                  'هر وقت کمک خواستی روی من بزن! من راهنما و داور بازی‌های تو هستم 🌰',
-                ),
-              ),
-            ),
-          ),
-        ),
+    return DraggableFandoghi(
+      size: 96,
+      onTap: () => FandoghiCoach.instruction(
+        'هر وقت کمک خواستی روی من بزن! من راهنمای تو هستم 🐰',
       ),
     );
   }
@@ -136,11 +124,7 @@ class _CoachBubble extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              FandoghiV2(
-                size: 88,
-                animate: true,
-                mood: message.mood,
-              ),
+              FandoghiBunny(size: 88),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(
@@ -148,7 +132,7 @@ class _CoachBubble extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'فندقی می‌گوید 🌰',
+                      'فندقی می‌گوید 🐰',
                       style: TextStyle(
                         color: toneColor,
                         fontSize: 12,
