@@ -15,6 +15,8 @@ class LoggerService {
       talker.handle(error ?? message, stackTrace, message);
 
   static String getHistory() {
-    return talker.history.map((e) => e.generateTextField()).join('\n');
+    // ⚠️ در talker 4.0.0 متد صحیح generateTextMessage است
+    // (متد generateTextField در این نسخه وجود ندارد و بیلد را خراب می‌کند)
+    return talker.history.map((e) => e.generateTextMessage()).join('\n');
   }
 }
