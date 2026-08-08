@@ -57,6 +57,7 @@ class AppFonts {
     FontWeight? fontWeight,
     double? letterSpacing,
     double? height,
+    List<Shadow>? shadows,
   }) {
     try {
       return GoogleFonts.balooBhaijaan2(
@@ -66,6 +67,7 @@ class AppFonts {
         fontWeight: fontWeight,
         letterSpacing: letterSpacing,
         height: height,
+        shadows: shadows,
       );
     } catch (_) {
       return (textStyle ?? const TextStyle()).copyWith(
@@ -75,6 +77,7 @@ class AppFonts {
         fontWeight: fontWeight,
         letterSpacing: letterSpacing,
         height: height,
+        shadows: shadows,
       );
     }
   }
