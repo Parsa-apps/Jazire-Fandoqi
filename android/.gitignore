@@ -1,0 +1,9 @@
+# Android build artifacts (wrapper files ARE committed intentionally so the
+# folder is self-contained and CI never needs `flutter create`)
+.gradle/
+/captures
+/local.properties
+**/build/
+.dart_tool/
+GeneratedPluginRegistrant.java
+.cxx/
