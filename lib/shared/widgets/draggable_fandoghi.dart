@@ -110,45 +110,57 @@ class _DraggableFandoghiState extends State<DraggableFandoghi>
     return LayoutBuilder(
       builder: (context, constraints) {
         final parentSize = Size(constraints.maxWidth, constraints.maxHeight);
-        return ValueListenableBuilder<Offset>(
-          valueListenable: FandoghiPosition.instance,
-          builder: (context, pos, _) {
-            // Convert fraction to pixel center position.
-            final cx = pos.dx * parentSize.width;
-            final cy = pos.dy * parentSize.height;
-            // Use top-left so the bunny's center is at (cx, cy).
-            final left = cx - widget.size / 2;
-            final top = cy - widget.size / 2;
-            return AnimatedBuilder(
-              animation: _wobbleCtrl,
-              builder: (context, child) {
-                final wobble = 1.0 +
-                    (1.0 - _wobbleCtrl.value) * 0.08 *
-                        (1 - (_wobbleCtrl.value - 0.5).abs() * 2);
-                return Positioned(
-                  left: left,
-                  top: top,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _onTap,
-                    onPanStart: _onPanStart,
-                    onPanUpdate: (d) => _onPanUpdate(d, parentSize),
-                    onPanEnd: _onPanEnd,
-                    child: AnimatedScale(
-                      scale: _scale * wobble,
-                      duration: const Duration(milliseconds: 120),
-                      curve: Curves.easeOut,
-                      child: _BunnyContainer(
-                        size: widget.size,
-                        showHint: !_hasDragged,
-                        child: FandoghiBunny(size: widget.size),
+        // The bunny is placed with a [Positioned] widget, which is only valid
+        // as a direct descendant of a [Stack]. Previously [Positioned] was
+        // returned straight from this [LayoutBuilder] with no [Stack] ancestor,
+        // so Flutter threw a "ParentDataWidget Positioned" assertion on every
+        // screen the mascot was mounted on. This [Stack] is that missing parent
+        // and gives the fractional position a real coordinate space to resolve
+        // against (the global overlay feeds us full-size constraints).
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            ValueListenableBuilder<Offset>(
+              valueListenable: FandoghiPosition.instance,
+              builder: (context, pos, _) {
+                // Convert fraction to pixel center position.
+                final cx = pos.dx * parentSize.width;
+                final cy = pos.dy * parentSize.height;
+                // Use top-left so the bunny's center is at (cx, cy).
+                final left = cx - widget.size / 2;
+                final top = cy - widget.size / 2;
+                return AnimatedBuilder(
+                  animation: _wobbleCtrl,
+                  builder: (context, child) {
+                    final wobble = 1.0 +
+                        (1.0 - _wobbleCtrl.value) * 0.08 *
+                            (1 - (_wobbleCtrl.value - 0.5).abs() * 2);
+                    return Positioned(
+                      left: left,
+                      top: top,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _onTap,
+                        onPanStart: _onPanStart,
+                        onPanUpdate: (d) => _onPanUpdate(d, parentSize),
+                        onPanEnd: _onPanEnd,
+                        child: AnimatedScale(
+                          scale: _scale * wobble,
+                          duration: const Duration(milliseconds: 120),
+                          curve: Curves.easeOut,
+                          child: _BunnyContainer(
+                            size: widget.size,
+                            showHint: !_hasDragged,
+                            child: FandoghiBunny(size: widget.size),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 );
               },
-            );
-          },
+            ),
+          ],
         );
       },
     );

@@ -26,6 +26,12 @@ import 'shared/widgets/fandoghi_coach.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Never leave a child staring at a blank white screen. If any widget throws
+  // during the very first frame (a transient storage error, a rendering glitch,
+  // etc.) Flutter's default behaviour can drop to an empty surface. Route it
+  // to a friendly full-screen message instead and keep the app recoverable.
+  ErrorWidget.builder = (_) => const _FirstFrameErrorScreen();
+
   // A child app must work without a network connection. Google Fonts otherwise
   // may try to fetch a font at runtime on the first launch.
   GoogleFonts.config.allowRuntimeFetching = false;
@@ -184,6 +190,43 @@ class _PlayTimeTrackerState extends State<_PlayTimeTracker>
 
   @override
   Widget build(BuildContext context) => widget.child;
+}
+
+/// Shown by [ErrorWidget.builder] when an unexpected first-frame error would
+/// otherwise leave the app on a blank white screen.
+class _FirstFrameErrorScreen extends StatelessWidget {
+  const _FirstFrameErrorScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Material(
+      color: Color(0xFF1B1B2F),
+      child: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('🐰', style: TextStyle(fontSize: 72)),
+                SizedBox(height: 16),
+                Text(
+                  'اوه! یک مشکل ناگهانی پیش آمد. لطفاً برنامه را دوباره باز کن.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _UnknownRouteScreen extends StatelessWidget {
