@@ -1,5 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../../core/premium_animations.dart';
+import '../home/widgets/premium_card.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -407,6 +409,183 @@ class _ShopState extends State<ShopScreen>
 
   // ─── ITEM CARD ──────────────────────────────
   Widget _buildItemCard(ShopItem item, int index) {
+    final owned = GameData.hasItem(item.id);
+    final canAfford = GameData.coins >= item.price;
+    final catColor = _categories[_selectedCategory].color;
+
+    return PremiumAnimations.premiumCard(
+      onTap: () => _showItemDetail(item),
+      child: Container(
+        decoration: BoxDecoration(
+          color: owned
+              ? const Color(0xFF00B894).withOpacity(0.1)
+              : Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: owned
+                ? const Color(0xFF00B894).withOpacity(0.3)
+                : Colors.white.withOpacity(0.08),
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Stack(
+            children: [
+              // Background pattern
+              Positioned(
+                top: -20,
+                right: -20,
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: catColor.withOpacity(0.05),
+                  ),
+                ),
+              ),
+
+              // Content
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Emoji
+                    Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        color: catColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Center(
+                        child: Text(
+                          item.emoji,
+                          style: TextStyle(
+                            fontSize: owned ? 36 : 32,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Name
+                    Text(
+                      item.name,
+                      style: GoogleFonts.vazirmatn(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    // Description
+                    Text(
+                      item.desc,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.5),
+                        fontSize: 10,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Price / Owned
+                    if (owned)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF00B894).withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.check_circle, color: Color(0xFF00B894), size: 16),
+                            SizedBox(width: 4),
+                            Text(
+                              'مال توئه!',
+                              style: TextStyle(
+                                color: Color(0xFF00B894),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: canAfford
+                              ? const Color(0xFFFFD700).withOpacity(0.2)
+                              : Colors.red.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '💰',
+                              style: TextStyle(fontSize: canAfford ? 14 : 12),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${item.price}',
+                              style: TextStyle(
+                                color: canAfford
+                                    ? const Color(0xFFFFD700)
+                                    : Colors.red.shade300,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              // Owned badge
+              if (owned)
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00B894),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(Icons.check, color: Colors.white, size: 16),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    )
+        .animate(
+          delay: Duration(milliseconds: 100 * index),
+        )
+        .fadeIn()
+        .scale(
+          begin: const Offset(0.8, 0.8),
+          duration: 500.ms,
+          curve: Curves.elasticOut,
+        );
+  }
     final owned = GameData.hasItem(item.id);
     final canAfford = GameData.coins >= item.price;
     final catColor = _categories[_selectedCategory].color;
