@@ -35,7 +35,7 @@ class AchievementsScreen extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                // Emoji
+                // Premium Image Badge
                 Container(
                   width: 70,
                   height: 70,
@@ -46,9 +46,12 @@ class AchievementsScreen extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   child: Center(
-                    child: Text(
-                      ach.emoji,
-                      style: const TextStyle(fontSize: 36),
+                    child: Image.asset(
+                      isUnlocked 
+                          ? 'assets/premium/medal_gold.png' 
+                          : 'assets/premium/star_badge.png',
+                      width: 48,
+                      height: 48,
                     ),
                   ),
                 ),
