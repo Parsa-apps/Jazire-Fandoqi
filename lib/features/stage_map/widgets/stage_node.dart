@@ -2,8 +2,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../app/app_colors.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 
 /// ═══════════════════════════════════════════════
 /// ⭕ STAGE NODE — Individual Stage on Map
@@ -100,7 +100,7 @@ class _StageNodeState extends State<StageNode>
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.vazirmatn(
+                style: AppFonts.vazirmatn(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   color: widget.state == StageState.locked

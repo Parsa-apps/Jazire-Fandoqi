@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../core/achievement_system.dart';
 import '../../core/premium_animations.dart';
 import '../home/widgets/premium_card.dart';
@@ -64,7 +64,7 @@ class AchievementsScreen extends StatelessWidget {
                     children: [
                       Text(
                         ach.title,
-                        style: GoogleFonts.vazirmatn(
+                        style: AppFonts.vazirmatn(
                           fontSize: 18,
                           fontWeight: FontWeight.w900,
                           color: isUnlocked ? Colors.black87 : Colors.grey,

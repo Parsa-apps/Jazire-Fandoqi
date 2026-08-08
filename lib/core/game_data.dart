@@ -104,6 +104,10 @@ class GameData {
   static int prizeBoxTokens = 0;
   static List<String> openedPrizes = <String>[];
 
+  // ✅ فیکس عمیق فاز ۳۰: achievement_system به playedGames نیاز داشت ولی نبود — باعث بیلد فیل خاموش
+  static List<String> playedGames = <String>[];
+  static final Set<String> _playedGamesSet = <String>{};
+
   /// Loads persisted state once. A second caller receives the same Future,
   /// which prevents two app-start reads from racing each other.
   static Future<void> load() {
@@ -166,6 +170,11 @@ class GameData {
 
       prizeBoxTokens = _readInt('pbt', 0);
       openedPrizes = _readList('op');
+      // ✅ فیکس: بارگذاری playedGames برای achievement
+      playedGames = _readList('pg');
+      _playedGamesSet
+        ..clear()
+        ..addAll(playedGames);
 
       for (final key in skills.keys.toList()) {
         skills[key] = _readInt('sk_$key', 0, max: _maxStoredCounter);
@@ -354,6 +363,7 @@ class GameData {
     }
     await prefs.setInt('pbt', prizeBoxTokens);
     await prefs.setStringList('op', List<String>.from(openedPrizes));
+    await prefs.setStringList('pg', List<String>.from(playedGames));
     for (final key in skills.keys) {
       await prefs.setInt('sk_$key', skills[key] ?? 0);
     }
@@ -403,6 +413,10 @@ class GameData {
     _progressMissionInternal('questions');
     if (skill != null && skills.containsKey(skill)) {
       skills[skill] = min(_maxStoredCounter, (skills[skill] ?? 0) + 1);
+      // هر مهارت = یک نوع بازی، برای achievement
+      if (_playedGamesSet.add(skill)) {
+        playedGames = _playedGamesSet.toList();
+      }
     }
     _autoAchieve();
     _notify();
@@ -471,7 +485,18 @@ class GameData {
 
   static bool buySticker(String id, int price) => buyItem(id, price);
 
-  static bool hasItem(String id) => ownedItems.contains(id) || stickers.contains(id);
+  static bool hasItem(String id) =>
+      ownedItems.contains(id) || stickers.contains(id);
+
+  /// ✅ فیکس عمیق فاز ۳۰: ثبت بازی‌های انجام شده برای achievement
+  static void recordGamePlayed(String gameId) {
+    if (!_isLoaded || gameId.isEmpty) return;
+    if (_playedGamesSet.contains(gameId)) return;
+    _playedGamesSet.add(gameId);
+    playedGames = _playedGamesSet.toList();
+    _notify();
+    unawaited(save());
+  }
 
   /// Refreshes day/week boundaries while the app remains open across
   /// midnight. Previously the rollover only happened during app startup, so a
@@ -570,11 +595,25 @@ class GameData {
   static int get completedStageCount =>
       completedStages.values.where((value) => value).length;
 
-  static void completeOnboarding({String nickname = '', required int age}) {
+  /// ✅ فیکس عمیق فاز ۱۱: ذخیره آواتار انتخابی در onboarding
+  static void completeOnboarding({
+    String nickname = '',
+    required int age,
+    String avatarIcon = '🦊',
+  }) {
     childName = nickname.trim();
     if (childName.length > 24) childName = childName.substring(0, 24);
     childAge = age.clamp(3, 12).toInt();
+    avatar = avatarIcon;
+    if (avatar.length > 8) avatar = avatar.substring(0, 8);
     onboardingSeen = true;
+    _notify();
+    unawaited(save());
+  }
+
+  static void setAvatar(String newAvatar) {
+    if (newAvatar.isEmpty) return;
+    avatar = newAvatar.length > 8 ? newAvatar.substring(0, 8) : newAvatar;
     _notify();
     unawaited(save());
   }
@@ -739,6 +778,8 @@ class GameData {
     completedStages = <String, bool>{};
     prizeBoxTokens = 0;
     openedPrizes = <String>[];
+    playedGames = <String>[];
+    _playedGamesSet.clear();
     _notify();
   }
 }

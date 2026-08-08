@@ -2,8 +2,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../app/app_colors.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../core/game_data.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
 import '../../shared/widgets/star_field.dart';
@@ -233,7 +233,7 @@ class _ProfileState extends State<ProfileScreen>
                   // Name
                   Text(
                     GameData.childName.isNotEmpty ? GameData.childName : 'قهرمان کوچولو',
-                    style: GoogleFonts.vazirmatn(
+                    style: AppFonts.vazirmatn(
                       color: Colors.white,
                       fontSize: 28,
                       fontWeight: FontWeight.w900,
@@ -428,7 +428,7 @@ class _ProfileState extends State<ProfileScreen>
                 const SizedBox(width: 12),
                 Text(
                   'نمودار مهارت‌ها',
-                  style: GoogleFonts.vazirmatn(
+                  style: AppFonts.vazirmatn(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
                     fontSize: 18,
@@ -515,7 +515,7 @@ class _ProfileState extends State<ProfileScreen>
                 const SizedBox(width: 12),
                 Text(
                   'جزئیات مهارت‌ها',
-                  style: GoogleFonts.vazirmatn(
+                  style: AppFonts.vazirmatn(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
                     fontSize: 18,
@@ -573,7 +573,7 @@ class _ProfileState extends State<ProfileScreen>
               const SizedBox(width: 12),
               Text(
                 'مدال‌ها',
-                style: GoogleFonts.vazirmatn(
+                style: AppFonts.vazirmatn(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
                   fontSize: 18,
@@ -719,7 +719,7 @@ class _ProfileState extends State<ProfileScreen>
                 const SizedBox(width: 12),
                 Text(
                   'فعالیت ۴ هفته اخیر',
-                  style: GoogleFonts.vazirmatn(
+                  style: AppFonts.vazirmatn(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
                     fontSize: 18,
@@ -829,7 +829,7 @@ class _ProfileState extends State<ProfileScreen>
               const SizedBox(width: 12),
               Text(
                 'رکوردها',
-                style: GoogleFonts.vazirmatn(
+                style: AppFonts.vazirmatn(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
                   fontSize: 18,
@@ -929,7 +929,7 @@ class _ProfileState extends State<ProfileScreen>
                 children: [
                   Text(
                     'نکته فندقی 🌰',
-                    style: GoogleFonts.vazirmatn(
+                    style: AppFonts.vazirmatn(
                       color: AppColors.primaryLight,
                       fontWeight: FontWeight.w800,
                       fontSize: 14,

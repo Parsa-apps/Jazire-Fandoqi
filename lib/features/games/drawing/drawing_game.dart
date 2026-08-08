@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../app/app_colors.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
@@ -187,7 +187,7 @@ class _DrawingGameState extends State<DrawingGame> {
       appBar: AppBar(
         title: Text(
           'کارگاه نقاشی 🎨',
-          style: GoogleFonts.vazirmatn(fontWeight: FontWeight.w800),
+          style: AppFonts.vazirmatn(fontWeight: FontWeight.w800),
         ),
         leading: IconButton(
           tooltip: 'برگشت',

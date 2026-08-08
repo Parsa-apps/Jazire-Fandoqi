@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../app/app_colors.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../core/game_data.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
 import '../../shared/widgets/premium_button.dart';
@@ -43,9 +43,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       return;
     }
 
+    // ✅ فیکس عمیق فاز ۱۱: ذخیره آواتار انتخابی
     GameData.completeOnboarding(
       nickname: _nicknameController.text,
       age: _age,
+      avatarIcon: _selectedAvatar,
     );
     Navigator.pushReplacementNamed(context, '/home');
   }
@@ -80,7 +82,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     Expanded(
                       child: Text(
                         'شروع یک ماجرای تازه',
-                        style: GoogleFonts.vazirmatn(
+                        style: AppFonts.vazirmatn(
                           color: Colors.white,
                           fontWeight: FontWeight.w800,
                           fontSize: 18,
@@ -145,7 +147,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(
             'سلام قهرمان کوچولو! 👋',
             textAlign: TextAlign.center,
-            style: GoogleFonts.vazirmatn(
+            style: AppFonts.vazirmatn(
               color: Colors.white,
               fontSize: 30,
               fontWeight: FontWeight.w900,
@@ -176,7 +178,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           const SizedBox(height: 40),
           Text(
             'آواتارت رو انتخاب کن',
-            style: GoogleFonts.vazirmatn(
+            style: AppFonts.vazirmatn(
               color: Colors.white,
               fontSize: 26,
               fontWeight: FontWeight.w900,
@@ -248,7 +250,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
           Text(
             'قهرمانت رو بساز',
-            style: GoogleFonts.vazirmatn(
+            style: AppFonts.vazirmatn(
               color: Colors.white,
               fontSize: 26,
               fontWeight: FontWeight.w900,
@@ -277,7 +279,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
           Text(
             'چند سالته؟',
-            style: GoogleFonts.vazirmatn(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+            style: AppFonts.vazirmatn(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 16),
 
@@ -318,7 +320,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(
             'عالیه! آماده‌ای؟',
             textAlign: TextAlign.center,
-            style: GoogleFonts.vazirmatn(
+            style: AppFonts.vazirmatn(
               color: Colors.white,
               fontSize: 28,
               fontWeight: FontWeight.w900,

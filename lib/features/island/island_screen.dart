@@ -1,8 +1,8 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../app/app_colors.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
 import 'painters/sky_painter.dart';
 import 'painters/water_painter.dart';
@@ -109,7 +109,7 @@ class _IslandState extends State<LearningIsland>
                           const Spacer(),
                           Text(
                             'جزیره یادگیری 🏝️',
-                            style: GoogleFonts.vazirmatn(
+                            style: AppFonts.vazirmatn(
                               color: Colors.white,
                               fontSize: 18,
                               fontWeight: FontWeight.w800,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import 'package:flutter/rendering.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'fandoghi_bunny.dart';
 
@@ -329,7 +329,7 @@ class _DragHintState extends State<_DragHint>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text('بکش',
-                    style: GoogleFonts.balooBhaijaan2(
+                    style: AppFonts.balooBhaijaan2(
                       fontSize: 13,
                       fontWeight: FontWeight.w900,
                       color: const Color(0xFFE91E63),

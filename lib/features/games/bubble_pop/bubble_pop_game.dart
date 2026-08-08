@@ -3,8 +3,8 @@ import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../app/app_colors.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
@@ -108,7 +108,7 @@ class _BubblePopState extends State<BubblePopGame> {
           const SizedBox(width: 8),
           Text(
             'حباب ${_game.targetLabel} را بترکان!',
-            style: GoogleFonts.balooBhaijaan2(
+            style: AppFonts.balooBhaijaan2(
               color: Colors.white,
               fontSize: 15,
               fontWeight: FontWeight.w900,
@@ -137,7 +137,7 @@ class _BubblePopState extends State<BubblePopGame> {
                 const SizedBox(height: 20),
                 Text(
                   'حباب‌ترکان',
-                  style: GoogleFonts.balooBhaijaan2(
+                  style: AppFonts.balooBhaijaan2(
                     fontSize: 32,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
@@ -147,7 +147,7 @@ class _BubblePopState extends State<BubblePopGame> {
                 Text(
                   'حباب‌های درست رو بترکون!\nحواست به حباب‌های اشتباه باشه!',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.balooBhaijaan2(
+                  style: AppFonts.balooBhaijaan2(
                     fontSize: 16,
                     color: Colors.white.withOpacity(0.9),
                     fontWeight: FontWeight.w700,
@@ -196,7 +196,7 @@ class _BubblePopState extends State<BubblePopGame> {
         if (canStartPlay(context)) onTap();
       },
       child: Text(text,
-        style: GoogleFonts.balooBhaijaan2(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900)),
+        style: AppFonts.balooBhaijaan2(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900)),
     );
   }
 
@@ -210,12 +210,12 @@ class _BubblePopState extends State<BubblePopGame> {
             Text(_game.score >= 100 ? '🏆' : '🎉', style: const TextStyle(fontSize: 80)),
             const SizedBox(height: 20),
             Text(_game.score >= 100 ? 'قهرمان!' : 'آفرین!',
-              style: GoogleFonts.balooBhaijaan2(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white)),
+              style: AppFonts.balooBhaijaan2(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white)),
             const SizedBox(height: 12),
             Text('امتیاز: ${_game.score}',
-              style: GoogleFonts.balooBhaijaan2(fontSize: 24, color: Colors.amber, fontWeight: FontWeight.w900)),
+              style: AppFonts.balooBhaijaan2(fontSize: 24, color: Colors.amber, fontWeight: FontWeight.w900)),
             Text('بهترین کمبو: ${_game.bestCombo}x',
-              style: GoogleFonts.balooBhaijaan2(fontSize: 17, color: Colors.orange, fontWeight: FontWeight.w800)),
+              style: AppFonts.balooBhaijaan2(fontSize: 17, color: Colors.orange, fontWeight: FontWeight.w800)),
             const SizedBox(height: 30),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -228,13 +228,13 @@ class _BubblePopState extends State<BubblePopGame> {
                       setState(() {});
                     }
                   },
-                  child: Text('دوباره 🔄', style: GoogleFonts.balooBhaijaan2(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
+                  child: Text('دوباره 🔄', style: AppFonts.balooBhaijaan2(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
                 ),
                 const SizedBox(width: 16),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.white.withOpacity(0.2), padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                   onPressed: () => Navigator.pop(context),
-                  child: Text('برگرد 🏠', style: GoogleFonts.balooBhaijaan2(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
+                  child: Text('برگرد 🏠', style: AppFonts.balooBhaijaan2(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
                 ),
               ],
             ),

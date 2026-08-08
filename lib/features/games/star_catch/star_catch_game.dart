@@ -3,8 +3,8 @@ import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../app/app_colors.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
@@ -115,7 +115,7 @@ class _StarCatchState extends State<StarCatchGame> {
                           ],
                         ),
                       ),
-                      // Lives
+                      // Lives - ✅ فیکس عمیق فاز ۳۳: از ۳ به ۵ قلب (چون logic تا ۵ می‌رود)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         decoration: BoxDecoration(
@@ -124,7 +124,7 @@ class _StarCatchState extends State<StarCatchGame> {
                           border: Border.all(color: Colors.white.withOpacity(0.2)),
                         ),
                         child: Row(
-                          children: List.generate(3, (i) => Padding(
+                          children: List.generate(5, (i) => Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 2),
                             child: Text(
                               i < _game.lives ? '❤️' : '🖤',
@@ -197,7 +197,7 @@ class _StarCatchState extends State<StarCatchGame> {
             const SizedBox(width: 8),
             Text(
               'فقط ${_game.targetEmoji} را بگیر!',
-              style: GoogleFonts.balooBhaijaan2(
+              style: AppFonts.balooBhaijaan2(
                 color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.w900,
@@ -240,7 +240,7 @@ class _StarCatchState extends State<StarCatchGame> {
                 const SizedBox(height: 20),
                 Text(
                   'ستاره‌گیری',
-                  style: GoogleFonts.balooBhaijaan2(
+                  style: AppFonts.balooBhaijaan2(
                     fontSize: 32,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
@@ -250,7 +250,7 @@ class _StarCatchState extends State<StarCatchGame> {
                 Text(
                   'ستاره‌ها رو با سبد بگیر!\nاز آیتم‌های قرمز دوری کن!',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.balooBhaijaan2(
+                  style: AppFonts.balooBhaijaan2(
                     fontSize: 16,
                     color: Colors.white.withOpacity(0.9),
                     fontWeight: FontWeight.w700,
@@ -277,7 +277,7 @@ class _StarCatchState extends State<StarCatchGame> {
                   },
                   child: Text(
                     'شروع بازی! 🚀',
-                    style: GoogleFonts.balooBhaijaan2(
+                    style: AppFonts.balooBhaijaan2(
                       color: Colors.white,
                       fontSize: 19,
                       fontWeight: FontWeight.w900,
@@ -311,7 +311,7 @@ class _StarCatchState extends State<StarCatchGame> {
             const SizedBox(height: 20),
             Text(
               'بازی تموم شد!',
-              style: GoogleFonts.balooBhaijaan2(
+              style: AppFonts.balooBhaijaan2(
                 fontSize: 32,
                 fontWeight: FontWeight.w900,
                 color: Colors.white,
@@ -320,7 +320,7 @@ class _StarCatchState extends State<StarCatchGame> {
             const SizedBox(height: 12),
             Text(
               'امتیاز: ${_game.score}',
-              style: GoogleFonts.balooBhaijaan2(
+              style: AppFonts.balooBhaijaan2(
                 fontSize: 24,
                 color: Colors.amber,
                 fontWeight: FontWeight.w900,
@@ -346,7 +346,7 @@ class _StarCatchState extends State<StarCatchGame> {
                   },
                   child: Text(
                     'دوباره 🔄',
-                    style: GoogleFonts.balooBhaijaan2(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900),
+                    style: AppFonts.balooBhaijaan2(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -361,7 +361,7 @@ class _StarCatchState extends State<StarCatchGame> {
                   onPressed: () => Navigator.pop(context),
                   child: Text(
                     'برگرد 🏠',
-                    style: GoogleFonts.balooBhaijaan2(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900),
+                    style: AppFonts.balooBhaijaan2(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900),
                   ),
                 ),
               ],

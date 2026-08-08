@@ -2,8 +2,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../app/app_colors.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/game_data.dart';
 import '../../core/game_launch.dart';
@@ -351,7 +351,7 @@ class _StageMapState extends State<StageMapScreen>
                       const SizedBox(width: 8),
                       Text(
                         'نقشه مراحل',
-                        style: GoogleFonts.vazirmatn(
+                        style: AppFonts.vazirmatn(
                           color: Colors.white,
                           fontWeight: FontWeight.w800,
                           fontSize: 16,
@@ -440,7 +440,7 @@ class _StageMapState extends State<StageMapScreen>
                   allCompleted
                       ? 'همه مراحل را بردی! 🏆'
                       : 'مرحله بعد: ${currentStage.title}',
-                  style: GoogleFonts.vazirmatn(
+                  style: AppFonts.vazirmatn(
                     fontWeight: FontWeight.w800,
                     fontSize: 14,
                     color: AppColors.primary,
@@ -531,7 +531,7 @@ class _StageMapState extends State<StageMapScreen>
             const SizedBox(height: 12),
             Text(
               stage.title,
-              style: GoogleFonts.vazirmatn(
+              style: AppFonts.vazirmatn(
                 fontSize: 24,
                 fontWeight: FontWeight.w900,
               ),
