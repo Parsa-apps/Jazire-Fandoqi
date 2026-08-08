@@ -34,40 +34,38 @@ class _SplashState extends State<SplashScreen>
     
     _fadeCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1400),
     );
     _scaleCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1600),
     );
     _slideCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 1100),
     );
     _glowCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 2400),
     );
     _orbitCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 8),
+      duration: const Duration(seconds: 9),
     );
 
-    // Staggered animation sequence
+    // Premium staggered animation sequence
     _scaleCtrl.forward();
-    Future.delayed(const Duration(milliseconds: 300), () {
+    Future.delayed(const Duration(milliseconds: 280), () {
       if (mounted) _fadeCtrl.forward();
     });
-    Future.delayed(const Duration(milliseconds: 600), () {
+    Future.delayed(const Duration(milliseconds: 620), () {
       if (mounted) _slideCtrl.forward();
     });
     _glowCtrl.repeat(reverse: true);
     _orbitCtrl.repeat();
 
-    // Keep the first impression lively without holding the child on a
-    // loading screen for four seconds. First launch continues to onboarding;
-    // returning players go straight to the dashboard.
-    _navigationTimer = Timer(const Duration(milliseconds: 1400), () {
+    // Premium timing with haptic feedback
+    _navigationTimer = Timer(const Duration(milliseconds: 1650), () {
       if (!mounted) return;
       HapticFeedback.lightImpact();
       final destination = GameData.onboardingSeen ? '/home' : '/onboarding';
