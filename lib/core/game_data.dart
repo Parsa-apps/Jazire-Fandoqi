@@ -88,6 +88,7 @@ class GameData {
 
   // Settings
   static int timeLimitMinutes = 60;
+  static String parentPin = '';
   static bool treasureOpened = false;
   static bool goldenChestOpened = false;
   static bool soundEnabled = true;
@@ -588,6 +589,38 @@ class GameData {
     timeLimitMinutes = value.clamp(15, 24 * 60).toInt();
     _notify();
     unawaited(save());
+  }
+
+  // ==================== PARENT CONTROL ====================
+  static bool hasParentPin() => parentPin.isNotEmpty;
+
+  static bool verifyParentPin(String pin) => pin == parentPin;
+
+  static void setParentPin(String pin) {
+    parentPin = pin;
+    _notify();
+    unawaited(save());
+  }
+
+  static void removeParentPin() {
+    parentPin = '';
+    _notify();
+    unawaited(save());
+  }
+
+  // ==================== PARENT REPORT ====================
+  static int get todayPlayMinutes => (todayPlaySeconds / 60).floor();
+  static int get totalPlayMinutes => (sessionSeconds / 60).floor();
+
+  static double get averageSuccessRate {
+    final total = totalCorrect + totalWrong;
+    return total == 0 ? 0.0 : (totalCorrect / total * 100);
+  }
+
+  static Map<String, int> get topSkills {
+    final sorted = skills.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    return Map.fromEntries(sorted.take(5));
   }
 
   static String getLevelName() {

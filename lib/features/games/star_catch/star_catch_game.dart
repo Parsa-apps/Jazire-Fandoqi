@@ -440,8 +440,8 @@ class StarCatchFlameGame extends FlameGame {
   /// انتخاب آیتم هدف جدید، متفاوت از هدف قبلی.
   void _pickTarget() {
     // ترکیب آیتم‌های خوب (نه بمب). بمب همیشه بد است.
-    const goodItems = ['⭐', '🌟', '✨', '💛', '🔮'];
-    const goodLabels = ['ستاره', 'ستاره‌ی درخشان', 'درخشش', 'قلبِ زرد', 'کریستال'];
+    const goodItems = ['⭐', '🌟', '✨', '💛', '🔮', '🍎', '🌸', '🦋'];
+    const goodLabels = ['ستاره', 'ستاره‌ی درخشان', 'درخشش', 'قلبِ زرد', 'کریستال', 'سیب قرمز', 'گل بهاری', 'پروانه'];
     String previous = targetEmoji;
     int attempts = 0;
     do {
@@ -525,14 +525,24 @@ class StarCatchFlameGame extends FlameGame {
         itemSize: 35,
       ));
     } else {
-      final items = ['⭐', '🌟', '✨', '💛', '🔮'];
-      add(_FallingItem(
-        x: x,
-        speed: speed,
-        emoji: items[_rng.nextInt(items.length)],
-        isBad: false,
-        itemSize: 32 + _rng.nextDouble() * 8,
-      ));
+      // آیتم‌های خوب + پاورآپ‌های جدید
+      final rand = _rng.nextDouble();
+      if (rand < 0.08) {
+        // پاورآپ قلب (جان اضافی)
+        add(_FallingItem(x: x, speed: speed * 0.7, emoji: '❤️', isBad: false, itemSize: 36, isPowerUp: true, powerType: 'heart'));
+      } else if (rand < 0.15) {
+        // پاورآپ امتیاز دوبل
+        add(_FallingItem(x: x, speed: speed * 0.85, emoji: '💎', isBad: false, itemSize: 34, isPowerUp: true, powerType: 'double'));
+      } else {
+        final items = ['⭐', '🌟', '✨', '💛', '🔮', '🍎', '🌸', '🦋'];
+        add(_FallingItem(
+          x: x,
+          speed: speed,
+          emoji: items[_rng.nextInt(items.length)],
+          isBad: false,
+          itemSize: 32 + _rng.nextDouble() * 8,
+        ));
+      }
     }
   }
 
@@ -544,34 +554,46 @@ class StarCatchFlameGame extends FlameGame {
       GameData.recordAnswer(correct: false, skill: 'counting');
       HapticFeedback.heavyImpact();
       if (lives <= 0) _finishGame();
-      } else if (item.emoji == targetEmoji) {
-        // آیتم درست = همان هدف فعلی
-        FandoghiCoach.correct('$targetLabel را گرفتی! امتیاز برای قهرمان من ${item.emoji}🌟');
-        score += 10;
-        combo++;
-        GameData.recordAnswer(correct: true, skill: 'counting');
+    } else if (item.isPowerUp) {
+      // ===== پاورآپ‌های جدید =====
+      if (item.powerType == 'heart') {
+        lives = (lives + 1).clamp(1, 5);
+        FandoghiCoach.reward('وای! قلب جادویی گرفتی! ❤️ جان اضافی!');
+        HapticFeedback.mediumImpact();
+      } else if (item.powerType == 'double') {
+        score += 20;
+        FandoghiCoach.correct('عالی! امتیاز دوبل! 💎');
         HapticFeedback.lightImpact();
-        correctCatchesOnTarget++;
-        if (correctCatchesOnTarget >= catchesRequiredForNext) {
-          // وقتی به تعداد لازم رسید، هدف عوض می‌شود
-          _targetsCompleted++;
-          _pickTarget();
-          FandoghiCoach.instruction('هدف عوض شد! حالا فقط $targetEmoji را بگیر 🌰');
-        }
-        if (score % 50 == 0) onCelebrate();
-      } else {
-        // آیتم خوب ولی غیرهدف: فقط راهنمایی، بدون life کم
-        FandoghiCoach.say(
-          'این $targetLabel نبود؛ دنبال $targetEmoji بگرد 👀',
-          mood: FandoghiMood.thinking,
-          tone: FandoghiCoachTone.encouragement,
-          duration: const Duration(seconds: 2),
-        );
-        score += 2; // امتیاز کم برای شرکت در بازی
-        combo = 0; // کمبوی ناقص
-        GameData.recordAnswer(correct: false, skill: 'counting');
-        HapticFeedback.selectionClick();
+        if (score % 40 == 0) onCelebrate();
       }
+    } else if (item.emoji == targetEmoji) {
+      // آیتم درست = همان هدف فعلی
+      FandoghiCoach.correct('$targetLabel را گرفتی! امتیاز برای قهرمان من ${item.emoji}🌟');
+      score += 10;
+      combo++;
+      GameData.recordAnswer(correct: true, skill: 'counting');
+      HapticFeedback.lightImpact();
+      correctCatchesOnTarget++;
+      if (correctCatchesOnTarget >= catchesRequiredForNext) {
+        // وقتی به تعداد لازم رسید، هدف عوض می‌شود
+        _targetsCompleted++;
+        _pickTarget();
+        FandoghiCoach.instruction('هدف عوض شد! حالا فقط $targetEmoji را بگیر 🌰');
+      }
+      if (score % 50 == 0) onCelebrate();
+    } else {
+      // آیتم خوب ولی غیرهدف: فقط راهنمایی، بدون life کم
+      FandoghiCoach.say(
+        'این $targetLabel نبود؛ دنبال $targetEmoji بگرد 👀',
+        mood: FandoghiMood.thinking,
+        tone: FandoghiCoachTone.encouragement,
+        duration: const Duration(seconds: 2),
+      );
+      score += 2; // امتیاز کم برای شرکت در بازی
+      combo = 0; // کمبوی ناقص
+      GameData.recordAnswer(correct: false, skill: 'counting');
+      HapticFeedback.selectionClick();
+    }
     item.removeFromParent();
     onScore();
   }
@@ -660,6 +682,8 @@ class _FallingItem extends PositionComponent {
   final bool isBad;
   final double itemSize;
   final double _rotation;
+  final bool isPowerUp;
+  final String? powerType;
 
   _FallingItem({
     required double x,
@@ -667,6 +691,8 @@ class _FallingItem extends PositionComponent {
     required this.emoji,
     required this.isBad,
     required this.itemSize,
+    this.isPowerUp = false,
+    this.powerType,
   })  : _rotation = (Random().nextDouble() - 0.5) * 2,
         super(
           position: Vector2(x, -40),
