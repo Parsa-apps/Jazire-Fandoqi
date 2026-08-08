@@ -9,6 +9,7 @@ import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
 import '../../../shared/widgets/glass_card.dart';
+import 'premium_card.dart';
 import '../../../shared/widgets/star_field.dart';
 
 /// ═══════════════════════════════════════════════
@@ -371,37 +372,76 @@ class _DashboardState extends State<DashboardTab> {
       child: Row(
         children: [
           Expanded(
-            child: _statCard(
-              icon: Icons.check_circle_rounded,
-              value: '${GameData.totalCorrect}',
-              label: 'جواب درست',
-              color: AppColors.success,
-              gradient: AppGradients.forest,
+            child: PremiumCard(
+              padding: const EdgeInsets.all(18),
+              onTap: () {},
+              child: _statContent(
+                icon: Icons.check_circle_rounded,
+                value: '${GameData.totalCorrect}',
+                label: 'جواب درست',
+                color: AppColors.success,
+              ),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: _statCard(
-              icon: Icons.trending_up_rounded,
-              value: '${(GameData.successRate * 100).toStringAsFixed(0)}%',
-              label: 'نرخ موفقیت',
-              color: AppColors.info,
-              gradient: AppGradients.ocean,
+            child: PremiumCard(
+              padding: const EdgeInsets.all(18),
+              onTap: () {},
+              child: _statContent(
+                icon: Icons.trending_up_rounded,
+                value: '${(GameData.successRate * 100).toStringAsFixed(0)}%',
+                label: 'نرخ موفقیت',
+                color: AppColors.info,
+              ),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: _statCard(
-              icon: Icons.emoji_events_rounded,
-              value: '${GameData.achievements.length}',
-              label: 'مدال',
-              color: AppColors.warning,
-              gradient: AppGradients.candy,
+            child: PremiumCard(
+              padding: const EdgeInsets.all(18),
+              onTap: () {},
+              child: _statContent(
+                icon: Icons.emoji_events_rounded,
+                value: '${GameData.achievements.length}',
+                label: 'مدال',
+                color: AppColors.warning,
+              ),
             ),
           ),
         ],
       ),
     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.3);
+  }
+
+  Widget _statContent({
+    required IconData icon,
+    required String value,
+    required String label,
+    required Color color,
+  }) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 30),
+        const SizedBox(height: 10),
+        Text(
+          value,
+          style: GoogleFonts.exo2(
+            fontSize: 26,
+            fontWeight: FontWeight.w900,
+            color: color,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _statCard({
