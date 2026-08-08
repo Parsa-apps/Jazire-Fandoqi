@@ -16,7 +16,10 @@ export '../../core/fandoghi_models.dart';
 /// ═══════════════════════════════════════════════
 class FandoghiV2 extends StatelessWidget {
   final double size;
-  final bool animate;
+
+  /// Stored under a name that does not shadow flutter_animate's `animate()`
+  /// extension. The public constructor keeps the old `animate:` argument.
+  final bool shouldAnimate;
   final String? message;
   final VoidCallback? onTap;
 
@@ -28,11 +31,11 @@ class FandoghiV2 extends StatelessWidget {
   const FandoghiV2({
     super.key,
     this.size = 80,
-    this.animate = true,
+    bool animate = true,
     this.message,
     this.onTap,
     this.mood = FandoghiMood.happy,
-  });
+  }) : shouldAnimate = animate;
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +43,7 @@ class FandoghiV2 extends StatelessWidget {
       onTap: onTap,
       child: _BunnyWithFloat(
         size: size,
-        animate: animate,
+        animate: shouldAnimate,
         child: FandoghiBunny(size: size),
       ),
     );
