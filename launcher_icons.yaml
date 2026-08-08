@@ -1,0 +1,8 @@
+# Android-only launcher icon config for CI builds
+# (local dev uses the flutter_launcher_icons section in pubspec.yaml)
+android: true
+ios: false
+image_path: "assets/icons/app_icon.png"
+min_sdk_android: 21
+adaptive_icon_background: "#7FD3B7"
+adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"
