@@ -1,47 +1,56 @@
 #!/usr/bin/env bash
-# کودک ایران — reproducible local/CI validation and build
+# 🚀 KUDAKE IRAN — Professional Multi-Stage Build Script
 set -Eeuo pipefail
 
 BUILD_MODE="${BUILD_MODE:-debug}"
+PROJECT_NAME="amoozesh_fandoghi"
 
-printf '=======================================\n'
-printf 'کودک ایران — validation/build (%s)\n' "$BUILD_MODE"
-printf '=======================================\n'
+printf '===========================================================\n'
+printf '🐰 کودک ایران — سیستم بیلد حرفه‌ای (حالت: %s)\n' "$BUILD_MODE"
+printf '===========================================================\n'
 
+# 1. Check Flutter environment
 if ! command -v flutter >/dev/null 2>&1; then
-  echo 'Flutter نصب نیست. از کانال stable Flutter 3.24+ استفاده کنید.' >&2
+  echo '❌ خطا: فلاتر نصب نیست.' >&2
   exit 1
 fi
 
-flutter --version | head -1 || true
-
-# The repository keeps platform folders out of the source snapshot. Generate
-# the Android shell deterministically before any build command.
+# 2. Ensure Android project exists
 if [[ ! -d android ]]; then
-  echo 'ساخت پوسته Android...'
-  flutter create . --platforms android --project-name amoozesh_fandoghi --org com.parsaapps
+  echo '📦 در حال ایجاد ساختار اندروید...'
+  flutter create . --platforms android --project-name $PROJECT_NAME --org com.parsaapps
 fi
 
-echo 'دریافت وابستگی‌ها...'
+# 3. Get Dependencies
+echo '📥 دریافت کتابخانه‌ها...'
 flutter pub get
 
-echo 'تولید آیکون‌ها...'
-dart run flutter_launcher_icons
+# 4. Generate Assets/Icons
+echo '🎨 تولید آیکون‌های اپلیکیشن...'
+flutter pub run flutter_launcher_icons
 
-echo 'تحلیل ایستا...'
+# 5. Static Analysis (Audit)
+echo '🔍 در حال تحلیل کد (Static Analysis)...'
 flutter analyze --no-fatal-infos
 
-echo 'تست‌ها...'
-flutter test
+# 6. Run Tests with Coverage
+echo '🧪 در حال اجرای تست‌ها...'
+flutter test --coverage
 
+# 7. Build and Size Check
 if [[ "$BUILD_MODE" == "release" ]]; then
-  echo 'ساخت APK و AAB نسخه انتشار...'
-  flutter build apk --release
+  echo '🚀 ساخت نسخه نهایی (Release)...'
+  flutter build apk --release --split-per-abi
   flutter build appbundle --release
-  echo 'APK: build/app/outputs/flutter-apk/app-release.apk'
-  echo 'AAB: build/app/outputs/bundle/release/app-release.aab'
+  
+  APK_PATH="build/app/outputs/flutter-apk/app-release.apk"
+  if [[ -f "$APK_PATH" ]]; then
+    SIZE=$(du -h "$APK_PATH" | cut -f1)
+    echo "✅ بیلد موفقیت‌آمیز بود. حجم APK: $SIZE"
+  fi
 else
-  echo 'ساخت APK آزمایشی...'
+  echo '🛠️ ساخت نسخه آزمایشی (Debug)...'
   flutter build apk --debug
-  echo 'APK: build/app/outputs/flutter-apk/app-debug.apk'
 fi
+
+echo '✨ عملیات با موفقیت به پایان رسید.'

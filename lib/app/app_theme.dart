@@ -8,26 +8,50 @@ import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 /// طراحی مدرن، نرم و حرفه‌ای برای کودکان
 /// =======================================================
 
+enum DayCycle { morning, noon, night }
+
 class AppTheme {
-  static TextTheme _textTheme(Brightness brightness) {
+  static DayCycle get currentCycle {
+    final hour = DateTime.now().hour;
+    if (hour >= 6 && hour < 12) return DayCycle.morning;
+    if (hour >= 12 && hour < 18) return DayCycle.noon;
+    return DayCycle.night;
+  }
+
+  static TextTheme _textTheme(Brightness brightness, {double scaleFactor = 1.0}) {
     final foreground = brightness == Brightness.dark
         ? Colors.white
         : AppColors.textPrimary;
-    // ✅ فیکس عمیق فاز ۱: استفاده از wrapper امن برای آفلاین
-    return AppFonts.vazirmatnTextTheme(
+    
+    final baseTextTheme = AppFonts.vazirmatnTextTheme(
       brightness == Brightness.dark
           ? ThemeData.dark().textTheme
           : ThemeData.light().textTheme,
-    ).apply(
+    );
+
+    if (scaleFactor == 1.0) {
+      return baseTextTheme.apply(
+        bodyColor: foreground,
+        displayColor: foreground,
+      );
+    }
+
+    return baseTextTheme.apply(
       bodyColor: foreground,
       displayColor: foreground,
+      fontSizeFactor: scaleFactor,
     );
+  }
+
+  static ThemeData getTheme(DayCycle cycle, Brightness systemBrightness, {double textScale = 1.0}) {
+    final isDark = cycle == DayCycle.night || systemBrightness == Brightness.dark;
+    return _buildTheme(isDark ? Brightness.dark : Brightness.light, textScale: textScale);
   }
 
   static ThemeData get light => _buildTheme(Brightness.light);
   static ThemeData get dark => _buildTheme(Brightness.dark);
 
-  static ThemeData _buildTheme(Brightness brightness) {
+  static ThemeData _buildTheme(Brightness brightness, {double textScale = 1.0}) {
     final isDark = brightness == Brightness.dark;
     final surface = isDark ? const Color(0xFF17182B) : AppColors.surface;
     final background = isDark ? const Color(0xFF101124) : AppColors.background;
@@ -47,9 +71,9 @@ class AppTheme {
             : const Color(0xFFF8F4FF),
       ),
       scaffoldBackgroundColor: background,
-      textTheme: _textTheme(brightness),
+      textTheme: _textTheme(brightness, scaleFactor: textScale),
       
-      // AppBar Premium - ✅ فیکس CardTheme دیپرکیت و GoogleFonts
+      // AppBar Premium
       appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
@@ -57,7 +81,7 @@ class AppTheme {
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         titleTextStyle: AppFonts.vazirmatn(
-          fontSize: 22,
+          fontSize: 22 * textScale,
           fontWeight: FontWeight.w900,
           color: foreground,
           letterSpacing: -0.3,
@@ -75,13 +99,13 @@ class AppTheme {
             borderRadius: BorderRadius.circular(22),
           ),
           textStyle: AppFonts.vazirmatn(
-            fontSize: 18,
+            fontSize: 18 * textScale,
             fontWeight: FontWeight.w800,
           ),
         ),
       ),
 
-      // Card Premium - ✅ CardTheme -> CardThemeData برای Flutter 3.24+
+      // Card Premium
       cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -98,8 +122,8 @@ class AppTheme {
         selectedItemColor: AppColors.primary,
         unselectedItemColor: isDark ? Colors.white54 : AppColors.textLight,
         elevation: 0,
-        selectedLabelStyle: AppFonts.vazirmatn(fontWeight: FontWeight.w700, fontSize: 12),
-        unselectedLabelStyle: AppFonts.vazirmatn(fontWeight: FontWeight.w600, fontSize: 11),
+        selectedLabelStyle: AppFonts.vazirmatn(fontWeight: FontWeight.w700, fontSize: 12 * textScale),
+        unselectedLabelStyle: AppFonts.vazirmatn(fontWeight: FontWeight.w600, fontSize: 11 * textScale),
       ),
 
       // Chip Premium
@@ -107,7 +131,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-        labelStyle: AppFonts.vazirmatn(fontWeight: FontWeight.w600),
+        labelStyle: AppFonts.vazirmatn(fontWeight: FontWeight.w600, fontSize: 14 * textScale),
       ),
 
       // Input Premium
@@ -119,6 +143,7 @@ class AppTheme {
           borderSide: BorderSide.none,
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        labelStyle: TextStyle(fontSize: 16 * textScale),
       ),
 
       // Page Transitions Premium

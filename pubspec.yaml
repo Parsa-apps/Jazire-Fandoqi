@@ -22,6 +22,21 @@ dependencies:
   # 💾 Storage
   shared_preferences: 2.3.2
   
+  # 🚀 State Management
+  flutter_riverpod: ^2.5.1
+  
+  # 📦 Database
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  path_provider: ^2.1.3
+  
+  # 🔊 Audio & TTS
+  just_audio: ^0.9.40
+  flutter_tts: ^4.1.0
+  
+  # 🛠️ Debugging & Logging
+  talker: ^4.0.0
+  
 
 dev_dependencies:
   flutter_test:

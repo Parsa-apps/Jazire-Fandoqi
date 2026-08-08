@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -25,6 +27,7 @@ import 'shared/widgets/fandoghi_coach.dart';
 /// آفلاین، فارسی و طراحی‌شده برای یادگیری امن کودکان.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
 
   // Never leave a child staring at a blank white screen. If any widget throws
   // during the very first frame (a transient storage error, a rendering glitch,
@@ -46,7 +49,11 @@ Future<void> main() async {
     GameData.useMemoryFallback();
   }
 
-  runApp(const AmoozeshFandoghiApp());
+  runApp(
+    const ProviderScope(
+      child: AmoozeshFandoghiApp(),
+    ),
+  );
 }
 
 class AmoozeshFandoghiApp extends StatelessWidget {
