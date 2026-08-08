@@ -1,10 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'app/app_theme.dart';
+import 'core/audio_service.dart';
 import 'core/game_data.dart';
 import 'core/game_launch.dart';
 import 'features/about/about_screen.dart';
@@ -25,11 +28,13 @@ import 'shared/widgets/fandoghi_coach.dart';
 /// آفلاین، فارسی و طراحی‌شده برای یادگیری امن کودکان.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // بنیادهای فنی - فاز ۴، ۶ و ۸
+  await Hive.initFlutter();
+  await Hive.openBox('playerBox');
+  await AudioService.init();
 
-  // Never leave a child staring at a blank white screen. If any widget throws
-  // during the very first frame (a transient storage error, a rendering glitch,
-  // etc.) Flutter's default behaviour can drop to an empty surface. Route it
-  // to a friendly full-screen message instead and keep the app recoverable.
+  // Never leave a child staring at a blank white screen.
   ErrorWidget.builder = (_) => const _FirstFrameErrorScreen();
 
   // ✅ فیکس عمیق فاز ۲: تنظیم امن فونت‌ها برای آفلاین — دیگر کرش سفید نمی‌دهد
@@ -46,7 +51,11 @@ Future<void> main() async {
     GameData.useMemoryFallback();
   }
 
-  runApp(const AmoozeshFandoghiApp());
+  runApp(
+    const ProviderScope(
+      child: AmoozeshFandoghiApp(),
+    ),
+  );
 }
 
 class AmoozeshFandoghiApp extends StatelessWidget {
