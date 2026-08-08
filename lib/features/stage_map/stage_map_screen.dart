@@ -10,7 +10,7 @@ import '../../core/game_launch.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
 import 'painters/path_painter.dart';
 import 'painters/map_background_painter.dart';
-import 'widgets/stage_node.dart';
+import 'widgets/premium_stage_node.dart';
 
 /// ═══════════════════════════════════════════════
 /// 🗺️ STAGE MAP — Winding Path Level Select
@@ -200,10 +200,10 @@ class _StageMapState extends State<StageMapScreen>
         state = StageState.locked;
       }
 
-      return Positioned(
+                        return Positioned(
         left: stage.relX * w - nodeW / 2,
         top: stage.relY * totalH - nodeH / 2,
-        child: StageNode(
+        child: PremiumStageNode(
           stageNumber: stage.number,
           title: stage.title,
           emoji: stage.emoji,
