@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'fandoghi_bunny.dart';
@@ -24,13 +25,35 @@ class FandoghiPosition extends ValueNotifier<Offset> {
     const Offset(0.86, 0.78), // default: bottom-right
   );
 
-  /// Update position from a raw pixel offset, converting to fractions of
-  /// [size]. Bounds are clamped to keep the bunny on-screen.
-  void updateFromPixels(Offset pixel, Size size) {
-    final cx = (pixel.dx / size.width).clamp(0.05, 0.95).toDouble();
-    final cy = (pixel.dy / size.height).clamp(0.08, 0.95).toDouble();
+  /// Update position from a pixel-space center, converting to fractions of
+  /// [size]. Bounds account for the mascot frame so dragging cannot leave a
+  /// visibly cut-off bunny at the edges of the screen.
+  void updateFromPixels(
+    Offset pixel,
+    Size size, {
+    double mascotSize = 0,
+  }) {
+    if (size.width <= 0 || size.height <= 0) return;
+
+    final halfWidth = (mascotSize / 2).clamp(0.0, size.width / 2).toDouble();
+    final halfHeight = (mascotSize / 2).clamp(0.0, size.height / 2).toDouble();
+    final minX = (halfWidth / size.width).clamp(0.02, 0.5).toDouble();
+    final maxX = 1.0 - minX;
+    final minY = (halfHeight / size.height).clamp(0.02, 0.5).toDouble();
+    final maxY = 1.0 - minY;
+
+    final cx = (pixel.dx / size.width).clamp(minX, maxX).toDouble();
+    final cy = (pixel.dy / size.height).clamp(minY, maxY).toDouble();
     value = Offset(cx, cy);
   }
+
+  /// Converts the stored fractional center into the coordinate space used by
+  /// the overlay. Keeping this in one place prevents the mascot and its
+  /// speech bubble from drifting apart when the screen is resized.
+  Offset toPixels(Size size) => Offset(
+        value.dx * size.width,
+        value.dy * size.height,
+      );
 }
 
 /// The visual + interactive draggable bunny that should be mounted once at
@@ -58,6 +81,7 @@ class _DraggableFandoghiState extends State<DraggableFandoghi>
   late final AnimationController _wobbleCtrl;
   double _scale = 1.0;
   bool _hasDragged = false;
+  Offset _dragOffset = Offset.zero;
 
   @override
   void initState() {
@@ -75,7 +99,26 @@ class _DraggableFandoghiState extends State<DraggableFandoghi>
     super.dispose();
   }
 
-  void _onPanStart(DragStartDetails _) {
+  Offset _toParentPosition(Offset globalPosition, BuildContext coordinateContext) {
+    final renderObject = coordinateContext.findRenderObject();
+    if (renderObject is RenderBox) {
+      return renderObject.globalToLocal(globalPosition);
+    }
+    return globalPosition;
+  }
+
+  void _onPanStart(
+    DragStartDetails details,
+    Size parentSize,
+    BuildContext coordinateContext,
+  ) {
+    final pointer = _toParentPosition(details.globalPosition, coordinateContext);
+    final center = FandoghiPosition.instance.toPixels(parentSize);
+    // Preserve the point where the child grabbed the mascot. Without this
+    // offset the mascot jumps so its center lands under the finger on the
+    // first update, which feels especially wrong for a child-sized target.
+    _dragOffset = pointer - center;
+
     _everDragged = true;
     setState(() {
       _hasDragged = true;
@@ -83,22 +126,28 @@ class _DraggableFandoghiState extends State<DraggableFandoghi>
     });
   }
 
-  /// We use the global pointer position from the gesture itself
-  /// ([DragUpdateDetails.globalPosition]) to compute the new center, which
-  /// is the simplest and most robust way — no RenderBox math, no race
-  /// conditions, no jitter.
-  void _onPanUpdate(DragUpdateDetails details, Size parentSize) {
-    // The center of the bunny follows the finger one-to-one.
+  void _onPanUpdate(
+    DragUpdateDetails details,
+    Size parentSize,
+    BuildContext coordinateContext,
+  ) {
+    final pointer = _toParentPosition(details.globalPosition, coordinateContext);
     FandoghiPosition.instance.updateFromPixels(
-      details.globalPosition,
+      pointer - _dragOffset,
       parentSize,
+      mascotSize: widget.size,
     );
   }
 
-  void _onPanEnd(DragEndDetails _) {
-    setState(() => _scale = 1.0);
+  void _finishPan() {
+    _dragOffset = Offset.zero;
+    if (mounted) setState(() => _scale = 1.0);
     _wobbleCtrl.forward(from: 0);
   }
+
+  void _onPanEnd(DragEndDetails _) => _finishPan();
+
+  void _onPanCancel() => _finishPan();
 
   void _onTap() {
     _wobbleCtrl.forward(from: 0);
@@ -108,7 +157,7 @@ class _DraggableFandoghiState extends State<DraggableFandoghi>
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
-      builder: (context, constraints) {
+      builder: (coordinateContext, constraints) {
         final parentSize = Size(constraints.maxWidth, constraints.maxHeight);
         // The bunny is placed with a [Positioned] widget, which is only valid
         // as a direct descendant of a [Stack]. Previously [Positioned] was
@@ -141,9 +190,12 @@ class _DraggableFandoghiState extends State<DraggableFandoghi>
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: _onTap,
-                        onPanStart: _onPanStart,
-                        onPanUpdate: (d) => _onPanUpdate(d, parentSize),
+                        onPanStart: (d) =>
+                            _onPanStart(d, parentSize, coordinateContext),
+                        onPanUpdate: (d) =>
+                            _onPanUpdate(d, parentSize, coordinateContext),
                         onPanEnd: _onPanEnd,
+                        onPanCancel: _onPanCancel,
                         child: AnimatedScale(
                           scale: _scale * wobble,
                           duration: const Duration(milliseconds: 120),
@@ -167,9 +219,9 @@ class _DraggableFandoghiState extends State<DraggableFandoghi>
   }
 }
 
-/// Adds a soft drop shadow + circular white halo so the bunny is easy to
-/// spot on any background, and a tiny "drag me" hint arrow that fades out
-/// after the user has dragged the bunny once.
+/// Adds a soft drop shadow and a subtle glow so the bunny is easy to spot
+/// on any background, without creating a visible white cut-out circle around
+/// the artwork. A tiny "drag me" hint fades out after the first drag.
 class _BunnyContainer extends StatelessWidget {
   final double size;
   final bool showHint;
@@ -194,7 +246,7 @@ class _BunnyContainer extends StatelessWidget {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.88),
+                color: Colors.transparent,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.2),

@@ -228,60 +228,75 @@ class _StarCatchState extends State<StarCatchGame> {
   }
 
   Widget _buildStartScreen() {
-    return Container(
-      color: Colors.black.withOpacity(0.6),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('⭐', style: TextStyle(fontSize: 80)),
-            const SizedBox(height: 20),
-            Text(
-              'ستاره‌گیری',
-              style: GoogleFonts.balooBhaijaan2(
-                fontSize: 32,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'ستاره‌ها رو با سبد بگیر!\nاز آیتم‌های قرمز دوری کن!',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.balooBhaijaan2(
-                fontSize: 16,
-                color: Colors.white.withOpacity(0.9),
-                fontWeight: FontWeight.w700,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 40),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+    return Stack(
+      children: [
+        Container(
+          color: Colors.black.withOpacity(0.6),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('⭐', style: TextStyle(fontSize: 80)),
+                const SizedBox(height: 20),
+                Text(
+                  'ستاره‌گیری',
+                  style: GoogleFonts.balooBhaijaan2(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
                 ),
-              ),
-              onPressed: () {
-                if (canStartPlay(context)) {
-                  _game.startGame();
-                  setState(() {});
-                }
-              },
-              child: Text(
-                'شروع بازی! 🚀',
-                style: GoogleFonts.balooBhaijaan2(
-                  color: Colors.white,
-                  fontSize: 19,
-                  fontWeight: FontWeight.w900,
+                const SizedBox(height: 12),
+                Text(
+                  'ستاره‌ها رو با سبد بگیر!\nاز آیتم‌های قرمز دوری کن!',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.balooBhaijaan2(
+                    fontSize: 16,
+                    color: Colors.white.withOpacity(0.9),
+                    fontWeight: FontWeight.w700,
+                    height: 1.5,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 40),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  onPressed: () {
+                    if (canStartPlay(context)) {
+                      _game.startGame();
+                      setState(() {});
+                    }
+                  },
+                  child: Text(
+                    'شروع بازی! 🚀',
+                    style: GoogleFonts.balooBhaijaan2(
+                      color: Colors.white,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+        Positioned(
+          top: MediaQuery.of(context).padding.top + 16,
+          left: 16,
+          child: _glassBtn(
+            Icons.arrow_back_rounded,
+            () => Navigator.pop(context),
+          ),
+        ),
+      ],
     );
   }
 
@@ -397,6 +412,7 @@ class StarCatchFlameGame extends FlameGame {
   void startGame() {
     score = 0;
     lives = 3;
+    combo = 0;
     gameOver = false;
     started = true;
     _spawnInterval = 1.2;

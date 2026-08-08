@@ -69,6 +69,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
 
   void _answer(int optionIndex) {
     if (_answerLocked || _finished) return;
+    if (!canStartPlay(context)) return;
     final question = _questions[_questionIndex];
     final correct = optionIndex == question.correctIndex;
     final token = _roundToken;
@@ -133,6 +134,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
   }
 
   void _restart() {
+    if (!canStartPlay(context)) return;
     FandoghiCoach.instruction('دوباره شروع کنیم! این بار فندقی هم حواسش به جواب‌ها هست 🌰');
     _roundToken++;
     setState(() {

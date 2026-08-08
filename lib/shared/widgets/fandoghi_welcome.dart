@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../app/app_colors.dart';
 import '../../core/fandoghi_welcome.dart';
+import 'draggable_fandoghi.dart';
 import 'fandoghi_bunny.dart';
 
 /// ═══════════════════════════════════════════════
@@ -284,35 +285,38 @@ class _BunnyStage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Enter: from y=+1.2 (below screen) → 0 (centre), with bounce.
-    // Exit: from centre → bottom-right corner.
+    // Enter: from below the screen to the centre, with a bounce.
+    // Exit: from the centre to the same saved center used by the persistent
+    // draggable mascot. Previously this animation used a hard-coded top-left
+    // offset, so the welcome bunny visibly jumped away from the real mascot
+    // when the intro finished.
+    const stageSize = 140.0;
     final media = MediaQuery.of(context).size;
-    final centerY = media.height * 0.42;
-    final cornerX = media.width * 0.86 - 60; // align with default corner
-    final cornerY = media.height * 0.78 - 60;
+    final center = Offset(media.width / 2, media.height * 0.42);
+    final savedPosition = FandoghiPosition.instance.toPixels(media);
 
-    // Position while entering (lerp from bottom to centre).
-    final enterY = centerY + (1 - enterT) * (media.height * 0.6);
-    // Position while exiting (lerp from centre to corner).
-    final exitY = centerY + exitT * (cornerY - centerY);
-    final exitX = exitT * (cornerX - media.width / 2);
-    final exitScale = 1.1 - exitT * 0.1; // gently shrink as it leaves
+    final enterY = center.dy + (1 - enterT) * (media.height * 0.6);
+    final exitCenter = Offset(
+      center.dx + exitT * (savedPosition.dx - center.dx),
+      center.dy + exitT * (savedPosition.dy - center.dy),
+    );
+    final exitScale = 1.1 - exitT * 0.1;
 
-    // Active values depending on phase.
-    final y = exitT > 0 ? exitY : enterY;
-    final x = exitT > 0 ? exitX : 0.0;
+    final position = exitT > 0
+        ? exitCenter
+        : Offset(center.dx, enterY);
     final s = exitT > 0 ? exitScale : scale;
     final b = exitT > 0 ? 1.0 : bounce;
 
     return Positioned(
-      left: media.width / 2 - 70 + x,
-      top: y - 70,
+      left: position.dx - stageSize / 2,
+      top: position.dy - stageSize / 2,
       child: IgnorePointer(
         child: Transform.scale(
           scale: s * b,
           child: SizedBox(
-            width: 140,
-            height: 140,
+            width: stageSize,
+            height: stageSize,
             child: child,
           ),
         ),
@@ -329,7 +333,7 @@ class _WelcomeBunny extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withOpacity(0.95),
+        color: Colors.transparent,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.25),

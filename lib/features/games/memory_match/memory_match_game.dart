@@ -159,6 +159,7 @@ class _MemoryState extends State<MemoryMatchGame> {
   void _onCardTap(int index) {
     if (_busy || _gameOver || index < 0 || index >= _cards.length) return;
     if (_cards[index].isFlipped || _cards[index].isMatched) return;
+    if (!canStartPlay(context)) return;
 
     HapticFeedback.lightImpact();
     if (_firstFlipped == null) {
@@ -634,7 +635,7 @@ class _MemoryState extends State<MemoryMatchGame> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    onPressed: () => _startGame('medium'),
+                    onPressed: () => _startGame(_selectedLevel),
                     child: const Text(
                       'دوباره 🔄',
                       style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),

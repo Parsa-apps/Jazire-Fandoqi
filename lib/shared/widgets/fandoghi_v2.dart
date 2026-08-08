@@ -123,6 +123,17 @@ class _BunnyWithFloatState extends State<_BunnyWithFloat>
   }
 
   @override
+  void didUpdateWidget(covariant _BunnyWithFloat oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.animate && !oldWidget.animate) {
+      _ctrl.repeat(reverse: true);
+    } else if (!widget.animate && oldWidget.animate) {
+      _ctrl.stop();
+      _ctrl.value = 0;
+    }
+  }
+
+  @override
   void dispose() {
     _ctrl.dispose();
     super.dispose();

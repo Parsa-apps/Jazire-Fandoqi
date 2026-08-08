@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -39,14 +41,11 @@ class FandoghiCoachOverlay extends StatelessWidget {
                   // a bubble is shown, so the user can keep dragging it).
                   const Positioned.fill(child: _DraggableMascot()),
                   if (message != null)
-                    Positioned(
-                      left: 12,
-                      right: 12,
-                      bottom: 140,
+                    Positioned.fill(
                       child: IgnorePointer(
-                        child: SafeArea(
-                          top: false,
-                          child: _CoachBubble(message: message),
+                        child: _CoachBubbleFollower(
+                          message: message,
+                          mascotSize: 120,
                         ),
                       ),
                     )
@@ -80,6 +79,100 @@ class _DraggableMascot extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Positions the coach bubble next to the same fractional center used by the
+/// draggable mascot. The old implementation pinned this bubble to a fixed
+/// bottom offset, so moving the mascot made the character and its words look
+/// unrelated.
+class _CoachBubbleFollower extends StatelessWidget {
+  final FandoghiCoachMessage message;
+  final double mascotSize;
+
+  const _CoachBubbleFollower({
+    required this.message,
+    required this.mascotSize,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = Size(constraints.maxWidth, constraints.maxHeight);
+        return ValueListenableBuilder<Offset>(
+          valueListenable: FandoghiPosition.instance,
+          builder: (context, position, _) {
+            final center = Offset(
+              position.dx * size.width,
+              position.dy * size.height,
+            );
+            return CustomSingleChildLayout(
+              delegate: _CoachBubbleLayoutDelegate(
+                mascotCenter: center,
+                mascotSize: mascotSize,
+              ),
+              child: _CoachBubble(message: message),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _CoachBubbleLayoutDelegate extends SingleChildLayoutDelegate {
+  final Offset mascotCenter;
+  final double mascotSize;
+  static const double _edgePadding = 12;
+  static const double _gap = 14;
+  static const double _maxBubbleWidth = 560;
+
+  const _CoachBubbleLayoutDelegate({
+    required this.mascotCenter,
+    required this.mascotSize,
+  });
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
+    final maxWidth = constraints.maxWidth.isFinite
+        ? math.max(0.0, math.min(_maxBubbleWidth, constraints.maxWidth - 24))
+            .toDouble()
+        : _maxBubbleWidth;
+    final maxHeight = constraints.maxHeight.isFinite
+        ? math.max(0.0, constraints.maxHeight - 24).toDouble()
+        : double.infinity;
+    return BoxConstraints(
+      minWidth: maxWidth,
+      maxWidth: maxWidth,
+      maxHeight: maxHeight,
+    );
+  }
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) {
+    final availableWidth = math.max(0.0, size.width - childSize.width);
+    final left = (mascotCenter.dx - childSize.width / 2)
+        .clamp(_edgePadding, math.max(_edgePadding, availableWidth - _edgePadding))
+        .toDouble();
+
+    final above = mascotCenter.dy - mascotSize / 2 - _gap - childSize.height;
+    final below = mascotCenter.dy + mascotSize / 2 + _gap;
+    final bottomLimit = size.height - _edgePadding - childSize.height;
+    final top = above >= _edgePadding
+        ? above
+        : below <= bottomLimit
+            ? below
+            : (mascotCenter.dy - childSize.height / 2)
+                .clamp(_edgePadding, math.max(_edgePadding, bottomLimit))
+                .toDouble();
+
+    return Offset(left, top);
+  }
+
+  @override
+  bool shouldRelayout(covariant _CoachBubbleLayoutDelegate oldDelegate) =>
+      oldDelegate.mascotCenter != mascotCenter ||
+      oldDelegate.mascotSize != mascotSize;
 }
 
 class _CoachBubble extends StatelessWidget {

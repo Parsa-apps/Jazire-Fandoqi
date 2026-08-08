@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_colors.dart';
 
-/// ═══════════════════════════════════════════════
-/// 🐰 Fandoghi Bunny — the cute rabbit mascot
-/// holding a hazelnut (fandoghi). Replaces the
-/// old CustomPaint hazelnut with a soft, hand-drawn
-/// image that is more friendly to young children.
-/// ═══════════════════════════════════════════════
-
+/// The visual asset used for فندقی throughout the app.
+///
+/// The mascot artwork is kept as a transparent, square PNG so it can preserve
+/// the full teacher character (ears, pointer, book and feet) in every slot.
+/// Keeping the image inside a normal square frame also means a future mascot
+/// asset can be swapped in without changing any of the UI call sites.
 class FandoghiBunny extends StatelessWidget {
-  /// Logical size of the bunny (width & height of the square frame).
+  /// Logical size of the bunny (width and height of the square frame).
   final double size;
   final BoxFit fit;
   final Alignment alignment;
@@ -31,8 +30,8 @@ class FandoghiBunny extends StatelessWidget {
         'assets/mascot/fandoghi_bunny.png',
         fit: fit,
         alignment: alignment,
-        filterQuality: FilterQuality.medium,
-        // Give a slight fade-in so the bunny doesn't pop in.
+        filterQuality: FilterQuality.high,
+        // Give a slight fade-in so the bunny does not pop in.
         frameBuilder: (context, child, frame, wasSync) {
           if (wasSync) return child;
           return AnimatedOpacity(
