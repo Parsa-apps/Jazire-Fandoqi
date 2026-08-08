@@ -106,7 +106,8 @@ class AppTheme {
       ),
 
       // Card Premium
-      cardTheme: CardThemeData(
+      // ⚠️ CardThemeData فقط از Flutter 3.27+ وجود دارد؛ پروژه روی 3.24.3 است.
+      cardTheme: CardTheme(
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(28),
