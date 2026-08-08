@@ -523,7 +523,11 @@ class _StageMapState extends State<StageMapScreen>
               ),
             ),
             const SizedBox(height: 20),
-            Text(stage.emoji, style: const TextStyle(fontSize: 50)),
+            Image.asset(
+              'assets/premium/star_catch_icon.png',
+              width: 70,
+              height: 70,
+            ),
             const SizedBox(height: 12),
             Text(
               stage.title,
