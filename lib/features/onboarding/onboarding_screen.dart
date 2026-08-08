@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../app/app_colors.dart';
 import '../../core/game_data.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
+import '../../shared/widgets/premium_button.dart';
 
 /// A short, local-only setup for the child profile.
 ///
@@ -87,23 +88,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: _next,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: Text(
-                      _page == 0 ? 'بزن بریم! 🚀' : 'ورود به دنیای من 🌟',
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
+                child: PremiumButton(
+                  text: _page == 0 ? 'بزن بریم! 🚀' : 'ورود به دنیای من 🌟',
+                  icon: _page == 0 ? Icons.rocket_launch_rounded : Icons.stars_rounded,
+                  onPressed: _next,
                 ),
               ),
             ],
@@ -135,7 +123,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               fontSize: 28,
               fontWeight: FontWeight.w900,
             ),
-          ),
+          ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.3),
           const SizedBox(height: 12),
           const Text(
             'اینجا با بازی، کشف می‌کنی و هر روز یک مهارت تازه یاد می‌گیری.',
@@ -145,7 +133,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               fontSize: 16,
               height: 1.7,
             ),
-          ),
+          ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.3),
           const SizedBox(height: 24),
           _privacyNote(),
         ],
