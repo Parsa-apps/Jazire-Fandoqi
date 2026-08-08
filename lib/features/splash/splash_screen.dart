@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../app/app_colors.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../core/game_data.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
 import '../../shared/widgets/star_field.dart';
@@ -148,7 +148,7 @@ class _SplashState extends State<SplashScreen>
                       opacity: _slideCtrl,
                       child: Text(
                         'دنیای یادگیری و بازی',
-                        style: GoogleFonts.vazirmatn(
+                        style: AppFonts.vazirmatn(
                           fontSize: 18,
                           color: Colors.white70,
                           fontWeight: FontWeight.w500,
@@ -180,7 +180,7 @@ class _SplashState extends State<SplashScreen>
                 child: Text(
                   'ساخته‌شده توسط فرشاد پارسا',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.exo2(
+                  style: AppFonts.exo2(
                     fontSize: 14,
                     color: Colors.white38,
                     fontWeight: FontWeight.w300,
@@ -279,7 +279,7 @@ class _SplashState extends State<SplashScreen>
           },
           child: Text(
             'آموزش فندقی',
-            style: GoogleFonts.vazirmatn(
+            style: AppFonts.vazirmatn(
               fontSize: 48,
               fontWeight: FontWeight.w900,
               color: Colors.white,

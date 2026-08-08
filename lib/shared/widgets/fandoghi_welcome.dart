@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../app/app_colors.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../core/fandoghi_welcome.dart';
 import 'draggable_fandoghi.dart';
 import 'fandoghi_bunny.dart';
@@ -250,7 +250,7 @@ class _FandoghiWelcomeOverlayState extends State<FandoghiWelcomeOverlay>
                     child: Text(
                       'برای رد کردن، صفحه را بزن',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.balooBhaijaan2(
+                      style: AppFonts.balooBhaijaan2(
                         color: Colors.white,
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -394,7 +394,7 @@ class _WelcomeBubble extends StatelessWidget {
               children: [
                 Text(
                   'سلام! 👋',
-                  style: GoogleFonts.balooBhaijaan2(
+                  style: AppFonts.balooBhaijaan2(
                     color: AppColors.primary,
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
@@ -404,7 +404,7 @@ class _WelcomeBubble extends StatelessWidget {
                 Text(
                   'من فندقی هستم، دوست و مربی تو! 🐰\nهر وقت کمک خواستی من اینجام.',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.balooBhaijaan2(
+                  style: AppFonts.balooBhaijaan2(
                     color: AppColors.textPrimary,
                     fontSize: 17,
                     fontWeight: FontWeight.w800,

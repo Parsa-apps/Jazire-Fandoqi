@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../app/app_colors.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
@@ -175,7 +175,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
             Text(
               'زمان بازی امروز تمام شده',
               textAlign: TextAlign.center,
-              style: GoogleFonts.vazirmatn(
+              style: AppFonts.vazirmatn(
                 color: Colors.white,
                 fontSize: 24,
                 fontWeight: FontWeight.w900,
@@ -268,7 +268,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
           const Spacer(),
           Text(
             '${_topicTitle(widget.topic)} ${_topicEmoji(widget.topic)}',
-            style: GoogleFonts.vazirmatn(
+            style: AppFonts.vazirmatn(
               color: Colors.white,
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -330,7 +330,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
           Text(
             question.prompt,
             textAlign: TextAlign.center,
-            style: GoogleFonts.vazirmatn(
+            style: AppFonts.vazirmatn(
               color: Colors.white,
               fontSize: 22,
               fontWeight: FontWeight.w800,
@@ -427,7 +427,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
             Text(
               passed ? 'عالی بود! 🏆' : 'تلاش خیلی خوبی بود! 💪',
               textAlign: TextAlign.center,
-              style: GoogleFonts.vazirmatn(
+              style: AppFonts.vazirmatn(
                 color: Colors.white,
                 fontSize: 29,
                 fontWeight: FontWeight.w900,

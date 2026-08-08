@@ -3,9 +3,9 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../app/app_colors.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
@@ -128,7 +128,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
           const Spacer(),
           Text(
             'آکادمی الفبا 🔤',
-            style: GoogleFonts.balooBhaijaan2(
+            style: AppFonts.balooBhaijaan2(
               color: Colors.white,
               fontSize: 22,
               fontWeight: FontWeight.w900,
@@ -137,7 +137,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
           const Spacer(),
           Text(
             '${_lessonIndex + 1}/${_lessons.length}',
-            style: GoogleFonts.balooBhaijaan2(
+            style: AppFonts.balooBhaijaan2(
               color: Colors.white70,
               fontSize: 16,
               fontWeight: FontWeight.w800,
@@ -178,7 +178,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
               child: Text(
                 'ببین • بگو • بنویس • تکرار کن',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.balooBhaijaan2(
+                style: AppFonts.balooBhaijaan2(
                   color: Colors.white,
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
@@ -222,7 +222,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                 child: Center(
                   child: Text(
                     _lesson.letter,
-                    style: GoogleFonts.vazirmatn(
+                    style: AppFonts.vazirmatn(
                       color: Colors.white,
                       fontSize: 68,
                       fontWeight: FontWeight.w900,
@@ -238,7 +238,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                   children: [
                     Text(
                       'حرف «${_lesson.letter}»',
-                      style: GoogleFonts.balooBhaijaan2(
+                      style: AppFonts.balooBhaijaan2(
                         color: Colors.white,
                         fontSize: 23,
                         fontWeight: FontWeight.w900,
@@ -247,7 +247,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                     const SizedBox(height: 5),
                     Text(
                       '${_lesson.emoji} مثلِ «${_lesson.word}»',
-                      style: GoogleFonts.balooBhaijaan2(
+                      style: AppFonts.balooBhaijaan2(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
@@ -256,7 +256,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                     const SizedBox(height: 8),
                     Text(
                       'برای تمرین نوشتن، دکمه‌ی زیر را بزن.',
-                      style: GoogleFonts.balooBhaijaan2(
+                      style: AppFonts.balooBhaijaan2(
                         color: Colors.white70,
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -279,7 +279,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                 backgroundColor: Colors.white,
                 foregroundColor: AppColors.primaryDark,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                textStyle: GoogleFonts.balooBhaijaan2(
+                textStyle: AppFonts.balooBhaijaan2(
                   fontWeight: FontWeight.w900,
                   fontSize: 18,
                 ),
@@ -308,7 +308,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
         children: [
           Text(
             'انتخاب حرف برای تمرین',
-            style: GoogleFonts.balooBhaijaan2(
+            style: AppFonts.balooBhaijaan2(
               color: Colors.white70,
               fontSize: 16,
               fontWeight: FontWeight.w800,
@@ -326,7 +326,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                 onSelected: (_) => _selectLesson(index),
                 selectedColor: AppColors.primary,
                 backgroundColor: Colors.white.withOpacity(0.1),
-                labelStyle: GoogleFonts.balooBhaijaan2(
+                labelStyle: AppFonts.balooBhaijaan2(
                   color: selected ? Colors.white : Colors.white70,
                   fontWeight: FontWeight.w900,
                   fontSize: 16,
@@ -621,7 +621,7 @@ class _TraceScreenState extends State<_TraceScreen> {
           const Spacer(),
           Text(
             'بنویس: «${_lesson.letter}»',
-            style: GoogleFonts.balooBhaijaan2(
+            style: AppFonts.balooBhaijaan2(
               color: AppColors.textPrimary,
               fontSize: 20,
               fontWeight: FontWeight.w900,
@@ -643,7 +643,7 @@ class _TraceScreenState extends State<_TraceScreen> {
                   children: [
                     Text(
                       widget.lessons[i].letter,
-                      style: GoogleFonts.balooBhaijaan2(
+                      style: AppFonts.balooBhaijaan2(
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
                         color: AppColors.textPrimary,
@@ -652,7 +652,7 @@ class _TraceScreenState extends State<_TraceScreen> {
                     const SizedBox(width: 8),
                     Text(
                       widget.lessons[i].word,
-                      style: GoogleFonts.balooBhaijaan2(
+                      style: AppFonts.balooBhaijaan2(
                         color: AppColors.textSecondary,
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -687,7 +687,7 @@ class _TraceScreenState extends State<_TraceScreen> {
       alignment: Alignment.center,
       child: Text(
         _lesson.letter,
-        style: GoogleFonts.vazirmatn(
+        style: AppFonts.vazirmatn(
           color: AppColors.primary,
           fontSize: 44,
           fontWeight: FontWeight.w900,
@@ -725,7 +725,7 @@ class _TraceScreenState extends State<_TraceScreen> {
             r.passed
                 ? 'آفرین! امتیاز: ${(r.score * 100).round()}٪'
                 : 'امتیاز: ${(r.score * 100).round()}٪ — دوباره تلاش کن',
-            style: GoogleFonts.balooBhaijaan2(
+            style: AppFonts.balooBhaijaan2(
               color: Colors.white,
               fontWeight: FontWeight.w900,
               fontSize: 17,
@@ -772,7 +772,7 @@ class _TraceScreenState extends State<_TraceScreen> {
               foregroundColor: Colors.white,
               padding:
                   const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-              textStyle: GoogleFonts.balooBhaijaan2(
+              textStyle: AppFonts.balooBhaijaan2(
                 fontWeight: FontWeight.w900,
                 fontSize: 17,
               ),
@@ -839,7 +839,7 @@ TextPainter _guideTextPainter(String letter, Size size, Color color) {
   return TextPainter(
     text: TextSpan(
       text: letter,
-      style: GoogleFonts.vazirmatn(
+      style: AppFonts.vazirmatn(
         color: color,
         fontSize: math.min(size.width * 0.58, size.height * 0.75).toDouble(),
         fontWeight: FontWeight.w900,

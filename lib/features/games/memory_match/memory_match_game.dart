@@ -2,8 +2,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../app/app_colors.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
@@ -30,7 +30,8 @@ class MemoryMatchGame extends StatefulWidget {
   State<MemoryMatchGame> createState() => _MemoryState();
 }
 
-class _MemoryState extends State<MemoryMatchGame> {
+class _MemoryState extends State<MemoryMatchGame>
+    with WidgetsBindingObserver {
   // Game state
   late List<_CardData> _cards;
   int? _firstFlipped;
@@ -46,6 +47,7 @@ class _MemoryState extends State<MemoryMatchGame> {
   int _timeLeft = 120;
   String _selectedLevel = 'medium';
   int _gameToken = 0;
+  bool _pausedByBackground = false;
 
   static const String _memoryAsset =
       'assets/illustrations/memory_cards.webp';
@@ -65,6 +67,7 @@ class _MemoryState extends State<MemoryMatchGame> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     FandoghiCoach.enablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -76,7 +79,19 @@ class _MemoryState extends State<MemoryMatchGame> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // ✅ فیکس عمیق فاز ۳۱: تایمر در پس‌زمینه متوقف می‌شود تا باتری نخورد
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _pausedByBackground = true;
+    } else if (state == AppLifecycleState.resumed) {
+      _pausedByBackground = false;
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     FandoghiCoach.clear();
     super.dispose();
   }
@@ -151,6 +166,8 @@ class _MemoryState extends State<MemoryMatchGame> {
         mounted) {
       await Future<void>.delayed(const Duration(seconds: 1));
       if (!mounted || token != _gameToken || _gameOver) return;
+      // ✅ فیکس: اگر اپ در پس‌زمینه است، تایمر را کم نکن
+      if (_pausedByBackground) continue;
       setState(() => _timeLeft--);
       if (_timeLeft <= 0) _endGame(won: false);
     }
@@ -304,7 +321,7 @@ class _MemoryState extends State<MemoryMatchGame> {
           const Spacer(),
           Text(
             '🧠 بازی حافظه',
-            style: GoogleFonts.vazirmatn(
+            style: AppFonts.vazirmatn(
               color: Colors.white,
               fontWeight: FontWeight.w800,
               fontSize: 18,
@@ -470,7 +487,7 @@ class _MemoryState extends State<MemoryMatchGame> {
               card.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.vazirmatn(
+              style: AppFonts.vazirmatn(
                 color: Colors.white,
                 fontWeight: FontWeight.w800,
                 fontSize: 11,
@@ -531,7 +548,7 @@ class _MemoryState extends State<MemoryMatchGame> {
             const SizedBox(height: 20),
             Text(
               'بازی حافظه',
-              style: GoogleFonts.vazirmatn(
+              style: AppFonts.vazirmatn(
                 fontSize: 36,
                 fontWeight: FontWeight.w900,
                 color: Colors.white,
@@ -612,7 +629,7 @@ class _MemoryState extends State<MemoryMatchGame> {
               const SizedBox(height: 16),
               Text(
                 allMatched ? 'آفرین!' : 'وقت تموم شد!',
-                style: GoogleFonts.vazirmatn(
+                style: AppFonts.vazirmatn(
                   fontSize: 30,
                   fontWeight: FontWeight.w900,
                   color: Colors.white,

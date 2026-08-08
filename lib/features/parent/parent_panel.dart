@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../app/app_colors.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../core/game_data.dart';
 import '../../shared/widgets/premium_button.dart';
 
@@ -216,7 +216,7 @@ class _ParentPanelState extends State<ParentPanel> {
         children: [
           Text(
             'گزارش استفاده امروز',
-            style: GoogleFonts.vazirmatn(
+            style: AppFonts.vazirmatn(
               color: Colors.white,
               fontSize: 20,
               fontWeight: FontWeight.w800,
@@ -265,7 +265,7 @@ class _ParentPanelState extends State<ParentPanel> {
         children: [
           Text(
             'محدودیت زمانی',
-            style: GoogleFonts.vazirmatn(fontSize: 18, fontWeight: FontWeight.w800),
+            style: AppFonts.vazirmatn(fontSize: 18, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 16),
           Text(
@@ -323,7 +323,7 @@ class _ParentPanelState extends State<ParentPanel> {
         children: [
           Text(
             'گزارش مهارت‌ها',
-            style: GoogleFonts.vazirmatn(fontSize: 18, fontWeight: FontWeight.w800),
+            style: AppFonts.vazirmatn(fontSize: 18, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 16),
           ...GameData.topSkills.entries.map((entry) {

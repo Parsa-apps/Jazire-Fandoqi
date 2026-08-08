@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 
 /// =======================================================
 /// 🎨 PREMIUM MATERIAL 3 THEME — کودک ایران
@@ -13,7 +13,8 @@ class AppTheme {
     final foreground = brightness == Brightness.dark
         ? Colors.white
         : AppColors.textPrimary;
-    return GoogleFonts.vazirmatnTextTheme(
+    // ✅ فیکس عمیق فاز ۱: استفاده از wrapper امن برای آفلاین
+    return AppFonts.vazirmatnTextTheme(
       brightness == Brightness.dark
           ? ThemeData.dark().textTheme
           : ThemeData.light().textTheme,
@@ -48,14 +49,14 @@ class AppTheme {
       scaffoldBackgroundColor: background,
       textTheme: _textTheme(brightness),
       
-      // AppBar Premium
+      // AppBar Premium - ✅ فیکس CardTheme دیپرکیت و GoogleFonts
       appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
         scrolledUnderElevation: 0,
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
-        titleTextStyle: GoogleFonts.vazirmatn(
+        titleTextStyle: AppFonts.vazirmatn(
           fontSize: 22,
           fontWeight: FontWeight.w900,
           color: foreground,
@@ -73,15 +74,15 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(22),
           ),
-          textStyle: GoogleFonts.vazirmatn(
+          textStyle: AppFonts.vazirmatn(
             fontSize: 18,
             fontWeight: FontWeight.w800,
           ),
         ),
       ),
 
-      // Card Premium
-      cardTheme: CardTheme(
+      // Card Premium - ✅ CardTheme -> CardThemeData برای Flutter 3.24+
+      cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(28),
@@ -97,8 +98,8 @@ class AppTheme {
         selectedItemColor: AppColors.primary,
         unselectedItemColor: isDark ? Colors.white54 : AppColors.textLight,
         elevation: 0,
-        selectedLabelStyle: GoogleFonts.vazirmatn(fontWeight: FontWeight.w700, fontSize: 12),
-        unselectedLabelStyle: GoogleFonts.vazirmatn(fontWeight: FontWeight.w600, fontSize: 11),
+        selectedLabelStyle: AppFonts.vazirmatn(fontWeight: FontWeight.w700, fontSize: 12),
+        unselectedLabelStyle: AppFonts.vazirmatn(fontWeight: FontWeight.w600, fontSize: 11),
       ),
 
       // Chip Premium
@@ -106,7 +107,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-        labelStyle: GoogleFonts.vazirmatn(fontWeight: FontWeight.w600),
+        labelStyle: AppFonts.vazirmatn(fontWeight: FontWeight.w600),
       ),
 
       // Input Premium

@@ -4,8 +4,8 @@ import '../../core/premium_animations.dart';
 import '../home/widgets/premium_card.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../app/app_colors.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../core/game_data.dart';
 import 'painters/coin_rain_painter.dart';
 
@@ -142,7 +142,7 @@ class _ShopState extends State<ShopScreen>
 
   void _showSnackBar(String msg, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: GoogleFonts.vazirmatn(fontWeight: FontWeight.w700)),
+      content: Text(msg, style: AppFonts.vazirmatn(fontWeight: FontWeight.w700)),
       backgroundColor: color,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -236,7 +236,7 @@ class _ShopState extends State<ShopScreen>
                     children: [
                       Text(
                         '🏪 فروشگاه',
-                        style: GoogleFonts.vazirmatn(
+                        style: AppFonts.vazirmatn(
                           color: Colors.white,
                           fontWeight: FontWeight.w900,
                           fontSize: 22,
@@ -303,7 +303,7 @@ class _ShopState extends State<ShopScreen>
                       ),
                       Text(
                         '${GameData.coins}',
-                        style: GoogleFonts.exo2(
+                        style: AppFonts.exo2(
                           color: Colors.white,
                           fontSize: 32,
                           fontWeight: FontWeight.w900,
@@ -474,7 +474,7 @@ class _ShopState extends State<ShopScreen>
                     // Name
                     Text(
                       item.name,
-                      style: GoogleFonts.vazirmatn(
+                      style: AppFonts.vazirmatn(
                         color: Colors.white,
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
@@ -651,7 +651,7 @@ class _ShopState extends State<ShopScreen>
                     // Name
                     Text(
                       item.name,
-                      style: GoogleFonts.vazirmatn(
+                      style: AppFonts.vazirmatn(
                         color: Colors.white,
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
@@ -832,7 +832,7 @@ class _ShopState extends State<ShopScreen>
             // Name
             Text(
               item.name,
-              style: GoogleFonts.vazirmatn(
+              style: AppFonts.vazirmatn(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
                 fontSize: 26,
@@ -900,7 +900,7 @@ class _ShopState extends State<ShopScreen>
                     const SizedBox(width: 10),
                     Text(
                       'قبلاً خریداری شده!',
-                      style: GoogleFonts.vazirmatn(
+                      style: AppFonts.vazirmatn(
                         color: const Color(0xFF00B894),
                         fontWeight: FontWeight.w800,
                         fontSize: 18,
@@ -936,7 +936,7 @@ class _ShopState extends State<ShopScreen>
                     canAfford
                         ? 'خرید! 🎉'
                         : 'سکه کافی نیست 😅',
-                    style: GoogleFonts.vazirmatn(
+                    style: AppFonts.vazirmatn(
                       color: canAfford ? Colors.black : Colors.white54,
                       fontWeight: FontWeight.w900,
                       fontSize: 18,
@@ -1023,7 +1023,7 @@ class _ShopState extends State<ShopScreen>
                   ),
                   child: Text(
                     'خرید موفق! 🎉',
-                    style: GoogleFonts.vazirmatn(
+                    style: AppFonts.vazirmatn(
                       color: Colors.white,
                       fontWeight: FontWeight.w900,
                       fontSize: 22,

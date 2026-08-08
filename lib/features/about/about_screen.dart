@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../app/app_colors.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../core/app_legal.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
 
@@ -25,7 +25,7 @@ class AboutScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'درباره و پشتیبانی',
-          style: GoogleFonts.vazirmatn(fontWeight: FontWeight.w800),
+          style: AppFonts.vazirmatn(fontWeight: FontWeight.w800),
         ),
       ),
       body: ListView(
@@ -80,7 +80,7 @@ class AboutScreen extends StatelessWidget {
                       const SizedBox(width: 10),
                       Text(
                         'حریم خصوصی و ایمنی',
-                        style: GoogleFonts.vazirmatn(
+                        style: AppFonts.vazirmatn(
                           fontWeight: FontWeight.w800,
                           fontSize: 16,
                         ),
@@ -164,7 +164,7 @@ class AboutScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   AppLegal.developerName,
-                  style: GoogleFonts.vazirmatn(
+                  style: AppFonts.vazirmatn(
                     color: Colors.white,
                     fontSize: 23,
                     fontWeight: FontWeight.w900,
@@ -200,7 +200,7 @@ class AboutScreen extends StatelessWidget {
                 const SizedBox(width: 10),
                 Text(
                   title,
-                  style: GoogleFonts.vazirmatn(fontWeight: FontWeight.w800),
+                  style: AppFonts.vazirmatn(fontWeight: FontWeight.w800),
                 ),
               ],
             ),

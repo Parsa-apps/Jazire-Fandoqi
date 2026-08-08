@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../app/app_colors.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../core/fandoghi_coach.dart';
 import 'draggable_fandoghi.dart';
 import 'fandoghi_bunny.dart';
@@ -232,7 +232,7 @@ class _CoachBubble extends StatelessWidget {
                   children: [
                     Text(
                       'فندقی می‌گوید 🐰',
-                      style: GoogleFonts.balooBhaijaan2(
+                      style: AppFonts.balooBhaijaan2(
                         color: toneColor,
                         fontSize: 16,
                         fontWeight: FontWeight.w900,
@@ -243,7 +243,7 @@ class _CoachBubble extends StatelessWidget {
                     Text(
                       message.text,
                       textAlign: TextAlign.start,
-                      style: GoogleFonts.balooBhaijaan2(
+                      style: AppFonts.balooBhaijaan2(
                         color: AppColors.textPrimary,
                         fontSize: 17,
                         fontWeight: FontWeight.w800,

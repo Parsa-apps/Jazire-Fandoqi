@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'app/app_theme.dart';
 import 'core/game_data.dart';
@@ -32,9 +32,9 @@ Future<void> main() async {
   // to a friendly full-screen message instead and keep the app recoverable.
   ErrorWidget.builder = (_) => const _FirstFrameErrorScreen();
 
-  // A child app must work without a network connection. Google Fonts otherwise
-  // may try to fetch a font at runtime on the first launch.
-  GoogleFonts.config.allowRuntimeFetching = false;
+  // ✅ فیکس عمیق فاز ۲: تنظیم امن فونت‌ها برای آفلاین — دیگر کرش سفید نمی‌دهد
+  // اگر فونت کش نشده باشد، AppFonts به fallback می‌رود
+  AppFonts.configure();
 
   try {
     await GameData.load();

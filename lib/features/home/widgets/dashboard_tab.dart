@@ -2,8 +2,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../app/app_colors.dart';
+import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../../core/ai_system.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
@@ -156,7 +156,7 @@ class _DashboardState extends State<DashboardTab> {
                             children: [
                               Text(
                                 'سلام ${GameData.childName.isNotEmpty ? GameData.childName : 'دوست کوچولو'}! 👋',
-                                style: GoogleFonts.vazirmatn(
+                                style: AppFonts.vazirmatn(
                                   color: Colors.white,
                                   fontSize: 20,
                                   fontWeight: FontWeight.w800,
@@ -426,7 +426,7 @@ class _DashboardState extends State<DashboardTab> {
         const SizedBox(height: 10),
         Text(
           value,
-          style: GoogleFonts.exo2(
+          style: AppFonts.exo2(
             fontSize: 26,
             fontWeight: FontWeight.w900,
             color: color,
@@ -470,7 +470,7 @@ class _DashboardState extends State<DashboardTab> {
           const SizedBox(height: 8),
           Text(
             value,
-            style: GoogleFonts.exo2(
+            style: AppFonts.exo2(
               fontSize: 24,
               fontWeight: FontWeight.w900,
               color: Colors.white,
@@ -523,7 +523,7 @@ class _DashboardState extends State<DashboardTab> {
                 const SizedBox(width: 12),
                 Text(
                   'ماموریت‌های امروز',
-                  style: GoogleFonts.vazirmatn(
+                  style: AppFonts.vazirmatn(
                     fontWeight: FontWeight.w800,
                     fontSize: 18,
                   ),
@@ -644,7 +644,7 @@ class _DashboardState extends State<DashboardTab> {
         children: [
           Text(
             'بازی‌های سریع',
-            style: GoogleFonts.vazirmatn(
+            style: AppFonts.vazirmatn(
               fontSize: 20,
               fontWeight: FontWeight.w800,
             ),
@@ -736,7 +736,7 @@ class _DashboardState extends State<DashboardTab> {
         children: [
           Text(
             'دسته‌بندی بازی‌ها',
-            style: GoogleFonts.vazirmatn(
+            style: AppFonts.vazirmatn(
               fontSize: 20,
               fontWeight: FontWeight.w800,
             ),
@@ -829,7 +829,7 @@ class _DashboardState extends State<DashboardTab> {
                         children: [
                           Text(
                             title,
-                            style: GoogleFonts.vazirmatn(
+                            style: AppFonts.vazirmatn(
                               color: Colors.white,
                               fontWeight: FontWeight.w800,
                               fontSize: 18,
@@ -931,7 +931,7 @@ class _DashboardState extends State<DashboardTab> {
                 children: [
                   Text(
                     'فندقی، مربی تو 🌰',
-                    style: GoogleFonts.vazirmatn(
+                    style: AppFonts.vazirmatn(
                       fontWeight: FontWeight.w900,
                       fontSize: 17,
                       color: AppColors.fandoghiDark,
