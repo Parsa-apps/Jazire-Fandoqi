@@ -60,9 +60,9 @@ class _BubblePopState extends State<BubblePopGame> {
         children: [
           GestureDetector(
             onTapDown: (details) {
-              if (_game.started && !_game.gameOver) {
-                _game.handleTap(details.localPosition);
-              }
+              if (!_game.started || _game.gameOver) return;
+              if (!canStartPlay(context)) return;
+              _game.handleTap(details.localPosition);
             },
             child: GameWidget(game: _game),
           ),
@@ -125,29 +125,63 @@ class _BubblePopState extends State<BubblePopGame> {
   }
 
   Widget _buildStartScreen() {
-    return Container(
-      color: Colors.black.withOpacity(0.6),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('🫧', style: TextStyle(fontSize: 80)),
-            const SizedBox(height: 20),
-            Text('حباب‌ترکان',
-              style: GoogleFonts.balooBhaijaan2(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white)),
-            const SizedBox(height: 12),
-            Text('حباب‌های درست رو بترکون!\nحواست به حباب‌های اشتباه باشه!',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.balooBhaijaan2(fontSize: 16, color: Colors.white.withOpacity(0.9), fontWeight: FontWeight.w700, height: 1.5)),
-            const SizedBox(height: 40),
-            _startButton('حروف الفبا 🔤', () => _game.startGame(BubbleMode.letters)),
-            const SizedBox(height: 12),
-            _startButton('اعداد 🔢', () => _game.startGame(BubbleMode.numbers)),
-            const SizedBox(height: 12),
-            _startButton('رنگ‌ها 🎨', () => _game.startGame(BubbleMode.colors)),
-          ],
+    return Stack(
+      children: [
+        Container(
+          color: Colors.black.withOpacity(0.6),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('🫧', style: TextStyle(fontSize: 80)),
+                const SizedBox(height: 20),
+                Text(
+                  'حباب‌ترکان',
+                  style: GoogleFonts.balooBhaijaan2(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'حباب‌های درست رو بترکون!\nحواست به حباب‌های اشتباه باشه!',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.balooBhaijaan2(
+                    fontSize: 16,
+                    color: Colors.white.withOpacity(0.9),
+                    fontWeight: FontWeight.w700,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 40),
+                _startButton(
+                  'حروف الفبا 🔤',
+                  () => _game.startGame(BubbleMode.letters),
+                ),
+                const SizedBox(height: 12),
+                _startButton(
+                  'اعداد 🔢',
+                  () => _game.startGame(BubbleMode.numbers),
+                ),
+                const SizedBox(height: 12),
+                _startButton(
+                  'رنگ‌ها 🎨',
+                  () => _game.startGame(BubbleMode.colors),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
+        Positioned(
+          top: MediaQuery.of(context).padding.top + 16,
+          left: 16,
+          child: _glassBtn(
+            Icons.arrow_back_rounded,
+            () => Navigator.pop(context),
+          ),
+        ),
+      ],
     );
   }
 
@@ -273,6 +307,8 @@ class BubblePopFlameGame extends FlameGame {
     score = 0; combo = 0; bestCombo = 0; lives = 5;
     gameOver = false; started = true;
     _gameTime = 0; _spawnTimer = 0; _spawnInterval = 1.5;
+    _targetsCompleted = 0;
+    _targetKey = '';
     _nextTargetScore = 30; // هدف هر ۳۰ امتیاز عوض می‌شود تا تنوع بیشتر شود
 
     children.whereType<_Bubble>().toList().forEach((c) => c.removeFromParent());

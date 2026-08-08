@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../app/app_colors.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
+import '../../../core/play_limit.dart';
 import '../../../shared/widgets/illustration_tile.dart';
 
 /// An offline creative studio with brush, eraser, undo/redo and generated
@@ -55,11 +56,19 @@ class _DrawingGameState extends State<DrawingGame> {
     super.initState();
     FandoghiCoach.enablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        FandoghiCoach.instruction(
-          'هر چیزی که دوست داری بکش! قلم، پاک‌کن و استیکرهای رنگی همه دم دست تو هستند 🎨🌰',
+      if (!mounted) return;
+      if (GameData.isDailyLimitReached) {
+        FandoghiCoach.judge(
+          'زمان بازی امروز تمام شده؛ فردا دوباره با هم نقاشی می‌کنیم ⏰',
         );
+        showPlayLimitDialog(context).then((_) {
+          if (mounted) Navigator.pop(context);
+        });
+        return;
       }
+      FandoghiCoach.instruction(
+        'هر چیزی که دوست داری بکش! قلم، پاک‌کن و استیکرهای رنگی همه دم دست تو هستند 🎨🌰',
+      );
     });
   }
 
@@ -150,7 +159,12 @@ class _DrawingGameState extends State<DrawingGame> {
     FandoghiCoach.instruction(message);
   }
 
-  void _finish() {
+  Future<void> _finish() async {
+    if (GameData.isDailyLimitReached) {
+      await showPlayLimitDialog(context);
+      if (mounted) Navigator.pop(context);
+      return;
+    }
     if (!_saved) {
       _saved = true;
       GameData.progressMission('drawing');

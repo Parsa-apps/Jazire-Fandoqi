@@ -54,6 +54,7 @@ class GameData {
 
   // Feature state
   static String lastWeekReset = '';
+  static String _missionDay = '';
   static String lastLuckyDate = '';
   static String lastSurpriseClaimDate = '';
   static List<String> achievements = <String>[];
@@ -125,6 +126,7 @@ class GameData {
       childAge = _readInt('childAge', 5, min: 3, max: 12);
       onboardingSeen = prefs.getBool('onboardingSeen') ?? false;
       dailyMissions = _readInt('dm', 0, min: 0, max: missionTargets.length);
+      _missionDay = prefs.getString('missionDay') ?? '';
 
       for (final id in missionProgress.keys.toList()) {
         missionProgress[id] = _readInt('mp_$id', 0, min: 0, max: 100000);
@@ -188,6 +190,7 @@ class GameData {
   /// child can still use the app for this session; persistence is simply off.
   static void useMemoryFallback() {
     _prefs = null;
+    _missionDay = '';
     _isLoaded = true;
     _persistenceAvailable = false;
     _loadFuture = Future<void>.value();
@@ -254,7 +257,9 @@ class GameData {
       changed = true;
     }
 
-    final missionDay = _prefs?.getString('missionDay') ?? '';
+    final missionDay = _missionDay.isNotEmpty
+        ? _missionDay
+        : _prefs?.getString('missionDay') ?? '';
     if (missionDay != today) {
       for (final id in missionProgress.keys.toList()) {
         missionProgress[id] = 0;
@@ -263,8 +268,10 @@ class GameData {
       treasureOpened = false;
       todayPlaySeconds = 0;
       openedPrizes.removeWhere((id) => id.startsWith('daily_'));
+      _missionDay = today;
       changed = true;
     } else {
+      _missionDay = today;
       _recalculateDailyMissions();
     }
 
@@ -317,6 +324,7 @@ class GameData {
     await prefs.setInt('childAge', childAge);
     await prefs.setBool('onboardingSeen', onboardingSeen);
     await prefs.setInt('dm', dailyMissions);
+    await prefs.setString('missionDay', _missionDay);
     for (final entry in missionProgress.entries) {
       await prefs.setInt('mp_${entry.key}', entry.value);
     }
@@ -464,10 +472,28 @@ class GameData {
 
   static bool hasItem(String id) => ownedItems.contains(id) || stickers.contains(id);
 
+  /// Refreshes day/week boundaries while the app remains open across
+  /// midnight. Previously the rollover only happened during app startup, so a
+  /// child could carry yesterday's limit and missions into the next day.
+  static void _refreshDateBoundaries() {
+    final today = _dateKey();
+    if (lastLogin == today &&
+        _missionDay == today &&
+        lastWeekReset == _weekKey()) {
+      return;
+    }
+
+    if (_rolloverDates()) {
+      _notify();
+      unawaited(save());
+    }
+  }
+
   /// Adds foreground play time. It is called by the app session tracker, not
   /// from every game frame, so it has negligible battery/storage overhead.
   static void addPlayTime({int seconds = 1}) {
     if (!_isLoaded || seconds <= 0) return;
+    _refreshDateBoundaries();
     final previousMinute = todayPlaySeconds ~/ 60;
     todayPlaySeconds = min(_maxStoredCounter, todayPlaySeconds + seconds);
     sessionSeconds = min(_maxStoredCounter, sessionSeconds + seconds);
@@ -638,6 +664,7 @@ class GameData {
     childAge = 5;
     onboardingSeen = false;
     lastWeekReset = '';
+    _missionDay = '';
     lastLuckyDate = '';
     lastSurpriseClaimDate = '';
     achievements = <String>[];

@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../app/app_colors.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
+import '../../../core/play_limit.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
 
 /// A local-first Persian alphabet academy: see, hear/read, trace, receive
@@ -38,11 +39,16 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     super.initState();
     FandoghiCoach.enablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        FandoghiCoach.instruction(
-          'به آکادمی الفبا خوش آمدی! یک حرف انتخاب کن و بعد دکمه‌ی «تمرین نوشتن» را بزن ✍️',
+      if (!mounted) return;
+      if (GameData.isDailyLimitReached) {
+        FandoghiCoach.judge(
+          'زمان بازی امروز تمام شده؛ فردا دوباره تمرین نوشتن را ادامه می‌دهیم ⏰',
         );
+        return;
       }
+      FandoghiCoach.instruction(
+        'به آکادمی الفبا خوش آمدی! یک حرف انتخاب کن و بعد دکمه‌ی «تمرین نوشتن» را بزن ✍️',
+      );
     });
   }
 
@@ -60,6 +66,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   }
 
   Future<void> _openTraceScreen() async {
+    if (!canStartPlay(context)) return;
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         fullscreenDialog: true,
@@ -413,6 +420,11 @@ class _TraceScreenState extends State<_TraceScreen> {
 
   Future<void> _checkTrace() async {
     if (_checking) return;
+    if (GameData.isDailyLimitReached) {
+      await showPlayLimitDialog(context);
+      if (mounted) Navigator.pop(context);
+      return;
+    }
     final renderObject = _canvasKey.currentContext?.findRenderObject();
     final size =
         renderObject is RenderBox ? renderObject.size : const Size(320, 230);
