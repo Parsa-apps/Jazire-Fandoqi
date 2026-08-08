@@ -132,6 +132,7 @@ flutter build appbundle --release
 
 ## مستندات مرتبط
 
+- [دستورالعمل‌ها و قوانین پروژه (AI & Dev Rules)](AI_PROJECT_RULES.md)
 - [راهنمای ساخت و انتشار](BUILD_INSTRUCTIONS.md)
 - [گزارش تغییرات نسخه‌ها](RELEASE_NOTES.md)
 - [سیاست حریم خصوصی فارسی](PRIVACY_POLICY_FA.md)
