@@ -1,10 +1,12 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../core/game_data.dart';
+import '../../presentation/providers/game_state_provider.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
 import '../../shared/widgets/star_field.dart';
 import 'painters/skill_radar_painter.dart';
@@ -14,7 +16,7 @@ import 'painters/stat_ring_painter.dart';
 /// 👤 PROFILE SCREEN — Professional Profile
 /// Avatar, stats, skill radar, achievements, history
 /// ═══════════════════════════════════════════════
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   final bool embedded;
 
   const ProfileScreen({
@@ -23,10 +25,10 @@ class ProfileScreen extends StatefulWidget {
   });
 
   @override
-  State<ProfileScreen> createState() => _ProfileState();
+  ConsumerState<ProfileScreen> createState() => _ProfileState();
 }
 
-class _ProfileState extends State<ProfileScreen>
+class _ProfileState extends ConsumerState<ProfileScreen>
     with TickerProviderStateMixin {
   late AnimationController _radarCtrl;
   late AnimationController _ringCtrl;
@@ -60,16 +62,10 @@ class _ProfileState extends State<ProfileScreen>
     Future.delayed(const Duration(milliseconds: 700), () {
       if (mounted) _barCtrl.forward();
     });
-    GameData.changes.addListener(_onDataChanged);
-  }
-
-  void _onDataChanged() {
-    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    GameData.changes.removeListener(_onDataChanged);
     _radarCtrl.dispose();
     _ringCtrl.dispose();
     _barCtrl.dispose();
@@ -78,6 +74,8 @@ class _ProfileState extends State<ProfileScreen>
 
   @override
   Widget build(BuildContext context) {
+    // فاز ۳: واکنش به وضعیت از طریق Riverpod
+    ref.watch(gameStateProvider);
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(gradient: AppGradients.nightSky),

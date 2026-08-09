@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../app/app_colors.dart';
@@ -7,6 +8,7 @@ import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../../core/ai_system.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
+import '../../../presentation/providers/game_state_provider.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
 import '../../../shared/widgets/glass_card.dart';
 import 'premium_card.dart';
@@ -16,13 +18,13 @@ import '../../../shared/widgets/star_field.dart';
 /// 📊 DASHBOARD TAB — Main Content
 /// Parallax hero, daily missions, game categories
 /// ═══════════════════════════════════════════════
-class DashboardTab extends StatefulWidget {
+class DashboardTab extends ConsumerStatefulWidget {
   const DashboardTab({super.key});
   @override
-  State<DashboardTab> createState() => _DashboardState();
+  ConsumerState<DashboardTab> createState() => _DashboardState();
 }
 
-class _DashboardState extends State<DashboardTab> {
+class _DashboardState extends ConsumerState<DashboardTab> {
   final ScrollController _scrollCtrl = ScrollController();
   double _scrollOffset = 0;
 
@@ -30,7 +32,6 @@ class _DashboardState extends State<DashboardTab> {
   void initState() {
     super.initState();
     _scrollCtrl.addListener(_onScroll);
-    GameData.changes.addListener(_onDataChanged);
     FandoghiCoach.enablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) FandoghiCoach.welcome();
@@ -41,13 +42,8 @@ class _DashboardState extends State<DashboardTab> {
     if (mounted) setState(() => _scrollOffset = _scrollCtrl.offset);
   }
 
-  void _onDataChanged() {
-    if (mounted) setState(() {});
-  }
-
   @override
   void dispose() {
-    GameData.changes.removeListener(_onDataChanged);
     _scrollCtrl.removeListener(_onScroll);
     _scrollCtrl.dispose();
     super.dispose();
@@ -55,6 +51,8 @@ class _DashboardState extends State<DashboardTab> {
 
   @override
   Widget build(BuildContext context) {
+    // فاز ۳: واکنش به وضعیت از طریق Riverpod
+    ref.watch(gameStateProvider);
     return CustomScrollView(
       controller: _scrollCtrl,
       physics: const BouncingScrollPhysics(),

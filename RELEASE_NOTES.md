@@ -1,3 +1,10 @@
+## فاز ۳: سیستم مدیریت State — مهاجرت به Riverpod
+
+- ساخت `gameStateProvider` (StateNotifier + Snapshot غیرقابل‌تغییر) در `lib/presentation/providers/game_state_provider.dart`
+- مهاجرت ۶ صفحه اصلی (Home, Dashboard, Profile, Shop, Parent, StageMap) از `addListener` دستی به `ref.watch(gameStateProvider)`
+- کانال‌های گذرا (Coach overlay, موقعیت فندقی) به‌عنوان ChangeNotifier حفظ شدند (طبق الگوی Riverpod + ChangeNotifier)
+
+---
 ## فاز ۲: معماری Clean — لایه UseCase
 
 - ساخت `lib/domain/usecases/`: `GetPlayerProfile`، `RecordAnswer`، `CompleteStage`، `UpdateSettings`

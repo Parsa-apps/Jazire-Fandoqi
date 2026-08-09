@@ -1,11 +1,13 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/game_data.dart';
+import '../../presentation/providers/game_state_provider.dart';
 import '../../core/game_launch.dart';
 import '../../domain/entities/game_stage.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
@@ -17,7 +19,7 @@ import 'widgets/premium_stage_node.dart';
 /// 🗺️ STAGE MAP — Winding Path Level Select
 /// Beautiful scrolling map with curved path
 /// ═══════════════════════════════════════════════
-class StageMapScreen extends StatefulWidget {
+class StageMapScreen extends ConsumerStatefulWidget {
   final bool embedded;
 
   const StageMapScreen({
@@ -26,10 +28,10 @@ class StageMapScreen extends StatefulWidget {
   });
 
   @override
-  State<StageMapScreen> createState() => _StageMapState();
+  ConsumerState<StageMapScreen> createState() => _StageMapState();
 }
 
-class _StageMapState extends State<StageMapScreen>
+class _StageMapState extends ConsumerState<StageMapScreen>
     with TickerProviderStateMixin {
   late ScrollController _scrollCtrl;
   late AnimationController _animCtrl;
@@ -60,7 +62,6 @@ class _StageMapState extends State<StageMapScreen>
   void initState() {
     super.initState();
     _scrollCtrl = ScrollController()..addListener(_onScroll);
-    GameData.changes.addListener(_onDataChanged);
     _animCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 20),
@@ -75,10 +76,6 @@ class _StageMapState extends State<StageMapScreen>
   }
 
   void _onScroll() {
-    if (mounted) setState(() {});
-  }
-
-  void _onDataChanged() {
     if (mounted) setState(() {});
   }
 
@@ -106,7 +103,6 @@ class _StageMapState extends State<StageMapScreen>
   @override
   void dispose() {
     FandoghiCoach.clear();
-    GameData.changes.removeListener(_onDataChanged);
     _scrollCtrl.removeListener(_onScroll);
     _scrollCtrl.dispose();
     _animCtrl.dispose();
@@ -115,6 +111,8 @@ class _StageMapState extends State<StageMapScreen>
 
   @override
   Widget build(BuildContext context) {
+    // فاز ۳: واکنش به وضعیت از طریق Riverpod
+    ref.watch(gameStateProvider);
     final w = MediaQuery.of(context).size.width;
     final totalH = _mapHeight;
     if (_computedWidth != w) {

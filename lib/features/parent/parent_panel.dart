@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import '../../app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../core/game_data.dart';
+import '../../presentation/providers/game_state_provider.dart';
 import '../../shared/widgets/premium_button.dart';
 
 /// =======================================================
 /// 👨‍👩‍👧 PREMIUM ADVANCED PARENT CONTROL SYSTEM
 /// =======================================================
-class ParentPanel extends StatefulWidget {
+class ParentPanel extends ConsumerStatefulWidget {
   const ParentPanel({super.key});
 
   @override
-  State<ParentPanel> createState() => _ParentPanelState();
+  ConsumerState<ParentPanel> createState() => _ParentPanelState();
 }
 
-class _ParentPanelState extends State<ParentPanel> {
+class _ParentPanelState extends ConsumerState<ParentPanel> {
   late int _timeLimit;
   String _pin = '';
   bool _isUnlocked = false;
@@ -25,16 +27,10 @@ class _ParentPanelState extends State<ParentPanel> {
     super.initState();
     _timeLimit = GameData.timeLimitMinutes;
     _isUnlocked = !GameData.hasParentPin();
-    GameData.changes.addListener(_onDataChanged);
-  }
-
-  void _onDataChanged() {
-    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    GameData.changes.removeListener(_onDataChanged);
     super.dispose();
   }
 
@@ -140,6 +136,8 @@ class _ParentPanelState extends State<ParentPanel> {
   // ==================== UI ====================
   @override
   Widget build(BuildContext context) {
+    // فاز ۳: واکنش به وضعیت از طریق Riverpod
+    ref.watch(gameStateProvider);
     if (!_isUnlocked) {
       return Scaffold(
         appBar: AppBar(title: const Text('پنل والدین')),
