@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// 🎬 APARAT SERVICE — دریافت لینک مستقیم پخش از سرورهای ایران
@@ -136,7 +137,9 @@ class AparatService {
         final res = await http.get(Uri.parse(ep), headers: _headers).timeout(_timeout);
         if (res.statusCode != 200) continue;
         final parsed = _parseVideoJson(res.body);
-        if (parsed.hasSource) return parsed;
+        // برای نمایش پوستر در کارت‌ها، حتی اگر لینک پخش پیدا نشود هم
+        // نتیجه را برمی‌گردانیم تا عکس شخصیت‌ها از دست نرود.
+        if (parsed.hasSource || parsed.posterUrl != null) return parsed;
       } catch (_) {
         // ادامه به endpoint بعدی
       }
@@ -165,6 +168,136 @@ class AparatService {
   }
 
   /// پیدا کردن اولین هش ویدیو در پاسخ جستجو (فرمت‌های مختلف آپارات).
+  // ═══════════════════════════════════════════════════════════
+  // 🖼️ پوستر / تصویر شاخص (tumbnail) — با کش دائمی برای نمایش در کارت‌ها
+  // ═══════════════════════════════════════════════════════════
+
+  static final Map<String, String> _thumbMemCache = {};
+  static final Map<String, Future<String?>> _thumbInFlight = {};
+  static SharedPreferences? _prefs;
+
+  static const String _thumbPrefPrefix = 'aparat_thumb_v1_';
+  static const String _thumbPrefTimePrefix = 'aparat_thumb_t_';
+  static const Duration _thumbCacheTtl = Duration(days: 30);
+
+  /// کلید یکتا برای کش پوستر (هش ویدیو یا عبارت جستجو).
+  static String _thumbKey(String? videoHash, String? searchQuery) {
+    if (videoHash != null && videoHash.isNotEmpty) return 'h_$videoHash';
+    if (searchQuery != null && searchQuery.trim().isNotEmpty) {
+      return 'q_${searchQuery.trim().toLowerCase()}';
+    }
+    return '';
+  }
+
+  static Future<SharedPreferences> _prefsInstance() async {
+    return _prefs ??= await SharedPreferences.getInstance();
+  }
+
+  /// URL پوسترِ از قبل کش‌شده (هم‌روند) — برای نمایش فوری در UI بدون چشمک‌زدن.
+  static String? cachedThumbnail({String? videoHash, String? searchQuery}) {
+    final key = _thumbKey(videoHash, searchQuery);
+    if (key.isEmpty) return null;
+    final mem = _thumbMemCache[key];
+    if (mem != null) return mem;
+    final prefs = _prefs;
+    if (prefs == null) return null;
+    final url = prefs.getString('$_thumbPrefPrefix$key');
+    final time = prefs.getInt('$_thumbPrefTimePrefix$key') ?? 0;
+    final isFresh = DateTime.now().millisecondsSinceEpoch - time < _thumbCacheTtl.inMilliseconds;
+    if (url != null && url.isNotEmpty && isFresh) {
+      _thumbMemCache[key] = url;
+      return url;
+    }
+    return null;
+  }
+
+  /// دریافت URL پوستر نمایشی برای یک ویدیو — با کش حافظه + دیسک و بدون
+  /// ارسال درخواست‌های تکراری موازی. در صورت شکست، `null` برمی‌گرداند.
+  static Future<String?> thumbnailFor({
+    String? videoHash,
+    String? searchQuery,
+  }) {
+    final key = _thumbKey(videoHash, searchQuery);
+    if (key.isEmpty) return Future.value(null);
+
+    final inFlight = _thumbInFlight[key];
+    if (inFlight != null) return inFlight;
+
+    final future = _thumbnailForInner(key, videoHash, searchQuery)
+        .whenComplete(() => _thumbInFlight.remove(key));
+    _thumbInFlight[key] = future;
+    return future;
+  }
+
+  static Future<String?> _thumbnailForInner(
+    String key,
+    String? videoHash,
+    String? searchQuery,
+  ) async {
+    // ۱) کش حافظه‌ای
+    final mem = _thumbMemCache[key];
+    if (mem != null) return mem;
+
+    // ۲) کش دیسک با اعتبار TTL
+    final prefs = await _prefsInstance();
+    final diskUrl = prefs.getString('$_thumbPrefPrefix$key');
+    final diskTime = prefs.getInt('$_thumbPrefTimePrefix$key') ?? 0;
+    final diskFresh = DateTime.now().millisecondsSinceEpoch - diskTime < _thumbCacheTtl.inMilliseconds;
+    if (diskUrl != null && diskUrl.isNotEmpty && diskFresh) {
+      _thumbMemCache[key] = diskUrl;
+      return diskUrl;
+    }
+
+    // ۳) واکشی از شبکه: اول با هش ویدیو، در صورت نبود پوستر با جستجوی متنی.
+    // اگر پاسخ، لینک پخش هم داشت، آن را هم کش می‌کنیم تا شروع پخش فوری‌تر شود.
+    String? poster;
+    if (videoHash != null && videoHash.isNotEmpty) {
+      final byHash = await _resolveByHash(videoHash);
+      if (byHash.hasSource) _setCache(videoHash, byHash);
+      poster = byHash.posterUrl;
+    }
+    if (poster == null && searchQuery != null && searchQuery.trim().isNotEmpty) {
+      final foundHash = await _searchFirstHash(searchQuery.trim());
+      if (foundHash != null) {
+        final bySearch = await _resolveByHash(foundHash);
+        poster = bySearch.posterUrl;
+        if (bySearch.hasSource && videoHash != null && videoHash.isNotEmpty) {
+          _setCache(videoHash, bySearch);
+        }
+      }
+    }
+
+    if (poster != null && poster.startsWith('http')) {
+      _thumbMemCache[key] = poster;
+      await prefs.setString('$_thumbPrefPrefix$key', poster);
+      await prefs.setInt('$_thumbPrefTimePrefix$key', DateTime.now().millisecondsSinceEpoch);
+      return poster;
+    }
+    return null;
+  }
+
+  /// پیش‌بارگیری آرام پوستر مجموعه‌ای از کارتون‌ها در پس‌زمینه،
+  /// تا وقتی کارت‌ها دیده می‌شوند ارائهٔ بصری تقریباً آماده باشد.
+  /// [onProgress] بعد از هر پوستر موفق فراخوانی می‌شود تا UI به‌روز شود.
+  static void prefetchCartoonCovers(
+    Iterable<({String? hash, String? query})> items, {
+    void Function()? onProgress,
+  }) {
+    Future.microtask(() async {
+      for (final item in items) {
+        try {
+          final url = await thumbnailFor(
+            videoHash: item.hash,
+            searchQuery: item.query,
+          );
+          if (url != null && onProgress != null) onProgress();
+        } catch (_) {
+          // نادیده گرفتن خطای پیش‌بارگیری؛ کارت‌ها خودشان دوباره تلاش می‌کنند.
+        }
+      }
+    });
+  }
+
   static String? _parseSearchFirstHash(String body) {
     try {
       final decoded = jsonDecode(body);
@@ -199,7 +332,8 @@ class AparatService {
     try {
       final decoded = jsonDecode(body);
       final streams = <VideoStream>[];
-      String? poster;
+      String? poster;        // بهترین کیفیت (big)
+      String? posterSmall;   // کیفیت کوچک‌تر (small)
       String? title;
 
       // پاسخ API در نسخه‌های مختلف، داخل data.attributes یا مستقیماً در data
@@ -218,7 +352,15 @@ class AparatService {
             } else if (value is Map || value is List) {
               walk(value, quality: _qualityFrom(k, quality), key: k);
             }
-            if (poster == null && value is String && k.contains('poster')) poster = value;
+            if (value is String) {
+              if (k == 'big_poster') {
+                poster ??= value;
+              } else if (k == 'small_poster') {
+                posterSmall ??= value;
+              } else if (poster == null && posterSmall == null && k.contains('poster')) {
+                posterSmall = value;
+              }
+            }
             if (title == null && value is String && k == 'title') title = value;
           }
         } else if (node is List) {
@@ -235,7 +377,7 @@ class AparatService {
       }
 
       walk(decoded);
-      return AparatResolved(streams: streams, posterUrl: poster, title: title);
+      return AparatResolved(streams: streams, posterUrl: poster ?? posterSmall, title: title);
     } catch (_) {
       return const AparatResolved(streams: []);
     }

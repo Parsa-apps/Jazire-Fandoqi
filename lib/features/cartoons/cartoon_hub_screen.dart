@@ -4,10 +4,12 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:amoozesh_fandoghi/app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import 'package:amoozesh_fandoghi/core/ai_system.dart';
+import 'package:amoozesh_fandoghi/core/cartoons/aparat_service.dart';
 import 'package:amoozesh_fandoghi/core/cartoons/cartoon_data.dart';
 import 'package:amoozesh_fandoghi/core/fandoghi_coach.dart';
 import 'package:amoozesh_fandoghi/core/game_data.dart';
 import 'package:amoozesh_fandoghi/features/cartoons/cartoon_player_screen.dart';
+import 'package:amoozesh_fandoghi/features/cartoons/widgets/cartoon_cover.dart';
 import 'package:amoozesh_fandoghi/features/cartoons/widgets/cartoon_rating_dialog.dart';
 import 'package:amoozesh_fandoghi/features/profile/sticker_album_screen.dart';
 import 'package:amoozesh_fandoghi/shared/widgets/fandoghi_v2.dart';
@@ -34,6 +36,28 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
   void initState() {
     super.initState();
     _suggestedCartoonId = AI.suggestCartoon();
+
+    // 🖼️ پیش‌بارگیری پوستر کارتون‌ها (قاب واقعی شخصیت‌ها) در پس‌زمینه
+    // تا کودک مثل ویترین فروشگاه، هر کارتون را از روی عکس بشناسد.
+    // اولویت با کارتون‌های «ویژه» است، بعد بقیه.
+    final ordered = <Cartoon>[
+      ...CartoonData.getFeatured(),
+      ...CartoonData.allCartoons.where((c) => !c.isFeatured),
+    ];
+    AparatService.prefetchCartoonCovers(
+      ordered.map(
+        (c) => (
+          hash: c.episodes.isNotEmpty ? c.episodes.first.aparatHash : null,
+          query: c.episodes.isNotEmpty
+              ? (c.episodes.first.searchQuery ?? c.englishTitle)
+              : c.englishTitle,
+        ),
+      ),
+      onProgress: () {
+        if (mounted) setState(() {});
+      },
+    );
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         FandoghiCoach.say(
@@ -374,15 +398,23 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
           ),
           child: Row(
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  gradient: cartoon.gradient,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Center(
-                  child: Text(cartoon.coverEmoji, style: const TextStyle(fontSize: 24)),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: SizedBox(
+                  width: 52,
+                  height: 52,
+                  child: CartoonCoverImage(
+                    videoHash: cartoon.episodes.isNotEmpty
+                        ? cartoon.episodes.first.aparatHash
+                        : null,
+                    searchQuery: cartoon.episodes.isNotEmpty
+                        ? (cartoon.episodes.first.searchQuery ?? cartoon.englishTitle)
+                        : cartoon.englishTitle,
+                    fallbackEmoji: cartoon.coverEmoji,
+                    fallbackGradient: cartoon.gradient,
+                    emojiSize: 24,
+                    cacheWidth: 160,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -539,12 +571,37 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                     Expanded(
                       flex: 2,
                       child: Center(
-                        child: Text(
-                          cartoon.coverEmoji,
-                          style: const TextStyle(fontSize: 74),
+                        child: Container(
+                          height: 132,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(color: Colors.white.withOpacity(0.55), width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.25),
+                                blurRadius: 10,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: CartoonCoverImage(
+                              videoHash: cartoon.episodes.isNotEmpty
+                                  ? cartoon.episodes.first.aparatHash
+                                  : null,
+                              searchQuery: cartoon.episodes.isNotEmpty
+                                  ? (cartoon.episodes.first.searchQuery ?? cartoon.englishTitle)
+                                  : cartoon.englishTitle,
+                              fallbackEmoji: cartoon.coverEmoji,
+                              fallbackGradient: cartoon.gradient,
+                              emojiSize: 64,
+                              cacheWidth: 640,
+                            ),
+                          ),
                         )
                             .animate(onPlay: (c) => c.repeat(reverse: true))
-                            .moveY(begin: 0, end: -8, duration: 1800.ms, curve: Curves.easeInOut),
+                            .moveY(begin: 0, end: -5, duration: 1800.ms, curve: Curves.easeInOut),
                       ),
                     ),
                   ],
@@ -790,22 +847,25 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header Cover Box
+                    // Header Cover Box — قاب واقعی کارتون (شخصیت‌ها)
                     Expanded(
                       flex: 3,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: cartoon.gradient,
-                        ),
-                        child: Stack(
-                          children: [
-                            Center(
-                              child: Text(
-                                cartoon.coverEmoji,
-                                style: const TextStyle(fontSize: 48),
-                              ),
-                            ),
-                            // Favorite Button
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          CartoonCoverImage(
+                            videoHash: cartoon.episodes.isNotEmpty
+                                ? cartoon.episodes.first.aparatHash
+                                : null,
+                            searchQuery: cartoon.episodes.isNotEmpty
+                                ? (cartoon.episodes.first.searchQuery ?? cartoon.englishTitle)
+                                : cartoon.englishTitle,
+                            fallbackEmoji: cartoon.coverEmoji,
+                            fallbackGradient: cartoon.gradient,
+                            emojiSize: 48,
+                            cacheWidth: 420,
+                          ),
+                          // Favorite Button
                             Positioned(
                               top: 8,
                               right: 8,
@@ -849,8 +909,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                                 ),
                               ),
                             ),
-                          ],
-                        ),
+                        ],
                       ),
                     ),
 
