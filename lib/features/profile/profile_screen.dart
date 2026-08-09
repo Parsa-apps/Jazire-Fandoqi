@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -10,6 +11,7 @@ import '../../shared/widgets/fandoghi_v2.dart';
 import '../../shared/widgets/star_field.dart';
 import 'painters/skill_radar_painter.dart';
 import 'painters/stat_ring_painter.dart';
+import 'profile_editor.dart';
 
 /// ═══════════════════════════════════════════════
 /// 👤 PROFILE SCREEN — Professional Profile
@@ -184,6 +186,14 @@ class _ProfileState extends ConsumerState<ProfileScreen>
               ),
             ),
 
+            Positioned(
+              top: 12, left: 16,
+              child: SafeArea(child: IconButton(
+                tooltip: 'ویرایش پروفایل',
+                onPressed: () => showProfileEditor(context),
+                icon: const Icon(Icons.edit_rounded, color: Colors.white),
+              )),
+            ),
             // Profile content
             SafeArea(
               child: Column(
@@ -213,11 +223,9 @@ class _ProfileState extends ConsumerState<ProfileScreen>
                         ),
                         border: Border.all(color: Colors.white, width: 3),
                       ),
-                      child: Center(
-                        child: Text(
-                          GameData.avatar,
-                          style: const TextStyle(fontSize: 48),
-                        ),
+                      child: GameData.profilePhotoPath.isNotEmpty && File(GameData.profilePhotoPath).existsSync()
+                          ? ClipOval(child: Image.file(File(GameData.profilePhotoPath), fit: BoxFit.cover, width: 100, height: 100))
+                          : Center(child: Text(GameData.avatar, style: const TextStyle(fontSize: 48))),
                       ),
                     ),
                   ).animate().scale(

@@ -15,6 +15,7 @@ import 'premium_card.dart';
 import '../../../shared/widgets/star_field.dart';
 import '../../../core/monetization.dart';
 import '../../shop/full_version_paywall.dart';
+import '../../profile/profile_editor.dart';
 
 /// ═══════════════════════════════════════════════
 /// 📊 DASHBOARD TAB — Main Content
@@ -206,6 +207,8 @@ class _DashboardState extends ConsumerState<DashboardTab> {
                             ],
                           ),
                         ),
+                        _glassIconButton(Icons.edit_rounded, () => showProfileEditor(context)),
+                        const SizedBox(width: 8),
                         // Cinema Hub Button
                         _glassIconButton(
                           Icons.movie_rounded,

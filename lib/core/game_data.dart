@@ -52,6 +52,7 @@ class GameData {
   static String lastLogin = '';
   static String avatar = '😊';
   static String childName = '';
+  static String profilePhotoPath = '';
   static int childAge = 5;
   static bool onboardingSeen = true;
 
@@ -168,6 +169,7 @@ class GameData {
       lastLogin = prefs.getString('ll') ?? '';
       avatar = _readString('av', '😊', maxLength: 8);
       childName = _readString('childName', '', maxLength: 24).trim();
+      profilePhotoPath = _readString('profilePhotoPath', '', maxLength: 512);
       childAge = _readInt('childAge', 5, min: 3, max: 12);
       onboardingSeen = prefs.getBool('onboardingSeen') ?? true;
       dailyMissions = _readInt('dm', 0, min: 0, max: missionTargets.length);
@@ -349,6 +351,7 @@ class GameData {
     avatar = asString('av', '😊');
     if (avatar.length > 8) avatar = avatar.substring(0, 8);
     childName = asString('childName', '');
+    profilePhotoPath = asString('profilePhotoPath', '');
     if (childName.length > 24) childName = childName.substring(0, 24);
     childAge = asInt('childAge', 5).clamp(3, 12);
     onboardingSeen = asBool('onboardingSeen', true);
@@ -428,6 +431,7 @@ class GameData {
         'll': lastLogin,
         'av': avatar,
         'childName': childName,
+        'profilePhotoPath': profilePhotoPath,
         'childAge': childAge,
         'onboardingSeen': onboardingSeen,
         'dm': dailyMissions,
@@ -562,6 +566,7 @@ class GameData {
     await prefs.setString('ll', lastLogin);
     await prefs.setString('av', avatar);
     await prefs.setString('childName', childName);
+    await prefs.setString('profilePhotoPath', profilePhotoPath);
     await prefs.setInt('childAge', childAge);
     await prefs.setBool('onboardingSeen', onboardingSeen);
     await prefs.setInt('dm', dailyMissions);
@@ -932,6 +937,13 @@ class GameData {
     avatar = avatarIcon;
     if (avatar.length > 8) avatar = avatar.substring(0, 8);
     onboardingSeen = true;
+    _notify();
+    unawaited(save());
+  }
+
+  static void updateProfile({required String name, String? photoPath}) {
+    childName = name.trim().substring(0, name.trim().length.clamp(0, 24));
+    if (photoPath != null) profilePhotoPath = photoPath;
     _notify();
     unawaited(save());
   }
