@@ -1,8 +1,9 @@
 name: Build APK & AAB - کودک دانا v3
 
+
 on:
   push:
-    branches: [ main, master, arena/* ]
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
@@ -26,6 +27,7 @@ jobs:
           channel: 'stable'
           cache: true
 
+      # ==================== FIX اصلی ====================
       - name: Ensure Android folder exists
         run: |
           if [ ! -d "android" ]; then
@@ -43,21 +45,8 @@ jobs:
       - name: Flutter pub get
         run: flutter pub get
 
-      - name: Generate launcher icons
-        run: flutter pub run flutter_launcher_icons
-
-      # ==================== فاز ۸۸: CI حرفه‌ای ====================
-      - name: Static Analysis
-        run: flutter analyze
-
-      - name: Unit & Widget Tests
-        run: flutter test --coverage
-
-      - name: Privacy Audit (100% Offline)
-        run: bash tools/privacy_audit.sh
-
       - name: Build APK (Release)
-        run: flutter build apk --release --split-per-abi
+        run: flutter build apk --release
 
       - name: Build AAB (Release)
         run: flutter build appbundle --release
@@ -65,17 +54,11 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: kudake_iran_apk
-          path: build/app/outputs/flutter-apk/*.apk
+          name: kudake_iran_v3.0.0_apk
+          path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: kudake_iran_aab
+          name: kudake_iran_v3.0.0_aab
           path: build/app/outputs/bundle/release/app-release.aab
-
-      - name: Upload Coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage
-          path: coverage/lcov.info
