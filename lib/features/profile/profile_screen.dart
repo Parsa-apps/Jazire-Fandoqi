@@ -194,6 +194,14 @@ class _ProfileState extends ConsumerState<ProfileScreen>
                 icon: const Icon(Icons.edit_rounded, color: Colors.white),
               )),
             ),
+            Positioned(
+              top: 12, right: 16,
+              child: SafeArea(child: IconButton(
+                tooltip: 'درباره ما',
+                onPressed: () => Navigator.pushNamed(context, '/about'),
+                icon: const Icon(Icons.info_outline_rounded, color: Colors.white),
+              )),
+            ),
             // Profile content
             SafeArea(
               child: Column(

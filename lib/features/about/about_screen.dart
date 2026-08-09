@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
@@ -57,12 +59,11 @@ class AboutScreen extends StatelessWidget {
               context,
               label: 'آیدی تلگرام',
               value: AppLegal.telegramHandle,
-              icon: Icons.copy_rounded,
-              onTap: () => _copy(
-                context,
-                AppLegal.telegramHandle,
-                'آیدی تلگرام',
-              ),
+              icon: Icons.open_in_new_rounded,
+              onTap: () async {
+                final opened = await launchUrl(Uri.parse(AppLegal.telegramUrl), mode: LaunchMode.externalApplication);
+                if (!opened && context.mounted) await _copy(context, AppLegal.telegramHandle, 'آیدی تلگرام');
+              },
             ),
           ),
           const SizedBox(height: 16),
@@ -187,7 +188,7 @@ class AboutScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'سازنده و ناشر',
+                  'PARSA APPS • سازنده و ناشر',
                   style: TextStyle(color: Colors.white70, fontSize: 13),
                 ),
                 const SizedBox(height: 4),
@@ -201,7 +202,7 @@ class AboutScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'توسعه‌دهنده آموزش فندقی',
+                  'گروه برنامه‌نویسی پارسا اپس',
                   style: TextStyle(color: Colors.white70),
                 ),
               ],
@@ -209,7 +210,9 @@ class AboutScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ).animate(onPlay: (controller) => controller.repeat(reverse: true))
+      .shimmer(duration: 2600.ms, color: const Color(0x55FFD166))
+      .scale(begin: const Offset(.99, .99), end: const Offset(1.01, 1.01), duration: 2600.ms);
   }
 
   Widget _buildSection({
