@@ -118,6 +118,9 @@ class GameData {
   // فاز ۴۰: تزئینات جزیره‌ی شخصی (slotKey → itemId)
   static Map<String, String> islandDecorations = <String, String>{};
 
+  // فاز ۲۹ (تکمیل): داستان‌های خوانده‌شده — پاداش فقط یک‌بار برای هر داستان
+  static List<String> completedStories = <String>[];
+
   // ✅ فیکس عمیق فاز ۳۰: achievement_system به playedGames نیاز داشت ولی نبود — باعث بیلد فیل خاموش
   static List<String> playedGames = <String>[];
   static final Set<String> _playedGamesSet = <String>{};
@@ -204,6 +207,7 @@ class GameData {
       prizeBoxTokens = _readInt('pbt', 0);
       openedPrizes = _readList('op');
       islandDecorations = _readIslandDecorations();
+      completedStories = _readList('stories');
       // ✅ فیکس: بارگذاری playedGames برای achievement
       playedGames = _readList('pg');
       _playedGamesSet
@@ -381,6 +385,7 @@ class GameData {
     }
     prizeBoxTokens = asInt('pbt', 0).clamp(0, _maxStoredCounter);
     openedPrizes = asList('op');
+    completedStories = asList('stories');
     islandDecorations = <String, String>{};
     final idc = d['idc'];
     if (idc is Map) {
@@ -438,6 +443,7 @@ class GameData {
         'cs': completedStages,
         'pbt': prizeBoxTokens,
         'op': openedPrizes,
+        'stories': completedStories,
         'idc': islandDecorations,
         'pg': playedGames,
         'skills': skills,
@@ -572,6 +578,7 @@ class GameData {
     }
     await prefs.setInt('pbt', prizeBoxTokens);
     await prefs.setStringList('op', List<String>.from(openedPrizes));
+    await prefs.setStringList('stories', List<String>.from(completedStories));
     await prefs.setStringList(
       'idc',
       islandDecorations.entries
@@ -730,6 +737,19 @@ class GameData {
     islandDecorations.remove(slot);
     _notify();
     unawaited(save());
+  }
+
+  // ==================== STORIES (فاز ۲۹) ====================
+  static bool hasCompletedStory(String id) => completedStories.contains(id);
+
+  /// ثبت داستان تکمیل‌شده؛ خروجی false یعنی قبلاً خوانده شده
+  /// (ضد farming — پاداش فقط یک‌بار).
+  static bool markStoryCompleted(String id) {
+    if (!_isLoaded || id.isEmpty || completedStories.contains(id)) return false;
+    completedStories.add(id);
+    _notify();
+    unawaited(save());
+    return true;
   }
 
   /// ✅ فیکس عمیق فاز ۳۰: ثبت بازی‌های انجام شده برای achievement
@@ -1041,6 +1061,7 @@ class GameData {
     prizeBoxTokens = 0;
     openedPrizes = <String>[];
     islandDecorations = <String, String>{};
+    completedStories = <String>[];
     playedGames = <String>[];
     _playedGamesSet.clear();
     _notify();

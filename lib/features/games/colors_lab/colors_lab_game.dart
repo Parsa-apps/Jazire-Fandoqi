@@ -53,7 +53,7 @@ class _ColorsLabGameState extends State<ColorsLabGame> {
 
   /// گزینه‌های دور جاری — یک‌بار ساخته و کش می‌شوند تا مقایسه پاسخ
   /// همیشه با همان لیستی که کودک دیده انجام شود (رفع باگ شافل مجدد).
-  late List<String> _roundOptions = _buildOptions();
+  late List<String> _roundOptions;
 
   List<String> _buildOptions() {
     final correct = _resultOf['${_mixes[_round].$1}+${_mixes[_round].$2}']!;
@@ -65,6 +65,7 @@ class _ColorsLabGameState extends State<ColorsLabGame> {
   @override
   void initState() {
     super.initState();
+    _roundOptions = _buildOptions();
     FandoghiCoach.enablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;

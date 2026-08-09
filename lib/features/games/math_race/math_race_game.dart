@@ -165,7 +165,8 @@ class _MathRaceGameState extends State<MathRaceGame> {
 
   /// گزینه‌های دور جاری — یک‌بار ساخته می‌شوند تا نمایش و پاسخ همیشه
   /// روی یک لیست باشند.
-  late List<int> _roundOptions = _buildOptions();
+  /// ⚠️ بدون initializer: ساخت در initState بعد از _buildQuestions
+  late List<int> _roundOptions;
 
   List<int> _buildOptions() {
     final q = _questions[_index];

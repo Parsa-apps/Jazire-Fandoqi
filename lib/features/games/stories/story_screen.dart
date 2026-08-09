@@ -69,9 +69,11 @@ class _StoryScreenState extends State<StoryScreen> {
     Future<void>.delayed(const Duration(milliseconds: 400), _narrate);
 
     if (_finished) {
-      // پاداش پایان داستان
-      GameData.addStars(2);
-      GameData.addCoins(10);
+      // پاداش پایان داستان — فقط یک‌بار برای هر داستان (ضد farming)
+      if (GameData.markStoryCompleted(_story.id)) {
+        GameData.addStars(2);
+        GameData.addCoins(10);
+      }
       GameData.recordAnswer(correct: true, skill: 'vocab');
       FandoghiCoach.reward('داستان «${_story.title}» تمام شد! تو قهرمان داستان‌ها هستی 📚');
     }

@@ -150,7 +150,8 @@ class _PatternGameState extends State<PatternGame> {
 
   /// گزینه‌های دور جاری — یک‌بار ساخته می‌شوند تا نمایش، پاسخ و
   /// هایلایت درست/غلط همیشه روی یک لیست باشند.
-  late List<String> _roundOptions = _buildOptions();
+  /// ⚠️ بدون initializer: ساخت در initState بعد از _newPattern
+  late List<String> _roundOptions;
 
   List<String> _buildOptions() {
     final others = _pool

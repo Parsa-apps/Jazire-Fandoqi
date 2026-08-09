@@ -974,6 +974,9 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
     if (topic.contains('عدد') || topic.contains('اعداد') || topic.contains('شمار')) return 'اعداد';
     if (topic.contains('رنگ')) return 'رنگ‌ها';
     if (topic.contains('حیوان')) return 'حیوانات';
+    if (topic.contains('شکل') || topic.contains('اشکال')) return 'شکل‌ها';
+    if (topic.contains('میوه') || topic.contains('میوه‌ها')) return 'میوه‌ها';
+    if (topic.contains('بدن')) return 'بدن';
     return topic.isEmpty ? 'یادگیری' : topic;
   }
 
@@ -982,6 +985,9 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
     if (topic.contains('عدد') || topic.contains('اعداد') || topic.contains('شمار')) return '🔢';
     if (topic.contains('رنگ')) return '🎨';
     if (topic.contains('حیوان')) return '🐾';
+    if (topic.contains('شکل') || topic.contains('اشکال')) return '🔷';
+    if (topic.contains('میوه') || topic.contains('میوه‌ها')) return '🍎';
+    if (topic.contains('بدن')) return '🧍';
     if (topic.contains('شغل')) return '🧑‍🚒';
     return '🌟';
   }

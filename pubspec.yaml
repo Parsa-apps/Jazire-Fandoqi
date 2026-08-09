@@ -74,4 +74,12 @@ flutter:
     - assets/illustrations/body_cards.webp
     - assets/mascot/fandoghi_bunny.png
     - assets/premium/
-    - assets/fonts/
+
+  # فاز ۷ (تکمیل): فونت محلی آفلاین — fallback واقعی برای GoogleFonts
+  fonts:
+    - family: Vazirmatn
+      fonts:
+        - asset: assets/fonts/Vazirmatn-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Vazirmatn-Bold.ttf
+          weight: 700

@@ -203,3 +203,26 @@ game_state_provider)، `services` (profile).
 
 ### جمعبندی نهایی (۵ دور بازبینی)
 **۲۸ فیکس واقعی** در مجموع: ۲ بحرانی، ۱۲ مهم، ۱۴ سبک/مستند/import.
+
+
+---
+
+## 🔁 بازبینی دور ششم (Deep Pass 6 — زمان اجرا/بهروزرسانی زنده)
+
+### فیکسهای دور ششم
+| # | مورد | نوع |
+|---|------|-----|
+| ۲۹ | **کرش runtime (LateInitializationError):** `late _roundOptions = _buildOptions()` بهعنوان field initializer قبل از initState اجرا میشد و به `_roundCards` (academy) / `_correctNext` (pattern) / `_questions` (math_race) مقداردهینشده دسترسی میزد → حذف initializer و ساخت در initState (۴ بازی) | 🔴 کرش |
+| ۳۰ | **بهروزرسانی زنده تم:** `ThemeController` به `GameData.changes` گوش نمیداد → تغییر «اندازه متن» والدین تا ۱۵ دقیقه در کل اپ اعمال نمیشد → افزودن listener | 🟠 UI |
+| ۳۱ | **ضد farming داستان:** هر بار خواندن یک داستان +۲ ستاره +۱۰ سکه میداد → `completedStories` با پاداش یکبار | 🟠 منطق |
+| ۳۲ | فونت Vazirmatn به بخش `fonts:` پاباسپک منتقل شد — fallback آفلاین واقعی (تکمیل فاز ۷) | 🟡 |
+| ۳۳ | `_topicTitle`/`_topicEmoji` کوییز برای شکل/میوه/بدن تکمیل شد | 🟡 |
+
+### تأییدهای دور ششم
+- ✅ اسکن سراسری «field initializer وابسته به late»: هیچ مورد باقیمانده
+- ✅ `_roundOptions` در initState هر ۴ بازی ساخته میشود (تأیید با اسکن)
+- ✅ تست واحد ضد farming داستان اضافه شد
+- ✅ APIهای AppGradients/GradientGlassCard هماهنگ
+
+### جمعبندی نهایی (۶ دور بازبینی)
+**۳۳ فیکس واقعی** در مجموع: ۳ بحرانی (تقویم شمسی، مسیریابی اعداد، کرش init)، ۱۴ مهم، ۱۶ سبک/مستند/import.

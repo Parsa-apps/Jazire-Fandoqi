@@ -56,6 +56,7 @@ class _AcademyGameState extends State<AcademyGame> {
     super.initState();
     _topic = learningTopicById(widget.topicId) ?? learningTopics.first;
     _roundCards = _topic.pickRandom(5);
+    _roundOptions = _buildOptions();
     FandoghiCoach.enablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -85,7 +86,8 @@ class _AcademyGameState extends State<AcademyGame> {
 
   /// گزینه‌های دور جاری — یک‌بار ساخته می‌شوند تا نمایش، پاسخ و
   /// هایلایت درست/غلط همیشه روی یک لیست باشند (رفع شافل مجدد).
-  late List<LearningCard> _roundOptions = _buildOptions();
+  /// ⚠️ بدون initializer: ساخت در initState بعد از آماده‌شدن _roundCards
+  late List<LearningCard> _roundOptions;
 
   List<LearningCard> _buildOptions() {
     // گزینه‌های جواب: کارت درست + ۲ کارت تصادفی دیگر

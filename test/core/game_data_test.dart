@@ -112,3 +112,13 @@ void main() {
     expect(GameData.level, greaterThanOrEqualTo(5));
   });
 }
+
+  // ─────────── فاز ۲۹: پاداش یک‌بار داستان (ضد farming) ───────────
+  test('story reward is granted only once per story', () {
+    expect(GameData.hasCompletedStory('helpful_rabbit'), isFalse);
+    expect(GameData.markStoryCompleted('helpful_rabbit'), isTrue);
+    expect(GameData.hasCompletedStory('helpful_rabbit'), isTrue);
+    // بار دوم نباید پاداش بدهد
+    expect(GameData.markStoryCompleted('helpful_rabbit'), isFalse);
+  });
+}

@@ -1,3 +1,12 @@
+## 🔎 بازبینی دور ششم (Deep Pass 6) — زمان اجرا
+
+- **فیکس کرش:** `_roundOptions` در ۴ بازی (academy/pattern/math_race/colors_lab) از field-initializer به initState منتقل شد (LateInitializationError در اولین فریم)
+- **فیکس:** بهروزرسانی زنده «اندازه متن» از پنل والدین (ThemeController ← GameData.changes)
+- **فیکس ضد farming:** پاداش داستان فقط یکبار (completedStories) + تست
+- فونت Vazirmatn در بخش fonts: پاباسپک (fallback آفلاین واقعی)
+- تکمیل عنوان/ایموجی کوییز برای شکل/میوه/بدن
+
+---
 ## 🔎 بازبینی دور پنجم (Deep Pass 5) — صحتسنجی مأموریت/جزیره
 
 - **فیکس:** مأموریتهای ریاضی و حافظه (فاز ۵۲) پیشرفت نمیکردند → اتصال به MathRace و MemoryMatch

@@ -12,12 +12,13 @@ import 'app_theme.dart';
 /// - تم بر اساس چرخه روز (صبح/ظهر/شب) + حالت سیستم + مقیاس فونت والدین
 /// - هر ۱۵ دقیقه چرخه روز دوباره محاسبه می‌شود و هنگام بازگشت اپ
 ///   از پس‌زمینه هم به‌روزرسانی می‌شود
-/// - مقیاس فونت (textScale) مستقیماً از GameData خوانده می‌شود تا
-///   تنظیم والدین در همه‌جا اثر کند
+/// - به `GameData.changes` گوش می‌دهد تا تغییر «اندازه متن» والدین
+///   بلافاصله در کل اپ اعمال شود (فیکس بازبینی دور ۶)
 /// ────────────────────────────────────────────────────────────
 class ThemeController extends ChangeNotifier {
   Timer? _timer;
   DayCycle _cycle = AppTheme.currentCycle;
+  double _lastTextScale = GameData.textScale;
 
   ThemeController() {
     // به‌روزرسانی دوره‌ای چرخه روز (مثلاً وقتی ساعت ۱۲ ظهر می‌شود)
@@ -28,6 +29,18 @@ class ThemeController extends ChangeNotifier {
         notifyListeners();
       }
     });
+
+    // دور ۶: تغییر فونت/تم از GameData باید بلافاصله منعکس شود
+    GameData.changes.addListener(_onGameDataChanged);
+  }
+
+  void _onGameDataChanged() {
+    var changed = false;
+    if (GameData.textScale != _lastTextScale) {
+      _lastTextScale = GameData.textScale;
+      changed = true;
+    }
+    if (changed) notifyListeners();
   }
 
   DayCycle get cycle => _cycle;
@@ -37,8 +50,9 @@ class ThemeController extends ChangeNotifier {
   /// هنگام برگشتن اپ به foreground، چرخه روز و فونت را تازه می‌کنیم.
   void refresh() {
     final next = AppTheme.currentCycle;
-    if (next != _cycle || GameData.textScale != textScale) {
+    if (next != _cycle || GameData.textScale != _lastTextScale) {
       _cycle = next;
+      _lastTextScale = GameData.textScale;
       notifyListeners();
     }
   }
@@ -48,11 +62,13 @@ class ThemeController extends ChangeNotifier {
 
   void setTextScale(double value) {
     GameData.setTextScale(value);
+    _lastTextScale = GameData.textScale;
     notifyListeners();
   }
 
   @override
   void dispose() {
+    GameData.changes.removeListener(_onGameDataChanged);
     _timer?.cancel();
     super.dispose();
   }
