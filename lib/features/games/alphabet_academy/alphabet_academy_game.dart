@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -6,6 +7,7 @@ import 'package:flutter/services.dart';
 
 import '../../../app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
@@ -63,6 +65,8 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     FandoghiCoach.instruction(
       'حرف «${_lessons[index].letter}» را انتخاب کردی؛ اسمش ${_lessons[index].word} است. حالا دکمه‌ی «تمرین نوشتن» را بزن ✍️',
     );
+    // فاز ۶: تلفظ حرف توسط فندقی
+    unawaited(AudioService.pronounceLetter(_lessons[index].letter));
   }
 
   Future<void> _openTraceScreen() async {

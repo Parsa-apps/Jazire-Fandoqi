@@ -1,3 +1,11 @@
+## فاز ۶: طراحی سیستم صوتی
+
+- بازنویسی `AudioService`: صف TTS (بدون overlap)، افکت‌های آماده تشویق/درست/غلط/برد (playCorrect, playWrong, playCoin, playWin)
+- تلفظ فارسی حروف الفبا (`pronounceLetter`) متصل به آکادمی الفبا
+- تشویق صوتی فندقی در کوییز هم‌زمان با حباب گفتگو
+- مدیریت خطای کامل + لاگ به‌جای print
+
+---
 ## فاز ۵: سیستم Asset Manager
 
 - بازنویسی `AssetManager`: کش LRU با بودجه ۲۴ ورودی، لود تنبل، `filterQuality` قابل تنظیم برای گوشی ۱GB RAM

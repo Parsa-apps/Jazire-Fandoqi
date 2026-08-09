@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../../../app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
@@ -92,8 +93,11 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
     if (correct) {
       FandoghiCoach.correct('آفرین! «${question.options[optionIndex]}» جواب درست بود 🌟');
       HapticFeedback.mediumImpact();
+      // فاز ۶: تشویق صوتی هم‌زمان با حباب فندقی
+      unawaited(AudioService.playCorrect());
     } else {
       FandoghiCoach.incorrect(question.options[question.correctIndex]);
+      unawaited(AudioService.playWrong());
     }
 
     Future<void>.delayed(const Duration(milliseconds: 850), () {
