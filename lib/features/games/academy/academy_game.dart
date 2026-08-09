@@ -359,7 +359,7 @@ class _AcademyGameState extends State<AcademyGame> {
                 Text(
                   percent >= 0.6 ? '🏆' : '💪',
                   style: const TextStyle(fontSize: 80),
-                ).animate().scale(begin: 0.4, curve: Curves.elasticOut),
+                ).animate().scale(begin: const Offset(0.4, 0.4), curve: Curves.elasticOut),
                 const SizedBox(height: 20),
                 Text(
                   percent >= 0.6 ? 'آفرین قهرمان!' : 'تمرین خوبی بود!',

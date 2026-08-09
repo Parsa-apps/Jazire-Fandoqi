@@ -39,7 +39,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
   late int _gridSize; // 2 یا 3
   late List<String> _tiles; // تصویر کامل به‌صورت تکه
   late List<String> _shuffled;
-  final List<String?> _placed = <String?>[];
+  List<String?> _placed = <String?>[];
   int _correctPlaced = 0;
   bool _finished = false;
   int _pictureIndex = 0;
@@ -171,7 +171,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
                 // (در پازل ۳×۳ تکه‌های تکراری داریم؛ یکی که نشست،
                 //  بقیه همان تکه باید همچنان قابل کشیدن باشند)
                 if (_countUnplaced(tile) > 0)
-                  MagneticDraggable(
+                  Draggable<String>(
                     data: tile,
                     child: _tile(tile),
                   ),
