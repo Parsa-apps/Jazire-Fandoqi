@@ -4,6 +4,8 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/datasources/hive_player_store.dart';
+
 /// Single source of truth for the local player profile.
 ///
 /// The app is intentionally offline-first: no child data leaves the device and
@@ -116,6 +118,23 @@ class GameData {
 
   static Future<void> _loadInternal() async {
     try {
+      // ── فاز ۴: دیتابیس Hive اول ─────────────────────────────
+      // اگر اسنپ‌شات جدید Hive موجود بود، مستقیم از آن می‌خوانیم
+      // (سریع‌تر و یکجا). در غیر این صورت SharedPreferences قدیمی
+      // خوانده شده و با اولین save به Hive مهاجرت می‌کند.
+      final hiveSnapshot = await HivePlayerStore.readSnapshot();
+      if (hiveSnapshot != null) {
+        _applySnapshot(hiveSnapshot);
+        _isLoaded = true;
+        _persistenceAvailable = true;
+        final changed = _rolloverDates();
+        if (changed) {
+          await _writeAll();
+        }
+        _notify();
+        return;
+      }
+
       final prefs = await SharedPreferences.getInstance();
       _prefs = prefs;
 
@@ -235,6 +254,152 @@ class GameData {
         .toSet()
         .toList();
   }
+
+  /// اعمال اسنپ‌شات Hive (فاز ۴) روی حالت حافظه با خواندن امن.
+  static void _applySnapshot(Map<String, Object?> d) {
+    int asInt(String key, int fallback) {
+      final v = d[key];
+      if (v is num) return v.toInt();
+      return fallback;
+    }
+
+    String asString(String key, String fallback) {
+      final v = d[key];
+      if (v is String && v.isNotEmpty) return v;
+      return fallback;
+    }
+
+    bool asBool(String key, bool fallback) {
+      final v = d[key];
+      if (v is bool) return v;
+      return fallback;
+    }
+
+    List<String> asList(String key) {
+      final v = d[key];
+      if (v is List) {
+        return v
+            .whereType<String>()
+            .where((s) => s.isNotEmpty && s.length <= 64)
+            .toSet()
+            .toList();
+      }
+      return <String>[];
+    }
+
+    Map<String, int> asSkillMap(String key) {
+      final v = d[key];
+      if (v is Map) {
+        return v.map((k, val) => MapEntry(
+              k.toString(),
+              val is num ? val.toInt().clamp(0, _maxStoredCounter) : 0,
+            ));
+      }
+      return <String, int>{};
+    }
+
+    stars = asInt('stars', 0).clamp(0, _maxStoredCounter);
+    coins = asInt('c', 0).clamp(0, _maxStoredCounter);
+    level = asInt('l', 1).clamp(1, _maxStoredCounter);
+    streak = asInt('s', 0).clamp(0, 100000);
+    totalCorrect = asInt('tc', 0).clamp(0, _maxStoredCounter);
+    totalWrong = asInt('tw', 0).clamp(0, _maxStoredCounter);
+    lastLogin = asString('ll', '');
+    avatar = asString('av', '😊');
+    if (avatar.length > 8) avatar = avatar.substring(0, 8);
+    childName = asString('childName', '');
+    if (childName.length > 24) childName = childName.substring(0, 24);
+    childAge = asInt('childAge', 5).clamp(3, 12);
+    onboardingSeen = asBool('onboardingSeen', false);
+    dailyMissions = asInt('dm', 0).clamp(0, missionTargets.length);
+    _missionDay = asString('missionDay', '');
+    final mp = d['mp'];
+    if (mp is Map) {
+      for (final id in missionProgress.keys.toList()) {
+        final val = mp[id];
+        missionProgress[id] = val is num ? val.toInt().clamp(0, 100000) : 0;
+      }
+    }
+    sessionSeconds = asInt('ss', 0).clamp(0, _maxStoredCounter);
+    weeklyPlayMinutes = asInt('wpm', 0).clamp(0, _maxStoredCounter);
+    todayPlaySeconds = asInt('tps', 0).clamp(0, _maxStoredCounter);
+    achievements = asList('ach');
+    stickers = asList('st');
+    ownedItems = asList('ownedItems');
+    if (ownedItems.isEmpty) ownedItems = List<String>.from(stickers);
+    timeLimitMinutes = asInt('tl', 60).clamp(15, 24 * 60);
+    treasureOpened = asBool('tr', false);
+    goldenChestOpened = asBool('gc', false);
+    soundEnabled = asBool('sn', true);
+    lastWeekReset = asString('lwr', '');
+    highScore = asInt('hs', 0).clamp(0, _maxStoredCounter);
+    mathRaceHighScore = asInt('mrhs', 0).clamp(0, _maxStoredCounter);
+    quizHighScore = asInt('qhs', 0).clamp(0, _maxStoredCounter);
+    lastLuckyDate = asString('lld', '');
+    lastSurpriseClaimDate = asString('lscd', '');
+    aiBuddyUnlocked = asBool('aiBuddy', false);
+    currentStage = asInt('currentStage', 1).clamp(1, maxStageCount + 1);
+    currentIsland = asInt('currentIsland', 0).clamp(0, maxStageCount);
+    completedStages = <String, bool>{};
+    final cs = d['cs'];
+    if (cs is Map) {
+      cs.forEach((k, v) {
+        if (k is String && k.isNotEmpty && k.length <= 64 && v == true) {
+          completedStages[k] = true;
+        }
+      });
+    }
+    prizeBoxTokens = asInt('pbt', 0).clamp(0, _maxStoredCounter);
+    openedPrizes = asList('op');
+    playedGames = asList('pg');
+    _playedGamesSet
+      ..clear()
+      ..addAll(playedGames);
+    final sk = asSkillMap('skills');
+    if (sk.isNotEmpty) skills = sk;
+  }
+
+  /// ساخت اسنپ‌شات Hive از وضعیت فعلی (فاز ۴).
+  static Map<String, Object?> _buildSnapshot() => <String, Object?>{
+        'stars': stars,
+        'c': coins,
+        'l': level,
+        's': streak,
+        'tc': totalCorrect,
+        'tw': totalWrong,
+        'll': lastLogin,
+        'av': avatar,
+        'childName': childName,
+        'childAge': childAge,
+        'onboardingSeen': onboardingSeen,
+        'dm': dailyMissions,
+        'missionDay': _missionDay,
+        'mp': missionProgress,
+        'ss': sessionSeconds,
+        'wpm': weeklyPlayMinutes,
+        'tps': todayPlaySeconds,
+        'ach': achievements,
+        'st': stickers,
+        'ownedItems': ownedItems,
+        'tl': timeLimitMinutes,
+        'tr': treasureOpened,
+        'gc': goldenChestOpened,
+        'sn': soundEnabled,
+        'lwr': lastWeekReset,
+        'hs': highScore,
+        'mrhs': mathRaceHighScore,
+        'qhs': quizHighScore,
+        'lld': lastLuckyDate,
+        'lscd': lastSurpriseClaimDate,
+        'aiBuddy': aiBuddyUnlocked,
+        'currentStage': currentStage,
+        'currentIsland': currentIsland,
+        'cs': completedStages,
+        'pbt': prizeBoxTokens,
+        'op': openedPrizes,
+        'pg': playedGames,
+        'skills': skills,
+      };
 
   static String _dateKey([DateTime? date]) {
     final value = date ?? DateTime.now();
@@ -367,6 +532,10 @@ class GameData {
     for (final key in skills.keys) {
       await prefs.setInt('sk_$key', skills[key] ?? 0);
     }
+
+    // ── فاز ۴: همگام‌سازی با دیتابیس Hive ──
+    // همواره هم‌زمان با SharedPreferences (سازگاری با نسخه‌های قدیم)
+    await HivePlayerStore.writeSnapshot(_buildSnapshot());
   }
 
   static void _notify() {

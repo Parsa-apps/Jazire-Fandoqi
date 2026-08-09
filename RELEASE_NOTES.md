@@ -1,3 +1,11 @@
+## فاز ۴: دیتابیس حرفه‌ای — Hive + Migration خودکار
+
+- ساخت `HivePlayerStore` با اسکیمای نسخه‌دار (`schema_version`) در `lib/data/datasources/hive_player_store.dart`
+- GameData: خواندن از Hive اول، Fallback به SharedPreferences قدیمی + مهاجرت خودکار در اولین save
+- `monetization.dart`: حذف SharedPreferences مستقیم → Hive (توکن اشتراک/تاریخ خرید)
+- سازگاری کامل با نسخه‌های قبلی حفظ شد (هر دو منبع هم‌زمان نوشته می‌شوند)
+
+---
 ## فاز ۳: سیستم مدیریت State — مهاجرت به Riverpod
 
 - ساخت `gameStateProvider` (StateNotifier + Snapshot غیرقابل‌تغییر) در `lib/presentation/providers/game_state_provider.dart`
