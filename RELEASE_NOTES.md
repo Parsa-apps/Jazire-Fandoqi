@@ -1,3 +1,11 @@
+## فاز ۵: سیستم Asset Manager
+
+- بازنویسی `AssetManager`: کش LRU با بودجه ۲۴ ورودی، لود تنبل، `filterQuality` قابل تنظیم برای گوشی ۱GB RAM
+- `FandoghiImage` با fade-in، errorBuilder و کیفیت قابل تنظیم
+- اتصال کش به `IllustrationTile` (تصاویر پرکاربرد بازی‌ها) و `PremiumLoading`
+- تصمیم مهندسی مستند: AVIF در موتور Flutter 3.24 پشتیبانی نمی‌شود؛ بهینه‌سازی واقعی با lazy+cache+filterQuality
+
+---
 ## فاز ۴: دیتابیس حرفه‌ای — Hive + Migration خودکار
 
 - ساخت `HivePlayerStore` با اسکیمای نسخه‌دار (`schema_version`) در `lib/data/datasources/hive_player_store.dart`

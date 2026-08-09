@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/asset_manager.dart';
+
 /// =======================================================
 /// ✨ PREMIUM LOADING SCREEN
 /// =======================================================
@@ -16,7 +18,8 @@ class PremiumLoading extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(
+            // فاز ۵: تصویر از کش AssetManager لود می‌شود
+            const FandoghiImage(
               'assets/premium/loading_fandoghi.png',
               width: 160,
               height: 160,
