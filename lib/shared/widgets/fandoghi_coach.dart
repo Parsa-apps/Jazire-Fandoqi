@@ -37,9 +37,10 @@ class FandoghiCoachOverlay extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   child,
-                  // The draggable bunny mascot (always present, even when
-                  // a bubble is shown, so the user can keep dragging it).
-                  const Positioned.fill(child: _DraggableMascot()),
+                  // The mascot is shown only after a screen requests a persistent
+                  // coach, or while it is actively delivering a message.
+                  if (showPersistent || message != null)
+                    const Positioned.fill(child: _DraggableMascot()),
                   if (message != null)
                     Positioned.fill(
                       child: IgnorePointer(
@@ -73,10 +74,17 @@ class _DraggableMascot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DraggableFandoghi(
-      size: 84,
-      onTap: () => FandoghiCoach.instruction(
-        'هر وقت کمک خواستی روی من بزن! من راهنمای تو هستم 🧒',
+    return ValueListenableBuilder<bool>(
+      valueListenable: FandoghiCoach.minimized,
+      builder: (context, minimized, _) => DraggableFandoghi(
+        size: minimized ? 48 : 84,
+        minimized: minimized,
+        onRestore: FandoghiCoach.restore,
+        onMinimize: FandoghiCoach.minimize,
+        onClose: FandoghiCoach.disablePersistentPresence,
+        onTap: () => FandoghiCoach.instruction(
+          'هر وقت کمک خواستی روی من بزن! من راهنمای تو هستم 🧒',
+        ),
       ),
     );
   }

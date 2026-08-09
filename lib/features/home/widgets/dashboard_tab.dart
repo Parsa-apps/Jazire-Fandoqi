@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +14,9 @@ import '../../../shared/widgets/fandoghi_v2.dart';
 import '../../../shared/widgets/glass_card.dart';
 import 'premium_card.dart';
 import '../../../shared/widgets/star_field.dart';
+import '../../../core/monetization.dart';
+import '../../shop/full_version_paywall.dart';
+import '../../profile/profile_editor.dart';
 
 /// ═══════════════════════════════════════════════
 /// 📊 DASHBOARD TAB — Main Content
@@ -162,48 +166,27 @@ class _DashboardState extends ConsumerState<DashboardTab> {
                     // Top bar
                     Row(
                       children: [
-                        // Avatar
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
-                              width: 2,
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              GameData.avatar,
-                              style: const TextStyle(fontSize: 26),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 14),
+                        _buildHeroProfileAvatar(),
+                        const SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'سلام ${GameData.childName.isNotEmpty ? GameData.childName : 'دوست کوچولو'}! 👋',
-                                style: AppFonts.vazirmatn(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              Text(
-                                'لول ${GameData.level} • ${GameData.getLevelName()}',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.8),
-                                  fontSize: 13,
-                                ),
+                              Text('سلام ${GameData.childName.isNotEmpty ? GameData.childName : 'دوست کوچولو'}! 👋',
+                                maxLines: 1, overflow: TextOverflow.ellipsis,
+                                style: AppFonts.vazirmatn(textStyle: const TextStyle(shadows: [Shadow(color: Color(0x66000000), blurRadius: 8, offset: Offset(0, 2))]), color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                              ).animate().fadeIn(delay: 120.ms).slideX(begin: .12),
+                              const SizedBox(height: 3),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(color: Colors.white.withOpacity(.16), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white24)),
+                                child: Text('لول ${GameData.level} • ${GameData.getLevelName()}', style: TextStyle(color: Colors.white.withOpacity(.92), fontSize: 13, fontWeight: FontWeight.w700)),
                               ),
                             ],
                           ),
                         ),
+                        _glassIconButton(Icons.edit_rounded, () => showProfileEditor(context)),
+                        const SizedBox(width: 8),
                         // Cinema Hub Button
                         _glassIconButton(
                           Icons.movie_rounded,
@@ -253,6 +236,20 @@ class _DashboardState extends ConsumerState<DashboardTab> {
         ),
       ),
     );
+  }
+
+  Widget _buildHeroProfileAvatar() {
+    final hasPhoto = GameData.profilePhotoPath.isNotEmpty && File(GameData.profilePhotoPath).existsSync();
+    final hasAsset = GameData.avatar.startsWith('assets/');
+    final image = hasPhoto
+        ? Image.file(File(GameData.profilePhotoPath), fit: BoxFit.cover)
+        : hasAsset ? Image.asset(GameData.avatar, fit: BoxFit.cover)
+        : Center(child: Text(GameData.avatar, style: const TextStyle(fontSize: 36)));
+    return Container(
+      width: 68, height: 68, padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(shape: BoxShape.circle, gradient: const SweepGradient(colors: [Color(0xFFFFE58A), Color(0xFFFF8E53), Color(0xFFA29BFE), Color(0xFFFFE58A)]), boxShadow: [BoxShadow(color: const Color(0xFFFFD166).withOpacity(.65), blurRadius: 20, spreadRadius: 3), BoxShadow(color: Colors.black.withOpacity(.22), blurRadius: 8, offset: const Offset(0, 4))]),
+      child: ClipOval(child: DecoratedBox(decoration: const BoxDecoration(color: Color(0xFF6C5CE7)), child: image)),
+    ).animate(onPlay: (c) => c.repeat(reverse: true)).shimmer(duration: 2300.ms, color: Colors.white54).scale(begin: const Offset(.96, .96), end: const Offset(1.04, 1.04), duration: 2300.ms, curve: Curves.easeInOut);
   }
 
   List<Widget> _buildDecorativeCircles() {
@@ -790,6 +787,17 @@ class _DashboardState extends ConsumerState<DashboardTab> {
     );
   }
 
+  static const _freeGames = {'الفبا', 'اعداد', 'رنگ‌ها', 'ستاره‌گیری', 'حباب‌ترکان'};
+
+  Future<void> _openGame(String game) async {
+    // A generous starter set lets families assess the app before the parent-only paywall.
+    if (!_freeGames.contains(game) && !await Monetization.hasFullVersion()) {
+      if (mounted) await showFullVersionPaywall(context, featureName: game);
+      return;
+    }
+    if (mounted) Navigator.pushNamed(context, '/game/$game');
+  }
+
   // ─── QUICK GAMES ──────────────────────────────
   Widget _buildQuickGames() {
     return Padding(
@@ -829,7 +837,7 @@ class _DashboardState extends ConsumerState<DashboardTab> {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        Navigator.pushNamed(context, '/game/$name');
+        _openGame(name);
       },
       child: Container(
         width: 90,
@@ -974,7 +982,7 @@ class _DashboardState extends ConsumerState<DashboardTab> {
           onTap: () {
             HapticFeedback.lightImpact();
             if (games.isNotEmpty) {
-              Navigator.pushNamed(context, '/game/${games.first}');
+              _openGame(games.first);
             }
           },
           child: Padding(
@@ -1031,7 +1039,7 @@ class _DashboardState extends ConsumerState<DashboardTab> {
                         (g) => GestureDetector(
                           onTap: () {
                             HapticFeedback.lightImpact();
-                            Navigator.pushNamed(context, '/game/$g');
+                            _openGame(g);
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(

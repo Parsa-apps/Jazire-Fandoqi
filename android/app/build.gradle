@@ -4,6 +4,26 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+// Signing secrets stay local (android/key.properties) or are created from CI secrets.
+// A release without this file remains unsigned; it is suitable only for build
+// verification and must never be submitted to an app store.
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("key.properties")
+def hasReleaseSigning = keystorePropertiesFile.exists()
+if (hasReleaseSigning) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+}
+
+// Bazaar's RSA public key identifies and protects purchase responses. It is
+// public by design, but kept out of source so each release can be configured
+// from the store dashboard without a code change.
+def billingProperties = new Properties()
+def billingPropertiesFile = rootProject.file("billing.properties")
+if (billingPropertiesFile.exists()) {
+    billingPropertiesFile.withInputStream { billingProperties.load(it) }
+}
+def bazaarRsaPublicKey = billingProperties.getProperty("bazaarRsaPublicKey", "")
+
 android {
     namespace = "com.parsaapps.amoozesh_fandoghi"
     compileSdk = 35
@@ -26,17 +46,36 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled true
+        buildConfigField "String", "BAZAAR_RSA_PUBLIC_KEY", "\"${bazaarRsaPublicKey.replace('\\', '\\\\').replace('\"', '\\\"')}\""
+    }
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                keyAlias = keystoreProperties['keyAlias']
+                keyPassword = keystoreProperties['keyPassword']
+                storeFile = file(keystoreProperties['storeFile'])
+                storePassword = keystoreProperties['storePassword']
+            }
+        }
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            // Never fall back to the debug certificate for a distributable build.
+            // Without key.properties Gradle produces an unsigned verification artifact.
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.release
+            }
         }
     }
 }
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Poolakey is the official open-source Cafe Bazaar billing client.
+    implementation "com.github.cafebazaar.Poolakey:poolakey:2.2.0"
 }

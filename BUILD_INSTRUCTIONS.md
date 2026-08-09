@@ -23,7 +23,7 @@
 ```bash
 git clone https://github.com/farshadkurd/kudake_iran.git
 cd kudake_iran
-git checkout arena/019fe3f3-kudake-iran   # شاخه توسعه فعال (نسخه ۵.۰.۰)
+git checkout main   # یا شاخهٔ کاری موردنظر
 ```
 
 ### ۲. نصب وابستگی‌ها
@@ -40,7 +40,23 @@ flutter pub get
 flutter pub run flutter_launcher_icons
 ```
 
-### ۴. ساخت APK
+### ۴. پیکربندی امضای انتشار
+
+برای انتشار واقعی در کافه‌بازار یا گوگل‌پلی، یک keystore خصوصی بسازید و **هرگز**
+آن را وارد Git نکنید. سپس فایل `android/key.properties` محلی را بسازید:
+
+```properties
+storeFile=release.keystore
+storePassword=رمز-keystore
+keyAlias=نام-key
+keyPassword=رمز-key
+```
+
+فایل keystore را در `android/release.keystore` بگذارید. `key.properties` و فایل‌های
+keystore در `.gitignore` قرار دارند. اگر این فایل وجود نداشته باشد، خروجی release
+فقط برای راستی‌آزمایی build است و امضای قابل‌انتشار ندارد.
+
+### ۵. ساخت APK
 
 برای نسخه‌ی دیباگ (سریع‌تر، برای تست):
 ```bash
@@ -52,7 +68,7 @@ flutter build apk --debug
 flutter build apk --release
 ```
 
-### ۵. یافتن فایل APK
+### ۶. یافتن فایل APK
 
 فایل APK در این مسیرها قرار دارد:
 

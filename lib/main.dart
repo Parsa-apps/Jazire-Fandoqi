@@ -40,6 +40,7 @@ import 'features/profile/sticker_album_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/parent/parent_panel.dart';
 import 'features/splash/splash_screen.dart';
+import 'features/shop/game_access_gate.dart';
 import 'shared/widgets/fandoghi_coach.dart';
 
 /// آموزش فندقی - Kudake Iran
@@ -179,7 +180,7 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
               : GameLaunch(gameName: gameName);
           return MaterialPageRoute(
             settings: settings,
-            builder: (_) => _gameFor(launch),
+            builder: (_) => GameAccessGate(gameName: gameName, child: _gameFor(launch)),
           );
         }
         // فاز ۲۹: داستان‌های تعاملی (/story/<id>)

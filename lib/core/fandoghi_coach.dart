@@ -33,6 +33,8 @@ class FandoghiCoach {
   static final ValueNotifier<FandoghiCoachMessage?> current =
       ValueNotifier<FandoghiCoachMessage?>(null);
   static final ValueNotifier<bool> persistent = ValueNotifier<bool>(false);
+  /// کودک یا والد می‌تواند مربی را موقتاً جمع کند؛ وضعیت فقط در اجرای فعلی نگه داشته می‌شود.
+  static final ValueNotifier<bool> minimized = ValueNotifier<bool>(false);
   static Timer? _hideTimer;
   static Timer? _hintTimer;
   static int _nextId = 0;
@@ -76,8 +78,13 @@ class FandoghiCoach {
     persistent.value = true;
   }
 
+  static void minimize() => minimized.value = true;
+  static void restore() => minimized.value = false;
+
   static void disablePersistentPresence() {
     persistent.value = false;
+    minimized.value = false;
+    clear();
   }
 
   static void say(

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import 'package:flutter/rendering.dart';
@@ -64,12 +66,20 @@ class DraggableFandoghi extends StatefulWidget {
   final double size;
   final VoidCallback? onTap;
   final bool persistAcrossPages;
+  final bool minimized;
+  final VoidCallback? onMinimize;
+  final VoidCallback? onRestore;
+  final VoidCallback? onClose;
 
   const DraggableFandoghi({
     super.key,
     this.size = 96,
     this.onTap,
     this.persistAcrossPages = true,
+    this.minimized = false,
+    this.onMinimize,
+    this.onRestore,
+    this.onClose,
   });
 
   @override
@@ -79,6 +89,7 @@ class DraggableFandoghi extends StatefulWidget {
 class _DraggableFandoghiState extends State<DraggableFandoghi>
     with SingleTickerProviderStateMixin {
   late final AnimationController _wobbleCtrl;
+  late final AnimationController _idleCtrl;
   late final AnimationController _snapCtrl;
   Animation<Offset>? _snapAnim;
   double _scale = 1.0;
@@ -93,6 +104,12 @@ class _DraggableFandoghiState extends State<DraggableFandoghi>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
+    // حرکت نفس‌کشیدن و شناوری آرام؛ سبک است و هنگام پس‌زمینه‌شدن اپ
+    // به‌صورت خودکار با TickerMode متوقف می‌شود.
+    _idleCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )..repeat(reverse: true);
     // انیمیشن چسبیدن به لبهٔ صفحه بعد از رها کردن، تا مسکات روی
     // محتوا و دکمه‌های وسط صفحه معلق نماند.
     _snapCtrl = AnimationController(
@@ -103,7 +120,9 @@ class _DraggableFandoghiState extends State<DraggableFandoghi>
 
   @override
   void dispose() {
+    _snapAnim?.removeListener(_applySnap);
     _wobbleCtrl.dispose();
+    _idleCtrl.dispose();
     _snapCtrl.dispose();
     super.dispose();
   }
@@ -198,6 +217,10 @@ class _DraggableFandoghiState extends State<DraggableFandoghi>
   void _onPanCancel(Size parentSize) => _finishPan(parentSize);
 
   void _onTap() {
+    if (widget.minimized) {
+      widget.onRestore?.call();
+      return;
+    }
     _wobbleCtrl.forward(from: 0);
     widget.onTap?.call();
   }
@@ -227,14 +250,16 @@ class _DraggableFandoghiState extends State<DraggableFandoghi>
                 final left = cx - widget.size / 2;
                 final top = cy - widget.size / 2;
                 return AnimatedBuilder(
-                  animation: _wobbleCtrl,
+                  animation: Listenable.merge([_wobbleCtrl, _idleCtrl]),
                   builder: (context, child) {
                     final wobble = 1.0 +
                         (1.0 - _wobbleCtrl.value) * 0.08 *
                             (1 - (_wobbleCtrl.value - 0.5).abs() * 2);
+                    final idleLift = math.sin(_idleCtrl.value * math.pi) * 3.0;
+                    final idleScale = 1.0 + math.sin(_idleCtrl.value * math.pi) * 0.018;
                     return Positioned(
                       left: left,
-                      top: top,
+                      top: top - idleLift,
                       child: SizedBox(
                         width: widget.size,
                         height: widget.size,
@@ -247,17 +272,29 @@ class _DraggableFandoghiState extends State<DraggableFandoghi>
                             Positioned.fill(
                               child: IgnorePointer(
                                 child: AnimatedScale(
-                                  scale: _scale * wobble,
+                                  scale: _scale * wobble * idleScale,
                                   duration: const Duration(milliseconds: 120),
                                   curve: Curves.easeOut,
                                   child: _BunnyContainer(
                                     size: widget.size,
-                                    showHint: !_hasDragged,
-                                    child: FandoghiBunny(size: widget.size),
+                                    showHint: !_hasDragged && !widget.minimized,
+                                    child: widget.minimized
+                                        ? const _MiniFandoghiBadge()
+                                        : FandoghiBunny(size: widget.size),
                                   ),
                                 ),
                               ),
                             ),
+                            if (!widget.minimized)
+                              Positioned(
+                                top: -13,
+                                left: -8,
+                                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                  _MascotControl(icon: Icons.remove_rounded, tooltip: 'جمع کردن فندقی', onTap: widget.onMinimize),
+                                  const SizedBox(width: 4),
+                                  _MascotControl(icon: Icons.close_rounded, tooltip: 'بستن فندقی', onTap: widget.onClose),
+                                ]),
+                              ),
                             // 👆 لایهٔ لمسی: فقط ناحیهٔ بدن شخصیت (مرکز
                             // تصویر) لمسی است — نه کل قاب مربع.
                             Center(
@@ -289,6 +326,28 @@ class _DraggableFandoghiState extends State<DraggableFandoghi>
       },
     );
   }
+}
+
+class _MascotControl extends StatelessWidget {
+  const _MascotControl({required this.icon, required this.tooltip, this.onTap});
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onTap;
+  @override
+  Widget build(BuildContext context) => Tooltip(message: tooltip, child: Material(
+    color: Colors.white, shape: const CircleBorder(), elevation: 4,
+    child: InkWell(onTap: onTap, customBorder: const CircleBorder(), child: SizedBox(width: 26, height: 26, child: Icon(icon, size: 16, color: const Color(0xFF5B3DB5)))),
+  ));
+}
+
+class _MiniFandoghiBadge extends StatelessWidget {
+  const _MiniFandoghiBadge();
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: const BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [Color(0xFFFFD166), Color(0xFF6C43D9)])),
+    alignment: Alignment.center,
+    child: const Text('🌰', style: TextStyle(fontSize: 25)),
+  );
 }
 
 /// Adds a soft drop shadow and a subtle glow so the bunny is easy to spot

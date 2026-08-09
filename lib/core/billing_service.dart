@@ -55,10 +55,15 @@ class BillingService {
   /// سندباکس فقط در debug فعال است و از کد release قابل روشن‌کردن نیست.
   static bool get sandboxFallback => !kReleaseMode;
 
-  /// خرید اشتراک (غیرمصرف‌شدنی) مثل کودک‌دانا پلاس
-  static Future<BillingResult> purchaseSubscription(String productId) {
+  /// خرید دائمی و غیرمصرف‌شدنی نسخه کامل.
+  static Future<BillingResult> purchaseNonConsumable(String productId) {
     return _invoke('purchase', productId, consumable: false);
   }
+
+  /// نام قدیمی برای سازگاری با نسخه‌های قبلی؛ در مدل جدید اشتراک وجود ندارد.
+  @Deprecated('Use purchaseNonConsumable')
+  static Future<BillingResult> purchaseSubscription(String productId) =>
+      purchaseNonConsumable(productId);
 
   /// خرید آیتم مصرف‌شدنی مثل بسته سکه یا ستاره
   static Future<BillingResult> purchaseConsumable(String productId) async {

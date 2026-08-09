@@ -10,6 +10,9 @@ coverage/
 
 # Generated Android local configuration
 android/local.properties
+android/key.properties
+android/*.keystore
+android/*.jks
 android/.gradle/
 android/**/build/
 
@@ -21,3 +24,4 @@ android/**/build/
 # OS
 .DS_Store
 Thumbs.db
+android/billing.properties
