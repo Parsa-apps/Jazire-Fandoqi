@@ -1,3 +1,10 @@
+# 🛠️ هات‌فیکس بیلد ۶.۰.۰+۱۱ — سبز شدن دوباره CI
+
+- **فیکس نیتیو:** فعال‌سازی `BuildConfig` در AGP 8 و تغییر `MainActivity` به `FlutterFragmentActivity` برای رجیستری پرداخت بازار (Poolakey).
+- **فیکس Dart:** حذف پرانتز اضافه در `profile_screen.dart` (خطای کامپایل) و پین `image_cropper_platform_interface` به 7.0.0 (سازگار با فلاتر 3.24.3).
+
+---
+
 # ✨ نسخه ۶.۰.۰+۱۱ — تجربهٔ شخصی و نسخهٔ کامل
 
 - **ارتقای امن:** `versionCode` از ۱۰ به **۱۱** و `versionName` به **6.0.0** افزایش یافت؛ `applicationId` بدون تغییر (`com.parsaapps.amoozesh_fandoghi`) باقی مانده است.
