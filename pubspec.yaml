@@ -79,6 +79,7 @@ flutter:
     - assets/illustrations/jobs_cards.webp
     - assets/illustrations/body_cards.webp
     - assets/mascot/
+    - assets/avatars/
     - assets/premium/
     - assets/cartoons/
 

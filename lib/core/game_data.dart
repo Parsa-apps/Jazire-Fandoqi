@@ -167,7 +167,7 @@ class GameData {
       totalCorrect = _readInt('tc', 0);
       totalWrong = _readInt('tw', 0);
       lastLogin = prefs.getString('ll') ?? '';
-      avatar = _readString('av', '😊', maxLength: 8);
+      avatar = _readString('av', '😊', maxLength: 128);
       childName = _readString('childName', '', maxLength: 24).trim();
       profilePhotoPath = _readString('profilePhotoPath', '', maxLength: 512);
       childAge = _readInt('childAge', 5, min: 3, max: 12);
@@ -349,7 +349,7 @@ class GameData {
     totalWrong = asInt('tw', 0).clamp(0, _maxStoredCounter);
     lastLogin = asString('ll', '');
     avatar = asString('av', '😊');
-    if (avatar.length > 8) avatar = avatar.substring(0, 8);
+    if (avatar.length > 128) avatar = avatar.substring(0, 128);
     childName = asString('childName', '');
     profilePhotoPath = asString('profilePhotoPath', '');
     if (childName.length > 24) childName = childName.substring(0, 24);
@@ -935,23 +935,24 @@ class GameData {
     if (childName.length > 24) childName = childName.substring(0, 24);
     childAge = age.clamp(3, 12).toInt();
     avatar = avatarIcon;
-    if (avatar.length > 8) avatar = avatar.substring(0, 8);
+    if (avatar.length > 128) avatar = avatar.substring(0, 128);
     onboardingSeen = true;
     _notify();
     unawaited(save());
   }
 
-  static void updateProfile({required String name, String? photoPath}) {
+  static void updateProfile({required String name, String? photoPath, String? avatarIcon}) {
     final trimmed = name.trim();
     childName = trimmed.substring(0, trimmed.length.clamp(0, 24).toInt());
     if (photoPath != null) profilePhotoPath = photoPath;
+    if (avatarIcon != null && avatarIcon.isNotEmpty) avatar = avatarIcon;
     _notify();
     unawaited(save());
   }
 
   static void setAvatar(String newAvatar) {
     if (newAvatar.isEmpty) return;
-    avatar = newAvatar.length > 8 ? newAvatar.substring(0, 8) : newAvatar;
+    avatar = newAvatar.length > 128 ? newAvatar.substring(0, 128) : newAvatar;
     _notify();
     unawaited(save());
   }

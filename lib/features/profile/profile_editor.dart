@@ -10,6 +10,7 @@ import '../../core/game_data.dart';
 Future<void> showProfileEditor(BuildContext context) async {
   final name = TextEditingController(text: GameData.childName);
   String? photo = GameData.profilePhotoPath.isEmpty ? null : GameData.profilePhotoPath;
+  String selectedAvatar = GameData.avatar;
   await showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (sheetContext) => StatefulBuilder(builder: (context, setState) => Padding(
     padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.viewInsetsOf(context).bottom + 28),
     child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -47,9 +48,17 @@ Future<void> showProfileEditor(BuildContext context) async {
           );
         }
       }, child: CircleAvatar(radius: 46, backgroundImage: photo != null && File(photo!).existsSync() ? FileImage(File(photo!)) : null, child: photo == null ? const Icon(Icons.add_a_photo_rounded, size: 30) : null)),
-      const SizedBox(height: 8), const Text('برای انتخاب عکس بزنید'), const SizedBox(height: 16),
+      const SizedBox(height: 8), const Text('برای انتخاب عکس خودت بزنید'), const SizedBox(height: 18),
+      const Align(alignment: Alignment.centerRight, child: Text('یا یک آواتار آماده انتخاب کن', style: TextStyle(fontWeight: FontWeight.bold))),
+      const SizedBox(height: 10),
+      Wrap(spacing: 10, runSpacing: 10, children: List.generate(6, (index) {
+        final asset = 'assets/avatars/avatar_$index.png';
+        final active = selectedAvatar == asset && photo == null;
+        return GestureDetector(onTap: () => setState(() { selectedAvatar = asset; photo = null; }), child: AnimatedContainer(duration: const Duration(milliseconds: 180), width: 54, height: 54, padding: const EdgeInsets.all(2), decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: active ? const Color(0xFF6C43D9) : Colors.transparent, width: 3)), child: ClipOval(child: Image.asset(asset, fit: BoxFit.cover))));
+      })),
+      const SizedBox(height: 16),
       TextField(controller: name, maxLength: 24, decoration: const InputDecoration(labelText: 'نام کودک', border: OutlineInputBorder())),
-      const SizedBox(height: 12), FilledButton(onPressed: () { GameData.updateProfile(name: name.text, photoPath: photo ?? ''); Navigator.pop(sheetContext); }, child: const Text('ذخیره تغییرات')),
+      const SizedBox(height: 12), FilledButton(onPressed: () { GameData.updateProfile(name: name.text, photoPath: photo ?? '', avatarIcon: selectedAvatar); Navigator.pop(sheetContext); }, child: const Text('ذخیره تغییرات')),
     ]),
   )));
   name.dispose();
