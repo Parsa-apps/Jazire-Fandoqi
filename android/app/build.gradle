@@ -56,8 +56,8 @@ android {
     }
 
     signingConfigs {
-        if (hasReleaseSigning) {
-            release {
+        release {
+            if (hasReleaseSigning) {
                 keyAlias = keystoreProperties['keyAlias']
                 keyPassword = keystoreProperties['keyPassword']
                 storeFile = file(keystoreProperties['storeFile'])
@@ -68,11 +68,11 @@ android {
 
     buildTypes {
         release {
-            // Never fall back to the debug certificate for a distributable build.
-            // Without key.properties Gradle produces an unsigned verification artifact.
-            if (hasReleaseSigning) {
-                signingConfig = signingConfigs.release
-            }
+            // If key.properties exists → use real release keystore (for Bazaar/Play).
+            // If not → fallback to debug keystore so the APK is still signed and
+            // installable on device for testing. This prevents:
+            // "The parser did not find any certificates in the installation package."
+            signingConfig = hasReleaseSigning ? signingConfigs.release : signingConfigs.debug
         }
     }
 }

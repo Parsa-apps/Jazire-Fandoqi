@@ -70,6 +70,16 @@ fi
 # ── ۷. بیلد + حجم + آیکون نهایی ──────────────────────────────────
 log 'مرحله ۷/۷: ساخت خروجی'
 if [[ "$BUILD_MODE" == "release" ]]; then
+  if [[ ! -f android/key.properties ]]; then
+    log '⚠️  فایل android/key.properties پیدا نشد.'
+    log '   APK ریلیز با کلید دیباگ امضا می‌شود تا قابل نصب باشد (برای تست).'
+    log '   برای انتشار در کافه‌بازار/گوگل‌پلی باید keystore اصلی بسازی:'
+    log '   keytool -genkey -v -keystore android/release.keystore -alias fandoghi -keyalg RSA -keysize 4096 -validity 10000'
+    log '   سپس فایل android/key.properties را بساز (نمونه در BUILD_INSTRUCTIONS.md).'
+  else
+    ok 'فایل امضای انتشار پیدا شد → استفاده از کلید اصلی'
+  fi
+
   log 'ساخت APK (split per ABI)...'
   if ! flutter build apk --release --split-per-abi; then
     fail 'ساخت APK شکست خورد'
@@ -86,6 +96,12 @@ if [[ "$BUILD_MODE" == "release" ]]; then
     SIZE=$(du -m "$apk" | cut -f1)
     TOTAL=$((TOTAL + SIZE))
     ok "APK: $(basename "$apk") → ${SIZE}MB"
+    # Verify signature exists
+    if command -v apksigner >/dev/null 2>&1; then
+      apksigner verify --print-certs "$apk" >/dev/null 2>&1 && ok "امضا تایید شد: $(basename "$apk")" || fail "APK بدون امضا است: $(basename "$apk")"
+    elif command -v jarsigner >/dev/null 2>&1; then
+      jarsigner -verify "$apk" >/dev/null 2>&1 && ok "امضا (jarsigner) تایید شد" || log "هشدار: تایید امضا ممکن نیست"
+    fi
   done
   ok "حجم کل APKها: ${TOTAL}MB (هدف < ۳۵MB برای هر ABI)"
 else
@@ -94,6 +110,7 @@ else
     fail 'ساخت Debug شکست خورد'
     exit 1
   fi
+  ok 'APK دیباگ با کلید دیباگ امضا شد و قابل نصب است'
 fi
 
 if [[ $FAILED -ne 0 ]]; then

@@ -53,8 +53,12 @@ keyPassword=رمز-key
 ```
 
 فایل keystore را در `android/release.keystore` بگذارید. `key.properties` و فایل‌های
-keystore در `.gitignore` قرار دارند. اگر این فایل وجود نداشته باشد، خروجی release
-فقط برای راستی‌آزمایی build است و امضای قابل‌انتشار ندارد.
+keystore در `.gitignore` قرار دارند.
+
+> **فیکس ارور "The parser did not find any certificates":**
+> نسخه قبلی اگر `key.properties` نبود، APK را بدون امضا می‌ساخت که در اندروید ۱۳+ نصب نمی‌شود.
+> الان اگر `key.properties` نباشد، APK ریلیز با کلید دیباگ امضا می‌شود تا قابل نصب برای تست باشد.
+> این برای تست روی گوشی کافی است، اما برای کافه‌بازار باید حتماً keystore اصلی بسازید.
 
 ### ۵. ساخت APK
 
@@ -128,6 +132,31 @@ flutter build apk --release
 مطمئن شوید Java JDK 17 یا بالاتر نصب است:
 ```bash
 java -version
+```
+
+### خطای `Installation failed - parser did not find any certificates`:
+این خطا یعنی APK بدون امضا ساخته شده است.
+**راه حل فوری:**
+```bash
+# روش ۱: دیباگ بساز (همیشه قابل نصب است)
+flutter build apk --debug
+adb install build/app/outputs/flutter-apk/app-debug.apk
+
+# روش ۲: ریلیز با امضای دیباگ (بعد از فیکس v6.0.0+12):
+flutter build apk --release
+# الان این APK هم با کلید دیباگ امضا می‌شود و نصب می‌شود
+```
+**برای انتشار اصلی در کافه‌بازار:**
+```bash
+keytool -genkey -v -keystore android/release.keystore -alias fandoghi -keyalg RSA -keysize 4096 -validity 10000
+# بعد فایل android/key.properties را بسازید و دوباره build کنید
+```
+
+### خطای `App not installed` بعد از نصب قبلی:
+اگر نسخه قبلی با کلید دیگری امضا شده بود:
+```bash
+adb uninstall com.parsaapps.amoozesh_fandoghi
+adb install build/app/outputs/flutter-apk/app-release.apk
 ```
 
 ## 📞 پشتیبانی
