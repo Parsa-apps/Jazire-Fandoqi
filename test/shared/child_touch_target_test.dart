@@ -43,9 +43,11 @@ void main() {
       ),
     );
 
-    await tester.press(find.text('فندقی'));
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('فندقی')),
+    );
     await tester.pump(const Duration(milliseconds: 50));
-    await tester.release(find.text('فندقی'));
+    await gesture.up();
     await tester.pump();
     expect(presses, 1);
   });

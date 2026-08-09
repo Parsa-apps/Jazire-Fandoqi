@@ -21,10 +21,23 @@ void main() {
     expect(result, isTrue);
   });
 
-  test('billing channel falls back to failure when no native handler', () async {
-    // بدون mock نیتیو، روشنچنل در تست خطا می‌دهد → باید failure برگردد
-    const MethodChannel('kudake_iran/billing').setMockMethodCallHandler(null);
+  test('billing channel rejects when native returns failure', () async {
+    // شبیه‌سازی پاسخی که استور واقعی در حالت release برای خطا برمی‌گرداند
+    const MethodChannel('kudake_iran/billing').setMockMethodCallHandler(
+      (call) async => <String, Object?>{
+        'success': false,
+        'message': 'پرداخت تأیید نشد',
+      },
+    );
     final result = await BillingService.purchaseSubscription('sub_monthly');
     expect(result.success, isFalse);
+  });
+
+  test('sandbox fallback activates only outside release', () async {
+    // در تست kReleaseMode=false است؛ بدون هندلر نیتیو، fallback سندباکس باید فعال شود
+    const MethodChannel('kudake_iran/billing').setMockMethodCallHandler(null);
+    final result = await BillingService.purchaseSubscription('sub_monthly');
+    expect(result.success, isTrue);
+    expect(result.message, contains('سندباکس'));
   });
 }

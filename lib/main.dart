@@ -7,7 +7,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-import 'app/app_theme.dart';
 import 'app/theme_controller.dart';
 import 'core/audio_service.dart';
 import 'core/fandoghi_coach.dart';

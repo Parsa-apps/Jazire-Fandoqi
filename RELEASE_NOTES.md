@@ -1,3 +1,12 @@
+## 🔎 بازبینی دور دوم (Deep Pass 2) — ۹ اوت ۲۰۲۶
+
+- فیکس کامپایل: `accessibility.dart` (math.pow)، `audio_service.dart` (dart:async)
+- فیکس منطق: کش گزینههای دور در `academy_game` و `math_race` (رفع شافل مجدد)
+- فیکس تست: `monetization_test` (سندباکس در تست فعال است)، `child_touch_target_test` (startGesture)
+- حذف ۷ import بلااستفاده دیگر + ۱ import dart:ui اضافی
+- تأیید: welcome overlay واقعاً mount است، قلبهای ستاره ۵تاست، تمام تستها معتبرند
+
+---
 ## 🔎 بازبینی کامل ۱۰۰ فاز (QA Review Pass) — ۹ اوت ۲۰۲۶
 
 پس از اجرای تمام فازها، بازبینی خط‌به‌خط انجام شد (گزارش: `docs/PHASE_100_FINAL_REVIEW.md`):

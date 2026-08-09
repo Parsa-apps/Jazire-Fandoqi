@@ -1,4 +1,4 @@
-import 'dart:math';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -45,7 +45,7 @@ class Accessibility {
 
   static double _relativeLuminance(Color c) {
     double lin(double v) {
-      final s = v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055).pow(2.4).toDouble();
+      final s = v <= 0.03928 ? v / 12.92 : math.pow((v + 0.055) / 1.055, 2.4).toDouble();
       return s;
     }
 

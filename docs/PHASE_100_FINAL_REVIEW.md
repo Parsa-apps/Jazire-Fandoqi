@@ -93,3 +93,31 @@ game_state_provider)، `services` (profile).
 ## نتیجه
 بازبینی کامل از فاز ۱ تا ۱۰۰ انجام شد؛ ۸ باگ واقعی (۱ بحرانی، ۴ مهم) و ۸ import
 بلااستفاده فیکس شد و ۲ بهبود تکمیلی اعمال گردید. همه چک‌های ساختاری سبز هستند.
+
+---
+
+## 🔁 بازبینی دور دوم (Deep Pass 2)
+
+دومین مرور خطبهخط با تمرکز روی خطاهای کامپایلی پنهان و باگهای شافل مجدد:
+
+### فیکسهای دور دوم
+| # | مورد | نوع |
+|---|------|-----|
+| ۹ | `accessibility.dart`: `.pow(2.4)` نامعتبر بود → `math.pow(...)` | 🔴 کامپایل |
+| ۱۰ | `audio_service.dart`: `unawaited` بدون `import 'dart:async'` | 🔴 کامپایل |
+| ۱۱ | `asset_manager.dart`: import بلااستفاده `dart:ui` | 🟡 |
+| ۱۲ | `academy_game.dart` و `math_race_game.dart`: شافل مجدد گزینهها هنگام rebuild (همان الگوی باگ ۲) | 🟠 منطق |
+| ۱۳ | `monetization_test.dart`: انتظار اشتباه — در تست `kReleaseMode=false` است پس fallback سندباکس فعال است | 🟠 تست |
+| ۱۴ | `child_touch_target_test.dart`: `tester.press` وجود ندارد → `startGesture` | 🔴 تست |
+| ۱۵ | ۷ import بلااستفاده دیگر (main/app_theme، island/fandoghi_v2، colors_lab/learning_topics، shop/premium_card، premium_animations در ۳ فایل) | 🟡 |
+
+### تأییدهای مثبت دور دوم
+- ✅ `FandoghiWelcomeOverlay` در `FandoghiCoachOverlay` mount شده (انیمیشن خوشآمد واقعاً نمایش داده میشود)
+- ✅ قلبهای Star Catch = ۵ (باگ فاز ۳۳ رفع شده بود)
+- ✅ `BillingService._invoke` قرارداد نیتیو را درست parse میکند
+- ✅ تمام ۹ فایل تست از نظر منطق معتبرند
+- ✅ متنهای تست اسموک با داشبورد (حالت استاندارد سن ۵) هماهنگ است
+- ✅ ۶ مورد باقیمانده import checker همگی false positive بودند (استفاده از export و top-level providers)
+
+### جمعبندی نهایی دور دوم
+**۹ فیکس واقعی** (۲ کامپایل، ۱ تست، ۲ منطق شافل، ۴ import) — همه چکهای ساختاری سبز.

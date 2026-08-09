@@ -83,15 +83,18 @@ class _AcademyGameState extends State<AcademyGame> {
 
   LearningCard get _currentCard => _roundCards[_roundIndex];
 
-  List<LearningCard> _options() {
+  /// گزینه‌های دور جاری — یک‌بار ساخته می‌شوند تا نمایش، پاسخ و
+  /// هایلایت درست/غلط همیشه روی یک لیست باشند (رفع شافل مجدد).
+  late List<LearningCard> _roundOptions = _buildOptions();
+
+  List<LearningCard> _buildOptions() {
     // گزینه‌های جواب: کارت درست + ۲ کارت تصادفی دیگر
     final others = _topic.cards
         .where((c) => c.id != _currentCard.id)
         .toList()
       ..shuffle(Random());
-    final options = <LearningCard>[_currentCard, others[0], others[1]]
+    return <LearningCard>[_currentCard, others[0], others[1]]
       ..shuffle(Random());
-    return options;
   }
 
   void _speakCurrent() {
@@ -141,6 +144,7 @@ class _AcademyGameState extends State<AcademyGame> {
       } else {
         setState(() {
           _roundIndex++;
+          _roundOptions = _buildOptions();
           _selectedIndex = null;
           _locked = false;
         });
@@ -168,6 +172,7 @@ class _AcademyGameState extends State<AcademyGame> {
     setState(() {
       _roundCards = _topic.pickRandom(5);
       _roundIndex = 0;
+      _roundOptions = _buildOptions();
       _score = 0;
       _correct = 0;
       _locked = false;
@@ -190,7 +195,7 @@ class _AcademyGameState extends State<AcademyGame> {
   }
 
   Widget _buildGame() {
-    final options = _options();
+    final options = _roundOptions;
     final card = _currentCard;
     return Column(
       children: [

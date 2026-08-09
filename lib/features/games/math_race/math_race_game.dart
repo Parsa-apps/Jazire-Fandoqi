@@ -43,6 +43,7 @@ class _MathRaceGameState extends State<MathRaceGame> {
   void initState() {
     super.initState();
     _buildQuestions();
+    _roundOptions = _buildOptions();
     FandoghiCoach.enablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -111,6 +112,7 @@ class _MathRaceGameState extends State<MathRaceGame> {
       } else {
         setState(() {
           _index++;
+          _roundOptions = _buildOptions();
           _selected = null;
           _locked = false;
         });
@@ -137,6 +139,7 @@ class _MathRaceGameState extends State<MathRaceGame> {
     setState(() {
       _buildQuestions();
       _index = 0;
+      _roundOptions = _buildOptions();
       _correct = 0;
       _progress = 0;
       _locked = false;
@@ -158,11 +161,21 @@ class _MathRaceGameState extends State<MathRaceGame> {
     );
   }
 
-  Widget _buildGame() {
+  /// گزینه‌های دور جاری — یک‌بار ساخته می‌شوند تا نمایش و پاسخ همیشه
+  /// روی یک لیست باشند.
+  late List<int> _roundOptions = _buildOptions();
+
+  List<int> _buildOptions() {
     final q = _questions[_index];
     final answer = _answerOf(q);
     // گزینه‌ها: جواب درست + ۲ گزینه نزدیک
-    final options = <int>{answer, answer + 1, answer - 1}.toList()..shuffle();
+    return <int>{answer, answer + 1, answer - 1}.toList()..shuffle();
+  }
+
+  Widget _buildGame() {
+    final q = _questions[_index];
+    final answer = _answerOf(q);
+    final options = _roundOptions;
     return Column(
       children: [
         Padding(
