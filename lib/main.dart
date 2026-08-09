@@ -283,6 +283,9 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
         stageNumber: launch.stageNumber,
       );
     }
+    if (name.contains('آزمایشگاه')) {
+      return const ColorsLabGame();
+    }
     if (name.contains('رنگ') || name.contains('color')) {
       return AcademyGame(
         topicId: 'colors',

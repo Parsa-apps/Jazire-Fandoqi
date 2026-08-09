@@ -207,31 +207,40 @@ class _MathRaceGameState extends State<MathRaceGame> {
           ),
         ),
         const SizedBox(height: 10),
-        // پیست مسابقه
+        // پیست مسابقه (دور ۷: عرض کامل + بدون کلیپ — قبلاً Stack عرض صفر می‌گرفت)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Stack(
-            children: [
-              Container(
-                height: 10,
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(6),
+          child: SizedBox(
+            height: 40,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 18,
+                  child: Container(
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
                 ),
-              ),
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 400),
-                curve: Curves.easeOutBack,
-                left: (MediaQuery.of(context).size.width - 48) * _progress / 100,
-                top: -14,
-                child: const Text('🏎️', style: TextStyle(fontSize: 32)),
-              ),
-              Positioned(
-                right: 0,
-                top: -14,
-                child: const Text('🏁', style: TextStyle(fontSize: 32)),
-              ),
-            ],
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeOutBack,
+                  left: (MediaQuery.of(context).size.width - 48) * _progress / 100,
+                  top: 0,
+                  child: const Text('🏎️', style: TextStyle(fontSize: 32)),
+                ),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: const Text('🏁', style: TextStyle(fontSize: 32)),
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 34),

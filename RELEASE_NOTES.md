@@ -1,3 +1,10 @@
+## 🔎 بازبینی دور هفتم (Deep Pass 7) — بصری/مسیریابی
+
+- **فیکس بصری:** پیست مسابقه ریاضی (Stack با عرض صفر → نامرئی/بریده‌شده) → بازنویسی با SizedBox + clipBehavior.none
+- **فیکس مسیریابی:** مرحله «صدای جنگل» → بازی بشنو؛ مرحله «آزمایشگاه رنگ» → ColorsLabGame
+- تأیید: ۱۴ ارجاع asset همگی موجود، ۲۵ تم نقشه و ۶ بازی سریع درست مسیریابی می‌شوند
+
+---
 ## 🔎 بازبینی دور ششم (Deep Pass 6) — زمان اجرا
 
 - **فیکس کرش:** `_roundOptions` در ۴ بازی (academy/pattern/math_race/colors_lab) از field-initializer به initState منتقل شد (LateInitializationError در اولین فریم)
