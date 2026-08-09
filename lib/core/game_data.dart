@@ -112,6 +112,9 @@ class GameData {
   static int prizeBoxTokens = 0;
   static List<String> openedPrizes = <String>[];
 
+  // فاز ۴۰: تزئینات جزیره‌ی شخصی (slotKey → itemId)
+  static Map<String, String> islandDecorations = <String, String>{};
+
   // ✅ فیکس عمیق فاز ۳۰: achievement_system به playedGames نیاز داشت ولی نبود — باعث بیلد فیل خاموش
   static List<String> playedGames = <String>[];
   static final Set<String> _playedGamesSet = <String>{};
@@ -197,6 +200,7 @@ class GameData {
 
       prizeBoxTokens = _readInt('pbt', 0);
       openedPrizes = _readList('op');
+      islandDecorations = _readIslandDecorations();
       // ✅ فیکس: بارگذاری playedGames برای achievement
       playedGames = _readList('pg');
       _playedGamesSet
@@ -253,6 +257,18 @@ class GameData {
     final value = _prefs?.getString(key);
     if (value == null) return fallback;
     return value.length <= maxLength ? value : value.substring(0, maxLength);
+  }
+
+  static Map<String, String> _readIslandDecorations() {
+    final raw = _readList('idc');
+    final map = <String, String>{};
+    for (final entry in raw) {
+      final parts = entry.split(':');
+      if (parts.length == 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
+        map[parts[0]] = parts[1];
+      }
+    }
+    return map;
   }
 
   static List<String> _readList(String key) {
@@ -362,6 +378,15 @@ class GameData {
     }
     prizeBoxTokens = asInt('pbt', 0).clamp(0, _maxStoredCounter);
     openedPrizes = asList('op');
+    islandDecorations = <String, String>{};
+    final idc = d['idc'];
+    if (idc is Map) {
+      idc.forEach((k, v) {
+        if (k is String && v is String && k.isNotEmpty && v.isNotEmpty) {
+          islandDecorations[k] = v;
+        }
+      });
+    }
     playedGames = asList('pg');
     _playedGamesSet
       ..clear()
@@ -410,6 +435,7 @@ class GameData {
         'cs': completedStages,
         'pbt': prizeBoxTokens,
         'op': openedPrizes,
+        'idc': islandDecorations,
         'pg': playedGames,
         'skills': skills,
       };
@@ -543,6 +569,12 @@ class GameData {
     }
     await prefs.setInt('pbt', prizeBoxTokens);
     await prefs.setStringList('op', List<String>.from(openedPrizes));
+    await prefs.setStringList(
+      'idc',
+      islandDecorations.entries
+          .map((e) => '${e.key}:${e.value}')
+          .toList(),
+    );
     await prefs.setStringList('pg', List<String>.from(playedGames));
     for (final key in skills.keys) {
       await prefs.setInt('sk_$key', skills[key] ?? 0);
@@ -671,6 +703,29 @@ class GameData {
 
   static bool hasItem(String id) =>
       ownedItems.contains(id) || stickers.contains(id);
+
+  // ==================== ISLAND BUILDER (فاز ۴۰) ====================
+  static const int islandDecorationCost = 5;
+
+  /// قرار دادن تزئین روی یک خانه از جزیره. اگر سکه کافی نباشد false.
+  static bool placeDecoration(String slot, String itemId) {
+    if (!_isLoaded || slot.isEmpty || itemId.isEmpty) return false;
+    if (islandDecorations.containsKey(slot)) return false;
+    if (coins < islandDecorationCost) return false;
+    coins -= islandDecorationCost;
+    level = min(_maxStoredCounter, (coins ~/ 100) + 1);
+    islandDecorations[slot] = itemId;
+    _notify();
+    unawaited(save());
+    return true;
+  }
+
+  static void removeDecoration(String slot) {
+    if (!_isLoaded) return;
+    islandDecorations.remove(slot);
+    _notify();
+    unawaited(save());
+  }
 
   /// ✅ فیکس عمیق فاز ۳۰: ثبت بازی‌های انجام شده برای achievement
   static void recordGamePlayed(String gameId) {
@@ -978,6 +1033,7 @@ class GameData {
     completedStages = <String, bool>{};
     prizeBoxTokens = 0;
     openedPrizes = <String>[];
+    islandDecorations = <String, String>{};
     playedGames = <String>[];
     _playedGamesSet.clear();
     _notify();

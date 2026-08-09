@@ -18,6 +18,12 @@ import 'features/about/privacy_policy_screen.dart';
 import 'features/games/alphabet_academy/alphabet_academy_game.dart';
 import 'features/games/bubble_pop/bubble_pop_game.dart';
 import 'features/games/drawing/drawing_game.dart';
+import 'features/games/body_parts/body_parts_game.dart';
+import 'features/games/island_builder/island_builder_game.dart';
+import 'features/games/math_race/math_race_game.dart';
+import 'features/games/pattern/pattern_game.dart';
+import 'features/games/puzzle/puzzle_game.dart';
+import 'features/games/sound_match/sound_match_game.dart';
 import 'features/games/academy/academy_game.dart';
 import 'features/games/colors_lab/colors_lab_game.dart';
 import 'features/games/learning_quiz/learning_quiz_game.dart';
@@ -141,6 +147,12 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
         '/bubble_pop': (context) => const BubblePopGame(),
         '/star_catch': (context) => const StarCatchGame(),
         '/colors_lab': (context) => const ColorsLabGame(),
+        '/puzzle': (context) => const PuzzleGame(),
+        '/math_race': (context) => const MathRaceGame(),
+        '/pattern': (context) => const PatternGame(),
+        '/sound_match': (context) => const SoundMatchGame(),
+        '/body_parts': (context) => const BodyPartsGame(),
+        '/island_builder': (context) => const IslandBuilderGame(),
         '/parent': (context) => const ParentPanel(),
         '/about': (context) => const AboutScreen(),
         '/privacy': (context) => const PrivacyPolicyScreen(),

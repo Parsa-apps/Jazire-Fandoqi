@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
@@ -476,6 +478,19 @@ class BubblePopFlameGame extends FlameGame {
       if (mode == BubbleMode.letters) GameData.progressMission('alphabet');
       if (mode == BubbleMode.colors) GameData.progressMission('colors');
       HapticFeedback.lightImpact();
+      // فاز ۳۲: ترکیدن زنجیره‌ای حباب‌های هم‌ارزش (بدون امتیاز اضافه)
+      children.whereType<_Bubble>().toList().forEach((bubble) {
+        if (bubble.data.display == targetEmoji) bubble.popVisual();
+      });
+      // فاز ۳۲: تلفظ هدف توسط فندقی
+      switch (mode) {
+        case BubbleMode.letters:
+          unawaited(AudioService.pronounceLetter(_targetKey));
+        case BubbleMode.numbers:
+          unawaited(AudioService.speak(_targetKey));
+        case BubbleMode.colors:
+          unawaited(AudioService.speak(targetLabel));
+      }
       // شمارش ترکاندن‌های درست روی هدف فعلی
       _correctHitsOnTarget++;
       // شرط اول: چند ترکاندن درست پشت سر هم = عوض شدن هدف (تجربه‌ی متنوع)
@@ -559,6 +574,14 @@ class _Bubble extends PositionComponent {
     _popped = true; _popping = true;
     parent?.add(_PopParticle(position: position.clone(), color: data.color));
     onPop(data.isTarget);
+  }
+
+  /// فاز ۳۲: ترکیدن زنجیره‌ای — فقط بصری، بدون احتساب امتیاز.
+  void popVisual() {
+    if (_popped) return;
+    _popped = true;
+    _popping = true;
+    parent?.add(_PopParticle(position: position.clone(), color: data.color));
   }
 
   @override
