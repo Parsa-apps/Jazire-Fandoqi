@@ -74,10 +74,17 @@ class _DraggableMascot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DraggableFandoghi(
-      size: 84,
-      onTap: () => FandoghiCoach.instruction(
-        'هر وقت کمک خواستی روی من بزن! من راهنمای تو هستم 🧒',
+    return ValueListenableBuilder<bool>(
+      valueListenable: FandoghiCoach.minimized,
+      builder: (context, minimized, _) => DraggableFandoghi(
+        size: minimized ? 48 : 84,
+        minimized: minimized,
+        onRestore: FandoghiCoach.restore,
+        onMinimize: FandoghiCoach.minimize,
+        onClose: FandoghiCoach.disablePersistentPresence,
+        onTap: () => FandoghiCoach.instruction(
+          'هر وقت کمک خواستی روی من بزن! من راهنمای تو هستم 🧒',
+        ),
       ),
     );
   }
