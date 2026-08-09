@@ -13,7 +13,7 @@
 
 ## پیکربندی پیش از آزمون واقعی
 
-1. در داشبورد کافه‌بازار، محصولات دقیق `sub_monthly` و `sub_yearly` را بسازید.
+1. در داشبورد کافه‌بازار، محصولات دقیق `full_version` (خرید غیرمصرف‌شدنی و دائمی) را بسازید.
 2. `android/billing.properties.example` را به `android/billing.properties` کپی کنید.
 3. کلید عمومی RSA برنامه را در `bazaarRsaPublicKey` قرار دهید. این فایل در Git
    نادیده گرفته می‌شود.

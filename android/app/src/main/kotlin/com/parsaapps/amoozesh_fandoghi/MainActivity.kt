@@ -88,7 +88,7 @@ class MainActivity : FlutterActivity() {
         if (consumable) {
             client.purchaseProduct(activityResultRegistry, request, callback)
         } else {
-            client.subscribeProduct(activityResultRegistry, request, callback)
+            client.purchaseProduct(activityResultRegistry, request, callback)
         }
     }
 
@@ -115,7 +115,7 @@ class MainActivity : FlutterActivity() {
             return
         }
         val client = availablePayment(result) ?: return
-        client.getSubscribedProducts(queryCallback(result))
+        client.getPurchasedProducts(queryCallback(result))
     }
 
     private fun queryCallback(result: MethodChannel.Result): PurchaseQueryCallback.() -> Unit = {

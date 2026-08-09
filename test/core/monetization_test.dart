@@ -29,14 +29,14 @@ void main() {
         'message': 'پرداخت تأیید نشد',
       },
     );
-    final result = await BillingService.purchaseSubscription('sub_monthly');
+    final result = await BillingService.purchaseNonConsumable('full_version');
     expect(result.success, isFalse);
   });
 
   test('sandbox fallback activates only outside release', () async {
     // در تست kReleaseMode=false است؛ بدون هندلر نیتیو، fallback سندباکس باید فعال شود
     const MethodChannel('kudake_iran/billing').setMockMethodCallHandler(null);
-    final result = await BillingService.purchaseSubscription('sub_monthly');
+    final result = await BillingService.purchaseNonConsumable('full_version');
     expect(result.success, isTrue);
     expect(result.message, contains('سندباکس'));
   });

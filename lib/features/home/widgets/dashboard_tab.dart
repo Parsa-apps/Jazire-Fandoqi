@@ -13,6 +13,8 @@ import '../../../shared/widgets/fandoghi_v2.dart';
 import '../../../shared/widgets/glass_card.dart';
 import 'premium_card.dart';
 import '../../../shared/widgets/star_field.dart';
+import '../../../core/monetization.dart';
+import '../../shop/full_version_paywall.dart';
 
 /// ═══════════════════════════════════════════════
 /// 📊 DASHBOARD TAB — Main Content
@@ -790,6 +792,17 @@ class _DashboardState extends ConsumerState<DashboardTab> {
     );
   }
 
+  static const _freeGames = {'الفبا', 'اعداد', 'رنگ‌ها', 'ستاره‌گیری', 'حباب‌ترکان'};
+
+  Future<void> _openGame(String game) async {
+    // A generous starter set lets families assess the app before the parent-only paywall.
+    if (!_freeGames.contains(game) && !await Monetization.hasFullVersion()) {
+      if (mounted) await showFullVersionPaywall(context, featureName: game);
+      return;
+    }
+    if (mounted) Navigator.pushNamed(context, '/game/$game');
+  }
+
   // ─── QUICK GAMES ──────────────────────────────
   Widget _buildQuickGames() {
     return Padding(
@@ -829,7 +842,7 @@ class _DashboardState extends ConsumerState<DashboardTab> {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        Navigator.pushNamed(context, '/game/$name');
+        _openGame(name);
       },
       child: Container(
         width: 90,
@@ -974,7 +987,7 @@ class _DashboardState extends ConsumerState<DashboardTab> {
           onTap: () {
             HapticFeedback.lightImpact();
             if (games.isNotEmpty) {
-              Navigator.pushNamed(context, '/game/${games.first}');
+              _openGame(games.first);
             }
           },
           child: Padding(
@@ -1031,7 +1044,7 @@ class _DashboardState extends ConsumerState<DashboardTab> {
                         (g) => GestureDetector(
                           onTap: () {
                             HapticFeedback.lightImpact();
-                            Navigator.pushNamed(context, '/game/$g');
+                            _openGame(g);
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(
