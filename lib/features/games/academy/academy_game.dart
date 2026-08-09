@@ -392,6 +392,7 @@ class _AcademyGameState extends State<AcademyGame> {
           ],
         ),
         ),
+      ),
       ],
     );
   }
