@@ -24,3 +24,4 @@ android/**/build/
 # OS
 .DS_Store
 Thumbs.db
+android/billing.properties

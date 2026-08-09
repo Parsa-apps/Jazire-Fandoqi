@@ -14,6 +14,16 @@ if (hasReleaseSigning) {
     keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
 }
 
+// Bazaar's RSA public key identifies and protects purchase responses. It is
+// public by design, but kept out of source so each release can be configured
+// from the store dashboard without a code change.
+def billingProperties = new Properties()
+def billingPropertiesFile = rootProject.file("billing.properties")
+if (billingPropertiesFile.exists()) {
+    billingPropertiesFile.withInputStream { billingProperties.load(it) }
+}
+def bazaarRsaPublicKey = billingProperties.getProperty("bazaarRsaPublicKey", "")
+
 android {
     namespace = "com.parsaapps.amoozesh_fandoghi"
     compileSdk = 35
@@ -36,6 +46,7 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled true
+        buildConfigField "String", "BAZAAR_RSA_PUBLIC_KEY", "\"${bazaarRsaPublicKey.replace('\\', '\\\\').replace('\"', '\\\"')}\""
     }
 
     signingConfigs {
@@ -62,4 +73,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Poolakey is the official open-source Cafe Bazaar billing client.
+    implementation "com.github.cafebazaar.Poolakey:poolakey:2.2.0"
 }

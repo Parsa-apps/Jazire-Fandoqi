@@ -1,0 +1,3 @@
+# Cafe Bazaar public RSA key from your app's in-app billing dashboard.
+# Copy to billing.properties and paste the unbroken Base64 public key.
+bazaarRsaPublicKey=
