@@ -75,6 +75,9 @@ class _DashboardState extends ConsumerState<DashboardTab> {
 
       // 📚 بنر قصه‌خانه و داستان‌های کودکانه
       SliverToBoxAdapter(child: _buildStoriesBanner()),
+
+      // 🌙 بنر لالایی‌های شیرین
+      SliverToBoxAdapter(child: _buildLullabyBanner()),
     ];
 
     // مأموریت‌ها فقط یک‌بار نمایش داده می‌شوند:
@@ -200,6 +203,12 @@ class _DashboardState extends ConsumerState<DashboardTab> {
                         _glassIconButton(
                           Icons.menu_book_rounded,
                           () => Navigator.pushNamed(context, '/stories'),
+                        ),
+                        const SizedBox(width: 8),
+                        // Lullaby Hub Button
+                        _glassIconButton(
+                          Icons.bedtime_rounded,
+                          () => Navigator.pushNamed(context, '/lullabies'),
                         ),
                         const SizedBox(width: 8),
                         // Settings button
@@ -756,6 +765,70 @@ class _DashboardState extends ConsumerState<DashboardTab> {
         ),
       ),
     ).animate().fadeIn(delay: 280.ms).slideY(begin: 0.2);
+  }
+
+  // ─── LULLABY BANNER ──────────────────────────
+  Widget _buildLullabyBanner() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          Navigator.pushNamed(context, '/lullabies');
+        },
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF1A237E), Color(0xFF3949AB), Color(0xFF5C6BC0)],
+            ),
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [BoxShadow(color: const Color(0xFF1A237E).withOpacity(0.35), blurRadius: 16, offset: const Offset(0, 6))],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(18)),
+                child: const Center(child: Text('🌙✨', style: TextStyle(fontSize: 26))),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      Text('لالایی‌های شیرین', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.25), borderRadius: BorderRadius.circular(8)),
+                        child: const Text('خواب‌آور', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                      ),
+                    ]),
+                    const SizedBox(height: 4),
+                    Text('۱۰ لالایی آرام • تصویر اختصاصی • صدای بچگانه',
+                        style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                child: Row(children: [
+                  const Icon(Icons.bedtime_rounded, color: Color(0xFF1A237E), size: 18),
+                  const SizedBox(width: 4),
+                  Text('گوش کنیم', style: AppFonts.vazirmatn(color: const Color(0xFF1A237E), fontWeight: FontWeight.w900, fontSize: 12)),
+                ]),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2);
   }
 
   // ─── DAILY MISSIONS ───────────────────────────
