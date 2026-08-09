@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.parsaapps.amoozesh_fandoghi"
-    compileSdk = 34
+    compileSdk = 35
     ndkVersion = "25.1.8937393"
 
     compileOptions {
@@ -22,7 +22,7 @@ android {
         applicationId = "com.parsaapps.amoozesh_fandoghi"
         // Required by just_audio and other modern plugins
         minSdk = 21
-        targetSdk = 34
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled true
