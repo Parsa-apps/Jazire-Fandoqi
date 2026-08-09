@@ -1,3 +1,23 @@
+## فاز ۷۱-۸۰: کسب‌وکار، استور، قانون
+
+- **فاز ۷۱:** بریج نیتیو پرداخت `MainActivity.kt` (MethodChannel kudake_iran/billing) — sandbox در debug، failure امن در release
+- **فاز ۷۲:** راهنمای flavor دو استور `docs/PHASE_72_STORES.md`
+- **فاز ۷۳:** اقتصاد اشتراک + A/B تست `docs/PHASE_73_SUBSCRIPTION.md`
+- **فاز ۷۴:** لیست ۸ اسکرین‌شات استور `docs/PHASE_74_STORE_ASSETS.md`
+- **فاز ۷۵:** توضیحات ۴۰۰ کلمه‌ای سئو کافه‌بازار `docs/PHASE_75_STORE_DESCRIPTION.md`
+- **فاز ۷۶:** دیالوگ امتیاز در صفحه درباره ما (آفلاین، بدون درخواست مزاحم)
+- **فاز ۷۷:** مستند COPPA `docs/PHASE_77_COPPA.md`
+- **فاز ۷۸:** ممیزی لایسنس — همه ۱۷ asset موجود و ارجاع‌ها سالم
+- **فاز ۷۹:** لایه رشته‌های چندزبانه پنهان `lib/core/app_strings.dart`
+- **فاز ۸۰:** چک‌لیست ۳۰ موردی انتشار `docs/PHASE_80_RELEASE_CHECKLIST.md`
+
+## فاز ۸۱-۸۳: تست‌ها
+
+- **فاز ۸۱:** Unit Test — `achievement_system_test` (۲۴ مدال)، `ai_system_test` (تطبیقی/پیشنهاد/چت)، `game_data_test` (جزیره/مأموریت/فونت/استرس ۵۰۰)، `monetization_test`
+- **فاز ۸۲:** Widget Test — `child_touch_target_test` (ناحیه ۶۴px) + به‌روزرسانی `app_smoke_test` برای Riverpod
+- **فاز ۸۳:** Integration Test — `integration_test/app_flow_test.dart` + پکیج integration_test
+
+---
 ## فاز ۴۱-۵۰: هوش مصنوعی آفلاین
 
 - **فاز ۴۱:** موتور بیزین (Beta) برای تخمین تسلط مهارت‌ها (`AI.masteryOf`)

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -16,7 +17,12 @@ void main() {
     GameData.resetForTesting();
     GameData.onboardingSeen = true;
 
-    await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+    await tester.pumpWidget(
+      // فاز ۳: HomeScreen حالا Consumer است — ProviderScope لازم دارد
+      const ProviderScope(
+        child: MaterialApp(home: HomeScreen()),
+      ),
+    );
     await tester.pump(const Duration(milliseconds: 250));
 
     expect(find.text('ماموریت‌های امروز'), findsOneWidget);
