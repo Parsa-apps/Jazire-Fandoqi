@@ -97,6 +97,9 @@ class GameData {
   static bool luckyWheelSpunToday = false;
   static bool aiBuddyUnlocked = false;
 
+  /// فاز ۷: مقیاس فونت قابل تنظیم توسط والدین (0.85 تا 1.4)
+  static double textScale = 1.0;
+
   // Stage map progress
   static int currentStage = 1;
   static int currentIsland = 0;
@@ -168,6 +171,7 @@ class GameData {
       treasureOpened = prefs.getBool('tr') ?? false;
       goldenChestOpened = prefs.getBool('gc') ?? false;
       soundEnabled = prefs.getBool('sn') ?? true;
+      textScale = (prefs.getDouble('tsc') ?? 1.0).clamp(0.85, 1.4).toDouble();
       lastWeekReset = prefs.getString('lwr') ?? '';
       highScore = _readInt('hs', 0);
       mathRaceHighScore = _readInt('mrhs', 0);
@@ -331,6 +335,8 @@ class GameData {
     treasureOpened = asBool('tr', false);
     goldenChestOpened = asBool('gc', false);
     soundEnabled = asBool('sn', true);
+    final tsc = d['tsc'];
+    if (tsc is num) textScale = tsc.toDouble().clamp(0.85, 1.4).toDouble();
     lastWeekReset = asString('lwr', '');
     highScore = asInt('hs', 0).clamp(0, _maxStoredCounter);
     mathRaceHighScore = asInt('mrhs', 0).clamp(0, _maxStoredCounter);
@@ -385,6 +391,7 @@ class GameData {
         'tr': treasureOpened,
         'gc': goldenChestOpened,
         'sn': soundEnabled,
+        'tsc': textScale,
         'lwr': lastWeekReset,
         'hs': highScore,
         'mrhs': mathRaceHighScore,
@@ -511,6 +518,7 @@ class GameData {
     await prefs.setBool('tr', treasureOpened);
     await prefs.setBool('gc', goldenChestOpened);
     await prefs.setBool('sn', soundEnabled);
+    await prefs.setDouble('tsc', textScale);
     await prefs.setInt('wpm', weeklyPlayMinutes);
     await prefs.setInt('tps', todayPlaySeconds);
     await prefs.setString('lwr', lastWeekReset);
@@ -793,6 +801,13 @@ class GameData {
     unawaited(save());
   }
 
+  /// فاز ۷: تنظیم مقیاس فونت توسط والدین.
+  static void setTextScale(double value) {
+    textScale = value.clamp(0.85, 1.4).toDouble();
+    _notify();
+    unawaited(save());
+  }
+
   static void setTimeLimitMinutes(int value) {
     timeLimitMinutes = value.clamp(15, 24 * 60).toInt();
     _notify();
@@ -940,6 +955,7 @@ class GameData {
     treasureOpened = false;
     goldenChestOpened = false;
     soundEnabled = true;
+    textScale = 1.0;
     luckyWheelSpunToday = false;
     aiBuddyUnlocked = false;
     currentStage = 1;

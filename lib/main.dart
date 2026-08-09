@@ -7,6 +7,7 @@ import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'app/app_theme.dart';
+import 'app/theme_controller.dart';
 import 'core/audio_service.dart';
 import 'core/game_data.dart';
 import 'core/game_launch.dart';
@@ -58,30 +59,62 @@ Future<void> main() async {
   );
 }
 
-class AmoozeshFandoghiApp extends StatelessWidget {
+class AmoozeshFandoghiApp extends StatefulWidget {
   const AmoozeshFandoghiApp({super.key});
 
   @override
+  State<AmoozeshFandoghiApp> createState() => _AmoozeshFandoghiAppState();
+}
+
+class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
+    with WidgetsBindingObserver {
+  final ThemeController _themeController = ThemeController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // فاز ۷: هنگام برگشت از پس‌زمینه، تم و فونت به‌روز می‌شوند
+    if (state == AppLifecycleState.resumed) {
+      _themeController.refresh();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _themeController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'آموزش فندقی',
-      debugShowCheckedModeBanner: false,
-      locale: const Locale('fa'),
-      supportedLocales: const [Locale('fa')],
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.system,
-      builder: (context, child) => FandoghiCoachOverlay(
-        child: _PlayTimeTracker(
-          child: child ?? const SizedBox.shrink(),
-        ),
-      ),
-      initialRoute: '/',
+    return ListenableBuilder(
+      listenable: _themeController,
+      builder: (context, _) {
+        return MaterialApp(
+          title: 'آموزش فندقی',
+          debugShowCheckedModeBanner: false,
+          locale: const Locale('fa'),
+          supportedLocales: const [Locale('fa')],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          theme: _themeController.themeFor(Brightness.light),
+          darkTheme: _themeController.themeFor(Brightness.dark),
+          themeMode: ThemeMode.system,
+          builder: (context, child) => FandoghiCoachOverlay(
+            child: _PlayTimeTracker(
+              child: child ?? const SizedBox.shrink(),
+            ),
+          ),
+          initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
         '/onboarding': (context) => const OnboardingScreen(),
@@ -109,10 +142,12 @@ class AmoozeshFandoghiApp extends StatelessWidget {
         }
         return null;
       },
-      onUnknownRoute: (settings) => MaterialPageRoute(
-        settings: settings,
-        builder: (_) => const _UnknownRouteScreen(),
-      ),
+          onUnknownRoute: (settings) => MaterialPageRoute(
+            settings: settings,
+            builder: (_) => const _UnknownRouteScreen(),
+          ),
+        );
+      },
     );
   }
 

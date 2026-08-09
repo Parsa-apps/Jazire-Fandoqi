@@ -189,6 +189,11 @@ class _ParentPanelState extends ConsumerState<ParentPanel> {
 
           const SizedBox(height: 24),
 
+          // ==================== ACCESSIBILITY (فاز ۷) ====================
+          _buildTextScaleCard(),
+
+          const SizedBox(height: 24),
+
           // ==================== REPORT ====================
           _buildReportCard(),
 
@@ -303,6 +308,62 @@ class _ParentPanelState extends ConsumerState<ParentPanel> {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// فاز ۷: مقیاس فونت قابل تنظیم برای والدین (دسترس‌پذیری).
+  Widget _buildTextScaleCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('🔠', style: TextStyle(fontSize: 22)),
+              const SizedBox(width: 8),
+              Text(
+                'اندازه متن (دسترس‌پذیری)',
+                style: AppFonts.vazirmatn(fontSize: 18, fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'متن کوچک‌تر برای نمایش بیشتر / متن بزرگ‌تر برای خوانایی بهتر',
+            style: const TextStyle(color: Colors.grey, fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Icon(Icons.text_fields, size: 20),
+              Expanded(
+                child: Slider(
+                  min: 0.85,
+                  max: 1.4,
+                  divisions: 11,
+                  value: GameData.textScale,
+                  label: '${(GameData.textScale * 100).round()}٪',
+                  onChanged: (value) {
+                    setState(() => GameData.setTextScale(value));
+                  },
+                ),
+              ),
+              const Icon(Icons.text_fields, size: 30),
+            ],
+          ),
+          Center(
+            child: Text(
+              '${(GameData.textScale * 100).round()}٪ از اندازه معمول',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
           ),
         ],
       ),
