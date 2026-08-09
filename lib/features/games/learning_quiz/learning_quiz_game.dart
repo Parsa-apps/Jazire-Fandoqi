@@ -534,9 +534,9 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
   /// فاز ۳۰: تولید هوشمند سوال از روی ضعیف‌ترین مهارت کودک
   /// (با استفاده از محتوای آکادمی — نه بانک ثابت)
   List<_QuizQuestion> _generateSmartQuestions() {
-    final weakSkill = AI.weakSkill();
+    final weakSkillKey = AI.weakSkillKey();
     final topic = learningTopics.firstWhere(
-      (t) => t.skill == weakSkill,
+      (t) => t.skill == weakSkillKey,
       orElse: () => learningTopics.first,
     );
     final questions = <_QuizQuestion>[];
