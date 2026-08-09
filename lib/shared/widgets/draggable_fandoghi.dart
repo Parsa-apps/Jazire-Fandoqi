@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import 'package:flutter/rendering.dart';
@@ -79,6 +81,7 @@ class DraggableFandoghi extends StatefulWidget {
 class _DraggableFandoghiState extends State<DraggableFandoghi>
     with SingleTickerProviderStateMixin {
   late final AnimationController _wobbleCtrl;
+  late final AnimationController _idleCtrl;
   late final AnimationController _snapCtrl;
   Animation<Offset>? _snapAnim;
   double _scale = 1.0;
@@ -93,6 +96,12 @@ class _DraggableFandoghiState extends State<DraggableFandoghi>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
+    // حرکت نفس‌کشیدن و شناوری آرام؛ سبک است و هنگام پس‌زمینه‌شدن اپ
+    // به‌صورت خودکار با TickerMode متوقف می‌شود.
+    _idleCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )..repeat(reverse: true);
     // انیمیشن چسبیدن به لبهٔ صفحه بعد از رها کردن، تا مسکات روی
     // محتوا و دکمه‌های وسط صفحه معلق نماند.
     _snapCtrl = AnimationController(
@@ -103,7 +112,9 @@ class _DraggableFandoghiState extends State<DraggableFandoghi>
 
   @override
   void dispose() {
+    _snapAnim?.removeListener(_applySnap);
     _wobbleCtrl.dispose();
+    _idleCtrl.dispose();
     _snapCtrl.dispose();
     super.dispose();
   }
@@ -227,14 +238,16 @@ class _DraggableFandoghiState extends State<DraggableFandoghi>
                 final left = cx - widget.size / 2;
                 final top = cy - widget.size / 2;
                 return AnimatedBuilder(
-                  animation: _wobbleCtrl,
+                  animation: Listenable.merge([_wobbleCtrl, _idleCtrl]),
                   builder: (context, child) {
                     final wobble = 1.0 +
                         (1.0 - _wobbleCtrl.value) * 0.08 *
                             (1 - (_wobbleCtrl.value - 0.5).abs() * 2);
+                    final idleLift = math.sin(_idleCtrl.value * math.pi) * 3.0;
+                    final idleScale = 1.0 + math.sin(_idleCtrl.value * math.pi) * 0.018;
                     return Positioned(
                       left: left,
-                      top: top,
+                      top: top - idleLift,
                       child: SizedBox(
                         width: widget.size,
                         height: widget.size,
@@ -247,7 +260,7 @@ class _DraggableFandoghiState extends State<DraggableFandoghi>
                             Positioned.fill(
                               child: IgnorePointer(
                                 child: AnimatedScale(
-                                  scale: _scale * wobble,
+                                  scale: _scale * wobble * idleScale,
                                   duration: const Duration(milliseconds: 120),
                                   curve: Curves.easeOut,
                                   child: _BunnyContainer(
