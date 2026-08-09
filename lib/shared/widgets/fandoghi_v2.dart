@@ -7,7 +7,7 @@ import 'fandoghi_bunny.dart';
 export '../../core/fandoghi_models.dart';
 
 /// ═══════════════════════════════════════════════
-/// 🐰 Fandoghi V2 — Backwards-compatible wrapper.
+/// 🧒 Fandoghi V2 — Backwards-compatible wrapper.
 ///
 /// The original V2 widget was a CustomPaint hazelnut. We replaced it
 /// with the cute [FandoghiBunny] image everywhere it was used, but

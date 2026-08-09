@@ -7,7 +7,7 @@ import 'fandoghi_bunny.dart';
 bool _everDragged = false;
 
 /// ═══════════════════════════════════════════════
-/// 🐰 Draggable Fandoghi — a freely draggable
+/// 🧒 Draggable Fandoghi — a freely draggable
 /// floating mascot that the user can move anywhere
 /// on the screen with one finger. The position is
 /// persisted in a global [ValueNotifier] so the

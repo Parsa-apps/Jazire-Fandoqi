@@ -75,7 +75,7 @@ class _DraggableMascot extends StatelessWidget {
     return DraggableFandoghi(
       size: 120,
       onTap: () => FandoghiCoach.instruction(
-        'هر وقت کمک خواستی روی من بزن! من راهنمای تو هستم 🐰',
+        'هر وقت کمک خواستی روی من بزن! من راهنمای تو هستم 🧒',
       ),
     );
   }
@@ -231,7 +231,7 @@ class _CoachBubble extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'فندقی می‌گوید 🐰',
+                      'فندقی می‌گوید 🧒',
                       style: AppFonts.balooBhaijaan2(
                         color: toneColor,
                         fontSize: 16,

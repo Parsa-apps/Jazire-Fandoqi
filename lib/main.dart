@@ -441,7 +441,7 @@ class _FirstFrameErrorScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('🐰', style: TextStyle(fontSize: 72)),
+                Text('🧒', style: TextStyle(fontSize: 72)),
                 SizedBox(height: 16),
                 Text(
                   'اوه! یک مشکل ناگهانی پیش آمد. لطفاً برنامه را دوباره باز کن.',
