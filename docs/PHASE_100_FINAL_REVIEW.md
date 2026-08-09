@@ -268,3 +268,23 @@ game_state_provider)، `services` (profile).
 
 ### جمع‌بندی نهایی (۸ دور بازبینی)
 **۴۰ فیکس واقعی** در مجموع: ۳ بحرانی، ۱۸ مهم، ۱۹ سبک/مستند/import.
+
+
+---
+
+## 🔁 بازبینی دور نهم (Deep Pass 9 — تایپ/نال/امضای API)
+
+### فیکس‌های دور نهم
+| # | مورد | نوع |
+|---|------|-----|
+| ۴۱ | **باگ کامپایل:** `PremiumButton.onPressed` (VoidCallback غیرنال) در چرخ شانس `null` می‌گرفت → `() {}` | 🔴 کامپایل |
+
+### تأییدهای دور نهم
+- ✅ کلیدهای skills: هیچ ارجاع به کلید تعریف‌نشده (drawing همیشه از missionProgress خوانده می‌شود)
+- ✅ missionId کوییز فقط alphabet/colors — هر دو در missionTargets
+- ✅ مدیریت `FandoghiWelcome.isPlaying` کامل (start/listener/finish)
+- ✅ هر ۲۴ استفاده PremiumButton نال‌امن
+- ✅ سایر `onPressed: null` ها فقط روی IconButton (نال‌پذیر) — سالم
+
+### جمع‌بندی نهایی (۹ دور بازبینی)
+**۴۱ فیکس واقعی** در مجموع: ۴ بحرانی، ۱۸ مهم، ۱۹ سبک/مستند/import.

@@ -185,7 +185,7 @@ class _LuckyWheelGameState extends State<LuckyWheelGame>
                       : (_spinning ? 'در حال چرخش...' : 'بچرخان! 🎡'),
                   icon: Icons.casino_rounded,
                   onPressed: (GameData.luckyWheelSpunToday || _spinning)
-                      ? null
+                      ? () {}
                       : _spin,
                 ),
               ),
