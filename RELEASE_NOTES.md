@@ -1,3 +1,10 @@
+## فاز ۲: معماری Clean — لایه UseCase
+
+- ساخت `lib/domain/usecases/`: `GetPlayerProfile`، `RecordAnswer`، `CompleteStage`، `UpdateSettings`
+- تزریق UseCaseها به اپ از طریق `lib/presentation/providers/use_case_providers.dart` (Riverpod)
+- اتصال موجودیت `GameStage` به نقشه مرحله‌ای (منبع حقیقت پیشرفت مرحله)
+
+---
 # 🚀 کودک ایران — گزارش اجرای فازها (ROADMAP 100 فاز)
 
 ## فاز ۱: Audit کامل کد — ۹ اوت ۲۰۲۶

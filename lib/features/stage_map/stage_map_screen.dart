@@ -7,6 +7,7 @@ import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/game_data.dart';
 import '../../core/game_launch.dart';
+import '../../domain/entities/game_stage.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
 import 'painters/path_painter.dart';
 import 'painters/map_background_painter.dart';
@@ -583,8 +584,8 @@ class _StageMapState extends State<StageMapScreen>
                   '/game/${stage.gameName}',
                   arguments: GameLaunch(
                     gameName: stage.gameName,
-                    stageId: 'stage_${stage.number}',
-                    stageNumber: stage.number,
+                    stageId: stage.stage.id,
+                    stageNumber: stage.stage.number,
                   ),
                 );
               },
@@ -615,6 +616,14 @@ class _StageData {
   final double relY; // relative Y position (0..1)
 
   _StageData(this.number, this.title, this.emoji, this.gameName, this.relX, this.relY);
+
+  /// نمای Domain از مرحله — موجودیت [GameStage] منبع حقیقت پیشرفت نقشه است.
+  GameStage get stage => GameStage(
+        id: 'stage_$number',
+        number: number,
+        isCompleted: GameData.isStageCompleted('stage_$number'),
+        starsEarned: GameData.isStageCompleted('stage_$number') ? 3 : 0,
+      );
 }
 
 // ─── Tree Painter ───────────────────────────
