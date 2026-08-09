@@ -34,7 +34,7 @@ class _PatternGameState extends State<PatternGame> {
   ];
 
   late List<String> _pattern;
-  late int _correctNext;
+  late String _correctNext;
   int _round = 0;
   int _score = 0;
   int _correct = 0;

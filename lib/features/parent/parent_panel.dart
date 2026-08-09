@@ -64,11 +64,6 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
     super.dispose();
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
   // ==================== PIN ENTRY ====================
   Future<void> _showPinDialog() async {
     final controller = TextEditingController();
