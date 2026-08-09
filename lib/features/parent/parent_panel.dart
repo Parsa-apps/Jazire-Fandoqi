@@ -24,7 +24,6 @@ class ParentPanel extends ConsumerStatefulWidget {
 class _ParentPanelState extends ConsumerState<ParentPanel>
     with WidgetsBindingObserver {
   late int _timeLimit;
-  String _pin = '';
   bool _isUnlocked = false;
   Timer? _lockTimer; // فاز ۶۱: قفل خودکار بعد از ۲ دقیقه
 

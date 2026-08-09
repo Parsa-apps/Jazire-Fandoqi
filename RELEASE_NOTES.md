@@ -1,3 +1,13 @@
+## 🔎 بازبینی دور سوم (Deep Pass 3) — ۹ اوت ۲۰۲۶
+
+- **باگ بحرانی مسیریابی:** «اعداد» زیررشته «عدد» نیست (ا-ع-د-ا-د) → مرحله اعداد به کوییز عمومی می‌رفت؛ اصلاح در main.dart + learning_quiz
+- باگ مسیریابی «اشکال» → آکادمی shapes
+- مسیرهای جدید: صدا→بشنو، ترتیب→اعداد، مفاهیم→آکادمی مفاهیم
+- حذف ۳ فایل مرده (premium_loading، premium_page_transition، premium_floating_platform)
+- حذف فیلدهای ناخوانا (_pin، _claimed) + نمایش نتیجه کوییز onboarding
+- شبیه‌سازی کامل مسیریابی ۲۲ لانچ UI: همه حل می‌شوند
+
+---
 ## 🔎 بازبینی دور دوم (Deep Pass 2) — ۹ اوت ۲۰۲۶
 
 - فیکس کامپایل: `accessibility.dart` (math.pow)، `audio_service.dart` (dart:async)

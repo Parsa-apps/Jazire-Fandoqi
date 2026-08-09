@@ -277,7 +277,7 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
         stageNumber: launch.stageNumber,
       );
     }
-    if (name.contains('بشنو') || name.contains('sound')) {
+    if (name.contains('بشنو') || name.contains('صدا') || name.contains('sound')) {
       return SoundMatchGame(
         stageId: launch.stageId,
         stageNumber: launch.stageNumber,
@@ -286,6 +286,20 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
     if (name.contains('رنگ') || name.contains('color')) {
       return AcademyGame(
         topicId: 'colors',
+        stageId: launch.stageId,
+        stageNumber: launch.stageNumber,
+      );
+    }
+    if (name.contains('شکل') || name.contains('اشکال')) {
+      return AcademyGame(
+        topicId: 'shapes',
+        stageId: launch.stageId,
+        stageNumber: launch.stageNumber,
+      );
+    }
+    if (name.contains('مفاهیم') || name.contains('concept')) {
+      return AcademyGame(
+        topicId: 'concepts',
         stageId: launch.stageId,
         stageNumber: launch.stageNumber,
       );
@@ -318,7 +332,8 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
         stageNumber: launch.stageNumber,
       );
     }
-    if (name.contains('عدد') || name.contains('number') ||
+    if (name.contains('عدد') || name.contains('اعداد') ||
+        name.contains('ترتیب') || name.contains('number') ||
         name.contains('شمار')) {
       return AcademyGame(
         topicId: 'numbers',

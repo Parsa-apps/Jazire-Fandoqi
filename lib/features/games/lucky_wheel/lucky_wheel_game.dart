@@ -52,7 +52,6 @@ class _LuckyWheelGameState extends State<LuckyWheelGame>
 
   bool _spinning = false;
   (String, String, int, int)? _result;
-  bool _claimed = false;
 
   @override
   void initState() {
@@ -95,7 +94,6 @@ class _LuckyWheelGameState extends State<LuckyWheelGame>
     GameData.spinLucky();
     GameData.addStars(_result!.$3);
     GameData.addCoins(_result!.$4);
-    setState(() => _claimed = true);
     FandoghiCoach.reward(
       'جایزه‌ی تو: ${_result!.$1} ${_result!.$2}! به دست آوردی 🎊',
     );

@@ -377,7 +377,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.white70, fontSize: 17, height: 1.6),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 14),
+            // فاز ۱۸: نمایش نتیجه تست سطح اولیه (برای والدین)
+            Text(
+              'پاسخ‌های درست: $_quizScore از ${_quizQuestions.length} 🌟',
+              style: const TextStyle(
+                color: Colors.amber,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 28),
             _privacyNote(),
           ],
         ),

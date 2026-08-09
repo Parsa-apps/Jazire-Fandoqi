@@ -586,7 +586,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
         _QuizQuestion('کدام گزینه یک حرف است؟', '✨', ['کتاب', 'ش', 'مداد', 'خانه'], 1, 'alphabet', 'alphabet'),
       ];
     }
-    if (topic.contains('عدد') || topic.contains('شمار') || topic.contains('number')) {
+    if (topic.contains('عدد') || topic.contains('اعداد') || topic.contains('شمار') || topic.contains('number')) {
       return const [
         _QuizQuestion('🍎🍎🍎 چند سیب می‌بینی؟', '🔢', ['۲', '۳', '۴', '۵'], 1, 'counting', null),
         _QuizQuestion('عدد بعد از ۴ چیست؟', '4️⃣', ['۳', '۵', '۶', '۷'], 1, 'math', null),
@@ -971,7 +971,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
 
   String _topicTitle(String topic) {
     if (topic.contains('الفبا')) return 'الفبا';
-    if (topic.contains('عدد') || topic.contains('شمار')) return 'اعداد';
+    if (topic.contains('عدد') || topic.contains('اعداد') || topic.contains('شمار')) return 'اعداد';
     if (topic.contains('رنگ')) return 'رنگ‌ها';
     if (topic.contains('حیوان')) return 'حیوانات';
     return topic.isEmpty ? 'یادگیری' : topic;
@@ -979,7 +979,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
 
   String _topicEmoji(String topic) {
     if (topic.contains('الفبا')) return '🔤';
-    if (topic.contains('عدد') || topic.contains('شمار')) return '🔢';
+    if (topic.contains('عدد') || topic.contains('اعداد') || topic.contains('شمار')) return '🔢';
     if (topic.contains('رنگ')) return '🎨';
     if (topic.contains('حیوان')) return '🐾';
     if (topic.contains('شغل')) return '🧑‍🚒';
