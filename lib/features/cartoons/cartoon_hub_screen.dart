@@ -13,7 +13,7 @@ import 'package:amoozesh_fandoghi/features/profile/sticker_album_screen.dart';
 import 'package:amoozesh_fandoghi/shared/widgets/fandoghi_v2.dart';
 
 /// ═══════════════════════════════════════════════════════════════
-/// 🎬 CARTOON HUB SCREEN — کارتون‌کده و سینما کودک فندقی
+/// 🎬 CARTOON HUB SCREEN — کارتون‌کده و سینما کودک فوق پیشرفته
 /// ═══════════════════════════════════════════════════════════════
 class CartoonHubScreen extends StatefulWidget {
   const CartoonHubScreen({super.key});
@@ -90,6 +90,8 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
   Widget build(BuildContext context) {
     final featuredCartoons = CartoonData.getFeatured();
     final suggestedCartoon = CartoonData.getCartoonById(_suggestedCartoonId);
+    final watchedMins = (GameData.cartoonWatchSeconds / 60).round();
+    final currentRank = CartoonRank.currentRank(watchedMins);
 
     return Scaffold(
       backgroundColor: const Color(0xFF131127),
@@ -97,7 +99,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
         child: Column(
           children: [
             // Top Bar
-            _buildTopBar(),
+            _buildTopBar(currentRank),
 
             // Main Scrollable Area
             Expanded(
@@ -106,6 +108,9 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                 slivers: [
                   // 5-Star Rating Incentive Banner
                   SliverToBoxAdapter(child: _buildRatingBanner()),
+
+                  // VIP Rank Progress Pill
+                  SliverToBoxAdapter(child: _buildRankProgressCard(currentRank, watchedMins)),
 
                   // Featured Carousel (if no active search)
                   if (_searchQuery.isEmpty && !_onlyFavorites)
@@ -142,7 +147,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
     );
   }
 
-  Widget _buildTopBar() {
+  Widget _buildTopBar(CartoonRank rank) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Row(
@@ -177,7 +182,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                 Text(
                   'کارتون‌کده فندقی',
                   style: AppFonts.vazirmatn(
-                    fontSize: 20,
+                    fontSize: 19,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
                   ),
@@ -230,9 +235,38 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
     );
   }
 
+  Widget _buildRankProgressCard(CartoonRank rank, int mins) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.06),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: rank.color.withOpacity(0.4)),
+        ),
+        child: Row(
+          children: [
+            Text(rank.emoji, style: const TextStyle(fontSize: 22)),
+            const SizedBox(width: 8),
+            Text(
+              'رتبه شما: ${rank.title}',
+              style: TextStyle(color: rank.color, fontWeight: FontWeight.bold, fontSize: 12),
+            ),
+            const Spacer(),
+            Text(
+              '$mins دقیقه تماشا ⏱️',
+              style: const TextStyle(color: Colors.white70, fontSize: 11),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildRatingBanner() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
       child: GestureDetector(
         onTap: () => CartoonRatingDialog.show(context),
         child: Container(

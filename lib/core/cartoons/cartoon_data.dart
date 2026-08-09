@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// ═══════════════════════════════════════════════════════════════
-/// 🎬 KUDAKE IRAN — بانک جامع و پیشرفته کارتون‌ها و انیمیشن‌ها
+/// 🎬 KUDAKE IRAN — بانک جامع و فوق‌العاده پیشرفته کارتون‌ها و انیمیشن‌ها
 /// ═══════════════════════════════════════════════════════════════
 
 enum CartoonCategoryType {
@@ -12,6 +12,7 @@ enum CartoonCategoryType {
   preschool,
   musical,
   classics,
+  cinema,
 }
 
 class CartoonCategory {
@@ -77,6 +78,7 @@ class Cartoon {
   final String catchphrase;
   final bool isFeatured;
   final bool isNew;
+  final bool isDubbed;
   final List<CartoonEpisode> episodes;
 
   const Cartoon({
@@ -98,8 +100,43 @@ class Cartoon {
     required this.catchphrase,
     this.isFeatured = false,
     this.isNew = false,
+    this.isDubbed = true,
     required this.episodes,
   });
+}
+
+class CartoonRank {
+  final int level;
+  final String title;
+  final String emoji;
+  final int targetMinutes;
+  final Color color;
+
+  const CartoonRank({
+    required this.level,
+    required this.title,
+    required this.emoji,
+    required this.targetMinutes,
+    required this.color,
+  });
+
+  static const List<CartoonRank> ranks = [
+    CartoonRank(level: 1, title: 'نوآموز سینما', emoji: '🌱', targetMinutes: 0, color: Color(0xFF74B9FF)),
+    CartoonRank(level: 2, title: 'تماشاگر برنزی', emoji: '🥉', targetMinutes: 15, color: Color(0xFFCD7F32)),
+    CartoonRank(level: 3, title: 'تماشاگر نقره‌ای', emoji: '🥈', targetMinutes: 45, color: Color(0xFFBDC3C7)),
+    CartoonRank(level: 4, title: 'تماشاگر طلایی', emoji: '🥇', targetMinutes: 90, color: Color(0xFFF1C40F)),
+    CartoonRank(level: 5, title: 'سلطان کارتون', emoji: '👑', targetMinutes: 150, color: Color(0xFFE056FD)),
+  ];
+
+  static CartoonRank currentRank(int watchedMinutes) {
+    CartoonRank current = ranks.first;
+    for (final r in ranks) {
+      if (watchedMinutes >= r.targetMinutes) {
+        current = r;
+      }
+    }
+    return current;
+  }
 }
 
 class CartoonData {
@@ -141,6 +178,12 @@ class CartoonData {
       title: 'موزیکال و شعر',
       emoji: '🎵',
       color: Color(0xFFE84393),
+    ),
+    CartoonCategory(
+      type: CartoonCategoryType.cinema,
+      title: 'سینمایی و بلند',
+      emoji: '🎬',
+      color: Color(0xFFFF9F43),
     ),
     CartoonCategory(
       type: CartoonCategoryType.classics,
@@ -247,7 +290,89 @@ class CartoonData {
       ],
     ),
 
-    // ۳. سگ‌های نگهبان (گشت پنجه‌ای)
+    // ۳. پسر دلفینی (سینمایی ایرانی پرطرفدار)
+    const Cartoon(
+      id: 'dolphin_boy',
+      title: 'پسر دلفینی',
+      englishTitle: 'Dolphin Boy',
+      characterName: 'پسر دلفینی، سفیدبال، ناخدا مروارید',
+      category: CartoonCategoryType.cinema,
+      categoryLabel: 'سینمایی و بلند',
+      description:
+          'داستان شگفت‌انگیز پسری که در آغوش دلفین‌های خلیج فارس بزرگ شد و برای نجات دریا و پیدا کردن مادرش با هیولای دریاها مبارزه می‌کند.',
+      coverEmoji: '🐬',
+      themeColor: Color(0xFF00CEC9),
+      gradient: LinearGradient(
+        colors: [Color(0xFF00CEC9), Color(0xFF0984E3)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      rating: 5.0,
+      views: '۳۱۰ هزار تماشا',
+      ageRating: '۴+',
+      learningGoal: 'مهر مادر، شجاعت، دوستی با حیوانات و محیط زیست دریا',
+      badgeText: 'سینمایی شاهکار',
+      catchphrase: 'پسر دلفینی: دریا خانه ماست، با هم از آن مراقبت می‌کنیم!',
+      isFeatured: true,
+      episodes: [
+        CartoonEpisode(
+          id: 'dolphin_ep1',
+          episodeNumber: 1,
+          title: 'ماجراجویی در اعماق خلیج نیلگون',
+          duration: '۲۵:۰۰',
+          description: 'سفیدبال دلفین مهربان به پسر دلفینی شنا در امواج خروشان را یاد می‌دهد.',
+          streamUrl: 'https://www.aparat.com/v/kudak_dolphin_1',
+          webUrl: 'https://www.aparat.com/result/%D9%BE%D8%B3%D8%B1+%D8%AF%D9%84%D9%81%DB%8C%D9%86%DB%8C',
+          coverEmoji: '🌊',
+          triviaQuestion: 'پسر دلفینی در کنار چه موجوداتی در دریا بزرگ شد؟',
+          triviaOptions: ['دلفین‌های مهربان 🐬', 'کوسه‌های خطرناک 🦈', 'اختاپوس‌ها 🐙'],
+          triviaCorrectIndex: 0,
+        ),
+      ],
+    ),
+
+    // ۴. لوپتو (سینمایی شاد و خنده‌دار ایرانی)
+    const Cartoon(
+      id: 'loopeto',
+      title: 'لوپتو و کارگاه اسباب‌بازی',
+      englishTitle: 'Lupeto',
+      characterName: 'علی، فرشته امید، اسباب‌بازی‌های زنده',
+      category: CartoonCategoryType.cinema,
+      categoryLabel: 'سینمایی و بلند',
+      description:
+          'ماجرای شاد و موزیکال کارگاه اسباب‌بازی‌های ساخت ایران به دست بیماران یک آسایشگاه و تلاش علی برای بازگرداندن امید و شادی.',
+      coverEmoji: '🧸',
+      themeColor: Color(0xFFE84393),
+      gradient: LinearGradient(
+        colors: [Color(0xFFE84393), Color(0xFFFF7675)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      rating: 4.9,
+      views: '۱۷۵ هزار تماشا',
+      ageRating: '۴+',
+      learningGoal: 'امید، انگیزه، خودباوری و خلاقیت ساخت وسایل دستی',
+      badgeText: 'موزیکال و پرانرژی',
+      catchphrase: 'علی: با دست‌های خودمان زیباترین اسباب‌بازی‌ها را می‌سازیم!',
+      isFeatured: true,
+      episodes: [
+        CartoonEpisode(
+          id: 'loopeto_ep1',
+          episodeNumber: 1,
+          title: 'راز اسباب‌بازی‌های شگفت‌انگیز',
+          duration: '۲۲:۱۵',
+          description: 'اسباب‌بازی‌های دست‌ساز علی زنده می‌شوند و برای نجات کارگاه نقشه می‌کشند.',
+          streamUrl: 'https://www.aparat.com/v/kudak_loopeto_1',
+          webUrl: 'https://www.aparat.com/result/%D9%84%D9%88%D9%BE%D8%AA%D9%88',
+          coverEmoji: '🎨',
+          triviaQuestion: 'اسباب‌بازی‌های لوپتو با چه چیزی ساخته می‌شدند؟',
+          triviaOptions: ['با دست و عشق و خلاقیت 🧸🎨', 'با کامپیوتر 💻', 'با آهن‌پاره ⚙️'],
+          triviaCorrectIndex: 0,
+        ),
+      ],
+    ),
+
+    // ۵. سگ‌های نگهبان (گشت پنجه‌ای)
     const Cartoon(
       id: 'paw_patrol',
       title: 'سگ‌های نگهبان',
@@ -288,7 +413,7 @@ class CartoonData {
       ],
     ),
 
-    // ۴. باب اسفنجی شلوار مکعبی
+    // ۶. باب اسفنجی شلوار مکعبی
     const Cartoon(
       id: 'spongebob',
       title: 'باب اسفنجی',
@@ -329,7 +454,7 @@ class CartoonData {
       ],
     ),
 
-    // ۵. بره ناقلا (Shaun the Sheep)
+    // ۷. بره ناقلا (Shaun the Sheep)
     const Cartoon(
       id: 'shaun_sheep',
       title: 'بره ناقلا',
@@ -369,7 +494,7 @@ class CartoonData {
       ],
     ),
 
-    // ۶. پپا پیگ (دوبله فارسی)
+    // ۸. پپا پیگ (دوبله فارسی)
     const Cartoon(
       id: 'peppa_pig',
       title: 'پپا پیگ فارسی',
@@ -409,7 +534,7 @@ class CartoonData {
       ],
     ),
 
-    // ۷. دیرین دیرین کودکانه
+    // ۹. دیرین دیرین کودکانه
     const Cartoon(
       id: 'dirin_dirin',
       title: 'دیرین دیرین کودکانه',
@@ -449,7 +574,7 @@ class CartoonData {
       ],
     ),
 
-    // ۸. تام و جری
+    // ۱۰. تام و جری
     const Cartoon(
       id: 'tom_jerry',
       title: 'تام و جری',
@@ -489,7 +614,7 @@ class CartoonData {
       ],
     ),
 
-    // ۹. ماشین‌ها و مک‌کویین
+    // ۱۱. ماشین‌ها و مک‌کویین
     const Cartoon(
       id: 'cars_mcqueen',
       title: 'مک‌کویین و ماشین‌ها',
@@ -529,7 +654,7 @@ class CartoonData {
       ],
     ),
 
-    // ۱۰. بچه رئیس
+    // ۱۲. بچه رئیس
     const Cartoon(
       id: 'boss_baby',
       title: 'بچه رئیس',
@@ -569,7 +694,7 @@ class CartoonData {
       ],
     ),
 
-    // ۱۱. مینیون‌ها
+    // ۱۳. مینیون‌ها
     const Cartoon(
       id: 'minions',
       title: 'مینیون‌ها',
@@ -609,7 +734,7 @@ class CartoonData {
       ],
     ),
 
-    // ۱۲. کوکوملون و ترانه‌های شاد فارسی
+    // ۱۴. کوکوملون و ترانه‌های شاد فارسی
     const Cartoon(
       id: 'cocomelon_fa',
       title: 'ترانه‌های شاد کوکوملون',
@@ -650,7 +775,7 @@ class CartoonData {
       ],
     ),
 
-    // ۱۳. کارتون موزیکال الفبای فارسی
+    // ۱۵. کارتون موزیکال الفبای فارسی
     const Cartoon(
       id: 'alphabet_song_cartoon',
       title: 'ترانه‌های موزیکال الفبا',
@@ -691,7 +816,7 @@ class CartoonData {
       ],
     ),
 
-    // ۱۴. کارتون موزیکال اعداد و شمارش
+    // ۱۶. کارتون موزیکال اعداد و شمارش
     const Cartoon(
       id: 'numbers_song_cartoon',
       title: 'ترانه‌های شاد شمارش اعداد',
@@ -731,7 +856,7 @@ class CartoonData {
       ],
     ),
 
-    // ۱۵. ببعی و ببعو
+    // ۱۷. ببعی و ببعو
     const Cartoon(
       id: 'babi_babo',
       title: 'ببعی و ببعو',
@@ -771,7 +896,7 @@ class CartoonData {
       ],
     ),
 
-    // ۱۶. پوکویو (Pocoyo)
+    // ۱۸. پوکویو (Pocoyo)
     const Cartoon(
       id: 'pocoyo',
       title: 'پوکویو و دوستان',
@@ -811,7 +936,7 @@ class CartoonData {
       ],
     ),
 
-    // ۱۷. پاندای کونگ‌فوکار
+    // ۱۹. پاندای کونگ‌فوکار
     const Cartoon(
       id: 'kungfu_panda',
       title: 'پاندای کونگ‌فوکار',
@@ -851,7 +976,7 @@ class CartoonData {
       ],
     ),
 
-    // ۱۸. داستان‌های کهن شاهنامه و کلیله و دمنه
+    // ۲۰. داستان‌های کهن شاهنامه و کلیله و دمنه
     const Cartoon(
       id: 'persian_classics',
       title: 'داستان‌های کهن ایران',

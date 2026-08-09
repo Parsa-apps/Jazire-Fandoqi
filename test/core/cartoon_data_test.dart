@@ -9,7 +9,7 @@ void main() {
   });
 
   test('cartoon catalog has valid data and categories', () {
-    expect(CartoonData.allCartoons.length, greaterThanOrEqualTo(15));
+    expect(CartoonData.allCartoons.length, greaterThanOrEqualTo(18));
 
     final ids = CartoonData.allCartoons.map((c) => c.id).toSet();
     expect(ids.length, CartoonData.allCartoons.length, reason: 'شناسه کارتون‌ها نباید تکراری باشد');
@@ -56,5 +56,18 @@ void main() {
     GameData.childAge = 8;
     final olderSuggestion = AI.suggestCartoon();
     expect(olderSuggestion, isNotEmpty);
+  });
+
+  test('CartoonRank advances with watched minutes', () {
+    final rank0 = CartoonRank.currentRank(0);
+    expect(rank0.level, 1);
+
+    final rankSilver = CartoonRank.currentRank(50);
+    expect(rankSilver.level, 3);
+    expect(rankSilver.title, 'تماشاگر نقره‌ای');
+
+    final rankKing = CartoonRank.currentRank(200);
+    expect(rankKing.level, 5);
+    expect(rankKing.title, 'سلطان کارتون');
   });
 }

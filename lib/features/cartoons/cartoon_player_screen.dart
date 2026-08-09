@@ -15,7 +15,7 @@ import 'package:amoozesh_fandoghi/shared/widgets/fandoghi_v2.dart';
 import 'package:amoozesh_fandoghi/shared/widgets/star_field.dart';
 
 /// ═══════════════════════════════════════════════════════════════
-/// 🍿 CARTOON PLAYER SCREEN — سینما کارتون تعاملی کودک
+/// 🍿 CARTOON PLAYER SCREEN — سینما کارتون فوق حرفه‌ای کودک
 /// ═══════════════════════════════════════════════════════════════
 class CartoonPlayerScreen extends StatefulWidget {
   final Cartoon cartoon;
@@ -39,8 +39,11 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
   int _secondsWatched = 0;
   Timer? _playbackTimer;
 
-  // Cinema features
+  // Pro cinema features
   bool _cinemaDimMode = false;
+  bool _childLock = false;
+  bool _eyeProtectMode = false;
+  String _selectedQuality = '1080p HD';
   double _playbackSpeed = 1.0;
 
   // Popcorn minigame
@@ -69,12 +72,12 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
     // Track watching progress
     _playbackTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) return;
-      if (_isPlaying) {
+      if (_isPlaying && !_childLock) {
         setState(() {
           _secondsWatched++;
           _progress = (_progress + 0.005 * _playbackSpeed).clamp(0.0, 1.0);
           if (_progress >= 1.0) {
-            _progress = 0.0; // loop episode
+            _onEpisodeFinished();
           }
         });
         GameData.recordCartoonWatched(widget.cartoon.id, durationSeconds: 1);
@@ -103,7 +106,19 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
 
   CartoonEpisode get _currentEpisode => widget.cartoon.episodes[_currentEpIndex];
 
+  void _onEpisodeFinished() {
+    _progress = 0.0;
+    if (_currentEpIndex + 1 < widget.cartoon.episodes.length) {
+      _selectEpisode(_currentEpIndex + 1);
+    } else {
+      _isPlaying = false;
+      // Auto open trivia after finishing all
+      _openTrivia();
+    }
+  }
+
   void _togglePlayPause() {
+    if (_childLock) return;
     HapticFeedback.lightImpact();
     setState(() => _isPlaying = !_isPlaying);
     if (_isPlaying) {
@@ -114,6 +129,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
   }
 
   void _seekRelative(double delta) {
+    if (_childLock) return;
     HapticFeedback.selectionClick();
     setState(() {
       _progress = (_progress + delta).clamp(0.0, 1.0);
@@ -121,6 +137,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
   }
 
   void _cycleSpeed() {
+    if (_childLock) return;
     HapticFeedback.selectionClick();
     setState(() {
       if (_playbackSpeed == 0.75) {
@@ -134,7 +151,47 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
     FandoghiCoach.say('سرعت پخش: ${_playbackSpeed}x ⚡', mood: FandoghiMood.wink);
   }
 
+  void _showQualityDialog() {
+    if (_childLock) return;
+    HapticFeedback.selectionClick();
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Row(
+          children: [
+            Icon(Icons.high_quality_rounded, color: Colors.blueAccent),
+            SizedBox(width: 8),
+            Text('کیفیت پخش ویدیو', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _qualityTile('1080p HD (بالاترین کیفیت) 🌟', '1080p HD', ctx),
+            _qualityTile('720p استاندارد (مصرف متناسب) ⚡', '720p', ctx),
+            _qualityTile('480p اقتصادی (صرفه‌جویی در اینترنت) 📱', '480p', ctx),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _qualityTile(String label, String value, BuildContext dialogCtx) {
+    final selected = _selectedQuality == value;
+    return ListTile(
+      title: Text(label, style: TextStyle(fontWeight: selected ? FontWeight.bold : FontWeight.normal, fontSize: 13)),
+      trailing: selected ? const Icon(Icons.check_circle_rounded, color: Colors.green) : null,
+      onTap: () {
+        setState(() => _selectedQuality = value);
+        Navigator.pop(dialogCtx);
+        FandoghiCoach.say('کیفیت به $value تغییر یافت! ✨', mood: FandoghiMood.happy);
+      },
+    );
+  }
+
   void _playCatchphrase() {
+    if (_childLock) return;
     HapticFeedback.mediumImpact();
     final phrase = _currentEpisode.catchphrase.isNotEmpty
         ? _currentEpisode.catchphrase
@@ -146,6 +203,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
   }
 
   void _openTrivia() {
+    if (_childLock) return;
     HapticFeedback.mediumImpact();
     CartoonTriviaDialog.show(
       context,
@@ -155,6 +213,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
   }
 
   void _onPopcornTap() {
+    if (_childLock) return;
     HapticFeedback.mediumImpact();
     setState(() {
       _popcornTaps++;
@@ -180,6 +239,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
   }
 
   void _selectEpisode(int index) {
+    if (_childLock) return;
     if (index == _currentEpIndex) return;
     HapticFeedback.mediumImpact();
     setState(() {
@@ -194,9 +254,20 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
   }
 
   void _toggleFavorite() {
+    if (_childLock) return;
     HapticFeedback.lightImpact();
     GameData.toggleCartoonFavorite(widget.cartoon.id);
     setState(() {});
+  }
+
+  void _toggleChildLock() {
+    HapticFeedback.heavyImpact();
+    setState(() => _childLock = !_childLock);
+    if (_childLock) {
+      FandoghiCoach.say('🔒 قفل کودک فعال شد! برای باز کردن، روی علامت قفل ۲ ثانیه نگه دارید.', mood: FandoghiMood.wink);
+    } else {
+      FandoghiCoach.say('🔓 قفل کودک باز شد!', mood: FandoghiMood.happy);
+    }
   }
 
   @override
@@ -213,6 +284,14 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
           // Projector Beam
           _buildProjectorBeam(),
 
+          // Eye Protection Warm Filter
+          if (_eyeProtectMode)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Container(color: Colors.amber.withOpacity(0.09)),
+              ),
+            ),
+
           // Main Content
           SafeArea(
             child: Column(
@@ -223,7 +302,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
                 // Cinema Screen & Video Player Area
                 Expanded(
                   child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
+                    physics: _childLock ? const NeverScrollableScrollPhysics() : const BouncingScrollPhysics(),
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,23 +314,23 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
 
                         const SizedBox(height: 14),
 
-                        // Cinema Quick Toolbar (Trivia, Voice, Dim, Speed)
-                        _buildCinemaToolbar(),
+                        // Cinema Quick Toolbar (Trivia, Voice, Dim, Speed, Quality, Lock)
+                        if (!_childLock) _buildCinemaToolbar(),
 
                         const SizedBox(height: 16),
 
                         // Cartoon Details & Quick Actions
-                        _buildCartoonInfo(),
+                        if (!_childLock) _buildCartoonInfo(),
 
                         const SizedBox(height: 20),
 
                         // Interactive Popcorn Minigame & Rating Prompt
-                        _buildPopcornAndRatingRow(),
+                        if (!_childLock) _buildPopcornAndRatingRow(),
 
                         const SizedBox(height: 24),
 
                         // Episodes Playlist
-                        _buildEpisodesPlaylist(),
+                        if (!_childLock) _buildEpisodesPlaylist(),
 
                         const SizedBox(height: 30),
                       ],
@@ -261,7 +340,48 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
               ],
             ),
           ),
+
+          // Child Lock Floating Indicator
+          if (_childLock) _buildChildLockFloatingPill(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildChildLockFloatingPill() {
+    return Positioned(
+      bottom: 30,
+      left: 0,
+      right: 0,
+      child: Center(
+        child: GestureDetector(
+          onLongPress: _toggleChildLock,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.redAccent.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.redAccent.withOpacity(0.4),
+                  blurRadius: 15,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.lock_rounded, color: Colors.white, size: 22),
+                SizedBox(width: 8),
+                Text(
+                  'قفل لمس کودک فعال است (نگه دارید تا باز شود)',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                ),
+              ],
+            ),
+          ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(begin: const Offset(0.98, 0.98), end: const Offset(1.02, 1.02), duration: 1000.ms),
+        ),
       ),
     );
   }
@@ -276,7 +396,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
           right: 0,
           height: 300,
           child: Opacity(
-            opacity: _cinemaDimMode ? 0.05 : (0.12 + _beamCtrl.value * 0.08),
+            opacity: _cinemaDimMode ? 0.04 : (0.12 + _beamCtrl.value * 0.08),
             child: Container(
               decoration: BoxDecoration(
                 gradient: RadialGradient(
@@ -303,7 +423,9 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
         children: [
           // Back Button
           GestureDetector(
-            onTap: () => Navigator.of(context).pop(),
+            onTap: () {
+              if (!_childLock) Navigator.of(context).pop();
+            },
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
@@ -360,26 +482,68 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
             ),
           ),
 
+          // Eye Protection Mode
+          GestureDetector(
+            onTap: () {
+              if (_childLock) return;
+              HapticFeedback.lightImpact();
+              setState(() => _eyeProtectMode = !_eyeProtectMode);
+              FandoghiCoach.say(_eyeProtectMode ? 'حالت محافظت از چشم فعال شد 👁️' : 'حالت عادی ☀️', mood: FandoghiMood.happy);
+            },
+            child: Container(
+              margin: const EdgeInsets.only(left: 6),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: _eyeProtectMode ? Colors.orangeAccent.withOpacity(0.3) : Colors.white.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: _eyeProtectMode ? Colors.orangeAccent : Colors.white24),
+              ),
+              child: Icon(
+                Icons.remove_red_eye_rounded,
+                color: _eyeProtectMode ? Colors.orangeAccent : Colors.white70,
+                size: 20,
+              ),
+            ),
+          ),
+
           // Cinema Light Dimmer
           GestureDetector(
             onTap: () {
+              if (_childLock) return;
               HapticFeedback.lightImpact();
               setState(() => _cinemaDimMode = !_cinemaDimMode);
             },
             child: Container(
-              margin: const EdgeInsets.only(left: 8),
+              margin: const EdgeInsets.only(left: 6),
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: _cinemaDimMode ? Colors.amber.withOpacity(0.2) : Colors.white.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: _cinemaDimMode ? Colors.amber : Colors.white24,
-                ),
+                border: Border.all(color: _cinemaDimMode ? Colors.amber : Colors.white24),
               ),
               child: Icon(
                 _cinemaDimMode ? Icons.lightbulb_rounded : Icons.lightbulb_outline_rounded,
                 color: _cinemaDimMode ? Colors.amber : Colors.white70,
-                size: 22,
+                size: 20,
+              ),
+            ),
+          ),
+
+          // Child Lock Toggle Button
+          GestureDetector(
+            onTap: _toggleChildLock,
+            child: Container(
+              margin: const EdgeInsets.only(left: 6),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: _childLock ? Colors.redAccent.withOpacity(0.3) : Colors.white.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: _childLock ? Colors.redAccent : Colors.white24),
+              ),
+              child: Icon(
+                _childLock ? Icons.lock_rounded : Icons.lock_open_rounded,
+                color: _childLock ? Colors.redAccent : Colors.white70,
+                size: 20,
               ),
             ),
           ),
@@ -392,14 +556,12 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
               decoration: BoxDecoration(
                 color: isFav ? Colors.redAccent.withOpacity(0.2) : Colors.white.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isFav ? Colors.redAccent : Colors.white24,
-                ),
+                border: Border.all(color: isFav ? Colors.redAccent : Colors.white24),
               ),
               child: Icon(
                 isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                 color: isFav ? Colors.redAccent : Colors.white,
-                size: 22,
+                size: 20,
               ),
             ),
           ),
@@ -436,27 +598,15 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // Animated Cartoon Backdrop
                   Container(
-                    decoration: BoxDecoration(
-                      gradient: widget.cartoon.gradient,
-                    ),
+                    decoration: BoxDecoration(gradient: widget.cartoon.gradient),
                     child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            _currentEpisode.coverEmoji,
-                            style: const TextStyle(fontSize: 64),
-                          )
-                              .animate(
-                                onPlay: (c) => c.repeat(reverse: true),
-                              )
-                              .scale(
-                                begin: const Offset(0.9, 0.9),
-                                end: const Offset(1.1, 1.1),
-                                duration: 1500.ms,
-                              ),
+                          Text(_currentEpisode.coverEmoji, style: const TextStyle(fontSize: 64))
+                              .animate(onPlay: (c) => c.repeat(reverse: true))
+                              .scale(begin: const Offset(0.9, 0.9), end: const Offset(1.1, 1.1), duration: 1500.ms),
                           const SizedBox(height: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
@@ -478,7 +628,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
                     ),
                   ),
 
-                  // Center Play/Pause Overlay indicator
+                  // Center Play/Pause
                   Center(
                     child: GestureDetector(
                       onTap: _togglePlayPause,
@@ -500,24 +650,27 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
                     ),
                   ),
 
-                  // HD Badge & Duration
+                  // Quality Badge (Tap to change quality)
                   Positioned(
                     top: 10,
                     right: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.amber.withOpacity(0.7)),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.hd_rounded, color: Colors.amber, size: 16),
-                          SizedBox(width: 4),
-                          Text('HD 1080', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                        ],
+                    child: GestureDetector(
+                      onTap: _showQualityDialog,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.amber.withOpacity(0.7)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.hd_rounded, color: Colors.amber, size: 16),
+                            const SizedBox(width: 4),
+                            Text(_selectedQuality, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -548,7 +701,6 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
               color: const Color(0xFF16142A),
               child: Column(
                 children: [
-                  // Progress Slider & Timers
                   Row(
                     children: [
                       Text(
@@ -567,7 +719,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
                           ),
                           child: Slider(
                             value: _progress,
-                            onChanged: (val) => setState(() => _progress = val),
+                            onChanged: _childLock ? null : (val) => setState(() => _progress = val),
                           ),
                         ),
                       ),
@@ -577,21 +729,15 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 6),
-
-                  // Player Buttons
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      // Rewind 10s
                       IconButton(
-                        onPressed: () => _seekRelative(-0.05),
+                        onPressed: _childLock ? null : () => _seekRelative(-0.05),
                         icon: const Icon(Icons.replay_10_rounded, color: Colors.white, size: 28),
                         tooltip: '۱۰ ثانیه عقب',
                       ),
-
-                      // Play / Pause Main
                       GestureDetector(
                         onTap: _togglePlayPause,
                         child: Container(
@@ -615,10 +761,8 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
                           ),
                         ),
                       ),
-
-                      // Forward 10s
                       IconButton(
-                        onPressed: () => _seekRelative(0.05),
+                        onPressed: _childLock ? null : () => _seekRelative(0.05),
                         icon: const Icon(Icons.forward_10_rounded, color: Colors.white, size: 28),
                         tooltip: '۱۰ ثانیه جلو',
                       ),
@@ -655,11 +799,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
                   SizedBox(width: 6),
                   Text(
                     'معمای فندقی (+۱۰ سکه)',
-                    style: TextStyle(
-                      color: Colors.amber,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 12),
                   ),
                 ],
               ),
@@ -688,11 +828,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
                   SizedBox(width: 6),
                   Text(
                     'صدای شخصیت',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
                   ),
                 ],
               ),
@@ -714,11 +850,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
             ),
             child: Text(
               '${_playbackSpeed}x',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
             ),
           ),
         ),
@@ -773,7 +905,6 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
                   ],
                 ),
               ),
-              // Stars
               Row(
                 children: [
                   const Icon(Icons.star_rounded, color: Colors.amber, size: 20),
@@ -800,7 +931,6 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
             ),
           ),
           const SizedBox(height: 12),
-          // Learning outcome pill
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
