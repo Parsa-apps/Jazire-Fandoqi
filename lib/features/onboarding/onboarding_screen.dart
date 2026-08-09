@@ -90,7 +90,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       age: _age,
       avatarIcon: _selectedAvatar,
     );
-    Navigator.pushReplacementNamed(context, '/home');
+    Navigator.pushReplacementNamed(context, '/gateway');
   }
 
   void _goBack() {

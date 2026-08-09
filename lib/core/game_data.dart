@@ -121,6 +121,12 @@ class GameData {
   // فاز ۲۹ (تکمیل): داستان‌های خوانده‌شده — پاداش فقط یک‌بار برای هر داستان
   static List<String> completedStories = <String>[];
 
+  // 🎬 کارتون‌ها و انیمیشن‌ها — علاقه‌مندی‌ها و تاریخچه تماشا
+  static List<String> cartoonFavorites = <String>[];
+  static List<String> watchedCartoons = <String>[];
+  static int cartoonWatchSeconds = 0;
+  static bool appRated = false;
+
   // ✅ فیکس عمیق فاز ۳۰: achievement_system به playedGames نیاز داشت ولی نبود — باعث بیلد فیل خاموش
   static List<String> playedGames = <String>[];
   static final Set<String> _playedGamesSet = <String>{};
@@ -208,6 +214,10 @@ class GameData {
       openedPrizes = _readList('op');
       islandDecorations = _readIslandDecorations();
       completedStories = _readList('stories');
+      cartoonFavorites = _readList('cfav');
+      watchedCartoons = _readList('cw');
+      cartoonWatchSeconds = _readInt('cws', 0);
+      appRated = prefs.getBool('appRated') ?? false;
       // ✅ فیکس: بارگذاری playedGames برای achievement
       playedGames = _readList('pg');
       _playedGamesSet
@@ -386,6 +396,10 @@ class GameData {
     prizeBoxTokens = asInt('pbt', 0).clamp(0, _maxStoredCounter);
     openedPrizes = asList('op');
     completedStories = asList('stories');
+    cartoonFavorites = asList('cfav');
+    watchedCartoons = asList('cw');
+    cartoonWatchSeconds = asInt('cws', 0).clamp(0, _maxStoredCounter);
+    appRated = asBool('appRated', false);
     islandDecorations = <String, String>{};
     final idc = d['idc'];
     if (idc is Map) {
@@ -444,6 +458,10 @@ class GameData {
         'pbt': prizeBoxTokens,
         'op': openedPrizes,
         'stories': completedStories,
+        'cfav': cartoonFavorites,
+        'cw': watchedCartoons,
+        'cws': cartoonWatchSeconds,
+        'appRated': appRated,
         'idc': islandDecorations,
         'pg': playedGames,
         'skills': skills,
@@ -579,6 +597,10 @@ class GameData {
     await prefs.setInt('pbt', prizeBoxTokens);
     await prefs.setStringList('op', List<String>.from(openedPrizes));
     await prefs.setStringList('stories', List<String>.from(completedStories));
+    await prefs.setStringList('cfav', List<String>.from(cartoonFavorites));
+    await prefs.setStringList('cw', List<String>.from(watchedCartoons));
+    await prefs.setInt('cws', cartoonWatchSeconds);
+    await prefs.setBool('appRated', appRated);
     await prefs.setStringList(
       'idc',
       islandDecorations.entries
@@ -747,6 +769,45 @@ class GameData {
   static bool markStoryCompleted(String id) {
     if (!_isLoaded || id.isEmpty || completedStories.contains(id)) return false;
     completedStories.add(id);
+    _notify();
+    unawaited(save());
+    return true;
+  }
+
+  // ==================== CARTOONS (کارتون‌ها) ====================
+  static bool isCartoonFavorite(String id) => cartoonFavorites.contains(id);
+
+  static void toggleCartoonFavorite(String id) {
+    if (!_isLoaded || id.isEmpty) return;
+    if (cartoonFavorites.contains(id)) {
+      cartoonFavorites.remove(id);
+    } else {
+      cartoonFavorites.add(id);
+    }
+    _notify();
+    unawaited(save());
+  }
+
+  static void recordCartoonWatched(String id, {int durationSeconds = 60}) {
+    if (!_isLoaded || id.isEmpty) return;
+    var changed = false;
+    if (!watchedCartoons.contains(id)) {
+      watchedCartoons.add(id);
+      coins = min(_maxStoredCounter, coins + 5);
+      changed = true;
+    }
+    cartoonWatchSeconds = min(_maxStoredCounter, cartoonWatchSeconds + durationSeconds);
+    _autoAchieve();
+    _notify();
+    unawaited(save());
+  }
+
+  static bool claimRatingReward() {
+    if (!_isLoaded || appRated) return false;
+    appRated = true;
+    coins = min(_maxStoredCounter, coins + 50);
+    stars = min(_maxStoredCounter, stars + 5);
+    _autoAchieve();
     _notify();
     unawaited(save());
     return true;
@@ -982,6 +1043,8 @@ class GameData {
     if (ownedItems.length >= 10 || stickers.length >= 10) {
       candidates.add('mega_collector');
     }
+    if (watchedCartoons.isNotEmpty) candidates.add('cartoon_watcher');
+    if (watchedCartoons.length >= 5) candidates.add('cartoon_fan');
     for (final id in candidates) {
       if (!achievements.contains(id)) achievements.add(id);
     }
@@ -1062,6 +1125,10 @@ class GameData {
     openedPrizes = <String>[];
     islandDecorations = <String, String>{};
     completedStories = <String>[];
+    cartoonFavorites = <String>[];
+    watchedCartoons = <String>[];
+    cartoonWatchSeconds = 0;
+    appRated = false;
     playedGames = <String>[];
     _playedGamesSet.clear();
     _notify();

@@ -395,6 +395,7 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _statItem('${GameData.todayPlayMinutes}', 'دقیقه بازی'),
+              _statItem('${(GameData.cartoonWatchSeconds / 60).round()}', 'دقیقه کارتون'),
               _statItem('${GameData.totalCorrect}', 'پاسخ درست'),
               _statItem('${GameData.averageSuccessRate.toStringAsFixed(0)}%', 'موفقیت'),
             ],

@@ -48,6 +48,8 @@ class AchievementSystem {
     const Achievement(id: 'memory_king', title: 'شاه حافظه', description: 'بازی حافظه را کامل کردی', emoji: '🧠', target: 1, type: 'memory'),
     const Achievement(id: 'artist', title: 'هنرمند', description: 'یک نقاشی ذخیره کردی', emoji: '🎨', target: 1, type: 'artist'),
     const Achievement(id: 'story_teller', title: 'قصه‌گو', description: 'یک داستان تعاملی خواندی', emoji: '📖', target: 1, type: 'stories'),
+    const Achievement(id: 'cartoon_watcher', title: 'عاشق کارتون', description: 'یک کارتون تماشا کردی!', emoji: '🎬', target: 1, type: 'cartoons'),
+    const Achievement(id: 'cartoon_fan', title: 'سینمادوست کوچولو', description: '۵ کارتون مختلف تماشا کردی!', emoji: '🍿', target: 5, type: 'cartoons'),
   ];
 
   /// بررسی خودکار همه مدال‌ها و باز کردن مدال‌های جدید.
@@ -90,6 +92,8 @@ class AchievementSystem {
         return (GameData.missionProgress['drawing'] ?? 0) >= achievement.target;
       case 'stories':
         return (GameData.skills['vocab'] ?? 0) >= achievement.target;
+      case 'cartoons':
+        return GameData.watchedCartoons.length >= achievement.target;
       default:
         return false;
     }
@@ -121,6 +125,8 @@ class AchievementSystem {
         return 1.0;
       case 'stories':
         return ((GameData.skills['vocab'] ?? 0) / achievement.target).clamp(0.0, 1.0);
+      case 'cartoons':
+        return (GameData.watchedCartoons.length / achievement.target).clamp(0.0, 1.0);
       default:
         return 0.0;
     }

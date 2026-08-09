@@ -8,10 +8,18 @@ void main() {
     GameData.resetForTesting();
   });
 
-  test('24 achievements are registered with unique ids', () {
+  test('26 achievements are registered with unique ids', () {
     final ids = AchievementSystem.allAchievements.map((a) => a.id).toSet();
-    expect(AchievementSystem.allAchievements.length, 24);
-    expect(ids.length, 24, reason: 'idها نباید تکراری باشند');
+    expect(AchievementSystem.allAchievements.length, 26);
+    expect(ids.length, 26, reason: 'idها نباید تکراری باشند');
+  });
+
+  test('cartoon achievements unlock after watching cartoons', () {
+    expect(GameData.watchedCartoons, isEmpty);
+    GameData.recordCartoonWatched('shekarestan');
+    expect(GameData.watchedCartoons, contains('shekarestan'));
+    AchievementSystem.checkAndUnlock();
+    expect(GameData.achievements, contains('cartoon_watcher'));
   });
 
   test('star/coin/level achievements unlock at thresholds', () {

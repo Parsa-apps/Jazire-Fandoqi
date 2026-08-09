@@ -111,7 +111,6 @@ void main() {
     expect(GameData.skills['counting'], 500);
     expect(GameData.level, greaterThanOrEqualTo(5));
   });
-}
 
   // ─────────── فاز ۲۹: پاداش یک‌بار داستان (ضد farming) ───────────
   test('story reward is granted only once per story', () {
@@ -120,5 +119,28 @@ void main() {
     expect(GameData.hasCompletedStory('helpful_rabbit'), isTrue);
     // بار دوم نباید پاداش بدهد
     expect(GameData.markStoryCompleted('helpful_rabbit'), isFalse);
+  });
+
+  // ─────────── کارتون‌ها: علاقه‌مندی‌ها و تماشا ───────────
+  test('cartoon favorites and watch history track properly', () {
+    expect(GameData.isCartoonFavorite('shekarestan'), isFalse);
+    GameData.toggleCartoonFavorite('shekarestan');
+    expect(GameData.isCartoonFavorite('shekarestan'), isTrue);
+    GameData.toggleCartoonFavorite('shekarestan');
+    expect(GameData.isCartoonFavorite('shekarestan'), isFalse);
+
+    GameData.recordCartoonWatched('paw_patrol', durationSeconds: 45);
+    expect(GameData.watchedCartoons, contains('paw_patrol'));
+    expect(GameData.cartoonWatchSeconds, 45);
+  });
+
+  test('app rating reward grants 50 coins once', () {
+    expect(GameData.appRated, isFalse);
+    final initialCoins = GameData.coins;
+    expect(GameData.claimRatingReward(), isTrue);
+    expect(GameData.coins, initialCoins + 50);
+    expect(GameData.appRated, isTrue);
+    // بار دوم نباید پاداش تکراری بدهد
+    expect(GameData.claimRatingReward(), isFalse);
   });
 }
