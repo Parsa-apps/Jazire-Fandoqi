@@ -38,6 +38,9 @@ import 'features/games/stories/story_screen.dart';
 import 'features/stories/stories_hub_screen.dart';
 import 'features/stories/story_reader_screen.dart';
 import 'core/learning_content/children_stories_data.dart';
+import 'features/lullabies/lullaby_hub_screen.dart';
+import 'features/lullabies/lullaby_player_screen.dart';
+import 'core/learning_content/lullabies_data.dart';
 import 'features/home/home_screen.dart';
 import 'features/profile/sticker_album_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
@@ -156,6 +159,7 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
         '/gateway': (context) => const AppGatewayScreen(),
         '/cartoons': (context) => const CartoonHubScreen(),
         '/stories': (context) => const StoriesHubScreen(),
+        '/lullabies': (context) => const LullabyHubScreen(),
         '/home': (context) => const HomeScreen(),
         '/alphabet': (context) => const AlphabetAcademyGame(),
         '/memory_match': (context) => const MemoryMatchGame(),
@@ -218,6 +222,14 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
             settings: settings,
             builder: (_) => CartoonPlayerScreen(cartoon: cartoon),
           );
+        }
+        // 🌙 لالایی‌ها (/lullaby/<id>)
+        if (name.startsWith('/lullaby/')) {
+          final lullabyId = name.substring('/lullaby/'.length);
+          final lullaby = LullabiesData.byId(lullabyId);
+          if (lullaby != null) {
+            return MaterialPageRoute(settings: settings, builder: (_) => LullabyPlayerScreen(lullaby: lullaby));
+          }
         }
         // فاز ۲۲-۲۸: آکادمی‌های محتوایی (/academy/numbers, /academy/colors ...)
         if (name.startsWith('/academy/')) {
