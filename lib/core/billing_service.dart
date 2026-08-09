@@ -127,6 +127,15 @@ class BillingService {
     }
   }
 
+  /// باز کردن صفحه ثبت نظر و امتیاز در کافه‌بازار
+  static Future<void> openBazaarReview() async {
+    try {
+      await _channel.invokeMethod('openBazaarReview');
+    } catch (_) {
+      // نادیده گرفتن خطا در محیط‌های فاقد بازار
+    }
+  }
+
   static BillingResult _parse(dynamic raw, {bool requireReceipt = true}) {
     if (raw is Map) {
       final success = raw['success'] == true;

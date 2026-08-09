@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../core/app_legal.dart';
+import '../../core/billing_service.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
 
 /// Publisher, support and privacy information for parents and store review.
@@ -304,7 +305,14 @@ void _showRatingDialog(BuildContext context) {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(dialogContext),
-          child: const Text('متشکریم!'),
+          child: const Text('بعداً'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            BillingService.openBazaarReview();
+            Navigator.pop(dialogContext);
+          },
+          child: const Text('ثبت در کافه‌بازار ⭐'),
         ),
       ],
     ),

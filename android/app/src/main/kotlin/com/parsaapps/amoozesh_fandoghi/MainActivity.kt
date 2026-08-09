@@ -62,6 +62,30 @@ class MainActivity : FlutterActivity() {
                             )
                         )
                     }
+                    "openBazaarReview" -> {
+                        try {
+                            val intent = android.content.Intent(
+                                android.content.Intent.ACTION_EDIT,
+                                android.net.Uri.parse("bazaar://details?id=$packageName")
+                            )
+                            intent.setPackage("com.farsitel.bazaar")
+                            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                            startActivity(intent)
+                            result.success(true)
+                        } catch (e: Exception) {
+                            try {
+                                val fallback = android.content.Intent(
+                                    android.content.Intent.ACTION_VIEW,
+                                    android.net.Uri.parse("https://cafebazaar.ir/app/$packageName")
+                                )
+                                fallback.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                startActivity(fallback)
+                                result.success(true)
+                            } catch (e2: Exception) {
+                                result.success(false)
+                            }
+                        }
+                    }
                     else -> result.notImplemented()
                 }
             }
