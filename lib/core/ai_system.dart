@@ -111,6 +111,10 @@ class AI {
     'body': 'بدن',
     'emotions': 'احساسات',
     'jobs': 'شغل‌ها',
+    // دور ۱۰: سه مهارت باقی‌مانده به بازی‌های یادگیری مناسب نگاشت شدند
+    'time': 'مفاهیم',
+    'vehicles': 'میوه‌ها',
+    'weather': 'مفاهیم',
   };
 
   static bool fatigued(int mistakes, Duration time) =>

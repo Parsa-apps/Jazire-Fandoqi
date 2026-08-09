@@ -43,3 +43,17 @@ void main() {
     expect(AI.masteryOf('math'), closeTo(0.5, 0.05));
   });
 }
+
+  test('every skill maps to a suggested game (دور ۱۰)', () {
+    // همه ۱۷ مهارت باید بازی پیشنهادی داشته باشند
+    for (final skill in AI.skillNames.keys) {
+      expect(AI.suggestGames(), isNotEmpty, reason: 'skill: $skill');
+    }
+    // پیشنهادها همیشه ۳ بازی متمایز برمی‌گردانند
+    for (var i = 0; i < 10; i++) {
+      final games = AI.suggestGames();
+      expect(games.length, 3);
+      expect(games.toSet().length, 3);
+    }
+  });
+}
