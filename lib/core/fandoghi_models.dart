@@ -37,4 +37,22 @@ extension FandoghiMoodVisuals on FandoghiMood {
         FandoghiMood.excited || FandoghiMood.surprised => const Duration(seconds: 3),
         _ => const Duration(seconds: 2),
       };
+
+  /// تصویر اختصاصی این حالت از مسکات «فندقی کوچولو» (در صورت وجود).
+  ///
+  /// برای حالت‌هایی که هنوز تصویر ندارند `null` برمی‌گردد تا رابط کاربری
+  /// از تصویر پیش‌فرض + ایموجی احساس استفاده کند.
+  String? get portraitAsset => switch (this) {
+        FandoghiMood.happy => 'assets/mascot/fandoghi_baby.png',
+        FandoghiMood.excited ||
+        FandoghiMood.celebrating ||
+        FandoghiMood.proud =>
+          'assets/mascot/fandoghi_baby_cheer.png',
+        FandoghiMood.thinking => 'assets/mascot/fandoghi_baby_think.png',
+        FandoghiMood.surprised ||
+        FandoghiMood.wink =>
+          'assets/mascot/fandoghi_baby_wow.png',
+        // sleeping / shy / sad — فعلاً با تصویر پیش‌فرض + ایموجی احساس نمایش داده می‌شوند.
+        _ => null,
+      };
 }

@@ -79,6 +79,8 @@ class DraggableFandoghi extends StatefulWidget {
 class _DraggableFandoghiState extends State<DraggableFandoghi>
     with SingleTickerProviderStateMixin {
   late final AnimationController _wobbleCtrl;
+  late final AnimationController _snapCtrl;
+  Animation<Offset>? _snapAnim;
   double _scale = 1.0;
   bool _hasDragged = false;
   Offset _dragOffset = Offset.zero;
@@ -91,11 +93,18 @@ class _DraggableFandoghiState extends State<DraggableFandoghi>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
+    // انیمیشن چسبیدن به لبهٔ صفحه بعد از رها کردن، تا مسکات روی
+    // محتوا و دکمه‌های وسط صفحه معلق نماند.
+    _snapCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 260),
+    );
   }
 
   @override
   void dispose() {
     _wobbleCtrl.dispose();
+    _snapCtrl.dispose();
     super.dispose();
   }
 
@@ -112,6 +121,12 @@ class _DraggableFandoghiState extends State<DraggableFandoghi>
     Size parentSize,
     BuildContext coordinateContext,
   ) {
+    // اگر انیمیشن چسبیدن به لبه در حال اجراست، متوقفش کن تا با انگشت
+    // کاربر تقابل نکند.
+    _snapCtrl.stop();
+    _snapAnim?.removeListener(_applySnap);
+    _snapAnim = null;
+
     final pointer = _toParentPosition(details.globalPosition, coordinateContext);
     final center = FandoghiPosition.instance.toPixels(parentSize);
     // Preserve the point where the child grabbed the mascot. Without this
@@ -139,15 +154,48 @@ class _DraggableFandoghiState extends State<DraggableFandoghi>
     );
   }
 
-  void _finishPan() {
+  void _applySnap() {
+    final anim = _snapAnim;
+    if (anim != null) {
+      FandoghiPosition.instance.value = anim.value;
+    }
+  }
+
+  /// بعد از رها شدن، مسکات به نزدیک‌ترین لبهٔ افقی می‌چسبد تا روی
+  /// گزینه‌ها و محتوای وسط صفحه خیمه نزند.
+  void _snapToEdge(Size parentSize) {
+    if (parentSize.width <= 0 || parentSize.height <= 0) return;
+    final pos = FandoghiPosition.instance;
+    final current = pos.value;
+
+    final halfW = ((widget.size / 2) / parentSize.width)
+        .clamp(0.02, 0.5)
+        .toDouble();
+    final minX = (halfW + 0.008).clamp(0.02, 0.5).toDouble();
+    final maxX = 1.0 - minX;
+    final targetX = current.dx < 0.5 ? minX : maxX;
+
+    if ((current.dx - targetX).abs() < 0.002) return;
+
+    _snapAnim?.removeListener(_applySnap);
+    _snapAnim = CurvedAnimation(
+      parent: _snapCtrl,
+      curve: Curves.easeOutCubic,
+    ).drive(Tween<Offset>(begin: current, end: Offset(targetX, current.dy)))
+      ..addListener(_applySnap);
+    _snapCtrl.forward(from: 0);
+  }
+
+  void _finishPan(Size parentSize) {
     _dragOffset = Offset.zero;
     if (mounted) setState(() => _scale = 1.0);
     _wobbleCtrl.forward(from: 0);
+    _snapToEdge(parentSize);
   }
 
-  void _onPanEnd(DragEndDetails _) => _finishPan();
+  void _onPanEnd(DragEndDetails _, Size parentSize) => _finishPan(parentSize);
 
-  void _onPanCancel() => _finishPan();
+  void _onPanCancel(Size parentSize) => _finishPan(parentSize);
 
   void _onTap() {
     _wobbleCtrl.forward(from: 0);
@@ -187,24 +235,48 @@ class _DraggableFandoghiState extends State<DraggableFandoghi>
                     return Positioned(
                       left: left,
                       top: top,
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: _onTap,
-                        onPanStart: (d) =>
-                            _onPanStart(d, parentSize, coordinateContext),
-                        onPanUpdate: (d) =>
-                            _onPanUpdate(d, parentSize, coordinateContext),
-                        onPanEnd: _onPanEnd,
-                        onPanCancel: _onPanCancel,
-                        child: AnimatedScale(
-                          scale: _scale * wobble,
-                          duration: const Duration(milliseconds: 120),
-                          curve: Curves.easeOut,
-                          child: _BunnyContainer(
-                            size: widget.size,
-                            showHint: !_hasDragged,
-                            child: FandoghiBunny(size: widget.size),
-                          ),
+                      child: SizedBox(
+                        width: widget.size,
+                        height: widget.size,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            // 🖼️ لایهٔ دیداری: تصویر مسکات لمس را رد می‌کند،
+                            // پس حاشیه‌های شفاف عکس هیچ وقت جلوی لمس
+                            // دکمه‌ها و گزینه‌های زیرش را نمی‌گیرد.
+                            Positioned.fill(
+                              child: IgnorePointer(
+                                child: AnimatedScale(
+                                  scale: _scale * wobble,
+                                  duration: const Duration(milliseconds: 120),
+                                  curve: Curves.easeOut,
+                                  child: _BunnyContainer(
+                                    size: widget.size,
+                                    showHint: !_hasDragged,
+                                    child: FandoghiBunny(size: widget.size),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // 👆 لایهٔ لمسی: فقط ناحیهٔ بدن شخصیت (مرکز
+                            // تصویر) لمسی است — نه کل قاب مربع.
+                            Center(
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: _onTap,
+                                onPanStart: (d) => _onPanStart(
+                                    d, parentSize, coordinateContext),
+                                onPanUpdate: (d) => _onPanUpdate(
+                                    d, parentSize, coordinateContext),
+                                onPanEnd: (d) => _onPanEnd(d, parentSize),
+                                onPanCancel: () => _onPanCancel(parentSize),
+                                child: SizedBox(
+                                  width: widget.size * 0.62,
+                                  height: widget.size * 0.78,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );

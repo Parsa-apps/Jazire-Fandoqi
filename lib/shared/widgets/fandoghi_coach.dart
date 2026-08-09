@@ -45,7 +45,7 @@ class FandoghiCoachOverlay extends StatelessWidget {
                       child: IgnorePointer(
                         child: _CoachBubbleFollower(
                           message: message,
-                          mascotSize: 120,
+                          mascotSize: 84,
                         ),
                       ),
                     )
@@ -65,15 +65,16 @@ class FandoghiCoachOverlay extends StatelessWidget {
   }
 }
 
-/// The always-on, freely-draggable bunny. Tap = instruction prompt,
-/// drag = move anywhere on the screen.
+/// The always-on, freely-draggable mascot. Tap = instruction prompt,
+/// drag = move anywhere on the screen. اندازهٔ کوچک‌تر + ناحیهٔ لمسی
+/// فشرده باعث می‌شود هیچ‌وقت جلوی لمس گزینه‌ها و دکمه‌ها را نگیرد.
 class _DraggableMascot extends StatelessWidget {
   const _DraggableMascot();
 
   @override
   Widget build(BuildContext context) {
     return DraggableFandoghi(
-      size: 120,
+      size: 84,
       onTap: () => FandoghiCoach.instruction(
         'هر وقت کمک خواستی روی من بزن! من راهنمای تو هستم 🧒',
       ),
@@ -125,7 +126,7 @@ class _CoachBubbleLayoutDelegate extends SingleChildLayoutDelegate {
   final double mascotSize;
   static const double _edgePadding = 12;
   static const double _gap = 14;
-  static const double _maxBubbleWidth = 560;
+  static const double _maxBubbleWidth = 400;
 
   const _CoachBubbleLayoutDelegate({
     required this.mascotCenter,
@@ -206,25 +207,26 @@ class _CoachBubble extends StatelessWidget {
         },
         child: Container(
           key: ValueKey<int>(message.id),
-          constraints: const BoxConstraints(maxWidth: 560),
-          padding: const EdgeInsetsDirectional.fromSTEB(12, 10, 14, 10),
+          constraints: const BoxConstraints(maxWidth: 400),
+          padding: const EdgeInsetsDirectional.fromSTEB(10, 7, 12, 7),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.97),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: toneColor.withOpacity(0.55), width: 2.5),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: toneColor.withOpacity(0.55), width: 2),
             boxShadow: [
               BoxShadow(
                 color: toneColor.withOpacity(0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 7),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              FandoghiBunny(size: 96),
-              const SizedBox(width: 10),
+              // بیان چهرهٔ واقعی متناسب با حس پیام (شادی، فکر، تعجب، جشن)
+              FandoghiBunny(size: 56, mood: message.mood),
+              const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,19 +236,19 @@ class _CoachBubble extends StatelessWidget {
                       'فندقی می‌گوید 🧒',
                       style: AppFonts.balooBhaijaan2(
                         color: toneColor,
-                        fontSize: 16,
+                        fontSize: 12,
                         fontWeight: FontWeight.w900,
                         height: 1.1,
                       ),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 2),
                     Text(
                       message.text,
                       textAlign: TextAlign.start,
                       style: AppFonts.balooBhaijaan2(
                         color: AppColors.textPrimary,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
                         height: 1.4,
                       ),
                     ),
