@@ -34,7 +34,32 @@ class FandoghiCoach {
       ValueNotifier<FandoghiCoachMessage?>(null);
   static final ValueNotifier<bool> persistent = ValueNotifier<bool>(false);
   static Timer? _hideTimer;
+  static Timer? _hintTimer;
   static int _nextId = 0;
+
+  /// فاز ۱۹: راهنمای هوشمند — فندقی فقط وقتی کودک ۳ ثانیه
+  /// بی‌حرکت مانده راهنمایی می‌دهد (نه اسپم).
+  static void armSmartHint({
+    required void Function() onHint,
+    Duration delay = const Duration(seconds: 3),
+  }) {
+    _hintTimer?.cancel();
+    _hintTimer = Timer(delay, () {
+      _hintTimer = null;
+      onHint();
+    });
+  }
+
+  /// هر فعالیت کودک (لمس/کشیدن) این را صدا بزند تا تایمر ریست شود.
+  static void noteActivity() {
+    _hintTimer?.cancel();
+    _hintTimer = null;
+  }
+
+  static void cancelSmartHint() {
+    _hintTimer?.cancel();
+    _hintTimer = null;
+  }
 
   static void enablePersistentPresence() {
     persistent.value = true;

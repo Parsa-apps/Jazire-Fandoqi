@@ -57,6 +57,10 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
           FandoghiCoach.instruction(
             'من داور این مسابقه‌ام! گزینه‌ای را انتخاب کن؛ بعد با هم جواب را بررسی می‌کنیم 🌰',
           );
+          // فاز ۱۹: راهنمای هوشمند برای سوال اول
+          Future<void>.delayed(const Duration(milliseconds: 600), () {
+            if (mounted) _armNextHint();
+          });
         }
       }
     });
@@ -75,6 +79,9 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
     final question = _questions[_questionIndex];
     final correct = optionIndex == question.correctIndex;
     final token = _roundToken;
+
+    // فاز ۱۹: فعالیت کودک، راهنمای بی‌حرکتی را لغو می‌کند
+    FandoghiCoach.cancelSmartHint();
 
     HapticFeedback.lightImpact();
     setState(() {
@@ -110,8 +117,22 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
           _selectedOption = null;
           _answerLocked = false;
         });
+        _armNextHint();
       }
     });
+  }
+
+  /// فاز ۱۹: اگر کودک ۳ ثانیه جواب ندهد، فندقی ملایم راهنمایی می‌کند.
+  void _armNextHint() {
+    final question = _questions[_questionIndex];
+    FandoghiCoach.armSmartHint(
+      onHint: () {
+        if (!mounted || _finished || _answerLocked) return;
+        FandoghiCoach.instruction(
+          'می‌تونی جواب رو با لمس انتخاب کنی؛ هر کدوم که فکر می‌کنی درسته بزن 🌟',
+        );
+      },
+    );
   }
 
   void _finish() {
@@ -149,6 +170,9 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
       _selectedOption = null;
       _answerLocked = false;
       _finished = false;
+    });
+    Future<void>.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) _armNextHint();
     });
   }
 
