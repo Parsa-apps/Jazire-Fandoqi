@@ -927,9 +927,54 @@ class _DashboardState extends ConsumerState<DashboardTab> {
 
   // ─── FANDOGHI TIP ─────────────────────────────
   Widget _buildFandoghiTip() {
+    // فاز ۵۰: ضد اعتیاد — بعد از ۲۰ دقیقه بازی بی‌وقفه، استراحت پیشنهاد بده
+    if (AI.needsBreak() && !GameData.isDailyLimitReached) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+        child: GradientGlassCard(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
+          ),
+          borderRadius: 30,
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              const Text('😴', style: TextStyle(fontSize: 46)),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'وقت یک استراحت کوچک است!',
+                      style: AppFonts.vazirmatn(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'بیا ۲ دقیقه چشم‌ها را استراحت بدهیم؛ بعد قوی‌تر برمی‌گردی 🌈',
+                      style: TextStyle(fontSize: 13, height: 1.5),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // فاز ۴۶: پیشنهاد ۳ بازی هوشمند بر اساس مهارت ضعیف
+    final suggestions = AI.suggestGames();
     final coachText = GameData.totalCorrect == 0
         ? 'من از اول تا آخر کنارت هستم؛ هر وقت آماده‌ای، یکی از بازی‌ها را انتخاب کن!'
-        : AI.mascotMsg();
+        : 'فندقی پیشنهاد می‌کند امروز این بازی‌ها را امتحان کنی: '
+            '${suggestions.map((g) => '«$g»').join('، ')} 🎯';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),

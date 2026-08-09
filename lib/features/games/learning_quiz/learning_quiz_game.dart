@@ -41,6 +41,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
   int _questionIndex = 0;
   int _score = 0;
   int _correctAnswers = 0;
+  int _consecutiveWrong = 0; // فاز ۴۵
   int? _selectedOption;
   bool _answerLocked = false;
   bool _finished = false;
@@ -100,12 +101,23 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
       GameData.progressMission(question.missionId!);
     }
     if (correct) {
+      _consecutiveWrong = 0;
       FandoghiCoach.correct('آفرین! «${question.options[optionIndex]}» جواب درست بود 🌟');
       HapticFeedback.mediumImpact();
       // فاز ۶: تشویق صوتی هم‌زمان با حباب فندقی
       unawaited(AudioService.playCorrect());
     } else {
-      FandoghiCoach.incorrect(question.options[question.correctIndex]);
+      _consecutiveWrong++;
+      // فاز ۴۵: اگر پشت سر هم غلط زد، همدلی + پیشنهاد بازی آسون‌تر
+      final empathyMessage = AI.encouragementAfterMistakes(_consecutiveWrong);
+      FandoghiCoach.say(
+        empathyMessage.isEmpty
+            ? 'جواب درست «${question.options[question.correctIndex]}» بود'
+            : '$empathyMessage جواب درست «${question.options[question.correctIndex]}» بود',
+        mood: FandoghiMood.shy,
+        tone: FandoghiCoachTone.encouragement,
+        duration: const Duration(seconds: 4),
+      );
       unawaited(AudioService.playWrong());
     }
 
@@ -169,6 +181,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
       _questionIndex = 0;
       _score = 0;
       _correctAnswers = 0;
+      _consecutiveWrong = 0;
       _selectedOption = null;
       _answerLocked = false;
       _finished = false;

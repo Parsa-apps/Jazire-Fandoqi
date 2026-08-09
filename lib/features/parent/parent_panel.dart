@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import '../../app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import '../../core/ai_system.dart';
 import '../../core/game_data.dart';
 import '../../data/datasources/crash_report_store.dart';
 import '../../presentation/providers/game_state_provider.dart';
@@ -551,6 +552,40 @@ class _ParentPanelState extends ConsumerState<ParentPanel> {
               ),
             );
           }),
+          // فاز ۴۷: پیشنهاد AI والدین
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '🤖 پیشنهاد هوشمند فندقی',
+                  style: AppFonts.vazirmatn(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'مهارت «${AI.weakSkill()}» نیاز به تمرین بیشتری دارد؛ '
+                  'با بازی ${AI.suggestGames().join('، ')} تقویت می‌شود.',
+                  style: const TextStyle(fontSize: 13, height: 1.6),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'پیش‌بینی یک ماه آینده: تمرین روزانه ۱۰ دقیقه، تسلط '
+                  'مهارت‌های پایه تا ۸۰٪.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

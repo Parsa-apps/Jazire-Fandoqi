@@ -174,6 +174,17 @@ class AudioService {
     return options[DateTime.now().microsecondsSinceEpoch % options.length];
   }
 
+  /// فاز ۴۴: تلفظ اعداد فارسی با کلمات (برای آکادمی اعداد).
+  static Future<void> speakNumber(int number) async {
+    const Map<int, String> words = <int, String>{
+      0: 'صفر', 1: 'یک', 2: 'دو', 3: 'سه', 4: 'چهار', 5: 'پنج',
+      6: 'شش', 7: 'هفت', 8: 'هشت', 9: 'نه', 10: 'ده',
+      11: 'یازده', 12: 'دوازده', 13: 'سیزده', 14: 'چهارده', 15: 'پانزده',
+      16: 'شانزده', 17: 'هفده', 18: 'هجده', 19: 'نوزده', 20: 'بیست',
+    };
+    await speak(words[number] ?? '$number');
+  }
+
   static void dispose() {
     _effectPlayer.dispose();
     _bgmPlayer.dispose();

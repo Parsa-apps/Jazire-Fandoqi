@@ -10,11 +10,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'app/app_theme.dart';
 import 'app/theme_controller.dart';
 import 'core/audio_service.dart';
+import 'core/fandoghi_coach.dart';
 import 'core/game_data.dart';
 import 'core/game_launch.dart';
 import 'core/logger_service.dart';
 import 'features/about/about_screen.dart';
 import 'features/about/privacy_policy_screen.dart';
+import 'features/buddy/buddy_chat_screen.dart';
 import 'features/games/alphabet_academy/alphabet_academy_game.dart';
 import 'features/games/bubble_pop/bubble_pop_game.dart';
 import 'features/games/drawing/drawing_game.dart';
@@ -68,6 +70,8 @@ Future<void> main() async {
 
   try {
     await GameData.load();
+    // فاز ۴۳: فندقی اسم کودک را به یاد می‌آورد
+    FandoghiCoach.rememberChild(GameData.childName);
   } catch (error, stackTrace) {
     // Storage failures should degrade to a playable session, not a crash or a
     // blank screen. The next launch can retry persistence automatically.
@@ -153,6 +157,7 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
         '/sound_match': (context) => const SoundMatchGame(),
         '/body_parts': (context) => const BodyPartsGame(),
         '/island_builder': (context) => const IslandBuilderGame(),
+        '/buddy_chat': (context) => const BuddyChatScreen(),
         '/parent': (context) => const ParentPanel(),
         '/about': (context) => const AboutScreen(),
         '/privacy': (context) => const PrivacyPolicyScreen(),
