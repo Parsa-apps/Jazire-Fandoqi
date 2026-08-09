@@ -765,7 +765,20 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
                 fit: StackFit.expand,
                 children: [
                   // لایه پس‌زمینه (پوستر / نماد کارتون)
-                  if (_posterUrl != null)
+                  if (widget.cartoon.coverAsset != null && widget.cartoon.coverAsset!.isNotEmpty)
+                    Positioned.fill(
+                      child: Image.asset(
+                        widget.cartoon.coverAsset!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          decoration: BoxDecoration(gradient: widget.cartoon.gradient),
+                          child: Center(
+                            child: Text(_currentEpisode.coverEmoji, style: const TextStyle(fontSize: 64)),
+                          ),
+                        ),
+                      ),
+                    )
+                  else if (_posterUrl != null)
                     Positioned.fill(
                       child: Image.network(
                         _posterUrl!,
@@ -1125,6 +1138,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
                   child: CartoonCoverImage(
                     videoHash: _currentEpisode.aparatHash,
                     searchQuery: _currentEpisode.searchQuery ?? widget.cartoon.englishTitle,
+                    coverAsset: _currentEpisode.coverAsset ?? widget.cartoon.coverAsset,
                     fallbackEmoji: widget.cartoon.coverEmoji,
                     fallbackGradient: widget.cartoon.gradient,
                     emojiSize: 24,
@@ -1365,6 +1379,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
                       : CartoonCoverImage(
                           videoHash: ep.aparatHash,
                           searchQuery: ep.searchQuery ?? widget.cartoon.englishTitle,
+                          coverAsset: ep.coverAsset ?? widget.cartoon.coverAsset,
                           fallbackEmoji: ep.coverEmoji,
                           fallbackGradient: widget.cartoon.gradient,
                           emojiSize: 22,

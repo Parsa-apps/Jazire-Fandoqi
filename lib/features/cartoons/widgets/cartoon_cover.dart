@@ -12,6 +12,7 @@ import 'package:amoozesh_fandoghi/core/cartoons/aparat_service.dart';
 class CartoonCoverImage extends StatefulWidget {
   final String? videoHash;
   final String? searchQuery;
+  final String? coverAsset;
   final String fallbackEmoji;
   final Gradient fallbackGradient;
   final double emojiSize;
@@ -26,6 +27,7 @@ class CartoonCoverImage extends StatefulWidget {
     super.key,
     this.videoHash,
     this.searchQuery,
+    this.coverAsset,
     required this.fallbackEmoji,
     required this.fallbackGradient,
     this.emojiSize = 48,
@@ -97,9 +99,47 @@ class _CartoonCoverImageState extends State<CartoonCoverImage> {
     );
   }
 
+  Widget _buildEmojiBadgeWidget() {
+    if (!widget.showEmojiBadge) return const SizedBox.shrink();
+    return Positioned(
+      left: 6,
+      bottom: 6,
+      child: IgnorePointer(
+        child: Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.45),
+            shape: BoxShape.circle,
+          ),
+          child: Text(
+            widget.fallbackEmoji,
+            style: const TextStyle(fontSize: 14),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final fallback = _buildFallback();
+
+    // 1️⃣ اگر پوستر آفلاین (asset) تعریف شده باشد، با اولویت و بدون نیاز به شبکه نمایش می‌دهیم.
+    if (widget.coverAsset != null && widget.coverAsset!.isNotEmpty) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            widget.coverAsset!,
+            fit: widget.fit,
+            cacheWidth: widget.cacheWidth,
+            errorBuilder: (context, error, stackTrace) => fallback,
+          ),
+          _buildEmojiBadgeWidget(),
+        ],
+      );
+    }
+
     final url = _url;
 
     if (url == null) return fallback;
@@ -122,24 +162,7 @@ class _CartoonCoverImageState extends State<CartoonCoverImage> {
           },
           errorBuilder: (context, error, stackTrace) => fallback,
         ),
-        if (widget.showEmojiBadge)
-          Positioned(
-            left: 6,
-            bottom: 6,
-            child: IgnorePointer(
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.45),
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  widget.fallbackEmoji,
-                  style: const TextStyle(fontSize: 14),
-                ),
-              ),
-            ),
-          ),
+        _buildEmojiBadgeWidget(),
       ],
     );
   }

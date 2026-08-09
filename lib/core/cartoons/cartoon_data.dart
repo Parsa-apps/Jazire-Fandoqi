@@ -40,6 +40,7 @@ class CartoonEpisode {
   final String? streamUrl;
   final String webUrl;
   final String coverEmoji;
+  final String? coverAsset;
   final String catchphrase;
   final String triviaQuestion;
   final List<String> triviaOptions;
@@ -56,6 +57,7 @@ class CartoonEpisode {
     this.streamUrl,
     required this.webUrl,
     required this.coverEmoji,
+    this.coverAsset,
     this.catchphrase = '',
     this.triviaQuestion = '',
     this.triviaOptions = const [],
@@ -72,6 +74,7 @@ class Cartoon {
   final String categoryLabel;
   final String description;
   final String coverEmoji;
+  final String? coverAsset;
   final Color themeColor;
   final LinearGradient gradient;
   final double rating;
@@ -94,6 +97,7 @@ class Cartoon {
     required this.categoryLabel,
     required this.description,
     required this.coverEmoji,
+    this.coverAsset,
     required this.themeColor,
     required this.gradient,
     required this.rating,
@@ -203,11 +207,12 @@ class CartoonData {
       id: 'cocomelon_fa',
       title: 'کوکوملون (CoComelon)',
       englishTitle: 'Cocomelon',
-      characterName: 'بچه‌ها، مامان، بابا و دوستان',
+      characterName: 'جی‌جی، یویو، تام‌تام، مامان و بابا',
       category: CartoonCategoryType.preschool,
       categoryLabel: 'خردسالان و نوپا',
-      description: 'محبوب‌ترین ترانه‌های کودکانه جهان با کارتون‌های شاد و رنگارنگ؛ آهنگ‌های خواب، حمام، شمارش و الفبا که کودکان ایران عاشقش هستند.',
-      coverEmoji: '🎶',
+      description: 'کارتون جذاب و پرطرفدار کوکوملون درباره پسربچه شیرین و کنجکاوی به نام جی‌جی (JJ)، خواهرش یویو، برادرش تام‌تام و حیوانات مهربانشان است. جی‌جی و خانواده‌اش در هر قسمت ماجراهای روزمره، مهارت‌های زندگی، بهداشت فردی، دوستی و یادگیری الفبا را با داستان‌های شیرین، شاد و آموزنده تجربه می‌کنند.',
+      coverEmoji: '🍉',
+      coverAsset: 'assets/cartoons/cocomelon.png',
       themeColor: Color(0xFFE84393),
       gradient: LinearGradient(
         colors: [Color(0xFFE84393), Color(0xFFFF7675)],
@@ -280,6 +285,7 @@ class CartoonData {
       categoryLabel: 'ماجراجویی و نجات',
       description: 'محبوب‌ترین کارتون نجات در جهان؛ رایدر و توله‌سگ‌های شجاع با ماشین‌ها و بالگردهایشان به کمک دوستان می‌شتابند. دوبله فارسی بسیار شاد.',
       coverEmoji: '🐾',
+      coverAsset: 'assets/cartoons/paw_patrol.png',
       themeColor: Color(0xFF0984E3),
       gradient: LinearGradient(
         colors: [Color(0xFF0984E3), Color(0xFF74B9FF)],
@@ -337,6 +343,7 @@ class CartoonData {
       categoryLabel: 'طنز و خنده‌دار',
       description: 'خنده‌دارترین و پرمخاطب‌ترین کارتون دنیا در اعماق اقیانوس بیکینی‌باتم با همبرگرهای خوشمزه و حباب‌بازی!',
       coverEmoji: '🧽',
+      coverAsset: 'assets/cartoons/spongebob.png',
       themeColor: Color(0xFFF1C40F),
       gradient: LinearGradient(
         colors: [Color(0xFFF1C40F), Color(0xFFE67E22)],
@@ -379,6 +386,7 @@ class CartoonData {
       categoryLabel: 'خردسالان و نوپا',
       description: 'انیمیشن آموزشی بسیار ملایم و پرمخاطب برای خردسالان. آموزش رفتارهای مؤدبانه، بازی‌های خانوادگی و کشف طبیعت با دوبله فارسی.',
       coverEmoji: '🐷',
+      coverAsset: 'assets/cartoons/peppa_pig.png',
       themeColor: Color(0xFFFA709A),
       gradient: LinearGradient(
         colors: [Color(0xFFFA709A), Color(0xFFFEE140)],
@@ -435,6 +443,7 @@ class CartoonData {
       categoryLabel: 'طنز و خنده‌دار',
       description: 'انیمیشن صامت و فوق‌العاده خنده‌دار و پرمخاطب بره زرنگ مزرعه که همیشه نقشه‌های هوشمندانه برای شاد کردن دوستانش می‌کشد.',
       coverEmoji: '🐑',
+      coverAsset: 'assets/cartoons/shaun_sheep.png',
       themeColor: Color(0xFF6C5CE7),
       gradient: LinearGradient(
         colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
@@ -492,6 +501,7 @@ class CartoonData {
       categoryLabel: 'خردسالان و نوپا',
       description: 'پوکویو پسرک کنجکاو در دنیایی پر از شگفتی با دوستانش بازی و شادی می‌کند؛ یکی از پرمخاطب‌ترین کارتون‌های نوپایان با دوبله فارسی.',
       coverEmoji: '🎈',
+      coverAsset: 'assets/cartoons/pocoyo.png',
       themeColor: Color(0xFF3498DB),
       gradient: LinearGradient(
         colors: [Color(0xFF3498DB), Color(0xFF2980B9)],
@@ -564,6 +574,7 @@ class CartoonData {
       categoryLabel: 'طنز و خنده‌دار',
       description: 'پرطرفدارترین کارتون کلاسیک دنیا؛ دعوای بامزه و بی‌کلام گربه و موش که نسل‌ها را خندانده است.',
       coverEmoji: '🐭',
+      coverAsset: 'assets/cartoons/tom_jerry.png',
       themeColor: Color(0xFFE67E22),
       gradient: LinearGradient(
         colors: [Color(0xFFE67E22), Color(0xFFF39C12)],
@@ -885,6 +896,7 @@ class CartoonData {
       categoryLabel: 'ایرانی و آموزنده',
       description: 'محبوب‌ترین کارتون ایرانی با داستان‌های شیرین، طنز و آموزنده در شهر شکرستان و قصه‌های پر از حکمت و خنده.',
       coverEmoji: '🏰',
+      coverAsset: 'assets/cartoons/shekarestan.png',
       themeColor: Color(0xFFFF8E53),
       gradient: LinearGradient(
         colors: [Color(0xFFFF8E53), Color(0xFFFF6B6B)],
@@ -942,6 +954,7 @@ class CartoonData {
       categoryLabel: 'ایرانی و آموزنده',
       description: 'محبوب‌ترین انیمیشن ایرانی درباره پوریای ولی و شاگردان وفادارش در زورخانه شهر خوارزم. آموزش جوانمردی، کمک به نیازمندان و ایستادگی در برابر ستم.',
       coverEmoji: '⚔️',
+      coverAsset: 'assets/cartoons/pahlavanan.png',
       themeColor: Color(0xFF00B894),
       gradient: LinearGradient(
         colors: [Color(0xFF00B894), Color(0xFF00CEC9)],
@@ -984,6 +997,7 @@ class CartoonData {
       categoryLabel: 'سینمایی و بلند',
       description: 'پرمخاطب‌ترین انیمیشن سینمایی ایران درباره پسری که در آغوش دلفین‌های خلیج فارس بزرگ شد و برای نجات دریا با هیولای دریاها مبارزه می‌کند.',
       coverEmoji: '🐬',
+      coverAsset: 'assets/cartoons/dolphin_boy.png',
       themeColor: Color(0xFF00CEC9),
       gradient: LinearGradient(
         colors: [Color(0xFF00CEC9), Color(0xFF0984E3)],
