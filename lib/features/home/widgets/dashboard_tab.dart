@@ -67,6 +67,9 @@ class _DashboardState extends ConsumerState<DashboardTab> {
       SliverToBoxAdapter(child: _buildQuickStats()),
     ];
 
+    // مأموریت‌ها فقط یک‌بار نمایش داده می‌شوند:
+    //  - چالش (۷-۸ سال): بالای لیست (جلوتر)
+    //  - استاندارد (۵-۶ سال): بعد از دسته‌بندی‌ها
     if (challenge) {
       slivers.add(SliverToBoxAdapter(child: _buildDailyMissions()));
     }
@@ -77,7 +80,11 @@ class _DashboardState extends ConsumerState<DashboardTab> {
     // Game categories — در حالت ساده فقط دسته‌بندی‌های اصلی
     slivers.add(SliverToBoxAdapter(child: _buildCategories(simple: simple)));
 
-    if (!simple) {
+    if (simple) {
+      // حالت ساده (۳-۴ سال): بدون مأموریت و بدون نکته
+    } else if (challenge) {
+      slivers.add(SliverToBoxAdapter(child: _buildFandoghiTip()));
+    } else {
       slivers.add(SliverToBoxAdapter(child: _buildDailyMissions()));
       slivers.add(SliverToBoxAdapter(child: _buildFandoghiTip()));
     }
