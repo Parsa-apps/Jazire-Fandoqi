@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../core/game_data.dart';
+import '../../data/datasources/crash_report_store.dart';
 import '../../presentation/providers/game_state_provider.dart';
 import '../../shared/widgets/premium_button.dart';
 
@@ -201,7 +202,140 @@ class _ParentPanelState extends ConsumerState<ParentPanel> {
 
           // ==================== PIN MANAGEMENT ====================
           _buildPinCard(),
+
+          const SizedBox(height: 24),
+
+          // ==================== DEBUG LOGS (فاز ۸) ====================
+          _buildDebugLogsCard(),
         ],
+      ),
+    );
+  }
+
+  /// فاز ۸: مشاهده گزارش خطاهای آفلاین (برای دیباگ توسط والد).
+  Widget _buildDebugLogsCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('🛠️', style: TextStyle(fontSize: 22)),
+              const SizedBox(width: 8),
+              Text(
+                'گزارش خطاهای دستگاه',
+                style: AppFonts.vazirmatn(fontSize: 18, fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'این گزارش فقط روی همین دستگاه ذخیره می‌شود و جایی ارسال نمی‌شود.',
+            style: TextStyle(color: Colors.grey, fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: PremiumButton(
+                  text: 'مشاهده گزارش',
+                  color: const Color(0xFF5C6BC0),
+                  onPressed: _showDebugLogs,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showDebugLogs() async {
+    final logs = await CrashReportStore.getLogs();
+    if (!mounted) return;
+    if (logs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('هیچ خطایی ثبت نشده؛ همه‌چیز سالم است 🎉')),
+      );
+      return;
+    }
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.7,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) => Column(
+          children: [
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(right: 16),
+                  child: Text(
+                    'گزارش خطاها (${logs.length})',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    await CrashReportStore.clearLogs();
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  },
+                  child: const Text('پاک کردن همه'),
+                ),
+              ],
+            ),
+            Expanded(
+              child: ListView.separated(
+                controller: scrollController,
+                padding: const EdgeInsets.all(16),
+                itemCount: logs.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 10),
+                itemBuilder: (context, index) {
+                  final log = logs[index];
+                  final time = log['time']?.toString() ?? '';
+                  final message = log['message']?.toString() ?? '';
+                  final source = log['source']?.toString() ?? '';
+                  return Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF3E0),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$source — $time',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(message, style: const TextStyle(fontSize: 13)),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

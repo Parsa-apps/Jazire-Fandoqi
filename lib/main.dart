@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -35,6 +36,19 @@ Future<void> main() async {
   await Hive.initFlutter();
   await Hive.openBox('playerBox');
   await AudioService.init();
+
+  // فاز ۸: ثبت سراسری خطاهای غیرمنتظره به‌صورت آفلاین
+  FlutterError.onError = (details) {
+    LoggerService.reportCrash(
+      details.exception,
+      details.stack ?? StackTrace.current,
+      source: 'flutter',
+    );
+  };
+  PlatformDispatcher.instance.onError = (error, stackTrace) {
+    LoggerService.reportCrash(error, stackTrace, source: 'async');
+    return true; // جلوگیری از کرش پیش‌فرض
+  };
 
   // Never leave a child staring at a blank white screen.
   ErrorWidget.builder = (_) => const _FirstFrameErrorScreen();
