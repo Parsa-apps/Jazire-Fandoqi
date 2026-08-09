@@ -312,11 +312,11 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Padding(
-                  padding: EdgeInsets.only(right: 16),
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
                   child: Text(
                     'گزارش خطاها (${logs.length})',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
                   ),
                 ),
                 TextButton(

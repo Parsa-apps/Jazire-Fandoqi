@@ -170,11 +170,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
                 // فقط تکه‌هایی که هنوز جایشان خالی است نمایش داده می‌شوند
                 // (در پازل ۳×۳ تکه‌های تکراری داریم؛ یکی که نشست،
                 //  بقیه همان تکه باید همچنان قابل کشیدن باشند)
-                if (_countUnplaced(tile) > 0)
-                  Draggable<String>(
-                    data: tile,
-                    child: _tile(tile),
-                  ),
+                if (_countUnplaced(tile) > 0) _tile(tile),
             ],
           ),
         ),
