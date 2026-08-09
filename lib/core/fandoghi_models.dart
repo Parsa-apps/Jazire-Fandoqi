@@ -38,21 +38,21 @@ extension FandoghiMoodVisuals on FandoghiMood {
         _ => const Duration(seconds: 2),
       };
 
-  /// تصویر اختصاصی این حالت از مسکات «فندقی کوچولو» (در صورت وجود).
+  /// تصویر اختصاصی این حالت از مسکات «فندقی کوچولو».
   ///
-  /// برای حالت‌هایی که هنوز تصویر ندارند `null` برمی‌گردد تا رابط کاربری
-  /// از تصویر پیش‌فرض + ایموجی احساس استفاده کند.
+  /// هر ۱۰ حالت احساسی تصویر مخصوص خودش را دارد. مقدار `null` فقط
+  /// به‌عنوان شبکهٔ اطمینان برای حالت‌های آیندهٔ بدون تصویر باقی مانده
+  /// تا رابط کاربری به تصویر پیش‌فرض + ایموجی احساس برگردد.
   String? get portraitAsset => switch (this) {
         FandoghiMood.happy => 'assets/mascot/fandoghi_baby.png',
-        FandoghiMood.excited ||
-        FandoghiMood.celebrating ||
-        FandoghiMood.proud =>
-          'assets/mascot/fandoghi_baby_cheer.png',
+        FandoghiMood.excited => 'assets/mascot/fandoghi_baby_cheer.png',
+        FandoghiMood.celebrating => 'assets/mascot/fandoghi_baby_party.png',
+        FandoghiMood.proud => 'assets/mascot/fandoghi_baby_proud.png',
         FandoghiMood.thinking => 'assets/mascot/fandoghi_baby_think.png',
-        FandoghiMood.surprised ||
-        FandoghiMood.wink =>
-          'assets/mascot/fandoghi_baby_wow.png',
-        // sleeping / shy / sad — فعلاً با تصویر پیش‌فرض + ایموجی احساس نمایش داده می‌شوند.
-        _ => null,
+        FandoghiMood.surprised => 'assets/mascot/fandoghi_baby_wow.png',
+        FandoghiMood.wink => 'assets/mascot/fandoghi_baby_wink.png',
+        FandoghiMood.sleeping => 'assets/mascot/fandoghi_baby_sleep.png',
+        FandoghiMood.shy => 'assets/mascot/fandoghi_baby_shy.png',
+        FandoghiMood.sad => 'assets/mascot/fandoghi_baby_sad.png',
       };
 }
