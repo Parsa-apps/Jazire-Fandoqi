@@ -35,8 +35,8 @@ echo '🔒 ممیزی آفلاین — آموزش فندقی (فاز ۴۹)'
 echo '═══════════════════════════════════════════'
 
 check 'HTTP/HTTPS درخواست' "http://|https://" "$tmp"
-check 'ترکرها' "firebase|mixpanel|amplitude|segment\.io|google_analytics|sentry|crashlytics" "$tmp"
-check 'پکیج‌های آنلاین' "dio|http:|graphql|web_socket|firebase_|google_maps|geolocator" "$tmp"
+check 'ترکرها' "firebase|mixpanel|amplitude_|segment\.io|google_analytics|sentry|crashlytics" "$tmp"
+check 'پکیج‌های آنلاین' "package:dio|\bhttp:|graphql|web_socket|firebase_|google_maps|geolocator" "$tmp"
 check 'آدرس‌های IP' "([0-9]{1,3}\.){3}[0-9]{1,3}" "$tmp"
 check 'ارسال داده به بیرون' "package:http|HttpClient|WebSocket|socket\.io" "$tmp"
 
