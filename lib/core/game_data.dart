@@ -942,7 +942,8 @@ class GameData {
   }
 
   static void updateProfile({required String name, String? photoPath}) {
-    childName = name.trim().substring(0, name.trim().length.clamp(0, 24));
+    final trimmed = name.trim();
+    childName = trimmed.substring(0, trimmed.length.clamp(0, 24).toInt());
     if (photoPath != null) profilePhotoPath = photoPath;
     _notify();
     unawaited(save());
