@@ -30,6 +30,7 @@ dependencies:
   hive_flutter: 1.1.0
   path_provider: 2.1.3
   image_picker: 1.1.2
+  image_cropper: 8.0.2
   
   # 🔊 Audio & TTS
   just_audio: 0.9.40
