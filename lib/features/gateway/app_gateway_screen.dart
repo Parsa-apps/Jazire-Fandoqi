@@ -6,6 +6,9 @@ import 'package:amoozesh_fandoghi/app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import 'package:amoozesh_fandoghi/core/fandoghi_coach.dart';
 import 'package:amoozesh_fandoghi/core/game_data.dart';
+import 'package:amoozesh_fandoghi/core/cartoons/cartoon_data.dart';
+import 'package:amoozesh_fandoghi/features/cartoons/cartoon_player_screen.dart';
+import 'package:amoozesh_fandoghi/features/cartoons/widgets/cartoon_cover.dart';
 import 'package:amoozesh_fandoghi/features/cartoons/widgets/cartoon_rating_dialog.dart';
 import 'package:amoozesh_fandoghi/features/profile/sticker_album_screen.dart';
 import 'package:amoozesh_fandoghi/shared/widgets/fandoghi_v2.dart';
@@ -160,6 +163,11 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
                         children: [
                           // 1. CARTOONS SECTION CARD
                           _buildCartoonsCard(),
+
+                          const SizedBox(height: 20),
+
+                          // 🌟 CARTOON GALLERY ("گالری انیمیشن‌های فندقی با فریم‌های شیک")
+                          _buildGatewayCartoonGallery(),
 
                           const SizedBox(height: 20),
 
@@ -466,6 +474,251 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
         ),
       ),
     ).animate().fadeIn(delay: 200.ms, duration: 500.ms).slideY(begin: 0.15);
+  }
+
+  // ─── گالری کارتون‌های فندقی (فریم‌های شیک و حرفه‌ای کودکانه در صفحه ورود) ───
+  Widget _buildGatewayCartoonGallery() {
+    final cartoons = CartoonData.allCartoons;
+    if (cartoons.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                const Text('🍿✨', style: TextStyle(fontSize: 22)),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'گالری کارتون‌های فندقی',
+                      style: AppFonts.vazirmatn(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      'با فریم‌های ویژه • روی هر کارتون بزن و مستقیم تماشا کن',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            GestureDetector(
+              onTap: _openCartoons,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white24),
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      'همه کارتون‌ها',
+                      style: AppFonts.vazirmatn(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 12),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 235,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            itemCount: cartoons.length,
+            itemBuilder: (context, index) {
+              final cartoon = cartoons[index];
+              return GestureDetector(
+                onTap: () {
+                  HapticFeedback.mediumImpact();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => CartoonPlayerScreen(cartoon: cartoon),
+                    ),
+                  ).then((_) => setState(() {}));
+                },
+                child: Container(
+                  width: 156,
+                  margin: const EdgeInsets.only(left: 14, bottom: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E1B38),
+                    borderRadius: BorderRadius.circular(26),
+                    border: Border.all(
+                      color: cartoon.themeColor.withOpacity(0.85),
+                      width: 2.4,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: cartoon.themeColor.withOpacity(0.35),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header Cover Photo
+                        Expanded(
+                          flex: 12,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              if (cartoon.coverAsset != null && cartoon.coverAsset!.isNotEmpty)
+                                Image.asset(
+                                  cartoon.coverAsset!,
+                                  fit: BoxFit.cover,
+                                )
+                              else
+                                CartoonCoverImage(
+                                  videoHash: cartoon.episodes.isNotEmpty
+                                      ? cartoon.episodes.first.aparatHash
+                                      : null,
+                                  searchQuery: cartoon.episodes.isNotEmpty
+                                      ? (cartoon.episodes.first.searchQuery ?? cartoon.englishTitle)
+                                      : cartoon.englishTitle,
+                                  fallbackEmoji: cartoon.coverEmoji,
+                                  fallbackGradient: cartoon.gradient,
+                                  emojiSize: 38,
+                                  cacheWidth: 320,
+                                ),
+                              // Emoji Sticker Corner Badge
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.65),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white38, width: 1.4),
+                                  ),
+                                  child: Text(
+                                    cartoon.coverEmoji,
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                ),
+                              ),
+                              // Episode count badge
+                              Positioned(
+                                bottom: 6,
+                                left: 6,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.75),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    '${cartoon.episodes.length} قسمت',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Footer Info Frame
+                        Expanded(
+                          flex: 7,
+                          child: Container(
+                            padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  const Color(0xFF1E1B38),
+                                  cartoon.themeColor.withOpacity(0.22),
+                                ],
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  cartoon.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppFonts.vazirmatn(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        cartoon.categoryLabel,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.7),
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: cartoon.themeColor,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Text(
+                                        'تماشا ▶',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    ).animate().fadeIn(delay: 300.ms, duration: 500.ms).slideY(begin: 0.1);
   }
 
   // ─── ۲. دنیای بازی و یادگیری فندقی ───────────────────

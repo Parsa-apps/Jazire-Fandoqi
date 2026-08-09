@@ -148,7 +148,7 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
           initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
-        '/onboarding': (context) => const OnboardingScreen(),
+        '/onboarding': (context) => const AppGatewayScreen(),
         '/gateway': (context) => const AppGatewayScreen(),
         '/cartoons': (context) => const CartoonHubScreen(),
         '/home': (context) => const HomeScreen(),

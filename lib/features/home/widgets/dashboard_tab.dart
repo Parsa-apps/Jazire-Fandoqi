@@ -412,7 +412,10 @@ class _DashboardState extends ConsumerState<DashboardTab> {
           Expanded(
             child: PremiumCard(
               padding: const EdgeInsets.all(18),
-              onTap: () {},
+              onTap: () {
+                HapticFeedback.lightImpact();
+                FandoghiCoach.say('آفرین! تا الان ${GameData.totalCorrect} جواب درست دادی! ادامه بده قهرمان 🌰🌟', mood: FandoghiMood.excited);
+              },
               child: _statContent(
                 icon: Icons.check_circle_rounded,
                 value: '${GameData.totalCorrect}',
@@ -425,7 +428,10 @@ class _DashboardState extends ConsumerState<DashboardTab> {
           Expanded(
             child: PremiumCard(
               padding: const EdgeInsets.all(18),
-              onTap: () {},
+              onTap: () {
+                HapticFeedback.lightImpact();
+                FandoghiCoach.say('نرخ موفقیت تو ${(GameData.successRate * 100).toStringAsFixed(0)}% است! فوق‌العاده‌ای! 🔥', mood: FandoghiMood.happy);
+              },
               child: _statContent(
                 icon: Icons.trending_up_rounded,
                 value: '${(GameData.successRate * 100).toStringAsFixed(0)}%',
@@ -438,7 +444,10 @@ class _DashboardState extends ConsumerState<DashboardTab> {
           Expanded(
             child: PremiumCard(
               padding: const EdgeInsets.all(18),
-              onTap: () {},
+              onTap: () {
+                HapticFeedback.lightImpact();
+                FandoghiCoach.say('تا الان ${GameData.achievements.length} مدال افتخار گرفتی! 🏅', mood: FandoghiMood.excited);
+              },
               child: _statContent(
                 icon: Icons.emoji_events_rounded,
                 value: '${GameData.achievements.length}',

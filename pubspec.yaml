@@ -78,6 +78,7 @@ flutter:
     - assets/illustrations/body_cards.webp
     - assets/mascot/
     - assets/premium/
+    - assets/cartoons/
 
   # فاز ۷ (تکمیل): فونت محلی آفلاین — fallback واقعی برای GoogleFonts
   fonts:

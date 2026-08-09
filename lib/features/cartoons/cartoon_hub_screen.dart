@@ -410,6 +410,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                     searchQuery: cartoon.episodes.isNotEmpty
                         ? (cartoon.episodes.first.searchQuery ?? cartoon.englishTitle)
                         : cartoon.englishTitle,
+                    coverAsset: cartoon.coverAsset,
                     fallbackEmoji: cartoon.coverEmoji,
                     fallbackGradient: cartoon.gradient,
                     emojiSize: 24,
@@ -593,6 +594,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                               searchQuery: cartoon.episodes.isNotEmpty
                                   ? (cartoon.episodes.first.searchQuery ?? cartoon.englishTitle)
                                   : cartoon.englishTitle,
+                              coverAsset: cartoon.coverAsset,
                               fallbackEmoji: cartoon.coverEmoji,
                               fallbackGradient: cartoon.gradient,
                               emojiSize: 64,
@@ -860,6 +862,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                             searchQuery: cartoon.episodes.isNotEmpty
                                 ? (cartoon.episodes.first.searchQuery ?? cartoon.englishTitle)
                                 : cartoon.englishTitle,
+                            coverAsset: cartoon.coverAsset,
                             fallbackEmoji: cartoon.coverEmoji,
                             fallbackGradient: cartoon.gradient,
                             emojiSize: 48,

@@ -53,7 +53,7 @@ class GameData {
   static String avatar = '😊';
   static String childName = '';
   static int childAge = 5;
-  static bool onboardingSeen = false;
+  static bool onboardingSeen = true;
 
   // Feature state
   static String lastWeekReset = '';
@@ -169,7 +169,7 @@ class GameData {
       avatar = _readString('av', '😊', maxLength: 8);
       childName = _readString('childName', '', maxLength: 24).trim();
       childAge = _readInt('childAge', 5, min: 3, max: 12);
-      onboardingSeen = prefs.getBool('onboardingSeen') ?? false;
+      onboardingSeen = prefs.getBool('onboardingSeen') ?? true;
       dailyMissions = _readInt('dm', 0, min: 0, max: missionTargets.length);
       _missionDay = prefs.getString('missionDay') ?? '';
 
@@ -351,7 +351,7 @@ class GameData {
     childName = asString('childName', '');
     if (childName.length > 24) childName = childName.substring(0, 24);
     childAge = asInt('childAge', 5).clamp(3, 12);
-    onboardingSeen = asBool('onboardingSeen', false);
+    onboardingSeen = asBool('onboardingSeen', true);
     dailyMissions = asInt('dm', 0).clamp(0, missionTargets.length);
     _missionDay = asString('missionDay', '');
     final mp = d['mp'];
