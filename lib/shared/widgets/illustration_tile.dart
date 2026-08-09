@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/asset_manager.dart';
+
 /// Displays one cell from a generated 4x2 illustration sheet without loading
 /// eight separate bitmap files. The crop is done at paint time and remains
 /// responsive inside cards of any size.
@@ -52,12 +54,13 @@ class IllustrationTile extends StatelessWidget {
                 maxHeight: height * rows,
                 child: Transform.translate(
                   offset: Offset(-column * width, -row * height),
-                  child: Image.asset(
-                    asset,
+                  // فاز ۵: لود تنبل + کش با بودجه از AssetManager
+                  child: Image(
+                    image: AssetManager.getImage(asset),
                     width: width * columns,
                     height: height * rows,
                     fit: BoxFit.fill,
-                    filterQuality: FilterQuality.medium,
+                    filterQuality: AssetManager.filterQuality,
                     errorBuilder: (context, error, stackTrace) => const Center(
                       child: Icon(
                         Icons.image_not_supported_outlined,

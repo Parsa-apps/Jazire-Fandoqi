@@ -34,7 +34,43 @@ class FandoghiCoach {
       ValueNotifier<FandoghiCoachMessage?>(null);
   static final ValueNotifier<bool> persistent = ValueNotifier<bool>(false);
   static Timer? _hideTimer;
+  static Timer? _hintTimer;
   static int _nextId = 0;
+
+  // فاز ۴۳: فندقی نام کودک را به یاد می‌آورد و با همدلی حرف می‌زند
+  static String _childName = '';
+
+  static void rememberChild(String name) {
+    _childName = name.trim();
+  }
+
+  static String get childName => _childName;
+
+  static String _name() => _childName.isEmpty ? 'عزیزم' : _childName;
+
+  /// فاز ۱۹: راهنمای هوشمند — فندقی فقط وقتی کودک ۳ ثانیه
+  /// بی‌حرکت مانده راهنمایی می‌دهد (نه اسپم).
+  static void armSmartHint({
+    required void Function() onHint,
+    Duration delay = const Duration(seconds: 3),
+  }) {
+    _hintTimer?.cancel();
+    _hintTimer = Timer(delay, () {
+      _hintTimer = null;
+      onHint();
+    });
+  }
+
+  /// هر فعالیت کودک (لمس/کشیدن) این را صدا بزند تا تایمر ریست شود.
+  static void noteActivity() {
+    _hintTimer?.cancel();
+    _hintTimer = null;
+  }
+
+  static void cancelSmartHint() {
+    _hintTimer?.cancel();
+    _hintTimer = null;
+  }
 
   static void enablePersistentPresence() {
     persistent.value = true;
@@ -67,9 +103,24 @@ class FandoghiCoach {
   }
 
   static void welcome() => say(
-        'سلام! من فندقی‌ام؛ مربی و داور کوچولوی تو. با هم بازی می‌کنیم و یاد می‌گیریم! 🌰',
+        'سلام ${_name()}! من فندقی‌ام؛ مربی و داور کوچولوی تو. با هم بازی می‌کنیم و یاد می‌گیریم! 🌰',
         mood: FandoghiMood.excited,
         duration: const Duration(seconds: 5),
+      );
+
+  /// فاز ۴۳: پیام همدلی — وقتی کودک ناراحت یا خسته است.
+  static void empathy(String text) => say(
+        text,
+        mood: FandoghiMood.shy,
+        tone: FandoghiCoachTone.encouragement,
+        duration: const Duration(seconds: 4),
+      );
+
+  static void celebrate(String text) => say(
+        text,
+        mood: FandoghiMood.celebrating,
+        tone: FandoghiCoachTone.success,
+        duration: const Duration(seconds: 4),
       );
 
   static void instruction(String text) => say(

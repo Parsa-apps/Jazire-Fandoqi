@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/app_colors.dart';
+import '../../core/fandoghi_coach.dart';
 import '../../core/game_data.dart';
+import '../../presentation/providers/game_state_provider.dart';
 import '../../shared/widgets/fandoghi_welcome.dart';
 import '../island/island_screen.dart';
 import '../stage_map/stage_map_screen.dart';
@@ -14,13 +17,13 @@ import 'widgets/dashboard_tab.dart';
 /// 🏠 HOME SCREEN — Professional Dashboard
 /// Beautiful parallax, glass cards, animated nav
 /// ═══════════════════════════════════════════════
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
   @override
-  State<HomeScreen> createState() => _HomeState();
+  ConsumerState<HomeScreen> createState() => _HomeState();
 }
 
-class _HomeState extends State<HomeScreen> {
+class _HomeState extends ConsumerState<HomeScreen> {
   int _currentTab = 0;
   final List<Widget?> _tabWidgets = List<Widget?>.filled(5, null);
 
@@ -28,27 +31,25 @@ class _HomeState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _tabWidgets[0] = const DashboardTab();
-    GameData.changes.addListener(_onDataChanged);
     // نمایش انیمیشن خوش‌آمدگویی فندقی بعد از اولین فریم صفحه اصلی.
     // فقط یک‌بار در هر اجرای اپ نمایش داده می‌شود.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       FandoghiWelcomeOverlay.start(context);
+      // فاز ۹۸: جشن برای کاربران قدیمی — «تو از اول با فندقی بودی!»
+      if (GameData.playedGames.length >= 5 || GameData.streak >= 7) {
+        FandoghiCoach.celebrate(
+          'تو از اول با فندقی بودی! ممنون که هم‌سفر ما هستی 🌟',
+        );
+      }
     });
-  }
-
-  void _onDataChanged() {
-    if (mounted) setState(() {});
-  }
-
-  @override
-  void dispose() {
-    GameData.changes.removeListener(_onDataChanged);
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // فاز ۳: واکنش به وضعیت بازی از طریق Riverpod به‌جای addListener دستی.
+    ref.watch(gameStateProvider);
+
     return Scaffold(
       body: IndexedStack(
         index: _currentTab,

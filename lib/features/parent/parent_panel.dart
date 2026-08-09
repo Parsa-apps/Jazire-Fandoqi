@@ -1,40 +1,71 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import '../../app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import '../../core/ai_system.dart';
 import '../../core/game_data.dart';
+import '../../data/datasources/crash_report_store.dart';
+import '../../presentation/providers/game_state_provider.dart';
 import '../../shared/widgets/premium_button.dart';
 
 /// =======================================================
 /// 👨‍👩‍👧 PREMIUM ADVANCED PARENT CONTROL SYSTEM
 /// =======================================================
-class ParentPanel extends StatefulWidget {
+class ParentPanel extends ConsumerStatefulWidget {
   const ParentPanel({super.key});
 
   @override
-  State<ParentPanel> createState() => _ParentPanelState();
+  ConsumerState<ParentPanel> createState() => _ParentPanelState();
 }
 
-class _ParentPanelState extends State<ParentPanel> {
+class _ParentPanelState extends ConsumerState<ParentPanel>
+    with WidgetsBindingObserver {
   late int _timeLimit;
-  String _pin = '';
   bool _isUnlocked = false;
+  Timer? _lockTimer; // فاز ۶۱: قفل خودکار بعد از ۲ دقیقه
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _timeLimit = GameData.timeLimitMinutes;
     _isUnlocked = !GameData.hasParentPin();
-    GameData.changes.addListener(_onDataChanged);
+    _armLockTimer();
   }
 
-  void _onDataChanged() {
-    if (mounted) setState(() {});
+  /// فاز ۶۱: بعد از ۲ دقیقه بی‌فعالیتی، پنل دوباره قفل می‌شود.
+  void _armLockTimer() {
+    _lockTimer?.cancel();
+    _lockTimer = Timer(const Duration(minutes: 2), () {
+      if (mounted && _isUnlocked) {
+        setState(() => _isUnlocked = false);
+      }
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // فاز ۶۱: برگشت از پس‌زمینه = دوباره قفل
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      if (mounted && _isUnlocked) {
+        setState(() => _isUnlocked = false);
+      }
+    }
   }
 
   @override
   void dispose() {
-    GameData.changes.removeListener(_onDataChanged);
+    WidgetsBinding.instance.removeObserver(this);
+    _lockTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void dispose() {
     super.dispose();
   }
 
@@ -89,6 +120,7 @@ class _ParentPanelState extends State<ParentPanel> {
     if (result == true && controller.text.length == 4) {
       if (GameData.verifyParentPin(controller.text)) {
         setState(() => _isUnlocked = true);
+        _armLockTimer(); // فاز ۶۱: قفل خودکار از لحظه ورود
         HapticFeedback.lightImpact();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -131,6 +163,7 @@ class _ParentPanelState extends State<ParentPanel> {
     if (result != null && result.length == 4) {
       GameData.setParentPin(result);
       setState(() => _isUnlocked = true);
+      _armLockTimer(); // فاز ۶۱
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('پین با موفقیت ذخیره شد')),
       );
@@ -140,6 +173,8 @@ class _ParentPanelState extends State<ParentPanel> {
   // ==================== UI ====================
   @override
   Widget build(BuildContext context) {
+    // فاز ۳: واکنش به وضعیت از طریق Riverpod
+    ref.watch(gameStateProvider);
     if (!_isUnlocked) {
       return Scaffold(
         appBar: AppBar(title: const Text('پنل والدین')),
@@ -191,6 +226,11 @@ class _ParentPanelState extends State<ParentPanel> {
 
           const SizedBox(height: 24),
 
+          // ==================== ACCESSIBILITY (فاز ۷) ====================
+          _buildTextScaleCard(),
+
+          const SizedBox(height: 24),
+
           // ==================== REPORT ====================
           _buildReportCard(),
 
@@ -198,7 +238,140 @@ class _ParentPanelState extends State<ParentPanel> {
 
           // ==================== PIN MANAGEMENT ====================
           _buildPinCard(),
+
+          const SizedBox(height: 24),
+
+          // ==================== DEBUG LOGS (فاز ۸) ====================
+          _buildDebugLogsCard(),
         ],
+      ),
+    );
+  }
+
+  /// فاز ۸: مشاهده گزارش خطاهای آفلاین (برای دیباگ توسط والد).
+  Widget _buildDebugLogsCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('🛠️', style: TextStyle(fontSize: 22)),
+              const SizedBox(width: 8),
+              Text(
+                'گزارش خطاهای دستگاه',
+                style: AppFonts.vazirmatn(fontSize: 18, fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'این گزارش فقط روی همین دستگاه ذخیره می‌شود و جایی ارسال نمی‌شود.',
+            style: TextStyle(color: Colors.grey, fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: PremiumButton(
+                  text: 'مشاهده گزارش',
+                  color: const Color(0xFF5C6BC0),
+                  onPressed: _showDebugLogs,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showDebugLogs() async {
+    final logs = await CrashReportStore.getLogs();
+    if (!mounted) return;
+    if (logs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('هیچ خطایی ثبت نشده؛ همه‌چیز سالم است 🎉')),
+      );
+      return;
+    }
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.7,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) => Column(
+          children: [
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(right: 16),
+                  child: Text(
+                    'گزارش خطاها (${logs.length})',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    await CrashReportStore.clearLogs();
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  },
+                  child: const Text('پاک کردن همه'),
+                ),
+              ],
+            ),
+            Expanded(
+              child: ListView.separated(
+                controller: scrollController,
+                padding: const EdgeInsets.all(16),
+                itemCount: logs.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 10),
+                itemBuilder: (context, index) {
+                  final log = logs[index];
+                  final time = log['time']?.toString() ?? '';
+                  final message = log['message']?.toString() ?? '';
+                  final source = log['source']?.toString() ?? '';
+                  return Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF3E0),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$source — $time',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(message, style: const TextStyle(fontSize: 13)),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -311,6 +484,74 @@ class _ParentPanelState extends State<ParentPanel> {
     );
   }
 
+  /// فاز ۷: مقیاس فونت قابل تنظیم برای والدین (دسترس‌پذیری).
+  Widget _buildTextScaleCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('🔠', style: TextStyle(fontSize: 22)),
+              const SizedBox(width: 8),
+              Text(
+                'اندازه متن (دسترس‌پذیری)',
+                style: AppFonts.vazirmatn(fontSize: 18, fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'متن کوچک‌تر برای نمایش بیشتر / متن بزرگ‌تر برای خوانایی بهتر',
+            style: const TextStyle(color: Colors.grey, fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Icon(Icons.text_fields, size: 20),
+              Expanded(
+                child: Slider(
+                  min: 0.85,
+                  max: 1.4,
+                  divisions: 11,
+                  value: GameData.textScale,
+                  label: '${(GameData.textScale * 100).round()}٪',
+                  onChanged: (value) {
+                    setState(() => GameData.setTextScale(value));
+                  },
+                ),
+              ),
+              const Icon(Icons.text_fields, size: 30),
+            ],
+          ),
+          Center(
+            child: Text(
+              '${(GameData.textScale * 100).round()}٪ از اندازه معمول',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // فاز ۱۶: ترجیح دست کودک
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(
+              'کودک چپ‌دست است',
+              style: AppFonts.vazirmatn(fontSize: 15, fontWeight: FontWeight.w700),
+            ),
+            subtitle: const Text('دکمه‌های مهم به سمت دست چپ می‌روند'),
+            value: GameData.isLeftHanded,
+            onChanged: (value) => setState(() => GameData.setLeftHanded(value)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildReportCard() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -346,6 +587,40 @@ class _ParentPanelState extends State<ParentPanel> {
               ),
             );
           }),
+          // فاز ۴۷: پیشنهاد AI والدین
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '🤖 پیشنهاد هوشمند فندقی',
+                  style: AppFonts.vazirmatn(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'مهارت «${AI.weakSkill()}» نیاز به تمرین بیشتری دارد؛ '
+                  'با بازی ${AI.suggestGames().join('، ')} تقویت می‌شود.',
+                  style: const TextStyle(fontSize: 13, height: 1.6),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'پیش‌بینی یک ماه آینده: تمرین روزانه ۱۰ دقیقه، تسلط '
+                  'مهارت‌های پایه تا ۸۰٪.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

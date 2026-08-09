@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- 🔒 فاز ۶۳: بدون اینترنت — ۱۰۰٪ آفلاین. هیچ permission شبکه‌ای وجود ندارد. -->
 
     <application
         android:label="آموزش فندقی"

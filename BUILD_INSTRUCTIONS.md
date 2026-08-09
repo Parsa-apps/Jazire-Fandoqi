@@ -23,7 +23,7 @@
 ```bash
 git clone https://github.com/farshadkurd/kudake_iran.git
 cd kudake_iran
-git checkout arena/019fdbde-kudake-iran
+git checkout arena/019fe3f3-kudake-iran   # شاخه توسعه فعال (نسخه ۵.۰.۰)
 ```
 
 ### ۲. نصب وابستگی‌ها

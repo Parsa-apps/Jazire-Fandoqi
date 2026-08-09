@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../app/app_colors.dart';
@@ -7,6 +8,7 @@ import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../../core/ai_system.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
+import '../../../presentation/providers/game_state_provider.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
 import '../../../shared/widgets/glass_card.dart';
 import 'premium_card.dart';
@@ -16,13 +18,13 @@ import '../../../shared/widgets/star_field.dart';
 /// 📊 DASHBOARD TAB — Main Content
 /// Parallax hero, daily missions, game categories
 /// ═══════════════════════════════════════════════
-class DashboardTab extends StatefulWidget {
+class DashboardTab extends ConsumerStatefulWidget {
   const DashboardTab({super.key});
   @override
-  State<DashboardTab> createState() => _DashboardState();
+  ConsumerState<DashboardTab> createState() => _DashboardState();
 }
 
-class _DashboardState extends State<DashboardTab> {
+class _DashboardState extends ConsumerState<DashboardTab> {
   final ScrollController _scrollCtrl = ScrollController();
   double _scrollOffset = 0;
 
@@ -30,7 +32,6 @@ class _DashboardState extends State<DashboardTab> {
   void initState() {
     super.initState();
     _scrollCtrl.addListener(_onScroll);
-    GameData.changes.addListener(_onDataChanged);
     FandoghiCoach.enablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) FandoghiCoach.welcome();
@@ -41,13 +42,8 @@ class _DashboardState extends State<DashboardTab> {
     if (mounted) setState(() => _scrollOffset = _scrollCtrl.offset);
   }
 
-  void _onDataChanged() {
-    if (mounted) setState(() {});
-  }
-
   @override
   void dispose() {
-    GameData.changes.removeListener(_onDataChanged);
     _scrollCtrl.removeListener(_onScroll);
     _scrollCtrl.dispose();
     super.dispose();
@@ -55,32 +51,65 @@ class _DashboardState extends State<DashboardTab> {
 
   @override
   Widget build(BuildContext context) {
+    // فاز ۳: واکنش به وضعیت از طریق Riverpod
+    ref.watch(gameStateProvider);
+    // فاز ۱۴: داشبورد هوشمند بر اساس سن
+    // ۳-۴: ساده (بدون مأموریت روزانه، دسته‌بندی ساده)
+    // ۵-۶: استاندارد (همه بخش‌ها)
+    // ۷-۸: چالش‌محور (مأموریت‌ها جلوتر + نکته تشویقی)
+    final simple = _ageMode == _AgeMode.simple;
+    final challenge = _ageMode == _AgeMode.challenge;
+    final slivers = <Widget>[
+      // Hero App Bar with parallax
+      _buildHeroAppBar(),
+
+      // Quick stats
+      SliverToBoxAdapter(child: _buildQuickStats()),
+    ];
+
+    // مأموریت‌ها فقط یک‌بار نمایش داده می‌شوند:
+    //  - چالش (۷-۸ سال): بالای لیست (جلوتر)
+    //  - استاندارد (۵-۶ سال): بعد از دسته‌بندی‌ها
+    if (challenge) {
+      slivers.add(SliverToBoxAdapter(child: _buildDailyMissions()));
+    }
+
+    // Quick games
+    slivers.add(SliverToBoxAdapter(child: _buildQuickGames()));
+
+    // Game categories — در حالت ساده فقط دسته‌بندی‌های اصلی
+    slivers.add(SliverToBoxAdapter(child: _buildCategories(simple: simple)));
+
+    if (simple) {
+      // حالت ساده (۳-۴ سال): بدون مأموریت و بدون نکته
+    } else if (challenge) {
+      slivers.add(SliverToBoxAdapter(child: _buildFandoghiTip()));
+    } else {
+      slivers.add(SliverToBoxAdapter(child: _buildDailyMissions()));
+      slivers.add(SliverToBoxAdapter(child: _buildFandoghiTip()));
+    }
+
+    // فاز ۵۰/۶۲: یادآوری استراحت برای همه سن‌ها (حتی حالت ساده)
+    if (AI.needsBreak() && !GameData.isDailyLimitReached) {
+      slivers.add(SliverToBoxAdapter(child: _buildBreakReminder()));
+    }
+
+    // Bottom padding
+    slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 120)));
+
     return CustomScrollView(
       controller: _scrollCtrl,
       physics: const BouncingScrollPhysics(),
-      slivers: [
-        // Hero App Bar with parallax
-        _buildHeroAppBar(),
-        
-        // Quick stats
-        SliverToBoxAdapter(child: _buildQuickStats()),
-        
-        // Daily missions
-        SliverToBoxAdapter(child: _buildDailyMissions()),
-        
-        // Quick games
-        SliverToBoxAdapter(child: _buildQuickGames()),
-        
-        // Game categories
-        SliverToBoxAdapter(child: _buildCategories()),
-        
-        // Fandoghi tip
-        SliverToBoxAdapter(child: _buildFandoghiTip()),
-        
-        // Bottom padding
-        const SliverToBoxAdapter(child: SizedBox(height: 120)),
-      ],
+      slivers: slivers,
     );
+  }
+
+  /// فاز ۱۴: حالت سنی داشبورد.
+  _AgeMode get _ageMode {
+    final age = GameData.childAge;
+    if (age <= 4) return _AgeMode.simple;
+    if (age <= 6) return _AgeMode.standard;
+    return _AgeMode.challenge;
   }
 
   // ─── HERO APP BAR ─────────────────────────────
@@ -728,52 +757,67 @@ class _DashboardState extends State<DashboardTab> {
   }
 
   // ─── CATEGORIES ───────────────────────────────
-  Widget _buildCategories() {
+  Widget _buildCategories({bool simple = false}) {
+    final children = <Widget>[
+      Text(
+        simple ? 'بازی‌های من' : 'دسته‌بندی بازی‌ها',
+        style: AppFonts.vazirmatn(
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      const SizedBox(height: 14),
+      _categoryCard(
+        title: 'یادگیری پایه',
+        subtitle: 'الفبا • اعداد • رنگ‌ها • اشکال',
+        icon: Icons.school_rounded,
+        gradient: AppGradients.purple,
+        games: ['الفبا', 'اعداد', 'رنگ‌ها', 'اشکال'],
+      ),
+      const SizedBox(height: 12),
+      if (!simple) ...[
+        _categoryCard(
+          title: 'بازی‌های فکری',
+          subtitle: 'حافظه • الگو • مسابقه • ترتیب',
+          icon: Icons.psychology_rounded,
+          gradient: AppGradients.ocean,
+          games: ['حافظه', 'الگو', 'مسابقه', 'ترتیب'],
+        ),
+        const SizedBox(height: 12),
+      ],
+      if (simple) ...[
+        _categoryCard(
+          title: 'بازی‌های من',
+          subtitle: 'نقاشی • ستاره‌گیری • حباب',
+          icon: Icons.favorite_rounded,
+          gradient: AppGradients.candy,
+          games: ['نقاشی', 'ستاره‌گیری', 'حباب‌ترکان'],
+        ),
+        const SizedBox(height: 12),
+      ],
+      _categoryCard(
+        title: 'دنیای اطراف',
+        subtitle: 'حیوانات • بدن • شغل‌ها • فضا',
+        icon: Icons.public_rounded,
+        gradient: AppGradients.forest,
+        games: ['حیوانات', 'بدن', 'شغل‌ها', 'فضا'],
+      ),
+      if (!simple) ...[
+        const SizedBox(height: 12),
+        _categoryCard(
+          title: 'خلاقیت',
+          subtitle: 'نقاشی • داستان • موسیقی',
+          icon: Icons.palette_rounded,
+          gradient: AppGradients.candy,
+          games: ['نقاشی', 'داستان', 'سازها'],
+        ),
+      ],
+    ];
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'دسته‌بندی بازی‌ها',
-            style: AppFonts.vazirmatn(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 14),
-          _categoryCard(
-            title: 'یادگیری پایه',
-            subtitle: 'الفبا • اعداد • رنگ‌ها • اشکال',
-            icon: Icons.school_rounded,
-            gradient: AppGradients.purple,
-            games: ['الفبا', 'اعداد', 'رنگ‌ها', 'اشکال'],
-          ),
-          const SizedBox(height: 12),
-          _categoryCard(
-            title: 'بازی‌های فکری',
-            subtitle: 'حافظه • الگو • مسابقه • ترتیب',
-            icon: Icons.psychology_rounded,
-            gradient: AppGradients.ocean,
-            games: ['حافظه', 'الگو', 'مسابقه', 'ترتیب'],
-          ),
-          const SizedBox(height: 12),
-          _categoryCard(
-            title: 'دنیای اطراف',
-            subtitle: 'حیوانات • بدن • شغل‌ها • فضا',
-            icon: Icons.public_rounded,
-            gradient: AppGradients.forest,
-            games: ['حیوانات', 'بدن', 'شغل‌ها', 'فضا'],
-          ),
-          const SizedBox(height: 12),
-          _categoryCard(
-            title: 'خلاقیت',
-            subtitle: 'نقاشی • داستان • موسیقی',
-            icon: Icons.palette_rounded,
-            gradient: AppGradients.candy,
-            games: ['نقاشی', 'داستان', 'سازها'],
-          ),
-        ],
+        children: children,
       ),
     ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.3);
   }
@@ -894,10 +938,55 @@ class _DashboardState extends State<DashboardTab> {
   }
 
   // ─── FANDOGHI TIP ─────────────────────────────
+  /// فاز ۵۰/۶۲: کارت استراحت چشم (قانون 20-20-20) — برای همه سن‌ها.
+  Widget _buildBreakReminder() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+      child: GradientGlassCard(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
+        ),
+        borderRadius: 30,
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            const Text('😴', style: TextStyle(fontSize: 46)),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'وقت یک استراحت کوچک است!',
+                    style: AppFonts.vazirmatn(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'قانون ۲۰-۲۰-۲۰: بیا ۲۰ ثانیه به جای دور نگاه کنیم؛ چشم‌ها خسته نشوند 🌈',
+                    style: TextStyle(fontSize: 13, height: 1.5),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildFandoghiTip() {
+    // فاز ۴۶: پیشنهاد ۳ بازی هوشمند بر اساس مهارت ضعیف
+    final suggestions = AI.suggestGames();
     final coachText = GameData.totalCorrect == 0
         ? 'من از اول تا آخر کنارت هستم؛ هر وقت آماده‌ای، یکی از بازی‌ها را انتخاب کن!'
-        : AI.mascotMsg();
+        : 'فندقی پیشنهاد می‌کند امروز این بازی‌ها را امتحان کنی: '
+            '${suggestions.map((g) => '«$g»').join('، ')} 🎯';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
@@ -1032,3 +1121,6 @@ class _DashboardState extends State<DashboardTab> {
     }
   }
 }
+
+/// فاز ۱۴: حالت‌های داشبورد هوشمند بر اساس سن کودک.
+enum _AgeMode { simple, standard, challenge }

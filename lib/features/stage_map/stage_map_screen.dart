@@ -1,12 +1,15 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/game_data.dart';
+import '../../presentation/providers/game_state_provider.dart';
 import '../../core/game_launch.dart';
+import '../../domain/entities/game_stage.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
 import 'painters/path_painter.dart';
 import 'painters/map_background_painter.dart';
@@ -16,7 +19,7 @@ import 'widgets/premium_stage_node.dart';
 /// 🗺️ STAGE MAP — Winding Path Level Select
 /// Beautiful scrolling map with curved path
 /// ═══════════════════════════════════════════════
-class StageMapScreen extends StatefulWidget {
+class StageMapScreen extends ConsumerStatefulWidget {
   final bool embedded;
 
   const StageMapScreen({
@@ -25,29 +28,64 @@ class StageMapScreen extends StatefulWidget {
   });
 
   @override
-  State<StageMapScreen> createState() => _StageMapState();
+  ConsumerState<StageMapScreen> createState() => _StageMapState();
 }
 
-class _StageMapState extends State<StageMapScreen>
+class _StageMapState extends ConsumerState<StageMapScreen>
     with TickerProviderStateMixin {
   late ScrollController _scrollCtrl;
   late AnimationController _animCtrl;
 
-  // Stage definitions
-  final List<_StageData> _stages = [
-    _StageData(1, 'شروع ماجرا', '🌱', 'الفبا', 0.15, 0.06),
-    _StageData(2, 'حروف الفبا', '🔤', 'الفبا', 0.75, 0.12),
-    _StageData(3, 'اعداد جادویی', '🔢', 'اعداد', 0.25, 0.19),
-    _StageData(4, 'رنگین‌کمان', '🌈', 'رنگ‌ها', 0.70, 0.26),
-    _StageData(5, 'جنگل حیوانات', '🦁', 'حیوانات', 0.30, 0.33),
-    _StageData(6, 'شهر فکری', '🧠', 'حافظه', 0.65, 0.40),
-    _StageData(7, 'حباب‌ترکان', '🫧', 'حباب‌ترکان', 0.25, 0.47),
-    _StageData(8, 'مسابقه بزرگ', '🏆', 'مسابقه', 0.70, 0.54),
-    _StageData(9, 'ستاره‌گیری', '⭐', 'ستاره‌گیری', 0.30, 0.61),
-    _StageData(10, 'دنیای احساسات', '😊', 'احساسات', 0.65, 0.68),
-    _StageData(11, 'کارگاه خلاقیت', '🎨', 'نقاشی', 0.25, 0.75),
-    _StageData(12, 'قصر قهرمان', '👑', 'مسابقه', 0.55, 0.84),
-  ];
+  // فاز ۵۸: نقشه ۵۰ مرحله‌ای با مسیر مارپیچ واقعی (تولید برنامه‌ای)
+  late final List<_StageData> _stages = _generateStages();
+
+  static const int stageCount = 50;
+
+  static List<_StageData> _generateStages() {
+    const themes = <(String, String, String)>[
+      ('شروع ماجرا', '🌱', 'الفبا'),
+      ('حروف الفبا', '🔤', 'الفبا'),
+      ('اعداد جادویی', '🔢', 'اعداد'),
+      ('رنگین‌کمان', '🌈', 'رنگ‌ها'),
+      ('جنگل حیوانات', '🦁', 'حیوانات'),
+      ('شهر فکری', '🧠', 'حافظه'),
+      ('حباب‌ترکان', '🫧', 'حباب‌ترکان'),
+      ('مسابقه بزرگ', '🏆', 'مسابقه'),
+      ('ستاره‌گیری', '⭐', 'ستاره‌گیری'),
+      ('دنیای احساسات', '😊', 'احساسات'),
+      ('کارگاه خلاقیت', '🎨', 'نقاشی'),
+      ('قصر قهرمان', '👑', 'مسابقه'),
+      ('آزمایشگاه رنگ', '🧪', 'آزمایشگاه رنگ'),
+      ('جزیره پازل', '🧩', 'پازل'),
+      ('آسمان اعداد', '🔢', 'اعداد'),
+      ('جنگل الگوها', '🌀', 'الگو'),
+      ('صدای جنگل', '🎧', 'صدا'),
+      ('بدن من', '🧍', 'بدن'),
+      ('جزیره‌ی من', '🏝️', 'جزیره‌سازی'),
+      ('ماشین ریاضی', '🏎️', 'مسابقه'),
+      ('قصه‌های فندقی', '📖', 'داستان'),
+      ('شهر مشاغل', '👷', 'شغل‌ها'),
+      ('باغ میوه', '🍎', 'میوه‌ها'),
+      ('قلعه حافظه', '🏰', 'حافظه'),
+      ('ستاره‌های طلایی', '🌟', 'ستاره‌گیری'),
+    ];
+    final stages = <_StageData>[];
+    for (var i = 0; i < stageCount; i++) {
+      final theme = themes[i % themes.length];
+      // مسیر مارپیچ: X با موج سینوسی بین دو لبه می‌چرخد
+      final relX = i.isEven ? 0.22 : 0.74;
+      final relY = i / (stageCount - 1) * 0.92 + 0.04;
+      stages.add(_StageData(
+        i + 1,
+        i == 0 ? 'شروع ماجرا' : '${theme.$1} ${i + 1}',
+        theme.$2,
+        theme.$3,
+        relX,
+        relY,
+      ));
+    }
+    return stages;
+  }
 
   // Computed path points (screen coordinates)
   List<Offset> _pathPoints = [];
@@ -59,7 +97,6 @@ class _StageMapState extends State<StageMapScreen>
   void initState() {
     super.initState();
     _scrollCtrl = ScrollController()..addListener(_onScroll);
-    GameData.changes.addListener(_onDataChanged);
     _animCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 20),
@@ -74,10 +111,6 @@ class _StageMapState extends State<StageMapScreen>
   }
 
   void _onScroll() {
-    if (mounted) setState(() {});
-  }
-
-  void _onDataChanged() {
     if (mounted) setState(() {});
   }
 
@@ -105,7 +138,6 @@ class _StageMapState extends State<StageMapScreen>
   @override
   void dispose() {
     FandoghiCoach.clear();
-    GameData.changes.removeListener(_onDataChanged);
     _scrollCtrl.removeListener(_onScroll);
     _scrollCtrl.dispose();
     _animCtrl.dispose();
@@ -114,6 +146,8 @@ class _StageMapState extends State<StageMapScreen>
 
   @override
   Widget build(BuildContext context) {
+    // فاز ۳: واکنش به وضعیت از طریق Riverpod
+    ref.watch(gameStateProvider);
     final w = MediaQuery.of(context).size.width;
     final totalH = _mapHeight;
     if (_computedWidth != w) {
@@ -583,8 +617,8 @@ class _StageMapState extends State<StageMapScreen>
                   '/game/${stage.gameName}',
                   arguments: GameLaunch(
                     gameName: stage.gameName,
-                    stageId: 'stage_${stage.number}',
-                    stageNumber: stage.number,
+                    stageId: stage.stage.id,
+                    stageNumber: stage.stage.number,
                   ),
                 );
               },
@@ -615,6 +649,14 @@ class _StageData {
   final double relY; // relative Y position (0..1)
 
   _StageData(this.number, this.title, this.emoji, this.gameName, this.relX, this.relY);
+
+  /// نمای Domain از مرحله — موجودیت [GameStage] منبع حقیقت پیشرفت نقشه است.
+  GameStage get stage => GameStage(
+        id: 'stage_$number',
+        number: number,
+        isCompleted: GameData.isStageCompleted('stage_$number'),
+        starsEarned: GameData.isStageCompleted('stage_$number') ? 3 : 0,
+      );
 }
 
 // ─── Tree Painter ───────────────────────────

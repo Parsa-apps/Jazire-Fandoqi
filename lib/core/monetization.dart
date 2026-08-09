@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/datasources/hive_player_store.dart';
 import 'billing_service.dart';
 import 'game_data.dart';
 
@@ -20,9 +20,9 @@ class Monetization {
   static const String productIdYearly = 'sub_yearly';
 
   static Future<bool> isPremium() async {
-    final prefs = await SharedPreferences.getInstance();
+    final cached = await HivePlayerStore.readValue(_subscriptionKey);
     if (!kReleaseMode) {
-      return prefs.getBool(_subscriptionKey) ?? false;
+      return cached is bool && cached;
     }
 
     // Do not trust a cached flag/token in release: a subscription can expire
@@ -33,7 +33,7 @@ class Monetization {
         restored.purchaseToken!.isEmpty) {
       return false;
     }
-    await prefs.setString(_receiptTokenKey, restored.purchaseToken!);
+    await HivePlayerStore.writeValue(_receiptTokenKey, restored.purchaseToken!);
     return true;
   }
 
@@ -45,12 +45,14 @@ class Monetization {
       return false;
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_subscriptionKey, true);
+    await HivePlayerStore.writeValue(_subscriptionKey, true);
     if (result.purchaseToken != null && result.purchaseToken!.isNotEmpty) {
-      await prefs.setString(_receiptTokenKey, result.purchaseToken!);
+      await HivePlayerStore.writeValue(_receiptTokenKey, result.purchaseToken!);
     }
-    await prefs.setString(_lastPurchaseDate, DateTime.now().toIso8601String());
+    await HivePlayerStore.writeValue(
+      _lastPurchaseDate,
+      DateTime.now().toIso8601String(),
+    );
     return true;
   }
 

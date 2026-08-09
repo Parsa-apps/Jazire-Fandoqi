@@ -64,6 +64,32 @@ class _MemoryState extends State<MemoryMatchGame>
     _MemoryItem('🌈', 'رنگین‌کمان', 7),
   ];
 
+  // فاز ۳۱: تم‌های ایرانی — حیوانات بومی و میوه‌های ایران
+  static const _memorySetAnimals = [
+    _MemoryItem('🐆', 'یوزپلنگ', 0),
+    _MemoryItem('🐻', 'خرس', 1),
+    _MemoryItem('🦊', 'روباه', 2),
+    _MemoryItem('🐺', 'گرگ', 3),
+    _MemoryItem('🦌', 'آهو', 4),
+    _MemoryItem('🐏', 'قوچ', 5),
+    _MemoryItem('🦅', 'عقاب', 6),
+    _MemoryItem('🐢', 'لاک‌پشت', 7),
+  ];
+
+  static const _memorySetFruits = [
+    _MemoryItem('🍎', 'سیب', 0),
+    _MemoryItem('🍇', 'انگور', 1),
+    _MemoryItem('🍉', 'هندوانه', 2),
+    _MemoryItem('🍊', 'پرتقال', 3),
+    _MemoryItem('🍌', 'موز', 4),
+    _MemoryItem('🍒', 'گیلاس', 5),
+    _MemoryItem('🍐', 'گلابی', 6),
+    _MemoryItem('🍑', 'هلو', 7),
+  ];
+
+  /// فاز ۳۱: تم انتخابی (classic / animals / fruits)
+  String _selectedTheme = 'classic';
+
   @override
   void initState() {
     super.initState();
@@ -101,22 +127,36 @@ class _MemoryState extends State<MemoryMatchGame>
     _gameToken++;
     _selectedLevel = type;
 
+    // فاز ۳۱: انتخاب مجموعه بر اساس تم
+    final baseSet = switch (_selectedTheme) {
+      'animals' => _memorySetAnimals,
+      'fruits' => _memorySetFruits,
+      _ => _memorySet,
+    };
     List<_MemoryItem> dataSet;
     switch (type) {
+      case 'very_easy':
+        dataSet = baseSet.sublist(0, 2);
+        _timeLeft = 40;
+        break;
       case 'easy':
-        dataSet = _memorySet.sublist(0, 4);
+        dataSet = baseSet.sublist(0, 4);
         _timeLeft = 60;
         break;
       case 'medium':
-        dataSet = _memorySet.sublist(0, 6);
+        dataSet = baseSet.sublist(0, 6);
         _timeLeft = 90;
         break;
       case 'hard':
-        dataSet = _memorySet;
+        dataSet = baseSet;
         _timeLeft = 120;
         break;
+      case 'expert':
+        dataSet = baseSet;
+        _timeLeft = 150;
+        break;
       default:
-        dataSet = _memorySet.sublist(0, 6);
+        dataSet = baseSet.sublist(0, 6);
         _timeLeft = 90;
     }
 
@@ -217,6 +257,8 @@ class _MemoryState extends State<MemoryMatchGame>
 
     GameData.recordAnswer(correct: isMatch, skill: 'memory');
     if (isMatch) {
+      // فاز ۵۲: پیشرفت مأموریت روزانه حافظه
+      GameData.progressMission('memory');
       FandoghiCoach.correct('جفت درست پیدا شد! حافظه‌ات عالی کار می‌کند 🧠🌟');
       HapticFeedback.mediumImpact();
       if (won) {
@@ -564,13 +606,58 @@ class _MemoryState extends State<MemoryMatchGame>
                 height: 1.6,
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 24),
+            // فاز ۳۱: انتخاب تم ایرانی
+            Text(
+              'تم کارت‌ها:',
+              style: AppFonts.vazirmatn(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _themeButton('کلاسیک', '🚀', 'classic'),
+                const SizedBox(width: 10),
+                _themeButton('حیوانات', '🐆', 'animals'),
+                const SizedBox(width: 10),
+                _themeButton('میوه‌ها', '🍎', 'fruits'),
+              ],
+            ),
+            const SizedBox(height: 26),
+            _levelButton('شروع آسان 🌱', '2 جفت • ۴۰ ثانیه', 'very_easy', const Color(0xFF55A3F0)),
+            const SizedBox(height: 12),
             _levelButton('آسان 🌱', '4 جفت • ۶۰ ثانیه', 'easy', const Color(0xFF00B894)),
             const SizedBox(height: 12),
             _levelButton('متوسط ⭐', '6 جفت • ۹۰ ثانیه', 'medium', const Color(0xFFFDCB6E)),
             const SizedBox(height: 12),
             _levelButton('سخت 🔥', '8 جفت • ۱۲۰ ثانیه', 'hard', const Color(0xFFE17055)),
+            const SizedBox(height: 12),
+            _levelButton('حرفه‌ای 👑', '8 جفت • ۱۵۰ ثانیه', 'expert', const Color(0xFF9B59B6)),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _themeButton(String title, String emoji, String theme) {
+    final selected = _selectedTheme == theme;
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: selected ? AppColors.primary : Colors.white.withOpacity(0.15),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+      onPressed: () => setState(() => _selectedTheme = theme),
+      child: Text(
+        '$emoji $title',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 15,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );

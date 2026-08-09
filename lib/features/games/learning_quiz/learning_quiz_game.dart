@@ -5,8 +5,11 @@ import 'package:flutter/services.dart';
 
 import '../../../app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import '../../../core/ai_system.dart';
+import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
+import '../../../core/learning_content/learning_topics.dart';
 import '../../../core/play_limit.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
 import '../../../shared/widgets/illustration_tile.dart';
@@ -38,6 +41,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
   int _questionIndex = 0;
   int _score = 0;
   int _correctAnswers = 0;
+  int _consecutiveWrong = 0; // فاز ۴۵
   int? _selectedOption;
   bool _answerLocked = false;
   bool _finished = false;
@@ -56,6 +60,10 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
           FandoghiCoach.instruction(
             'من داور این مسابقه‌ام! گزینه‌ای را انتخاب کن؛ بعد با هم جواب را بررسی می‌کنیم 🌰',
           );
+          // فاز ۱۹: راهنمای هوشمند برای سوال اول
+          Future<void>.delayed(const Duration(milliseconds: 600), () {
+            if (mounted) _armNextHint();
+          });
         }
       }
     });
@@ -75,6 +83,9 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
     final correct = optionIndex == question.correctIndex;
     final token = _roundToken;
 
+    // فاز ۱۹: فعالیت کودک، راهنمای بی‌حرکتی را لغو می‌کند
+    FandoghiCoach.cancelSmartHint();
+
     HapticFeedback.lightImpact();
     setState(() {
       _answerLocked = true;
@@ -90,10 +101,24 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
       GameData.progressMission(question.missionId!);
     }
     if (correct) {
+      _consecutiveWrong = 0;
       FandoghiCoach.correct('آفرین! «${question.options[optionIndex]}» جواب درست بود 🌟');
       HapticFeedback.mediumImpact();
+      // فاز ۶: تشویق صوتی هم‌زمان با حباب فندقی
+      unawaited(AudioService.playCorrect());
     } else {
-      FandoghiCoach.incorrect(question.options[question.correctIndex]);
+      _consecutiveWrong++;
+      // فاز ۴۵: اگر پشت سر هم غلط زد، همدلی + پیشنهاد بازی آسون‌تر
+      final empathyMessage = AI.encouragementAfterMistakes(_consecutiveWrong);
+      FandoghiCoach.say(
+        empathyMessage.isEmpty
+            ? 'جواب درست «${question.options[question.correctIndex]}» بود'
+            : '$empathyMessage جواب درست «${question.options[question.correctIndex]}» بود',
+        mood: FandoghiMood.shy,
+        tone: FandoghiCoachTone.encouragement,
+        duration: const Duration(seconds: 4),
+      );
+      unawaited(AudioService.playWrong());
     }
 
     Future<void>.delayed(const Duration(milliseconds: 850), () {
@@ -106,8 +131,22 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
           _selectedOption = null;
           _answerLocked = false;
         });
+        _armNextHint();
       }
     });
+  }
+
+  /// فاز ۱۹: اگر کودک ۳ ثانیه جواب ندهد، فندقی ملایم راهنمایی می‌کند.
+  void _armNextHint() {
+    final question = _questions[_questionIndex];
+    FandoghiCoach.armSmartHint(
+      onHint: () {
+        if (!mounted || _finished || _answerLocked) return;
+        FandoghiCoach.instruction(
+          'می‌تونی جواب رو با لمس انتخاب کنی؛ هر کدوم که فکر می‌کنی درسته بزن 🌟',
+        );
+      },
+    );
   }
 
   void _finish() {
@@ -142,9 +181,13 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
       _questionIndex = 0;
       _score = 0;
       _correctAnswers = 0;
+      _consecutiveWrong = 0;
       _selectedOption = null;
       _answerLocked = false;
       _finished = false;
+    });
+    Future<void>.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) _armNextHint();
     });
   }
 
@@ -488,8 +531,52 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
     );
   }
 
+  /// فاز ۳۰: تولید هوشمند سوال از روی ضعیف‌ترین مهارت کودک
+  /// (با استفاده از محتوای آکادمی — نه بانک ثابت)
+  List<_QuizQuestion> _generateSmartQuestions() {
+    final weakSkillKey = AI.weakSkillKey();
+    final topic = learningTopics.firstWhere(
+      (t) => t.skill == weakSkillKey,
+      orElse: () => learningTopics.first,
+    );
+    final questions = <_QuizQuestion>[];
+    final cards = topic.pickRandom(5);
+    for (final card in cards) {
+      // «کدام گزینه X است؟» با ایموجی
+      final others = topic.cards
+          .where((c) => c.id != card.id)
+          .take(3)
+          .map((c) => c.name)
+          .toList();
+      final options = <String>[...others, card.name]..shuffle();
+      questions.add(_QuizQuestion(
+        'کدام یکی «${card.name}» است؟',
+        card.emoji,
+        options,
+        options.indexOf(card.name),
+        topic.skill,
+        topic.skill,
+      ));
+    }
+    if (questions.isEmpty) {
+      questions.add(const _QuizQuestion(
+        'کدام یکی «یک» است؟',
+        '1️⃣',
+        ['دو', 'یک', 'سه'],
+        1,
+        'counting',
+        null,
+      ));
+    }
+    return questions;
+  }
+
   List<_QuizQuestion> _questionsFor(String rawTopic) {
     final topic = rawTopic.trim().toLowerCase();
+    // فاز ۳۰: کوییز هوشمند بر اساس مهارت ضعیف
+    if (topic.contains('هوشمند') || topic.contains('smart')) {
+      return _generateSmartQuestions();
+    }
     if (topic.contains('الفبا') || topic.contains('alphabet')) {
       return const [
         _QuizQuestion('کلمه «بابا» با چه حرفی شروع می‌شود؟', '🔤', ['ب', 'م', 'س', 'ر'], 0, 'alphabet', 'alphabet'),
@@ -499,7 +586,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
         _QuizQuestion('کدام گزینه یک حرف است؟', '✨', ['کتاب', 'ش', 'مداد', 'خانه'], 1, 'alphabet', 'alphabet'),
       ];
     }
-    if (topic.contains('عدد') || topic.contains('شمار') || topic.contains('number')) {
+    if (topic.contains('عدد') || topic.contains('اعداد') || topic.contains('شمار') || topic.contains('number')) {
       return const [
         _QuizQuestion('🍎🍎🍎 چند سیب می‌بینی؟', '🔢', ['۲', '۳', '۴', '۵'], 1, 'counting', null),
         _QuizQuestion('عدد بعد از ۴ چیست؟', '4️⃣', ['۳', '۵', '۶', '۷'], 1, 'math', null),
@@ -884,17 +971,23 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
 
   String _topicTitle(String topic) {
     if (topic.contains('الفبا')) return 'الفبا';
-    if (topic.contains('عدد') || topic.contains('شمار')) return 'اعداد';
+    if (topic.contains('عدد') || topic.contains('اعداد') || topic.contains('شمار')) return 'اعداد';
     if (topic.contains('رنگ')) return 'رنگ‌ها';
     if (topic.contains('حیوان')) return 'حیوانات';
+    if (topic.contains('شکل') || topic.contains('اشکال')) return 'شکل‌ها';
+    if (topic.contains('میوه') || topic.contains('میوه‌ها')) return 'میوه‌ها';
+    if (topic.contains('بدن')) return 'بدن';
     return topic.isEmpty ? 'یادگیری' : topic;
   }
 
   String _topicEmoji(String topic) {
     if (topic.contains('الفبا')) return '🔤';
-    if (topic.contains('عدد') || topic.contains('شمار')) return '🔢';
+    if (topic.contains('عدد') || topic.contains('اعداد') || topic.contains('شمار')) return '🔢';
     if (topic.contains('رنگ')) return '🎨';
     if (topic.contains('حیوان')) return '🐾';
+    if (topic.contains('شکل') || topic.contains('اشکال')) return '🔷';
+    if (topic.contains('میوه') || topic.contains('میوه‌ها')) return '🍎';
+    if (topic.contains('بدن')) return '🧍';
     if (topic.contains('شغل')) return '🧑‍🚒';
     return '🌟';
   }

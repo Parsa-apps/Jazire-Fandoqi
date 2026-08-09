@@ -58,4 +58,67 @@ void main() {
     expect(AI.difficulty(), 3);
     expect(AI.weakSkill(), isNotEmpty);
   });
+
+  // ─────────── فاز ۴۰: جزیره‌سازی ───────────
+  test('island decorations cost coins and persist per slot', () {
+    GameData.coins = 20;
+    expect(GameData.placeDecoration('s0-0', 'palm'), isTrue);
+    expect(GameData.coins, 15);
+    expect(GameData.islandDecorations['s0-0'], 'palm');
+
+    // همان اسلات دوباره نمی‌شود
+    expect(GameData.placeDecoration('s0-0', 'house'), isFalse);
+    // بدون سکه کافی
+    GameData.coins = 2;
+    expect(GameData.placeDecoration('s1-1', 'star'), isFalse);
+
+    GameData.removeDecoration('s0-0');
+    expect(GameData.islandDecorations.containsKey('s0-0'), isFalse);
+  });
+
+  // ─────────── فاز ۵۲: مأموریت‌های جدید ───────────
+  test('math and memory missions progress correctly', () {
+    GameData.progressMission('math', amount: 3);
+    expect(GameData.isMissionDone('math'), isTrue);
+    GameData.progressMission('memory');
+    expect(GameData.isMissionDone('memory'), isFalse);
+    GameData.progressMission('memory');
+    expect(GameData.isMissionDone('memory'), isTrue);
+  });
+
+  // ─────────── فاز ۷: مقیاس فونت ───────────
+  test('textScale clamps to the accessible range', () {
+    GameData.setTextScale(2.0);
+    expect(GameData.textScale, 1.4);
+    GameData.setTextScale(0.5);
+    expect(GameData.textScale, 0.85);
+  });
+
+  // ─────────── فاز ۱۶: چپ‌دست ───────────
+  test('left-handed preference persists', () {
+    GameData.setLeftHanded(true);
+    expect(GameData.isLeftHanded, isTrue);
+  });
+
+  // ─────────── فاز ۸۵: استرس ذخیره‌سازی ───────────
+  test('500 rapid answers never exceed caps and stay stable', () {
+    for (var i = 0; i < 500; i++) {
+      GameData.recordAnswer(correct: true, skill: 'counting');
+      GameData.addCoins(1);
+    }
+    expect(GameData.totalCorrect, 500);
+    expect(GameData.coins, 500);
+    expect(GameData.skills['counting'], 500);
+    expect(GameData.level, greaterThanOrEqualTo(5));
+  });
+}
+
+  // ─────────── فاز ۲۹: پاداش یک‌بار داستان (ضد farming) ───────────
+  test('story reward is granted only once per story', () {
+    expect(GameData.hasCompletedStory('helpful_rabbit'), isFalse);
+    expect(GameData.markStoryCompleted('helpful_rabbit'), isTrue);
+    expect(GameData.hasCompletedStory('helpful_rabbit'), isTrue);
+    // بار دوم نباید پاداش بدهد
+    expect(GameData.markStoryCompleted('helpful_rabbit'), isFalse);
+  });
 }

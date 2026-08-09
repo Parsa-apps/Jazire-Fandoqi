@@ -1,19 +1,20 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/premium_animations.dart';
-import '../home/widgets/premium_card.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../core/game_data.dart';
+import '../../presentation/providers/game_state_provider.dart';
 import 'painters/coin_rain_painter.dart';
 
 /// ═══════════════════════════════════════════════
 /// 🏪 SHOP SCREEN — Professional Store
 /// Categories, items, purchase animations
 /// ═══════════════════════════════════════════════
-class ShopScreen extends StatefulWidget {
+class ShopScreen extends ConsumerStatefulWidget {
   final bool embedded;
 
   const ShopScreen({
@@ -22,10 +23,10 @@ class ShopScreen extends StatefulWidget {
   });
 
   @override
-  State<ShopScreen> createState() => _ShopState();
+  ConsumerState<ShopScreen> createState() => _ShopState();
 }
 
-class _ShopState extends State<ShopScreen>
+class _ShopState extends ConsumerState<ShopScreen>
     with TickerProviderStateMixin {
   int _selectedCategory = 0;
   late AnimationController _purchaseCtrl;
@@ -52,6 +53,12 @@ class _ShopState extends State<ShopScreen>
       ShopItem('sticker_crown', '👑', 'تاج طلایی', 120, 'تاج پادشاهی'),
       ShopItem('sticker_rocket', '🚀', 'موشک فضایی', 100, 'موشک آماده پرتاب'),
       ShopItem('sticker_unicorn', '🦄', 'تک‌شاخ', 150, 'تک‌شاخ جادویی'),
+      ShopItem('sticker_palm', '🌴', 'نخل جزیره', 60, 'نخل سرسبز'),
+      ShopItem('sticker_flower', '🌺', 'گل بهاری', 45, 'گل رنگارنگ'),
+      ShopItem('sticker_bunny', '🐰', 'خرگوش فندقی', 120, 'خرگوش مهربان'),
+      ShopItem('sticker_butterfly', '🦋', 'پروانه رنگین', 70, 'پروانه رنگی'),
+      ShopItem('sticker_icecream', '🍦', 'بستنی خوشمزه', 55, 'بستنی قیفی'),
+      ShopItem('sticker_sun', '🌞', 'خورشید خانم', 65, 'خورشید خندان'),
     ],
     1: [ // Avatars
       ShopItem('avatar_superhero', '🦸', 'قهرمان', 200, 'آواتار قهرمانی'),
@@ -89,16 +96,10 @@ class _ShopState extends State<ShopScreen>
       vsync: this,
       duration: const Duration(milliseconds: 2000),
     )..repeat();
-    GameData.changes.addListener(_onDataChanged);
-  }
-
-  void _onDataChanged() {
-    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    GameData.changes.removeListener(_onDataChanged);
     _purchaseCtrl.dispose();
     _coinBounceCtrl.dispose();
     _glowCtrl.dispose();
@@ -152,6 +153,8 @@ class _ShopState extends State<ShopScreen>
 
   @override
   Widget build(BuildContext context) {
+    // فاز ۳: واکنش به وضعیت از طریق Riverpod
+    ref.watch(gameStateProvider);
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(gradient: AppGradients.nightSky),
@@ -253,6 +256,12 @@ class _ShopState extends State<ShopScreen>
                   ),
                   const Spacer(),
                   _buildCoinDisplay(),
+                  // فاز ۵۹: آلبوم استیکر
+                  const SizedBox(width: 8),
+                  _glassBtn(Icons.menu_book_rounded, () {
+                    HapticFeedback.lightImpact();
+                    Navigator.pushNamed(context, '/stickers');
+                  }),
                 ],
               ),
             ),

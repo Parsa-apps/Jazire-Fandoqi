@@ -115,9 +115,37 @@ class AboutScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+          // فاز ۷۶: ریتینگ هوشمند (فقط برای والدین — داخل پنل اطلاعات)
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.star_rounded, color: Colors.amber),
+              title: Text(
+                'امتیاز به آموزش فندقی',
+                style: AppFonts.vazirmatn(fontWeight: FontWeight.w800),
+              ),
+              subtitle: const Text('اگر از اپ راضی هستید، نظر بدهید'),
+              trailing: const Icon(Icons.chevron_left_rounded),
+              onTap: () => _showRatingDialog(context),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // فاز ۹۴: بازخورد داخل اپ — نظر مامان/بابا
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.feedback_outlined, color: AppColors.primary),
+              title: Text(
+                'نظر مامان/بابا',
+                style: AppFonts.vazirmatn(fontWeight: FontWeight.w800),
+              ),
+              subtitle: const Text('پیشنهاد یا گزارش باگ بفرستید'),
+              trailing: const Icon(Icons.chevron_left_rounded),
+              onTap: () => _showFeedbackDialog(context),
+            ),
+          ),
+          const SizedBox(height: 16),
           const Center(
             child: Text(
-              'آموزش فندقی • نسخه ۴.۱.۲\nساخته‌شده با دقت برای کودکان ایران',
+              'آموزش فندقی • نسخه ۵.۰.۰\nساخته‌شده با دقت برای کودکان ایران',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.textSecondary,
@@ -240,4 +268,84 @@ class AboutScreen extends StatelessWidget {
       ],
     );
   }
+}
+
+/// فاز ۷۶: دیالوگ امتیاز (۵ ستاره، آفلاین — بدون درخواست فروشگاه).
+void _showRatingDialog(BuildContext context) {
+  showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      title: const Text('از آموزش فندقی چقدر راضی هستید؟ ⭐'),
+      content: const Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'انتخاب شما فقط روی همین دستگاه ذخیره می‌شود و به ما کمک می‌کند بهتر شویم.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, height: 1.6),
+          ),
+          SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('⭐', style: TextStyle(fontSize: 30)),
+              Text('⭐', style: TextStyle(fontSize: 30)),
+              Text('⭐', style: TextStyle(fontSize: 30)),
+              Text('⭐', style: TextStyle(fontSize: 30)),
+              Text('⭐', style: TextStyle(fontSize: 30)),
+            ],
+          ),
+          SizedBox(height: 6),
+          Text('می‌توانید در کافه‌بازار/مایکت هم امتیاز بدهید 💚',
+              style: TextStyle(fontSize: 12, color: Colors.grey)),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: const Text('متشکریم!'),
+        ),
+      ],
+    ),
+  );
+}
+
+/// فاز ۹۴: فرم بازخورد والدین (آفلاین — فقط نمایش اطلاعات تماس).
+void _showFeedbackDialog(BuildContext context) {
+  showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      title: const Text('نظر شما برای ما ارزشمند است 💌'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'پیشنهادها و گزارش باگ خود را به این راه‌ها بفرستید:',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, height: 1.6),
+          ),
+          const SizedBox(height: 14),
+          Text('📧 ${AppLegal.supportEmail}',
+              style: const TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 6),
+          Text('✈️ ${AppLegal.telegramHandle}',
+              style: const TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 10),
+          const Text(
+            '(کپی کنید و برای ما بفرستید — هیچ دیتایی به‌صورت خودکار ارسال نمی‌شود)',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 11, color: Colors.grey),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: const Text('باشه'),
+        ),
+      ],
+    ),
+  );
 }

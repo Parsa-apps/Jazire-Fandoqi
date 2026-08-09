@@ -1,7 +1,7 @@
 name: amoozesh_fandoghi
 description: "آموزش فندقی - اپلیکیشن آموزشی آفلاین کودکان با شخصیت فندقی | سازنده: فرشاد پارسا"
 publish_to: 'none'
-version: 4.1.2+4
+version: 5.0.0+10
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -41,6 +41,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
   flutter_lints: 4.0.0
   flutter_launcher_icons: 0.13.1
 
@@ -72,3 +74,12 @@ flutter:
     - assets/illustrations/body_cards.webp
     - assets/mascot/fandoghi_bunny.png
     - assets/premium/
+
+  # فاز ۷ (تکمیل): فونت محلی آفلاین — fallback واقعی برای GoogleFonts
+  fonts:
+    - family: Vazirmatn
+      fonts:
+        - asset: assets/fonts/Vazirmatn-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Vazirmatn-Bold.ttf
+          weight: 700
