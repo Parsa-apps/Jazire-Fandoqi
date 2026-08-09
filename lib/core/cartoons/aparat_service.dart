@@ -397,7 +397,9 @@ class AparatService {
 
   static bool _isPlayable(String u) {
     final value = u.trim();
-    if (!(value.startsWith('http://') || value.startsWith('https://'))) return false;
+    // Cartoon playback is networked, but all trusted Aparat endpoints use TLS.
+    // Rejecting clear-text streams prevents media URL downgrade attacks.
+    if (!value.startsWith('https://')) return false;
     final lower = value.toLowerCase();
     // CDN آپارات گاهی URL بدون پسوند یا با query امضاشده می‌دهد.
     return lower.contains('.mp4') || lower.contains('.m3u8') ||

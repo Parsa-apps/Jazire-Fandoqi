@@ -4,6 +4,16 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+// Signing secrets stay local (android/key.properties) or are created from CI secrets.
+// A release without this file remains unsigned; it is suitable only for build
+// verification and must never be submitted to an app store.
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("key.properties")
+def hasReleaseSigning = keystorePropertiesFile.exists()
+if (hasReleaseSigning) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+}
+
 android {
     namespace = "com.parsaapps.amoozesh_fandoghi"
     compileSdk = 35
@@ -28,11 +38,24 @@ android {
         multiDexEnabled true
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                keyAlias = keystoreProperties['keyAlias']
+                keyPassword = keystoreProperties['keyPassword']
+                storeFile = file(keystoreProperties['storeFile'])
+                storePassword = keystoreProperties['storePassword']
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            // Never fall back to the debug certificate for a distributable build.
+            // Without key.properties Gradle produces an unsigned verification artifact.
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.release
+            }
         }
     }
 }
