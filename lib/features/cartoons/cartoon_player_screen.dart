@@ -187,12 +187,22 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
     final ep = _currentEpisode;
     final query = '${widget.cartoon.title} ${ep.title}';
 
-    final resolved = await AparatService.resolve(
-      videoHash: ep.aparatHash,
-      searchQuery: ep.searchQuery?.isNotEmpty == true
-          ? ep.searchQuery
-          : query,
-    );
+    // اگر در آینده لینک CDN برای یک قسمت در بانک اطلاعاتی قرار گرفت،
+    // قبل از تماس با API از آن استفاده کن (لینک‌های آپارات موقتی‌اند، پس
+    // این فقط fallback سازگاری است و منبع اصلی همچنان resolver است).
+    AparatResolved resolved;
+    if (ep.streamUrl?.trim().isNotEmpty == true) {
+      resolved = AparatResolved(
+        streams: [VideoStream(url: ep.streamUrl!.trim(), quality: 'auto')],
+      );
+    } else {
+      resolved = await AparatService.resolve(
+        videoHash: ep.aparatHash,
+        searchQuery: ep.searchQuery?.isNotEmpty == true
+            ? ep.searchQuery
+            : query,
+      );
+    }
 
     if (!mounted) return;
 
