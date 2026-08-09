@@ -237,8 +237,7 @@ class _ProfileState extends ConsumerState<ProfileScreen>
                               ? ClipOval(child: Image.asset(GameData.avatar, fit: BoxFit.cover, width: 100, height: 100))
                               : Center(child: Text(GameData.avatar, style: const TextStyle(fontSize: 48))),
                       ),
-                    ),
-                  ).animate().scale(
+                    ).animate().scale(
                     duration: 600.ms,
                     curve: Curves.elasticOut,
                   ),
