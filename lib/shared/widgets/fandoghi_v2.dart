@@ -44,7 +44,29 @@ class FandoghiV2 extends StatelessWidget {
       child: _BunnyWithFloat(
         size: size,
         animate: shouldAnimate,
-        child: FandoghiBunny(size: size),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            FandoghiBunny(size: size),
+            // فاز ۱۲: صورت احساسی فندقی V3 — ایموجی شفاف، بدون هاله سفید
+            if (mood != FandoghiMood.happy)
+              Positioned(
+                right: -size * 0.12,
+                top: -size * 0.12,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.6, end: 1.0),
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutBack,
+                  builder: (context, value, child) =>
+                      Transform.scale(scale: value, child: child),
+                  child: Text(
+                    mood.emoji,
+                    style: TextStyle(fontSize: size * 0.42),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
 

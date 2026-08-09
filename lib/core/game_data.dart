@@ -100,6 +100,9 @@ class GameData {
   /// فاز ۷: مقیاس فونت قابل تنظیم توسط والدین (0.85 تا 1.4)
   static double textScale = 1.0;
 
+  /// فاز ۱۶: ترجیح دست کودک (چپ‌دست / راست‌دست)
+  static bool isLeftHanded = false;
+
   // Stage map progress
   static int currentStage = 1;
   static int currentIsland = 0;
@@ -172,6 +175,7 @@ class GameData {
       goldenChestOpened = prefs.getBool('gc') ?? false;
       soundEnabled = prefs.getBool('sn') ?? true;
       textScale = (prefs.getDouble('tsc') ?? 1.0).clamp(0.85, 1.4).toDouble();
+      isLeftHanded = prefs.getBool('lh') ?? false;
       lastWeekReset = prefs.getString('lwr') ?? '';
       highScore = _readInt('hs', 0);
       mathRaceHighScore = _readInt('mrhs', 0);
@@ -335,6 +339,7 @@ class GameData {
     treasureOpened = asBool('tr', false);
     goldenChestOpened = asBool('gc', false);
     soundEnabled = asBool('sn', true);
+    isLeftHanded = asBool('lh', false);
     final tsc = d['tsc'];
     if (tsc is num) textScale = tsc.toDouble().clamp(0.85, 1.4).toDouble();
     lastWeekReset = asString('lwr', '');
@@ -392,6 +397,7 @@ class GameData {
         'gc': goldenChestOpened,
         'sn': soundEnabled,
         'tsc': textScale,
+        'lh': isLeftHanded,
         'lwr': lastWeekReset,
         'hs': highScore,
         'mrhs': mathRaceHighScore,
@@ -519,6 +525,7 @@ class GameData {
     await prefs.setBool('gc', goldenChestOpened);
     await prefs.setBool('sn', soundEnabled);
     await prefs.setDouble('tsc', textScale);
+    await prefs.setBool('lh', isLeftHanded);
     await prefs.setInt('wpm', weeklyPlayMinutes);
     await prefs.setInt('tps', todayPlaySeconds);
     await prefs.setString('lwr', lastWeekReset);
@@ -808,6 +815,13 @@ class GameData {
     unawaited(save());
   }
 
+  /// فاز ۱۶: تنظیم ترجیح دست کودک.
+  static void setLeftHanded(bool value) {
+    isLeftHanded = value;
+    _notify();
+    unawaited(save());
+  }
+
   static void setTimeLimitMinutes(int value) {
     timeLimitMinutes = value.clamp(15, 24 * 60).toInt();
     _notify();
@@ -956,6 +970,7 @@ class GameData {
     goldenChestOpened = false;
     soundEnabled = true;
     textScale = 1.0;
+    isLeftHanded = false;
     luckyWheelSpunToday = false;
     aiBuddyUnlocked = false;
     currentStage = 1;

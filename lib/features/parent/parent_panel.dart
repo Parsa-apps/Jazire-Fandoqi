@@ -499,6 +499,18 @@ class _ParentPanelState extends ConsumerState<ParentPanel> {
               style: const TextStyle(fontWeight: FontWeight.w700),
             ),
           ),
+          const SizedBox(height: 16),
+          // فاز ۱۶: ترجیح دست کودک
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(
+              'کودک چپ‌دست است',
+              style: AppFonts.vazirmatn(fontSize: 15, fontWeight: FontWeight.w700),
+            ),
+            subtitle: const Text('دکمه‌های مهم به سمت دست چپ می‌روند'),
+            value: GameData.isLeftHanded,
+            onChanged: (value) => setState(() => GameData.setLeftHanded(value)),
+          ),
         ],
       ),
     );

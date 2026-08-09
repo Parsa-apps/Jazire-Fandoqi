@@ -53,32 +53,51 @@ class _DashboardState extends ConsumerState<DashboardTab> {
   Widget build(BuildContext context) {
     // فاز ۳: واکنش به وضعیت از طریق Riverpod
     ref.watch(gameStateProvider);
+    // فاز ۱۴: داشبورد هوشمند بر اساس سن
+    // ۳-۴: ساده (بدون مأموریت روزانه، دسته‌بندی ساده)
+    // ۵-۶: استاندارد (همه بخش‌ها)
+    // ۷-۸: چالش‌محور (مأموریت‌ها جلوتر + نکته تشویقی)
+    final simple = _ageMode == _AgeMode.simple;
+    final challenge = _ageMode == _AgeMode.challenge;
+    final slivers = <Widget>[
+      // Hero App Bar with parallax
+      _buildHeroAppBar(),
+
+      // Quick stats
+      SliverToBoxAdapter(child: _buildQuickStats()),
+    ];
+
+    if (challenge) {
+      slivers.add(SliverToBoxAdapter(child: _buildDailyMissions()));
+    }
+
+    // Quick games
+    slivers.add(SliverToBoxAdapter(child: _buildQuickGames()));
+
+    // Game categories — در حالت ساده فقط دسته‌بندی‌های اصلی
+    slivers.add(SliverToBoxAdapter(child: _buildCategories(simple: simple)));
+
+    if (!simple) {
+      slivers.add(SliverToBoxAdapter(child: _buildDailyMissions()));
+      slivers.add(SliverToBoxAdapter(child: _buildFandoghiTip()));
+    }
+
+    // Bottom padding
+    slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 120)));
+
     return CustomScrollView(
       controller: _scrollCtrl,
       physics: const BouncingScrollPhysics(),
-      slivers: [
-        // Hero App Bar with parallax
-        _buildHeroAppBar(),
-        
-        // Quick stats
-        SliverToBoxAdapter(child: _buildQuickStats()),
-        
-        // Daily missions
-        SliverToBoxAdapter(child: _buildDailyMissions()),
-        
-        // Quick games
-        SliverToBoxAdapter(child: _buildQuickGames()),
-        
-        // Game categories
-        SliverToBoxAdapter(child: _buildCategories()),
-        
-        // Fandoghi tip
-        SliverToBoxAdapter(child: _buildFandoghiTip()),
-        
-        // Bottom padding
-        const SliverToBoxAdapter(child: SizedBox(height: 120)),
-      ],
+      slivers: slivers,
     );
+  }
+
+  /// فاز ۱۴: حالت سنی داشبورد.
+  _AgeMode get _ageMode {
+    final age = GameData.childAge;
+    if (age <= 4) return _AgeMode.simple;
+    if (age <= 6) return _AgeMode.standard;
+    return _AgeMode.challenge;
   }
 
   // ─── HERO APP BAR ─────────────────────────────
@@ -726,52 +745,67 @@ class _DashboardState extends ConsumerState<DashboardTab> {
   }
 
   // ─── CATEGORIES ───────────────────────────────
-  Widget _buildCategories() {
+  Widget _buildCategories({bool simple = false}) {
+    final children = <Widget>[
+      Text(
+        simple ? 'بازی‌های من' : 'دسته‌بندی بازی‌ها',
+        style: AppFonts.vazirmatn(
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      const SizedBox(height: 14),
+      _categoryCard(
+        title: 'یادگیری پایه',
+        subtitle: 'الفبا • اعداد • رنگ‌ها • اشکال',
+        icon: Icons.school_rounded,
+        gradient: AppGradients.purple,
+        games: ['الفبا', 'اعداد', 'رنگ‌ها', 'اشکال'],
+      ),
+      const SizedBox(height: 12),
+      if (!simple) ...[
+        _categoryCard(
+          title: 'بازی‌های فکری',
+          subtitle: 'حافظه • الگو • مسابقه • ترتیب',
+          icon: Icons.psychology_rounded,
+          gradient: AppGradients.ocean,
+          games: ['حافظه', 'الگو', 'مسابقه', 'ترتیب'],
+        ),
+        const SizedBox(height: 12),
+      ],
+      if (simple) ...[
+        _categoryCard(
+          title: 'بازی‌های من',
+          subtitle: 'نقاشی • ستاره‌گیری • حباب',
+          icon: Icons.favorite_rounded,
+          gradient: AppGradients.candy,
+          games: ['نقاشی', 'ستاره‌گیری', 'حباب‌ترکان'],
+        ),
+        const SizedBox(height: 12),
+      ],
+      _categoryCard(
+        title: 'دنیای اطراف',
+        subtitle: 'حیوانات • بدن • شغل‌ها • فضا',
+        icon: Icons.public_rounded,
+        gradient: AppGradients.forest,
+        games: ['حیوانات', 'بدن', 'شغل‌ها', 'فضا'],
+      ),
+      if (!simple) ...[
+        const SizedBox(height: 12),
+        _categoryCard(
+          title: 'خلاقیت',
+          subtitle: 'نقاشی • داستان • موسیقی',
+          icon: Icons.palette_rounded,
+          gradient: AppGradients.candy,
+          games: ['نقاشی', 'داستان', 'سازها'],
+        ),
+      ],
+    ];
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'دسته‌بندی بازی‌ها',
-            style: AppFonts.vazirmatn(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 14),
-          _categoryCard(
-            title: 'یادگیری پایه',
-            subtitle: 'الفبا • اعداد • رنگ‌ها • اشکال',
-            icon: Icons.school_rounded,
-            gradient: AppGradients.purple,
-            games: ['الفبا', 'اعداد', 'رنگ‌ها', 'اشکال'],
-          ),
-          const SizedBox(height: 12),
-          _categoryCard(
-            title: 'بازی‌های فکری',
-            subtitle: 'حافظه • الگو • مسابقه • ترتیب',
-            icon: Icons.psychology_rounded,
-            gradient: AppGradients.ocean,
-            games: ['حافظه', 'الگو', 'مسابقه', 'ترتیب'],
-          ),
-          const SizedBox(height: 12),
-          _categoryCard(
-            title: 'دنیای اطراف',
-            subtitle: 'حیوانات • بدن • شغل‌ها • فضا',
-            icon: Icons.public_rounded,
-            gradient: AppGradients.forest,
-            games: ['حیوانات', 'بدن', 'شغل‌ها', 'فضا'],
-          ),
-          const SizedBox(height: 12),
-          _categoryCard(
-            title: 'خلاقیت',
-            subtitle: 'نقاشی • داستان • موسیقی',
-            icon: Icons.palette_rounded,
-            gradient: AppGradients.candy,
-            games: ['نقاشی', 'داستان', 'سازها'],
-          ),
-        ],
+        children: children,
       ),
     ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.3);
   }
@@ -1030,3 +1064,6 @@ class _DashboardState extends ConsumerState<DashboardTab> {
     }
   }
 }
+
+/// فاز ۱۴: حالت‌های داشبورد هوشمند بر اساس سن کودک.
+enum _AgeMode { simple, standard, challenge }

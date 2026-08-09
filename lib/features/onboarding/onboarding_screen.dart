@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import '../../core/fandoghi_coach.dart';
 import '../../core/game_data.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
 import '../../shared/widgets/premium_button.dart';
@@ -25,6 +26,38 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _age = 5;
   String _selectedAvatar = '🦊';
 
+  // فاز ۱۸: تست سطح اولیه پنهان
+  int _quizIndex = 0;
+  int _quizScore = 0;
+  bool _quizDone = false;
+  bool _quizLocked = false;
+  int _quizSelected = -1;
+  bool _quizWasCorrect = false;
+
+  static const List<_QuizQuestion> _quizQuestions = <_QuizQuestion>[
+    _QuizQuestion(
+      prompt: 'کدوم یکی از این‌ها حرف «ب» است؟',
+      emoji: '🔤',
+      options: <String>['آ', 'ب', 'ت'],
+      correctIndex: 1,
+      skill: 'alphabet',
+    ),
+    _QuizQuestion(
+      prompt: 'چند تا سیب می‌بینی؟',
+      emoji: '🍎🍎🍎',
+      options: <String>['۲', '۳', '۵'],
+      correctIndex: 1,
+      skill: 'counting',
+    ),
+    _QuizQuestion(
+      prompt: 'کدوم یکی رنگ قرمز است؟',
+      emoji: '🎨',
+      options: <String>['🔴', '🟢', '🔵'],
+      correctIndex: 0,
+      skill: 'colors',
+    ),
+  ];
+
   final List<String> _avatars = ['🦊', '🐼', '🐰', '🐨', '🦁', '🐸', '🐧', '🦉'];
 
   @override
@@ -39,6 +72,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 420),
         curve: Curves.easeOutCubic,
+      );
+      return;
+    }
+
+    // فاز ۱۸: اگر کوییز سطح اولیه هنوز کامل نشده، اول بازی تمام شود
+    if (!_quizDone) {
+      FandoghiCoach.instruction(
+        'اول این سه تا سوال کوچولو رو جواب بده؛ بعد با هم وارد دنیای بازی‌ها می‌شیم 🎮',
       );
       return;
     }
@@ -307,37 +348,172 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // ==================== PAGE 4: FINAL ====================
+  // ==================== PAGE 4: بازی سطح اولیه پنهان (فاز ۱۸) ====================
   Widget _finalPage() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 28),
+    if (_quizDone) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 28),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const FandoghiV2(
+              size: 120,
+              animate: true,
+              mood: FandoghiMood.celebrating,
+            ),
+            const SizedBox(height: 30),
+            Text(
+              'عالیه! آماده‌ای؟ 🎉',
+              textAlign: TextAlign.center,
+              style: AppFonts.vazirmatn(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'حالا می‌تونی با فندقی به دنیای بازی‌ها و یادگیری بری!',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white70, fontSize: 17, height: 1.6),
+            ),
+            const SizedBox(height: 40),
+            _privacyNote(),
+          ],
+        ),
+      );
+    }
+
+    // «بذار ببینم چی بلدی» — تست سطح اولیه پنهان (بدون برچسب تست)
+    final question = _quizQuestions[_quizIndex];
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const FandoghiV2(size: 120, animate: true, mood: FandoghiMood.excited),
-          const SizedBox(height: 30),
-
+          const SizedBox(height: 20),
+          FandoghiV2(size: 90, animate: true, mood: FandoghiMood.thinking),
+          const SizedBox(height: 18),
           Text(
-            'عالیه! آماده‌ای؟',
-            textAlign: TextAlign.center,
+            'بذار ببینم چی بلدی! 😄',
             style: AppFonts.vazirmatn(
               color: Colors.white,
-              fontSize: 28,
+              fontSize: 24,
               fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 16),
-
-          const Text(
-            'حالا می‌تونی با فندقی به دنیای بازی‌ها و یادگیری بری!',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white70, fontSize: 17, height: 1.6),
+          const SizedBox(height: 6),
+          Text(
+            'سوال ${_quizIndex + 1} از ${_quizQuestions.length}',
+            style: const TextStyle(color: Colors.white60, fontSize: 14),
           ),
-          const SizedBox(height: 40),
-          _privacyNote(),
+          const SizedBox(height: 26),
+          Text(
+            question.emoji,
+            style: const TextStyle(fontSize: 64),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            question.prompt,
+            textAlign: TextAlign.center,
+            style: AppFonts.vazirmatn(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 24),
+          for (var i = 0; i < question.options.length; i++) ...[
+            _quizOption(i, question),
+            const SizedBox(height: 12),
+          ],
+          const SizedBox(height: 10),
         ],
       ),
     );
+  }
+
+  Widget _quizOption(int index, _QuizQuestion question) {
+    final selected = _quizLocked && _quizSelected == index;
+    final isCorrectOption = index == question.correctIndex;
+    final Color bg;
+    if (selected) {
+      bg = _quizWasCorrect ? const Color(0xFF2ECC71) : const Color(0xFFE74C3C);
+    } else {
+      bg = Colors.white.withOpacity(0.12);
+    }
+    return SizedBox(
+      width: double.infinity,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: _quizLocked ? null : () => _answerQuiz(question, index),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 64),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: selected
+                    ? Colors.white
+                    : Colors.white.withOpacity(0.25),
+                width: selected ? 2.5 : 1,
+              ),
+            ),
+            child: Text(
+              question.options[index],
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 19,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _answerQuiz(_QuizQuestion question, int index) {
+    final correct = index == question.correctIndex;
+    setState(() {
+      _quizLocked = true;
+      _quizSelected = index;
+      _quizWasCorrect = correct;
+    });
+
+    if (correct) _quizScore++;
+    // ثبت مهارت (حتی با پاسخ نادرست — شرکت کردن ارزش دارد)
+    GameData.recordAnswer(correct: correct, skill: question.skill);
+    GameData.addSkill(question.skill);
+
+    if (correct) {
+      FandoghiCoach.correct('آفرین! تو بلدی! 🌟');
+      HapticFeedback.lightImpact();
+    } else {
+      FandoghiCoach.incorrect(question.options[question.correctIndex]);
+    }
+
+    Future<void>.delayed(const Duration(milliseconds: 1100), () {
+      if (!mounted) return;
+      if (_quizIndex + 1 < _quizQuestions.length) {
+        setState(() {
+          _quizIndex++;
+          _quizLocked = false;
+          _quizSelected = -1;
+        });
+      } else {
+        setState(() {
+          _quizDone = true;
+          _quizLocked = false;
+        });
+        FandoghiCoach.reward('همه جواب‌ها رو دادی؛ حالا بریم بازی کنیم! 🎮');
+      }
+    });
   }
 
   Widget _privacyNote() {
@@ -362,4 +538,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ),
     );
   }
+}
+/// فاز ۱۸: سوال بازی سطح اولیه (بدون برچسب تست برای کودک).
+class _QuizQuestion {
+  final String prompt;
+  final String emoji;
+  final List<String> options;
+  final int correctIndex;
+  final String skill;
+
+  const _QuizQuestion({
+    required this.prompt,
+    required this.emoji,
+    required this.options,
+    required this.correctIndex,
+    required this.skill,
+  });
 }
