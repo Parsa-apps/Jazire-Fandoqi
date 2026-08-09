@@ -35,6 +35,9 @@ import 'features/games/learning_quiz/learning_quiz_game.dart';
 import 'features/games/memory_match/memory_match_game.dart';
 import 'features/games/star_catch/star_catch_game.dart';
 import 'features/games/stories/story_screen.dart';
+import 'features/stories/stories_hub_screen.dart';
+import 'features/stories/story_reader_screen.dart';
+import 'core/learning_content/children_stories_data.dart';
 import 'features/home/home_screen.dart';
 import 'features/profile/sticker_album_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
@@ -152,6 +155,7 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
         '/onboarding': (context) => const AppGatewayScreen(),
         '/gateway': (context) => const AppGatewayScreen(),
         '/cartoons': (context) => const CartoonHubScreen(),
+        '/stories': (context) => const StoriesHubScreen(),
         '/home': (context) => const HomeScreen(),
         '/alphabet': (context) => const AlphabetAcademyGame(),
         '/memory_match': (context) => const MemoryMatchGame(),
@@ -183,9 +187,16 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
             builder: (_) => GameAccessGate(gameName: gameName, child: _gameFor(launch)),
           );
         }
-        // فاز ۲۹: داستان‌های تعاملی (/story/<id>)
+        // قصه‌خانه و داستان‌های کودکانه (/story/<id>)
         if (name.startsWith('/story/')) {
           final storyId = name.substring('/story/'.length);
+          final childrenStory = ChildrenStoriesData.getStoryById(storyId);
+          if (childrenStory != null) {
+            return MaterialPageRoute(
+              settings: settings,
+              builder: (_) => StoryReaderScreen(story: childrenStory),
+            );
+          }
           return MaterialPageRoute(
             settings: settings,
             builder: (_) => StoryScreen(storyId: storyId),
@@ -292,7 +303,7 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
       return const IslandBuilderGame();
     }
     if (name.contains('داستان') || name.contains('story')) {
-      return const StoryScreen(storyId: 'helpful_rabbit');
+      return const StoriesHubScreen();
     }
     if (name.contains('مسابقه') || name.contains('math') ||
         name.contains('race')) {

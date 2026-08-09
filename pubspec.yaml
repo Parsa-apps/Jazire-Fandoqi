@@ -88,6 +88,7 @@ flutter:
     - assets/avatars/
     - assets/premium/
     - assets/cartoons/
+    - assets/stories/
 
   # فاز ۷ (تکمیل): فونت محلی آفلاین — fallback واقعی برای GoogleFonts
   fonts:
