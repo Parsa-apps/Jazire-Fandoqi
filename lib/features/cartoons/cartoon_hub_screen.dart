@@ -127,6 +127,31 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                   // Search & Quick Filter Bar
                   SliverToBoxAdapter(child: _buildSearchBar()),
 
+                  // نکتهٔ پخش آنلاین (کارتون‌ها از سرورهای ایران پخش می‌شوند)
+                  SliverToBoxAdapter(
+                    child: Container(
+                      margin: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.blueAccent.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.blueAccent.withOpacity(0.4)),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.cloud_queue_rounded, color: Colors.lightBlueAccent, size: 18),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'کارتون‌ها به‌صورت آنلاین و با لینک مستقیم از سرورهای ایران پخش می‌شوند (اینترنت لازم است).',
+                              style: TextStyle(color: Colors.white70, fontSize: 11, height: 1.5),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
                   // Category Chips
                   SliverToBoxAdapter(child: _buildCategoryChips()),
 
