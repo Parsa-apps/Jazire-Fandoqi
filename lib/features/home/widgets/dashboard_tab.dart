@@ -65,6 +65,9 @@ class _DashboardState extends ConsumerState<DashboardTab> {
 
       // Quick stats
       SliverToBoxAdapter(child: _buildQuickStats()),
+
+      // 🎬 بنر کارتون‌ها و سینما کودک
+      SliverToBoxAdapter(child: _buildCartoonBanner()),
     ];
 
     // مأموریت‌ها فقط یک‌بار نمایش داده می‌شوند:
@@ -201,6 +204,12 @@ class _DashboardState extends ConsumerState<DashboardTab> {
                             ],
                           ),
                         ),
+                        // Cinema Hub Button
+                        _glassIconButton(
+                          Icons.movie_rounded,
+                          () => Navigator.pushNamed(context, '/cartoons'),
+                        ),
+                        const SizedBox(width: 8),
                         // Settings button
                         _glassIconButton(
                           Icons.settings_rounded,
@@ -515,6 +524,114 @@ class _DashboardState extends ConsumerState<DashboardTab> {
         ],
       ),
     );
+  }
+
+  // ─── CARTOON BANNER ──────────────────────────
+  Widget _buildCartoonBanner() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          Navigator.pushNamed(context, '/cartoons');
+        },
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFFFF5E3A),
+                Color(0xFFFF2A6D),
+                Color(0xFF8E44AD),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFFF2A6D).withOpacity(0.35),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Center(
+                  child: Text('🍿🎬', style: TextStyle(fontSize: 26)),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'سینما کارتون‌های شاد',
+                          style: AppFonts.vazirmatn(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.25),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text('جدید', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'شکرستان • پهلوانان • سگ‌های نگهبان و...',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.play_arrow_rounded, color: Color(0xFFFF2A6D), size: 18),
+                    const SizedBox(width: 2),
+                    Text(
+                      'تماشا',
+                      style: AppFonts.vazirmatn(
+                        color: const Color(0xFFFF2A6D),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.2);
   }
 
   // ─── DAILY MISSIONS ───────────────────────────

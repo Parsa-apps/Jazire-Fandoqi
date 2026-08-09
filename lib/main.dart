@@ -16,6 +16,10 @@ import 'core/logger_service.dart';
 import 'features/about/about_screen.dart';
 import 'features/about/privacy_policy_screen.dart';
 import 'features/buddy/buddy_chat_screen.dart';
+import 'features/cartoons/cartoon_hub_screen.dart';
+import 'features/cartoons/cartoon_player_screen.dart';
+import 'core/cartoons/cartoon_data.dart';
+import 'features/gateway/app_gateway_screen.dart';
 import 'features/games/alphabet_academy/alphabet_academy_game.dart';
 import 'features/games/bubble_pop/bubble_pop_game.dart';
 import 'features/games/drawing/drawing_game.dart';
@@ -145,6 +149,8 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
       routes: {
         '/': (context) => const SplashScreen(),
         '/onboarding': (context) => const OnboardingScreen(),
+        '/gateway': (context) => const AppGatewayScreen(),
+        '/cartoons': (context) => const CartoonHubScreen(),
         '/home': (context) => const HomeScreen(),
         '/alphabet': (context) => const AlphabetAcademyGame(),
         '/memory_match': (context) => const MemoryMatchGame(),
@@ -182,6 +188,23 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
           return MaterialPageRoute(
             settings: settings,
             builder: (_) => StoryScreen(storyId: storyId),
+          );
+        }
+        // 🎬 پخش کارتون (/cartoon/<id> یا /cartoon_player)
+        if (name.startsWith('/cartoon/')) {
+          final cartoonId = name.substring('/cartoon/'.length);
+          final cartoon = CartoonData.getCartoonById(cartoonId) ?? CartoonData.allCartoons.first;
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (_) => CartoonPlayerScreen(cartoon: cartoon),
+          );
+        }
+        if (name == '/cartoon_player') {
+          final args = settings.arguments;
+          final cartoon = args is Cartoon ? args : CartoonData.allCartoons.first;
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (_) => CartoonPlayerScreen(cartoon: cartoon),
           );
         }
         // فاز ۲۲-۲۸: آکادمی‌های محتوایی (/academy/numbers, /academy/colors ...)
