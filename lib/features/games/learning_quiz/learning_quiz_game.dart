@@ -5,9 +5,11 @@ import 'package:flutter/services.dart';
 
 import '../../../app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import '../../../core/ai_system.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
+import '../../../core/learning_content/learning_topics.dart';
 import '../../../core/play_limit.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
 import '../../../shared/widgets/illustration_tile.dart';
@@ -516,8 +518,52 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
     );
   }
 
+  /// فاز ۳۰: تولید هوشمند سوال از روی ضعیف‌ترین مهارت کودک
+  /// (با استفاده از محتوای آکادمی — نه بانک ثابت)
+  List<_QuizQuestion> _generateSmartQuestions() {
+    final weakSkill = AI.weakSkill();
+    final topic = learningTopics.firstWhere(
+      (t) => t.skill == weakSkill,
+      orElse: () => learningTopics.first,
+    );
+    final questions = <_QuizQuestion>[];
+    final cards = topic.pickRandom(5);
+    for (final card in cards) {
+      // «کدام گزینه X است؟» با ایموجی
+      final others = topic.cards
+          .where((c) => c.id != card.id)
+          .take(3)
+          .map((c) => c.name)
+          .toList();
+      final options = <String>[...others, card.name]..shuffle();
+      questions.add(_QuizQuestion(
+        'کدام یکی «${card.name}» است؟',
+        card.emoji,
+        options,
+        options.indexOf(card.name),
+        topic.skill,
+        topic.skill,
+      ));
+    }
+    if (questions.isEmpty) {
+      questions.add(const _QuizQuestion(
+        'کدام یکی «یک» است؟',
+        '1️⃣',
+        ['دو', 'یک', 'سه'],
+        1,
+        'counting',
+        null,
+      ));
+    }
+    return questions;
+  }
+
   List<_QuizQuestion> _questionsFor(String rawTopic) {
     final topic = rawTopic.trim().toLowerCase();
+    // فاز ۳۰: کوییز هوشمند بر اساس مهارت ضعیف
+    if (topic.contains('هوشمند') || topic.contains('smart')) {
+      return _generateSmartQuestions();
+    }
     if (topic.contains('الفبا') || topic.contains('alphabet')) {
       return const [
         _QuizQuestion('کلمه «بابا» با چه حرفی شروع می‌شود؟', '🔤', ['ب', 'م', 'س', 'ر'], 0, 'alphabet', 'alphabet'),

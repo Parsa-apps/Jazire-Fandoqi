@@ -453,6 +453,16 @@ class _TraceScreenState extends State<_TraceScreen> {
         FandoghiCoach.correct(
           'آفرین! فندقی دید که حرف «${_lesson.letter}» را با دقت نوشتی ✨',
         );
+        // فاز ۲۱: مرحله «بگو» — فندقی تلفظ را می‌گوید و کودک تکرار می‌کند
+        Future<void>.delayed(const Duration(milliseconds: 1500), () {
+          if (!mounted) return;
+          FandoghiCoach.say(
+            'حالا اسم حرف را با من بگو: ${_lesson.letter}… حالا نوبت توست! 🗣️',
+            mood: FandoghiMood.excited,
+            duration: const Duration(seconds: 4),
+          );
+          unawaited(AudioService.pronounceLetter(_lesson.letter));
+        });
       } else {
         FandoghiCoach.say(
           'هنوز کمی بیرون راهنما رفتی. از نقطه‌های کم‌رنگ آرام‌تر رد شو و دوباره امتحان کن 💪',

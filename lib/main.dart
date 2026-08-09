@@ -18,9 +18,12 @@ import 'features/about/privacy_policy_screen.dart';
 import 'features/games/alphabet_academy/alphabet_academy_game.dart';
 import 'features/games/bubble_pop/bubble_pop_game.dart';
 import 'features/games/drawing/drawing_game.dart';
+import 'features/games/academy/academy_game.dart';
+import 'features/games/colors_lab/colors_lab_game.dart';
 import 'features/games/learning_quiz/learning_quiz_game.dart';
 import 'features/games/memory_match/memory_match_game.dart';
 import 'features/games/star_catch/star_catch_game.dart';
+import 'features/games/stories/story_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/parent/parent_panel.dart';
@@ -137,6 +140,7 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
         '/memory_match': (context) => const MemoryMatchGame(),
         '/bubble_pop': (context) => const BubblePopGame(),
         '/star_catch': (context) => const StarCatchGame(),
+        '/colors_lab': (context) => const ColorsLabGame(),
         '/parent': (context) => const ParentPanel(),
         '/about': (context) => const AboutScreen(),
         '/privacy': (context) => const PrivacyPolicyScreen(),
@@ -152,6 +156,28 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
           return MaterialPageRoute(
             settings: settings,
             builder: (_) => _gameFor(launch),
+          );
+        }
+        // فاز ۲۹: داستان‌های تعاملی (/story/<id>)
+        if (name.startsWith('/story/')) {
+          final storyId = name.substring('/story/'.length);
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (_) => StoryScreen(storyId: storyId),
+          );
+        }
+        // فاز ۲۲-۲۸: آکادمی‌های محتوایی (/academy/numbers, /academy/colors ...)
+        if (name.startsWith('/academy/')) {
+          final topicId = name.substring('/academy/'.length);
+          final launch = settings.arguments;
+          final isGameLaunch = launch is GameLaunch;
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (_) => AcademyGame(
+              topicId: topicId,
+              stageId: isGameLaunch ? launch.stageId : null,
+              stageNumber: isGameLaunch ? launch.stageNumber : null,
+            ),
           );
         }
         return null;
