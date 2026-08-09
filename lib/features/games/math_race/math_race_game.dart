@@ -171,8 +171,11 @@ class _MathRaceGameState extends State<MathRaceGame> {
   List<int> _buildOptions() {
     final q = _questions[_index];
     final answer = _answerOf(q);
-    // گزینه‌ها: جواب درست + ۲ گزینه نزدیک
-    return <int>{answer, answer + 1, answer - 1}.toList()..shuffle();
+    // گزینه‌ها: جواب درست + ۲ گزینه نزدیک (همه غیرمنفی — دور ۸:
+    // قبلاً برای جواب ۰ گزینه «۱-» نمایش داده می‌شد)
+    final options = <int>{answer, answer + 1};
+    options.add(answer > 0 ? answer - 1 : answer + 2);
+    return options.toList()..shuffle();
   }
 
   Widget _buildGame() {

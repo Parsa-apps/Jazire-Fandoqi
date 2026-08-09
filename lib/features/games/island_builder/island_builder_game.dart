@@ -68,7 +68,7 @@ class _IslandBuilderGameState extends State<IslandBuilderGame> {
       return;
     }
     final item = _decorations.firstWhere((d) => d.$1 == _selectedItem);
-    final placed = GameData.placeDecoration(slot, item.$1);
+    final placed = GameData.placeDecoration(slot, item.$1, cost: item.$3);
     if (placed) {
       HapticFeedback.lightImpact();
       FandoghiCoach.correct('${item.$2} روی جزیره‌ات نشست!');

@@ -53,6 +53,12 @@ class _ShopState extends ConsumerState<ShopScreen>
       ShopItem('sticker_crown', '👑', 'تاج طلایی', 120, 'تاج پادشاهی'),
       ShopItem('sticker_rocket', '🚀', 'موشک فضایی', 100, 'موشک آماده پرتاب'),
       ShopItem('sticker_unicorn', '🦄', 'تک‌شاخ', 150, 'تک‌شاخ جادویی'),
+      ShopItem('sticker_palm', '🌴', 'نخل جزیره', 60, 'نخل سرسبز'),
+      ShopItem('sticker_flower', '🌺', 'گل بهاری', 45, 'گل رنگارنگ'),
+      ShopItem('sticker_bunny', '🐰', 'خرگوش فندقی', 120, 'خرگوش مهربان'),
+      ShopItem('sticker_butterfly', '🦋', 'پروانه رنگین', 70, 'پروانه رنگی'),
+      ShopItem('sticker_icecream', '🍦', 'بستنی خوشمزه', 55, 'بستنی قیفی'),
+      ShopItem('sticker_sun', '🌞', 'خورشید خانم', 65, 'خورشید خندان'),
     ],
     1: [ // Avatars
       ShopItem('avatar_superhero', '🦸', 'قهرمان', 200, 'آواتار قهرمانی'),

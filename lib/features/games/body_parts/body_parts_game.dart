@@ -132,7 +132,7 @@ class _BodyPartsGameState extends State<BodyPartsGame> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _slot(0, 'سر'),
+                  _slot(0, 'چشم'),
                   _slot(1, 'گوش'),
                 ],
               ),

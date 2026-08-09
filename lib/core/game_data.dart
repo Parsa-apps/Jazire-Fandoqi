@@ -717,14 +717,14 @@ class GameData {
       ownedItems.contains(id) || stickers.contains(id);
 
   // ==================== ISLAND BUILDER (فاز ۴۰) ====================
-  static const int islandDecorationCost = 5;
 
-  /// قرار دادن تزئین روی یک خانه از جزیره. اگر سکه کافی نباشد false.
-  static bool placeDecoration(String slot, String itemId) {
-    if (!_isLoaded || slot.isEmpty || itemId.isEmpty) return false;
+  /// قرار دادن تزئین روی یک خانه از جزیره.
+  /// [cost] قیمت واقعی آیتم است (دور ۸: قبلاً همیشه ۵ کم می‌شد).
+  static bool placeDecoration(String slot, String itemId, {int cost = 5}) {
+    if (!_isLoaded || slot.isEmpty || itemId.isEmpty || cost < 0) return false;
     if (islandDecorations.containsKey(slot)) return false;
-    if (coins < islandDecorationCost) return false;
-    coins -= islandDecorationCost;
+    if (coins < cost) return false;
+    coins -= cost;
     level = min(_maxStoredCounter, (coins ~/ 100) + 1);
     islandDecorations[slot] = itemId;
     _notify();
