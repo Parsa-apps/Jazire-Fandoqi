@@ -33,6 +33,10 @@ dependencies:
   # 🔊 Audio & TTS
   just_audio: 0.9.40
   flutter_tts: 4.1.0
+
+  # 🎬 Video playback (cartoons streamed from Iranian servers)
+  video_player: 2.9.1
+  http: 1.2.2
   
   # 🛠️ Debugging & Logging
   talker: 4.0.0

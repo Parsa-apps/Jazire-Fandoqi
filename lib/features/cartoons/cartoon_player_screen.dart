@@ -6,7 +6,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:amoozesh_fandoghi/app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import 'package:amoozesh_fandoghi/core/audio_service.dart';
+import 'package:amoozesh_fandoghi/core/cartoons/aparat_service.dart';
 import 'package:amoozesh_fandoghi/core/cartoons/cartoon_data.dart';
+import 'package:video_player/video_player.dart';
 import 'package:amoozesh_fandoghi/core/fandoghi_coach.dart';
 import 'package:amoozesh_fandoghi/core/game_data.dart';
 import 'package:amoozesh_fandoghi/features/cartoons/widgets/cartoon_rating_dialog.dart';
@@ -39,11 +41,21 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
   int _secondsWatched = 0;
   Timer? _playbackTimer;
 
+  // پخش‌کننده واقعی (لینک مستقیم از سرور آپارات / CDN ایران)
+  VideoPlayerController? _controller;
+  bool _videoReady = false;
+  bool _videoLoading = false;
+  bool _videoError = false;
+  String? _videoErrorMsg;
+  String? _posterUrl;
+  int _positionMs = 0;
+  int _durationMs = 0;
+
   // Pro cinema features
   bool _cinemaDimMode = false;
   bool _childLock = false;
   bool _eyeProtectMode = false;
-  String _selectedQuality = '1080p HD';
+  String _selectedQuality = '720p';
   double _playbackSpeed = 1.0;
 
   // Popcorn minigame
@@ -69,18 +81,23 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
 
-    // Track watching progress
-    _playbackTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    // بارگذاری ویدیوی واقعی (لینک مستقیم از سرورهای ایران)
+    _loadCurrentEpisode();
+
+    // پایش موقعیت پخش واقعی + ثبت زمان تماشا
+    _playbackTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
       if (!mounted) return;
-      if (_isPlaying && !_childLock) {
+      if (_controller != null && _videoReady) {
+        final pos = _controller!.value.position;
+        final dur = _controller!.value.duration;
         setState(() {
-          _secondsWatched++;
-          _progress = (_progress + 0.005 * _playbackSpeed).clamp(0.0, 1.0);
-          if (_progress >= 1.0) {
-            _onEpisodeFinished();
-          }
+          _positionMs = pos.inMilliseconds;
+          _durationMs = dur.inMilliseconds;
         });
-        GameData.recordCartoonWatched(widget.cartoon.id, durationSeconds: 1);
+        if (_controller!.value.isPlaying && !_childLock) {
+          _secondsWatched++;
+          GameData.recordCartoonWatched(widget.cartoon.id, durationSeconds: 1);
+        }
       }
     });
 
@@ -99,6 +116,8 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
   @override
   void dispose() {
     _playbackTimer?.cancel();
+    _controller?.removeListener(_videoListener);
+    _controller?.dispose();
     _beamCtrl.dispose();
     _pulseCtrl.dispose();
     super.dispose();
@@ -106,31 +125,166 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
 
   CartoonEpisode get _currentEpisode => widget.cartoon.episodes[_currentEpIndex];
 
+  void _videoListener() {
+    if (!mounted || _controller == null) return;
+    if (_controller!.value.isInitialized) {
+      final dur = _controller!.value.duration.inMilliseconds;
+      final pos = _controller!.value.position.inMilliseconds;
+      if (dur > 1000 && pos >= dur - 600) {
+        _onEpisodeFinished();
+      }
+    }
+  }
+
   void _onEpisodeFinished() {
     _progress = 0.0;
     if (_currentEpIndex + 1 < widget.cartoon.episodes.length) {
       _selectEpisode(_currentEpIndex + 1);
     } else {
       _isPlaying = false;
+      if (_controller != null && _videoReady) {
+        _controller!.pause();
+      }
       // Auto open trivia after finishing all
       _openTrivia();
     }
   }
 
+  String? _pickUrl(AparatResolved resolved) {
+    if (!resolved.hasSource) return null;
+    final wanted = _selectedQuality;
+    VideoStream? exact;
+    VideoStream? fallback;
+    for (final s in resolved.streams) {
+      final q = s.quality.toLowerCase();
+      if (q.contains(wanted.toLowerCase()) || wanted.toLowerCase().contains(q)) {
+        exact ??= s;
+      } else if (q.contains('480') || q.contains('360')) {
+        fallback ??= s;
+      } else if (fallback == null) {
+        fallback = s;
+      }
+    }
+    return (exact ?? fallback ?? resolved.streams.first).url;
+  }
+
+  Future<void> _loadCurrentEpisode() async {
+    if (_childLock) return;
+    _controller?.removeListener(_videoListener);
+    await _controller?.dispose();
+    _controller = null;
+
+    if (!mounted) return;
+    setState(() {
+      _videoReady = false;
+      _videoError = false;
+      _videoErrorMsg = null;
+      _videoLoading = true;
+      _positionMs = 0;
+      _durationMs = 0;
+    });
+
+    final ep = _currentEpisode;
+    final query = '${widget.cartoon.title} ${ep.title}';
+
+    final resolved = await AparatService.resolve(
+      videoHash: ep.aparatHash,
+      searchQuery: ep.searchQuery?.isNotEmpty == true
+          ? ep.searchQuery
+          : query,
+    );
+
+    if (!mounted) return;
+
+    final url = _pickUrl(resolved);
+    if (url == null) {
+      setState(() {
+        _videoLoading = false;
+        _videoError = true;
+        _videoErrorMsg = 'لینک پخش در دسترس نیست. اینترنت را بررسی کن یا بعداً امتحان کن.';
+      });
+      return;
+    }
+
+    try {
+      final controller = VideoPlayerController.networkUrl(Uri.parse(url));
+      _controller = controller;
+      controller.addListener(_videoListener);
+      await controller.initialize();
+      if (!mounted) {
+        controller.dispose();
+        return;
+      }
+      await controller.setLooping(false);
+      await controller.setPlaybackSpeed(_playbackSpeed.clamp(0.5, 2.0));
+      if (_isPlaying) {
+        await controller.play();
+      }
+      setState(() {
+        _videoReady = true;
+        _videoLoading = false;
+        _posterUrl = resolved.posterUrl;
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _videoLoading = false;
+          _videoError = true;
+          _videoErrorMsg = 'خطا در بارگذاری ویدیو. دوباره تلاش کن.';
+        });
+      }
+    }
+  }
+
+  Future<void> _retryLoad() => _loadCurrentEpisode();
+
+  Future<void> _changeQuality(String quality) async {
+    if (_childLock) return;
+    if (_selectedQuality == quality && _videoReady) return;
+    HapticFeedback.selectionClick();
+    if (!mounted) return;
+    setState(() => _selectedQuality = quality);
+    await _loadCurrentEpisode();
+    FandoghiCoach.say('کیفیت به $quality تغییر یافت! ✨', mood: FandoghiMood.happy);
+  }
+
+  void _enterFullscreen() {
+    if (_childLock) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _FullscreenVideo(controller: _controller, color: widget.cartoon.themeColor),
+      ),
+    );
+  }
+
   void _togglePlayPause() {
     if (_childLock) return;
     HapticFeedback.lightImpact();
-    setState(() => _isPlaying = !_isPlaying);
-    if (_isPlaying) {
-      FandoghiCoach.say('کارتون ادامه پیدا کرد! ▶', mood: FandoghiMood.happy);
-    } else {
-      FandoghiCoach.say('کارتون متوقف شد ⏸', mood: FandoghiMood.thinking);
+    if (_controller != null && _videoReady) {
+      if (_controller!.value.isPlaying) {
+        _controller!.pause();
+        setState(() => _isPlaying = false);
+        FandoghiCoach.say('کارتون متوقف شد ⏸', mood: FandoghiMood.thinking);
+      } else {
+        _controller!.play();
+        setState(() => _isPlaying = true);
+        FandoghiCoach.say('کارتون ادامه پیدا کرد! ▶', mood: FandoghiMood.happy);
+      }
+      return;
     }
+    setState(() => _isPlaying = !_isPlaying);
   }
 
   void _seekRelative(double delta) {
     if (_childLock) return;
     HapticFeedback.selectionClick();
+    if (_controller != null && _videoReady) {
+      final cur = _controller!.value.position.inMilliseconds;
+      final dur = _controller!.value.duration.inMilliseconds;
+      final target = (cur + (delta * 10 * 1000).round()).clamp(0, dur);
+      _controller!.seekTo(Duration(milliseconds: target));
+      return;
+    }
     setState(() {
       _progress = (_progress + delta).clamp(0.0, 1.0);
     });
@@ -168,9 +322,10 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _qualityTile('1080p HD (بالاترین کیفیت) 🌟', '1080p HD', ctx),
+            _qualityTile('1080p HD (بالاترین کیفیت) 🌟', '1080p', ctx),
             _qualityTile('720p استاندارد (مصرف متناسب) ⚡', '720p', ctx),
             _qualityTile('480p اقتصادی (صرفه‌جویی در اینترنت) 📱', '480p', ctx),
+            _qualityTile('360p سبک (اینترنت کند) 🐢', '360p', ctx),
           ],
         ),
       ),
@@ -183,9 +338,8 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
       title: Text(label, style: TextStyle(fontWeight: selected ? FontWeight.bold : FontWeight.normal, fontSize: 13)),
       trailing: selected ? const Icon(Icons.check_circle_rounded, color: Colors.green) : null,
       onTap: () {
-        setState(() => _selectedQuality = value);
         Navigator.pop(dialogCtx);
-        FandoghiCoach.say('کیفیت به $value تغییر یافت! ✨', mood: FandoghiMood.happy);
+        _changeQuality(value);
       },
     );
   }
@@ -251,6 +405,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
       'قسمت ${_currentEpisode.episodeNumber}: ${_currentEpisode.title} شروع شد! 🎬',
       mood: FandoghiMood.happy,
     );
+    _loadCurrentEpisode();
   }
 
   void _toggleFavorite() {
@@ -598,54 +753,123 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Container(
-                    decoration: BoxDecoration(gradient: widget.cartoon.gradient),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(_currentEpisode.coverEmoji, style: const TextStyle(fontSize: 64))
+                  // لایه پس‌زمینه (پوستر / نماد کارتون)
+                  if (_posterUrl != null)
+                    Positioned.fill(
+                      child: Image.network(
+                        _posterUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          decoration: BoxDecoration(gradient: widget.cartoon.gradient),
+                          child: Center(
+                            child: Text(_currentEpisode.coverEmoji, style: const TextStyle(fontSize: 64)),
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(gradient: widget.cartoon.gradient),
+                        child: Center(
+                          child: Text(_currentEpisode.coverEmoji, style: const TextStyle(fontSize: 64))
                               .animate(onPlay: (c) => c.repeat(reverse: true))
                               .scale(begin: const Offset(0.9, 0.9), end: const Offset(1.1, 1.1), duration: 1500.ms),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.4),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Text(
-                              _currentEpisode.title,
-                              style: AppFonts.vazirmatn(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
 
-                  // Center Play/Pause
-                  Center(
+                  // پخش‌کننده واقعی ویدیو
+                  if (_controller != null && _videoReady)
+                    Positioned.fill(
+                      child: GestureDetector(
+                        onTap: _togglePlayPause,
+                        child: VideoPlayer(_controller!),
+                      ),
+                    ),
+
+                  // نوار بارگذاری
+                  if (_videoLoading)
+                    const Positioned.fill(
+                      child: Center(
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                      ),
+                    ),
+
+                  // پیام خطا + تلاش دوباره
+                  if (_videoError)
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.black.withOpacity(0.65),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.cloud_off_rounded, color: Colors.white, size: 44),
+                            const SizedBox(height: 10),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: Text(
+                                _videoErrorMsg ?? 'خطا در پخش ویدیو.',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(color: Colors.white, fontSize: 13),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            GestureDetector(
+                              onTap: _childLock ? null : _retryLoad,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: const Text('تلاش دوباره', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                  // دکمه مرکزی پخش/توقف
+                  if (!_videoLoading && !_videoError)
+                    Center(
+                      child: GestureDetector(
+                        onTap: _togglePlayPause,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.55),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2.5),
+                          ),
+                          child: Icon(
+                            (_controller != null && _videoReady && _controller!.value.isPlaying)
+                                ? Icons.pause_rounded
+                                : Icons.play_arrow_rounded,
+                            color: Colors.white,
+                            size: 38,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  // دکمه تمام‌صفحه
+                  Positioned(
+                    top: 10,
+                    right: 70,
                     child: GestureDetector(
-                      onTap: _togglePlayPause,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        width: 64,
-                        height: 64,
+                      onTap: _childLock ? null : _enterFullscreen,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.55),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2.5),
+                          color: Colors.black.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white54),
                         ),
-                        child: Icon(
-                          _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                          color: Colors.white,
-                          size: 38,
-                        ),
+                        child: const Icon(Icons.fullscreen_rounded, color: Colors.white, size: 18),
                       ),
                     ),
                   ),
@@ -704,7 +928,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
                   Row(
                     children: [
                       Text(
-                        _formatTime((_progress * 15 * 60).toInt()),
+                        _formatTime(_durationMs > 0 ? _positionMs : (_progress * _estimatedDurationMs()).round()),
                         style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
                       ),
                       Expanded(
@@ -718,13 +942,24 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
                             thumbColor: Colors.white,
                           ),
                           child: Slider(
-                            value: _progress,
-                            onChanged: _childLock ? null : (val) => setState(() => _progress = val),
+                            value: (_durationMs > 1000 ? _positionMs : (_progress * _estimatedDurationMs()).round())
+                                .toDouble()
+                                .clamp(0, _maxSliderMs().toDouble()),
+                            max: _maxSliderMs().toDouble(),
+                            onChanged: _childLock
+                                ? null
+                                : (val) {
+                                    if (_controller != null && _videoReady && _durationMs > 1000) {
+                                      _controller!.seekTo(Duration(milliseconds: val.round()));
+                                    } else {
+                                      setState(() => _progress = (val / _estimatedDurationMs()).clamp(0.0, 1.0));
+                                    }
+                                  },
                           ),
                         ),
                       ),
                       Text(
-                        _currentEpisode.duration,
+                        _formatTime(_durationMs > 0 ? _durationMs : _estimatedDurationMs()),
                         style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
                       ),
                     ],
@@ -734,7 +969,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       IconButton(
-                        onPressed: _childLock ? null : () => _seekRelative(-0.05),
+                        onPressed: _childLock ? null : () => _seekRelative(-1.0),
                         icon: const Icon(Icons.replay_10_rounded, color: Colors.white, size: 28),
                         tooltip: '۱۰ ثانیه عقب',
                       ),
@@ -762,7 +997,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
                         ),
                       ),
                       IconButton(
-                        onPressed: _childLock ? null : () => _seekRelative(0.05),
+                        onPressed: _childLock ? null : () => _seekRelative(1.0),
                         icon: const Icon(Icons.forward_10_rounded, color: Colors.white, size: 28),
                         tooltip: '۱۰ ثانیه جلو',
                       ),
@@ -1156,10 +1391,98 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
     );
   }
 
-  String _formatTime(int seconds) {
-    final m = (seconds ~/ 60).toString().padLeft(2, '0');
-    final s = (seconds % 60).toString().padLeft(2, '0');
+  String _formatTime(int milliseconds) {
+    final totalSeconds = (milliseconds / 1000).round();
+    final m = (totalSeconds ~/ 60).toString().padLeft(2, '0');
+    final s = (totalSeconds % 60).toString().padLeft(2, '0');
     return '$m:$s';
+  }
+
+  int _estimatedDurationMs() {
+    // تبدیل رشتهٔ «MM:SS» به میلی‌ثانیه برای زمان تقریبی قبل از بارگذاری ویدیو
+    final parts = _currentEpisode.duration.split(':');
+    if (parts.length == 2) {
+      final m = int.tryParse(parts[0].replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+      final s = int.tryParse(parts[1].replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+      return (m * 60 + s) * 1000;
+    }
+    return 15 * 60 * 1000;
+  }
+
+  int _maxSliderMs() {
+    if (_durationMs > 1000) return _durationMs;
+    return _estimatedDurationMs();
+  }
+}
+
+/// صفحهٔ تمام‌صفحه برای پخش راحت‌تر کارتون (بدون نیاز به بستن پخش‌کننده اصلی).
+class _FullscreenVideo extends StatefulWidget {
+  final VideoPlayerController? controller;
+  final Color color;
+
+  const _FullscreenVideo({required this.controller, required this.color});
+
+  @override
+  State<_FullscreenVideo> createState() => _FullscreenVideoState();
+}
+
+class _FullscreenVideoState extends State<_FullscreenVideo> {
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    widget.controller?.play();
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Center(
+              child: widget.controller != null && widget.controller!.value.isInitialized
+                  ? AspectRatio(
+                      aspectRatio: widget.controller!.value.aspectRatio,
+                      child: VideoPlayer(widget.controller!),
+                    )
+                  : const CircularProgressIndicator(color: Colors.white),
+            ),
+            Positioned(
+              top: 16,
+              right: 16,
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white54),
+                  ),
+                  child: const Icon(Icons.fullscreen_exit_rounded, color: Colors.white, size: 24),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
