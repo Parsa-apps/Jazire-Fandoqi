@@ -10,6 +10,7 @@ import 'app/app_theme.dart';
 import 'core/audio_service.dart';
 import 'core/game_data.dart';
 import 'core/game_launch.dart';
+import 'core/logger_service.dart';
 import 'features/about/about_screen.dart';
 import 'features/about/privacy_policy_screen.dart';
 import 'features/games/alphabet_academy/alphabet_academy_game.dart';
@@ -46,8 +47,7 @@ Future<void> main() async {
   } catch (error, stackTrace) {
     // Storage failures should degrade to a playable session, not a crash or a
     // blank screen. The next launch can retry persistence automatically.
-    debugPrint('Game data storage unavailable: $error');
-    debugPrintStack(stackTrace: stackTrace);
+    LoggerService.e('Game data storage unavailable', error, stackTrace);
     GameData.useMemoryFallback();
   }
 

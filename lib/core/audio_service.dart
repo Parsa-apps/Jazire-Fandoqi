@@ -1,6 +1,7 @@
 import 'package:just_audio/just_audio.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'game_data.dart';
+import 'logger_service.dart';
 
 class AudioService {
   static final AudioPlayer _effectPlayer = AudioPlayer();
@@ -19,7 +20,7 @@ class AudioService {
       await _effectPlayer.setAsset(assetPath);
       await _effectPlayer.play();
     } catch (e) {
-      print("Error playing effect: $e");
+      LoggerService.e('Error playing effect', e);
     }
   }
 
@@ -36,7 +37,7 @@ class AudioService {
       await _bgmPlayer.setVolume(0.5);
       await _bgmPlayer.play();
     } catch (e) {
-      print("Error playing BGM: $e");
+      LoggerService.e('Error playing BGM', e);
     }
   }
 
