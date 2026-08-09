@@ -3,7 +3,7 @@ package com.parsaapps.amoozesh_fandoghi
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.net.Uri
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import ir.cafebazaar.poolakey.Connection
@@ -17,8 +17,12 @@ import java.util.UUID
 
 /** Native Cafe Bazaar billing bridge. Product IDs are owned by the store dashboard.
  * A release purchase is accepted only after Poolakey's RSA signature validation.
+ *
+ * This must stay a [FlutterFragmentActivity]: plain FlutterActivity extends
+ * android.app.Activity and has no ActivityResultRegistry, which Poolakey needs
+ * to launch Bazaar's payment flow.
  */
-class MainActivity : FlutterActivity() {
+class MainActivity : FlutterFragmentActivity() {
     private val channelName = "kudake_iran/billing"
     private var paymentConnection: Connection? = null
     private var purchaseInProgress = false
