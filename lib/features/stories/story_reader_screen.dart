@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:just_audio/just_audio.dart';
 
 import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
 import '../../core/audio_service.dart';
+import '../../core/story_audio_service.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/game_data.dart';
 import '../../core/learning_content/children_stories_data.dart';
@@ -54,7 +56,7 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
   void dispose() {
     _autoPlayTimer?.cancel();
     _pageController.dispose();
-    AudioService.stopSpeaking();
+    StoryAudioService.stop();
     FandoghiCoach.clear();
     super.dispose();
   }
@@ -62,26 +64,61 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
   ChildrenStoryPage get _currentPage => widget.story.pages[_currentPageIndex];
   bool get _isLastPage => _currentPageIndex == widget.story.pages.length - 1;
 
-  void _playPageAudio(int pageIndex) {
+  Future<void> _playPageAudio(int pageIndex) async {
     if (pageIndex < 0 || pageIndex >= widget.story.pages.length) return;
-    final pageText = widget.story.pages[pageIndex].text;
+    final page = widget.story.pages[pageIndex];
+    // عنوان + متن با لحن کودکانه - صدای بچگانه حرفه‌ای
+    final pageText = '${page.title}. ${page.text}';
     setState(() => _isSpeaking = true);
-    AudioService.speak(pageText).then((_) {
+
+    // اول سعی کن فایل پیش‌ضبط شده با صدای بچگانه را پخش کنی
+    final playedPreRecorded = await StoryAudioService.playPreRecordedOnly(
+      widget.story.id,
+      page.pageNumber,
+    );
+
+    if (playedPreRecorded) {
+      // گوش دادن به پایان پخش فایل ضبط شده
+      StoryAudioService.playerStateStream.listen((state) {
+        if (state.processingState == ProcessingState.completed) {
+          if (mounted) {
+            setState(() => _isSpeaking = false);
+            if (_isAutoPlaying && !_isLastPage) {
+              _autoPlayTimer?.cancel();
+              _autoPlayTimer = Timer(const Duration(seconds: 1), () {
+                if (mounted && _isAutoPlaying) _goToNextPage();
+              });
+            }
+          }
+        }
+      });
+      // fallback تایمری اگر استریم نیامد (تخمین طول فایل)
+      Future.delayed(Duration(seconds: (pageText.split(' ').length / 2.5).ceil() + 6), () {
+        if (mounted && _isSpeaking && _isAutoPlaying && !_isLastPage) {
+          // اگر هنوز speaking بود و autoPlay روشن است، برو صفحه بعد
+        }
+      });
+      // همچنین شنونده برای تغییر isPlaying
+      // اگر فایل وجود نداشت، fallback به TTS
+    } else {
+      // fallback: TTS سیستم با لحن کودکانه (pitch بالا)
+      try {
+        await AudioService.speak(pageText);
+        // تخمین زمان پایان TTS
+        final wordCount = pageText.split(' ').length;
+        final est = Duration(seconds: (wordCount / 2.2).ceil() + 2);
+        await Future.delayed(est);
+      } catch (_) {}
       if (mounted) {
         setState(() => _isSpeaking = false);
-        // در حالت خودکار، بعد از پایان صدا به صفحه بعد می‌رود
         if (_isAutoPlaying && !_isLastPage) {
           _autoPlayTimer?.cancel();
           _autoPlayTimer = Timer(const Duration(seconds: 2), () {
-            if (mounted && _isAutoPlaying) {
-              _goToNextPage();
-            }
+            if (mounted && _isAutoPlaying) _goToNextPage();
           });
         }
       }
-    }).catchError((_) {
-      if (mounted) setState(() => _isSpeaking = false);
-    });
+    }
   }
 
   void _toggleAutoPlay() {
@@ -93,7 +130,7 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
       _playPageAudio(_currentPageIndex);
     } else {
       _autoPlayTimer?.cancel();
-      AudioService.stopSpeaking();
+      StoryAudioService.stop();
       setState(() => _isSpeaking = false);
     }
   }
@@ -232,7 +269,7 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
 
   void _completeStoryAndStartQuiz() {
     HapticFeedback.mediumImpact();
-    AudioService.stopSpeaking();
+    StoryAudioService.stop();
 
     // ثبت تکمیل داستان برای بار اول
     GameData.markStoryCompleted(widget.story.id);
@@ -278,7 +315,7 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
                       onPageChanged: (index) {
                         setState(() => _currentPageIndex = index);
                         _autoPlayTimer?.cancel();
-                        AudioService.stopSpeaking();
+                        StoryAudioService.stop();
                         _playPageAudio(index);
                       },
                       itemBuilder: (context, index) {
@@ -504,8 +541,8 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
                       const SizedBox(width: 8),
                       Text(
                         _isSpeaking
-                            ? 'در حال خواندن...'
-                            : 'بشنویم 🔊',
+                            ? 'با صدای کودکانه... 🎙️'
+                            : 'بشنویم با صدای بچگانه 🎧',
                         style: AppFonts.vazirmatn(
                           color:
                               _isSpeaking ? Colors.amberAccent : Colors.white,

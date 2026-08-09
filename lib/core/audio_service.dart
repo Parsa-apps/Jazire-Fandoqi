@@ -33,13 +33,28 @@ class AudioService {
     if (_initialized) return;
     try {
       await _tts.setLanguage('fa-IR');
-      await _tts.setPitch(1.2); // صدای بامزه فندقی
-      await _tts.setSpeechRate(0.5);
+      await _tts.setPitch(1.35); // صدای بچگانه شیرین — فارسی روان بدون لهجه
+      await _tts.setSpeechRate(0.46); // آرام و شمرده برای درک کودک
       await _tts.setVolume(1.0);
       _initialized = true;
     } catch (error) {
       LoggerService.e('AudioService.init failed', error);
     }
+  }
+
+  /// حالت کودکانه حرفه‌ای — برای قصه‌خوانی
+  static Future<void> enableChildVoice() async {
+    try {
+      await _tts.setPitch(1.4);
+      await _tts.setSpeechRate(0.44);
+    } catch (_) {}
+  }
+
+  static Future<void> enableNormalVoice() async {
+    try {
+      await _tts.setPitch(1.35);
+      await _tts.setSpeechRate(0.46);
+    } catch (_) {}
   }
 
   // ─────────────────────────── افکت ───────────────────────────
