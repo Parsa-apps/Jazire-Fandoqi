@@ -97,6 +97,8 @@ class _MathRaceGameState extends State<MathRaceGame> {
     });
     GameData.recordAnswer(correct: correct, skill: 'math');
     if (correct) {
+      // فاز ۵۲: پیشرفت مأموریت روزانه ریاضی
+      GameData.progressMission('math');
       HapticFeedback.lightImpact();
       FandoghiCoach.correct('آفرین! ماشین جلو رفت 🚗💨');
       unawaited(AudioService.playCorrect());

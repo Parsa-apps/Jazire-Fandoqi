@@ -257,6 +257,8 @@ class _MemoryState extends State<MemoryMatchGame>
 
     GameData.recordAnswer(correct: isMatch, skill: 'memory');
     if (isMatch) {
+      // فاز ۵۲: پیشرفت مأموریت روزانه حافظه
+      GameData.progressMission('memory');
       FandoghiCoach.correct('جفت درست پیدا شد! حافظه‌ات عالی کار می‌کند 🧠🌟');
       HapticFeedback.mediumImpact();
       if (won) {
