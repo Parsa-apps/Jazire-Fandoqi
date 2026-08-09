@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/app_colors.dart';
+import '../../core/fandoghi_coach.dart';
+import '../../core/game_data.dart';
 import '../../presentation/providers/game_state_provider.dart';
 import '../../shared/widgets/fandoghi_welcome.dart';
 import '../island/island_screen.dart';
@@ -34,6 +36,12 @@ class _HomeState extends ConsumerState<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       FandoghiWelcomeOverlay.start(context);
+      // فاز ۹۸: جشن برای کاربران قدیمی — «تو از اول با فندقی بودی!»
+      if (GameData.playedGames.length >= 5 || GameData.streak >= 7) {
+        FandoghiCoach.celebrate(
+          'تو از اول با فندقی بودی! ممنون که هم‌سفر ما هستی 🌟',
+        );
+      }
     });
   }
 

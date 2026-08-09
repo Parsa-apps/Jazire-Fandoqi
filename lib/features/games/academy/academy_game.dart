@@ -13,6 +13,7 @@ import '../../../core/learning_content/learning_topics.dart';
 import '../../../core/play_limit.dart';
 import '../../../shared/widgets/child_touch_target.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
+import '../../../shared/widgets/particle_celebration.dart';
 import '../../../shared/widgets/premium_button.dart';
 
 /// ────────────────────────────────────────────────────────────
@@ -334,7 +335,15 @@ class _AcademyGameState extends State<AcademyGame> {
 
   Widget _buildResult() {
     final percent = _roundCards.isEmpty ? 0 : (_correct / _roundCards.length);
-    return Center(
+    return Stack(
+      children: [
+        // فاز ۶۰: جشن ذرات برای هر برد
+        if (percent >= 0.6)
+          const ParticleCelebration(
+            trigger: true,
+            particleCount: 40,
+          ),
+        Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(28),
         child: Column(
@@ -382,7 +391,8 @@ class _AcademyGameState extends State<AcademyGame> {
             ),
           ],
         ),
-      ),
+        ),
+      ],
     );
   }
 }

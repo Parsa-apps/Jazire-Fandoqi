@@ -26,12 +26,14 @@ class BubblePopGame extends StatefulWidget {
   State<BubblePopGame> createState() => _BubblePopState();
 }
 
-class _BubblePopState extends State<BubblePopGame> {
+class _BubblePopState extends State<BubblePopGame>
+    with WidgetsBindingObserver {
   late BubblePopFlameGame _game;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     FandoghiCoach.enablePersistentPresence();
     _game = BubblePopFlameGame(
       stageId: widget.stageId,
@@ -49,8 +51,20 @@ class _BubblePopState extends State<BubblePopGame> {
     });
   }
 
+  /// فاز ۶۵: توقف موتور Flame در پس‌زمینه (صرفه‌جویی باتری)
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _game.pauseEngine();
+    } else if (state == AppLifecycleState.resumed) {
+      _game.resumeEngine();
+    }
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     FandoghiCoach.clear();
     super.dispose();
   }

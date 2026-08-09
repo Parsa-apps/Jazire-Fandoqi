@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
@@ -19,16 +21,48 @@ class ParentPanel extends ConsumerStatefulWidget {
   ConsumerState<ParentPanel> createState() => _ParentPanelState();
 }
 
-class _ParentPanelState extends ConsumerState<ParentPanel> {
+class _ParentPanelState extends ConsumerState<ParentPanel>
+    with WidgetsBindingObserver {
   late int _timeLimit;
   String _pin = '';
   bool _isUnlocked = false;
+  Timer? _lockTimer; // فاز ۶۱: قفل خودکار بعد از ۲ دقیقه
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _timeLimit = GameData.timeLimitMinutes;
     _isUnlocked = !GameData.hasParentPin();
+    _armLockTimer();
+  }
+
+  /// فاز ۶۱: بعد از ۲ دقیقه بی‌فعالیتی، پنل دوباره قفل می‌شود.
+  void _armLockTimer() {
+    _lockTimer?.cancel();
+    _lockTimer = Timer(const Duration(minutes: 2), () {
+      if (mounted && _isUnlocked) {
+        setState(() => _isUnlocked = false);
+      }
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // فاز ۶۱: برگشت از پس‌زمینه = دوباره قفل
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      if (mounted && _isUnlocked) {
+        setState(() => _isUnlocked = false);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _lockTimer?.cancel();
+    super.dispose();
   }
 
   @override

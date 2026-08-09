@@ -542,15 +542,32 @@ class _ProfileState extends ConsumerState<ProfileScreen>
 
   // ─── ACHIEVEMENTS ────────────────────────────
   Widget _buildAchievements() {
+    // فاز ۵۴: ۲۴ مدال (کاتالوگ دستاوردها)
     final allAch = [
+      {'id': 'first_star', 'emoji': '⭐', 'title': 'اولین ستاره', 'desc': 'اولین ستاره‌ات'},
+      {'id': 'star_50', 'emoji': '🌟', 'title': 'جمع‌کننده', 'desc': '۵۰ ستاره'},
+      {'id': 'star_200', 'emoji': '✨', 'title': 'استاد ستاره', 'desc': '۲۰۰ ستاره'},
+      {'id': 'correct_50', 'emoji': '🎯', 'title': 'تیرانداز', 'desc': '۵۰ جواب درست'},
+      {'id': 'correct_100', 'emoji': '🏹', 'title': 'ماهر', 'desc': '۱۰۰ جواب درست'},
+      {'id': 'correct_500', 'emoji': '🏅', 'title': 'افسانه', 'desc': '۵۰۰ جواب درست'},
+      {'id': 'streak_3', 'emoji': '🔥', 'title': '۳ روز پیاپی', 'desc': '۳ روز متوالی'},
+      {'id': 'streak_7', 'emoji': '🏆', 'title': 'هفته طلایی', 'desc': '۷ روز متوالی'},
+      {'id': 'streak_30', 'emoji': '👑', 'title': 'ماه پیوسته', 'desc': '۳۰ روز متوالی'},
+      {'id': 'coin_500', 'emoji': '💰', 'title': 'ثروتمند', 'desc': '۵۰۰ سکه'},
+      {'id': 'coin_1000', 'emoji': '💎', 'title': 'سرمایه‌دار', 'desc': '۱۰۰۰ سکه'},
+      {'id': 'coin_5000', 'emoji': '🤑', 'title': 'میلیونر کوچولو', 'desc': '۵۰۰۰ سکه'},
+      {'id': 'level_3', 'emoji': '🌱', 'title': 'نوآموز', 'desc': 'لول ۳'},
+      {'id': 'level_5', 'emoji': '🌟', 'title': 'استاد', 'desc': 'لول ۵'},
+      {'id': 'level_10', 'emoji': '🚀', 'title': 'قهرمان', 'desc': 'لول ۱۰'},
+      {'id': 'level_20', 'emoji': '👑', 'title': 'افسانه', 'desc': 'لول ۲۰'},
+      {'id': 'collector', 'emoji': '🎁', 'title': 'کلکسیونر', 'desc': '۵ استیکر'},
+      {'id': 'mega_collector', 'emoji': '🧸', 'title': 'مگا کلکسیونر', 'desc': '۱۰ استیکر'},
+      {'id': 'game_explorer', 'emoji': '🎮', 'title': 'کاوشگر', 'desc': '۵ بازی مختلف'},
+      {'id': 'alphabet_master', 'emoji': '🔤', 'title': 'استاد الفبا', 'desc': 'تمرین الفبا'},
       {'id': 'math_50', 'emoji': '🧮', 'title': 'ریاضیدان', 'desc': '۵۰ امتیاز ریاضی'},
       {'id': 'memory_king', 'emoji': '🧠', 'title': 'شاه حافظه', 'desc': 'بازی حافظه کامل'},
-      {'id': 'streak_3', 'emoji': '🔥', 'title': '۳ روز پیاپی', 'desc': '۳ روز متوالی'},
-      {'id': 'streak_7', 'emoji': '🏆', 'title': '۷ روز پیاپی', 'desc': '۷ روز متوالی'},
-      {'id': 'coin_500', 'emoji': '💰', 'title': 'ثروتمند', 'desc': '۵۰۰ سکه'},
-      {'id': 'level_5', 'emoji': '🌟', 'title': 'استاد', 'desc': 'لول ۵'},
-      {'id': 'correct_100', 'emoji': '🎯', 'title': 'ماهر', 'desc': '۱۰۰ جواب درست'},
-      {'id': 'collector', 'emoji': '🎁', 'title': 'کلکسیونر', 'desc': '۵ استیکر'},
+      {'id': 'artist', 'emoji': '🎨', 'title': 'هنرمند', 'desc': 'نقاشی ذخیره کن'},
+      {'id': 'story_teller', 'emoji': '📖', 'title': 'قصه‌گو', 'desc': 'داستان تعاملی بخوان'},
     ];
 
     return Padding(

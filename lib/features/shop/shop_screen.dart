@@ -251,6 +251,12 @@ class _ShopState extends ConsumerState<ShopScreen>
                   ),
                   const Spacer(),
                   _buildCoinDisplay(),
+                  // فاز ۵۹: آلبوم استیکر
+                  const SizedBox(width: 8),
+                  _glassBtn(Icons.menu_book_rounded, () {
+                    HapticFeedback.lightImpact();
+                    Navigator.pushNamed(context, '/stickers');
+                  }),
                 ],
               ),
             ),

@@ -957,7 +957,8 @@ class _DashboardState extends ConsumerState<DashboardTab> {
                     ),
                     const SizedBox(height: 6),
                     const Text(
-                      'بیا ۲ دقیقه چشم‌ها را استراحت بدهیم؛ بعد قوی‌تر برمی‌گردی 🌈',
+                      // فاز ۶۲: قانون 20-20-20 — هر ۲۰ دقیقه، ۲۰ ثانیه به فاصله ۶ متری نگاه کن
+                      'قانون ۲۰-۲۰-۲۰: بیا ۲۰ ثانیه به جای دور نگاه کنیم؛ چشم‌ها خسته نشوند 🌈',
                       style: TextStyle(fontSize: 13, height: 1.5),
                     ),
                   ],

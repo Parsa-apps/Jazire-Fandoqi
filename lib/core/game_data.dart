@@ -15,7 +15,8 @@ import '../data/datasources/hive_player_store.dart';
 class GameData {
   GameData._();
 
-  static const int maxStageCount = 12;
+  /// فاز ۵۸: نقشه ۵۰ مرحله‌ای
+  static const int maxStageCount = 50;
   static const int _maxStoredCounter = 100000000;
 
   static SharedPreferences? _prefs;
@@ -67,6 +68,8 @@ class GameData {
     'alphabet': 0,
     'drawing': 0,
     'colors': 0,
+    'math': 0,
+    'memory': 0,
   };
   static Map<String, int> skills = <String, int>{
     'math': 0,
@@ -656,6 +659,8 @@ class GameData {
     'alphabet': 1,
     'drawing': 1,
     'colors': 1,
+    'math': 3, // فاز ۵۲: مأموریت ریاضی
+    'memory': 1, // فاز ۵۲: مأموریت حافظه
   };
 
   static void progressMission(String id, {int amount = 1}) {
@@ -1000,6 +1005,8 @@ class GameData {
       'alphabet': 0,
       'drawing': 0,
       'colors': 0,
+      'math': 0,
+      'memory': 0,
     };
     skills = <String, int>{
       'math': 0,

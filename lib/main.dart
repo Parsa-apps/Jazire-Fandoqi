@@ -33,6 +33,7 @@ import 'features/games/memory_match/memory_match_game.dart';
 import 'features/games/star_catch/star_catch_game.dart';
 import 'features/games/stories/story_screen.dart';
 import 'features/home/home_screen.dart';
+import 'features/profile/sticker_album_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/parent/parent_panel.dart';
 import 'features/splash/splash_screen.dart';
@@ -158,6 +159,7 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
         '/body_parts': (context) => const BodyPartsGame(),
         '/island_builder': (context) => const IslandBuilderGame(),
         '/buddy_chat': (context) => const BuddyChatScreen(),
+        '/stickers': (context) => const StickerAlbumScreen(),
         '/parent': (context) => const ParentPanel(),
         '/about': (context) => const AboutScreen(),
         '/privacy': (context) => const PrivacyPolicyScreen(),
@@ -243,6 +245,86 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
         stageNumber: launch.stageNumber,
       );
     }
+    if (name.contains('پازل') || name.contains('puzzle')) {
+      return PuzzleGame(
+        stageId: launch.stageId,
+        stageNumber: launch.stageNumber,
+      );
+    }
+    if (name.contains('الگو') || name.contains('pattern')) {
+      return PatternGame(
+        stageId: launch.stageId,
+        stageNumber: launch.stageNumber,
+      );
+    }
+    if (name.contains('بدن') || name.contains('body')) {
+      return BodyPartsGame(
+        stageId: launch.stageId,
+        stageNumber: launch.stageNumber,
+      );
+    }
+    if (name.contains('جزیره‌ساز') || name.contains('island_builder')) {
+      return const IslandBuilderGame();
+    }
+    if (name.contains('داستان') || name.contains('story')) {
+      return const StoryScreen(storyId: 'helpful_rabbit');
+    }
+    if (name.contains('مسابقه') || name.contains('math') ||
+        name.contains('race')) {
+      return MathRaceGame(
+        stageId: launch.stageId,
+        stageNumber: launch.stageNumber,
+      );
+    }
+    if (name.contains('بشنو') || name.contains('sound')) {
+      return SoundMatchGame(
+        stageId: launch.stageId,
+        stageNumber: launch.stageNumber,
+      );
+    }
+    if (name.contains('رنگ') || name.contains('color')) {
+      return AcademyGame(
+        topicId: 'colors',
+        stageId: launch.stageId,
+        stageNumber: launch.stageNumber,
+      );
+    }
+    if (name.contains('حیوان') || name.contains('animal')) {
+      return AcademyGame(
+        topicId: 'animals',
+        stageId: launch.stageId,
+        stageNumber: launch.stageNumber,
+      );
+    }
+    if (name.contains('شغل') || name.contains('job')) {
+      return AcademyGame(
+        topicId: 'jobs',
+        stageId: launch.stageId,
+        stageNumber: launch.stageNumber,
+      );
+    }
+    if (name.contains('احساس') || name.contains('emotion')) {
+      return AcademyGame(
+        topicId: 'emotions',
+        stageId: launch.stageId,
+        stageNumber: launch.stageNumber,
+      );
+    }
+    if (name.contains('میوه') || name.contains('fruit')) {
+      return AcademyGame(
+        topicId: 'fruits',
+        stageId: launch.stageId,
+        stageNumber: launch.stageNumber,
+      );
+    }
+    if (name.contains('عدد') || name.contains('number') ||
+        name.contains('شمار')) {
+      return AcademyGame(
+        topicId: 'numbers',
+        stageId: launch.stageId,
+        stageNumber: launch.stageNumber,
+      );
+    }
 
     return LearningQuizGame(
       topic: launch.gameName,
@@ -264,6 +346,7 @@ class _PlayTimeTracker extends StatefulWidget {
 class _PlayTimeTrackerState extends State<_PlayTimeTracker>
     with WidgetsBindingObserver {
   Timer? _timer;
+  Timer? _autosaveTimer;
   bool _foreground = true;
 
   @override
@@ -273,6 +356,12 @@ class _PlayTimeTrackerState extends State<_PlayTimeTracker>
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (_foreground && GameData.onboardingSeen && !GameData.isDailyLimitReached) {
         GameData.addPlayTime();
+      }
+    });
+    // فاز ۶۷: ذخیره خودکار هر ۱۰ ثانیه — بازیابی پس از کرش
+    _autosaveTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (_foreground && GameData.isLoaded) {
+        unawaited(GameData.save());
       }
     });
   }
@@ -286,6 +375,7 @@ class _PlayTimeTrackerState extends State<_PlayTimeTracker>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
+    _autosaveTimer?.cancel();
     super.dispose();
   }
 
