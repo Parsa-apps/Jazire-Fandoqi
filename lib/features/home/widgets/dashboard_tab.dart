@@ -174,7 +174,7 @@ class _DashboardState extends ConsumerState<DashboardTab> {
                             children: [
                               Text('سلام ${GameData.childName.isNotEmpty ? GameData.childName : 'دوست کوچولو'}! 👋',
                                 maxLines: 1, overflow: TextOverflow.ellipsis,
-                                style: AppFonts.vazirmatn(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, shadows: const [Shadow(color: Color(0x66000000), blurRadius: 8, offset: Offset(0, 2))]),
+                                style: AppFonts.vazirmatn(textStyle: const TextStyle(shadows: [Shadow(color: Color(0x66000000), blurRadius: 8, offset: Offset(0, 2))]), color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
                               ).animate().fadeIn(delay: 120.ms).slideX(begin: .12),
                               const SizedBox(height: 3),
                               Container(
