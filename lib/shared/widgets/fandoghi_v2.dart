@@ -7,7 +7,7 @@ import 'fandoghi_bunny.dart';
 export '../../core/fandoghi_models.dart';
 
 /// ═══════════════════════════════════════════════
-/// 🐰 Fandoghi V2 — Backwards-compatible wrapper.
+/// 🧒 Fandoghi V2 — Backwards-compatible wrapper.
 ///
 /// The original V2 widget was a CustomPaint hazelnut. We replaced it
 /// with the cute [FandoghiBunny] image everywhere it was used, but
@@ -23,9 +23,8 @@ class FandoghiV2 extends StatelessWidget {
   final String? message;
   final VoidCallback? onTap;
 
-  /// Kept for API compatibility. The bunny has a single friendly
-  /// smile and ignores mood switches.
-  // ignore: unused_element_parameter
+  /// حالت احساسی مسکات. حالت‌هایی که تصویر اختصاصی دارند (شادی، جشن،
+  /// فکر کردن، تعجب) با همان تصویر واقعی نمایش داده می‌شوند.
   final FandoghiMood mood;
 
   const FandoghiV2({
@@ -47,9 +46,10 @@ class FandoghiV2 extends StatelessWidget {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            FandoghiBunny(size: size),
-            // فاز ۱۲: صورت احساسی فندقی V3 — ایموجی شفاف، بدون هاله سفید
-            if (mood != FandoghiMood.happy)
+            FandoghiBunny(size: size, mood: mood),
+            // ایموجی احساس فقط برای حالت‌هایی نشان داده می‌شود که هنوز
+            // تصویر اختصاصی ندارند (خواب‌آلود، خجالتی، ناراحت).
+            if (mood != FandoghiMood.happy && mood.portraitAsset == null)
               Positioned(
                 right: -size * 0.12,
                 top: -size * 0.12,

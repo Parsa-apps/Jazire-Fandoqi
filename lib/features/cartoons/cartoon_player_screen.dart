@@ -11,6 +11,7 @@ import 'package:amoozesh_fandoghi/core/cartoons/cartoon_data.dart';
 import 'package:video_player/video_player.dart';
 import 'package:amoozesh_fandoghi/core/fandoghi_coach.dart';
 import 'package:amoozesh_fandoghi/core/game_data.dart';
+import 'package:amoozesh_fandoghi/features/cartoons/widgets/cartoon_cover.dart';
 import 'package:amoozesh_fandoghi/features/cartoons/widgets/cartoon_rating_dialog.dart';
 import 'package:amoozesh_fandoghi/features/cartoons/widgets/cartoon_trivia_dialog.dart';
 import 'package:amoozesh_fandoghi/shared/widgets/fandoghi_v2.dart';
@@ -1116,15 +1117,19 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
         children: [
           Row(
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  gradient: widget.cartoon.gradient,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Center(
-                  child: Text(widget.cartoon.coverEmoji, style: const TextStyle(fontSize: 24)),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: SizedBox(
+                  width: 52,
+                  height: 52,
+                  child: CartoonCoverImage(
+                    videoHash: _currentEpisode.aparatHash,
+                    searchQuery: _currentEpisode.searchQuery ?? widget.cartoon.englishTitle,
+                    fallbackEmoji: widget.cartoon.coverEmoji,
+                    fallbackGradient: widget.cartoon.gradient,
+                    emojiSize: 24,
+                    cacheWidth: 160,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1345,17 +1350,26 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
             child: ListTile(
               onTap: () => _selectEpisode(index),
               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-              leading: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: isCurrent ? widget.cartoon.themeColor : Colors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
+              leading: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: 58,
+                  height: 44,
                   child: isCurrent
-                      ? const Icon(Icons.equalizer_rounded, color: Colors.white, size: 24)
-                      : Text(ep.coverEmoji, style: const TextStyle(fontSize: 22)),
+                      ? Container(
+                          color: widget.cartoon.themeColor,
+                          child: const Center(
+                            child: Icon(Icons.equalizer_rounded, color: Colors.white, size: 24),
+                          ),
+                        )
+                      : CartoonCoverImage(
+                          videoHash: ep.aparatHash,
+                          searchQuery: ep.searchQuery ?? widget.cartoon.englishTitle,
+                          fallbackEmoji: ep.coverEmoji,
+                          fallbackGradient: widget.cartoon.gradient,
+                          emojiSize: 22,
+                          cacheWidth: 160,
+                        ),
                 ),
               ),
               title: Text(

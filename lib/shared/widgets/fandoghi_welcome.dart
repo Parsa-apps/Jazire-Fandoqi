@@ -9,7 +9,7 @@ import 'draggable_fandoghi.dart';
 import 'fandoghi_bunny.dart';
 
 /// ═══════════════════════════════════════════════
-/// 🐰 Fandoghi Welcome — Cinematic intro animation.
+/// 🧒 Fandoghi Welcome — Cinematic intro animation.
 ///
 /// Plays once per app session:
 ///   1. Soft scrim fades in.
@@ -402,7 +402,7 @@ class _WelcomeBubble extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'من فندقی هستم، دوست و مربی تو! 🐰\nهر وقت کمک خواستی من اینجام.',
+                  'من فندقی هستم، دوست و مربی تو! 🧒\nهر وقت کمک خواستی من اینجام.',
                   textAlign: TextAlign.center,
                   style: AppFonts.balooBhaijaan2(
                     color: AppColors.textPrimary,

@@ -55,7 +55,7 @@ class _ShopState extends ConsumerState<ShopScreen>
       ShopItem('sticker_unicorn', '🦄', 'تک‌شاخ', 150, 'تک‌شاخ جادویی'),
       ShopItem('sticker_palm', '🌴', 'نخل جزیره', 60, 'نخل سرسبز'),
       ShopItem('sticker_flower', '🌺', 'گل بهاری', 45, 'گل رنگارنگ'),
-      ShopItem('sticker_bunny', '🐰', 'خرگوش فندقی', 120, 'خرگوش مهربان'),
+      ShopItem('sticker_bunny', '🧒', 'فندقی کوچولو', 120, 'مسکات بامزه آموزش فندقی'),
       ShopItem('sticker_butterfly', '🦋', 'پروانه رنگین', 70, 'پروانه رنگی'),
       ShopItem('sticker_icecream', '🍦', 'بستنی خوشمزه', 55, 'بستنی قیفی'),
       ShopItem('sticker_sun', '🌞', 'خورشید خانم', 65, 'خورشید خندان'),

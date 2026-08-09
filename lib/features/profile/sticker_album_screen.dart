@@ -49,7 +49,7 @@ class _StickerAlbumScreenState extends State<StickerAlbumScreen> {
     ('sticker_unicorn', '🦄', 'تک‌شاخ جادویی', 'games'),
     ('sticker_palm', '🌴', 'نخل جزیره', 'games'),
     ('sticker_flower', '🌺', 'گل بهاری', 'games'),
-    ('sticker_bunny', '🐰', 'خرگوش فندقی', 'games'),
+    ('sticker_bunny', '🧒', 'فندقی کوچولو', 'games'),
     ('sticker_butterfly', '🦋', 'پروانه رنگین', 'games'),
     ('sticker_icecream', '🍦', 'بستنی خوشمزه', 'games'),
     ('sticker_sun', '🌞', 'خورشید خانم', 'games'),

@@ -1,24 +1,33 @@
 import 'package:flutter/material.dart';
 
 import '../../app/app_colors.dart';
+import '../../core/fandoghi_models.dart';
 
 /// The visual asset used for فندقی throughout the app.
 ///
-/// The mascot artwork is kept as a transparent, square PNG so it can preserve
-/// the full teacher character (ears, pointer, book and feet) in every slot.
-/// Keeping the image inside a normal square frame also means a future mascot
-/// asset can be swapped in without changing any of the UI call sites.
+/// Since the rebrand, «فندقی» is a cheerful toddler boy (teal hoodie with a
+/// hazelnut badge) instead of the old teacher bunny. The artwork is kept as
+/// a transparent, square PNG so it preserves the full character (hair tuft,
+/// waving hand and sneakers) in every slot. Several emotional expressions
+/// exist (cheer / think / wow); pass [mood] to pick one. Keeping the image
+/// inside a normal square frame also means a future mascot asset can be
+/// swapped in without changing any of the UI call sites.
 class FandoghiBunny extends StatelessWidget {
-  /// Logical size of the bunny (width and height of the square frame).
+  /// Logical size of the mascot (width and height of the square frame).
   final double size;
   final BoxFit fit;
   final Alignment alignment;
+
+  /// حالت احساسی — برای حالت‌هایی که تصویر اختصاصی دارند (شادی، جشن،
+  /// فکر کردن، تعجب) همان تصویر نشان داده می‌شود وگرنه تصویر پیش‌فرض.
+  final FandoghiMood mood;
 
   const FandoghiBunny({
     super.key,
     this.size = 96,
     this.fit = BoxFit.contain,
     this.alignment = Alignment.center,
+    this.mood = FandoghiMood.happy,
   });
 
   @override
@@ -27,7 +36,7 @@ class FandoghiBunny extends StatelessWidget {
       width: size,
       height: size,
       child: Image.asset(
-        'assets/mascot/fandoghi_bunny.png',
+        mood.portraitAsset ?? 'assets/mascot/fandoghi_baby.png',
         fit: fit,
         alignment: alignment,
         filterQuality: FilterQuality.high,
@@ -59,11 +68,11 @@ class _FallbackBunny extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: const Color(0xFFFFE4EC),
+        color: const Color(0xFFFFF0DB),
         shape: BoxShape.circle,
         border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 2),
       ),
-      child: Text('🐰', style: TextStyle(fontSize: size * 0.6)),
+      child: Text('🧒', style: TextStyle(fontSize: size * 0.6)),
     );
   }
 }
