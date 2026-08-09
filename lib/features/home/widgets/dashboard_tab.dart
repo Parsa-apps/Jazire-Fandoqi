@@ -72,6 +72,9 @@ class _DashboardState extends ConsumerState<DashboardTab> {
 
       // 🎬 بنر کارتون‌ها و سینما کودک
       SliverToBoxAdapter(child: _buildCartoonBanner()),
+
+      // 📚 بنر قصه‌خانه و داستان‌های کودکانه
+      SliverToBoxAdapter(child: _buildStoriesBanner()),
     ];
 
     // مأموریت‌ها فقط یک‌بار نمایش داده می‌شوند:
@@ -191,6 +194,12 @@ class _DashboardState extends ConsumerState<DashboardTab> {
                         _glassIconButton(
                           Icons.movie_rounded,
                           () => Navigator.pushNamed(context, '/cartoons'),
+                        ),
+                        const SizedBox(width: 8),
+                        // Stories Hub Button
+                        _glassIconButton(
+                          Icons.menu_book_rounded,
+                          () => Navigator.pushNamed(context, '/stories'),
                         ),
                         const SizedBox(width: 8),
                         // Settings button
@@ -638,6 +647,115 @@ class _DashboardState extends ConsumerState<DashboardTab> {
         ),
       ),
     ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.2);
+  }
+
+  // ─── STORIES BANNER ──────────────────────────
+  Widget _buildStoriesBanner() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          Navigator.pushNamed(context, '/stories');
+        },
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF5C6BC0),
+                Color(0xFF7E57C2),
+                Color(0xFFAB47BC),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF7E57C2).withOpacity(0.35),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Center(
+                  child: Text('📚✨', style: TextStyle(fontSize: 26)),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'قصه‌خانه و داستان‌های کودکانه',
+                          style: AppFonts.vazirmatn(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.25),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text('بخش جدید', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '۱۰ داستان مصور • پند اخلاقی • ۳ ستاره پاداش',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.85),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.menu_book_rounded, color: Color(0xFF5C6BC0), size: 18),
+                    const SizedBox(width: 4),
+                    Text(
+                      'بخوانیم',
+                      style: AppFonts.vazirmatn(
+                        color: const Color(0xFF5C6BC0),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).animate().fadeIn(delay: 280.ms).slideY(begin: 0.2);
   }
 
   // ─── DAILY MISSIONS ───────────────────────────

@@ -121,6 +121,7 @@ class GameData {
 
   // فاز ۲۹ (تکمیل): داستان‌های خوانده‌شده — پاداش فقط یک‌بار برای هر داستان
   static List<String> completedStories = <String>[];
+  static List<String> storyFavorites = <String>[];
 
   // 🎬 کارتون‌ها و انیمیشن‌ها — علاقه‌مندی‌ها و تاریخچه تماشا
   static List<String> cartoonFavorites = <String>[];
@@ -216,6 +217,7 @@ class GameData {
       openedPrizes = _readList('op');
       islandDecorations = _readIslandDecorations();
       completedStories = _readList('stories');
+      storyFavorites = _readList('sfav');
       cartoonFavorites = _readList('cfav');
       watchedCartoons = _readList('cw');
       cartoonWatchSeconds = _readInt('cws', 0);
@@ -399,6 +401,7 @@ class GameData {
     prizeBoxTokens = asInt('pbt', 0).clamp(0, _maxStoredCounter);
     openedPrizes = asList('op');
     completedStories = asList('stories');
+    storyFavorites = asList('sfav');
     cartoonFavorites = asList('cfav');
     watchedCartoons = asList('cw');
     cartoonWatchSeconds = asInt('cws', 0).clamp(0, _maxStoredCounter);
@@ -462,6 +465,7 @@ class GameData {
         'pbt': prizeBoxTokens,
         'op': openedPrizes,
         'stories': completedStories,
+        'sfav': storyFavorites,
         'cfav': cartoonFavorites,
         'cw': watchedCartoons,
         'cws': cartoonWatchSeconds,
@@ -602,6 +606,7 @@ class GameData {
     await prefs.setInt('pbt', prizeBoxTokens);
     await prefs.setStringList('op', List<String>.from(openedPrizes));
     await prefs.setStringList('stories', List<String>.from(completedStories));
+    await prefs.setStringList('sfav', List<String>.from(storyFavorites));
     await prefs.setStringList('cfav', List<String>.from(cartoonFavorites));
     await prefs.setStringList('cw', List<String>.from(watchedCartoons));
     await prefs.setInt('cws', cartoonWatchSeconds);
@@ -777,6 +782,19 @@ class GameData {
     _notify();
     unawaited(save());
     return true;
+  }
+
+  static bool isStoryFavorite(String id) => storyFavorites.contains(id);
+
+  static void toggleStoryFavorite(String id) {
+    if (!_isLoaded || id.isEmpty) return;
+    if (storyFavorites.contains(id)) {
+      storyFavorites.remove(id);
+    } else {
+      storyFavorites.add(id);
+    }
+    _notify();
+    unawaited(save());
   }
 
   // ==================== CARTOONS (کارتون‌ها) ====================
@@ -1139,6 +1157,7 @@ class GameData {
     openedPrizes = <String>[];
     islandDecorations = <String, String>{};
     completedStories = <String>[];
+    storyFavorites = <String>[];
     cartoonFavorites = <String>[];
     watchedCartoons = <String>[];
     cartoonWatchSeconds = 0;
