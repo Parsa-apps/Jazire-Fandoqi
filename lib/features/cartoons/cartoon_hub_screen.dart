@@ -3,11 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:amoozesh_fandoghi/app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import 'package:amoozesh_fandoghi/core/ai_system.dart';
 import 'package:amoozesh_fandoghi/core/cartoons/cartoon_data.dart';
 import 'package:amoozesh_fandoghi/core/fandoghi_coach.dart';
 import 'package:amoozesh_fandoghi/core/game_data.dart';
 import 'package:amoozesh_fandoghi/features/cartoons/cartoon_player_screen.dart';
 import 'package:amoozesh_fandoghi/features/cartoons/widgets/cartoon_rating_dialog.dart';
+import 'package:amoozesh_fandoghi/features/profile/sticker_album_screen.dart';
 import 'package:amoozesh_fandoghi/shared/widgets/fandoghi_v2.dart';
 
 /// ═══════════════════════════════════════════════════════════════
@@ -26,10 +28,12 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
   int _featuredIndex = 0;
   bool _onlyFavorites = false;
+  late String _suggestedCartoonId;
 
   @override
   void initState() {
     super.initState();
+    _suggestedCartoonId = AI.suggestCartoon();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         FandoghiCoach.say(
@@ -75,9 +79,17 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
     Navigator.of(context).pushReplacementNamed('/home');
   }
 
+  void _openStickerAlbum() {
+    HapticFeedback.lightImpact();
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const StickerAlbumScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final featuredCartoons = CartoonData.getFeatured();
+    final suggestedCartoon = CartoonData.getCartoonById(_suggestedCartoonId);
 
     return Scaffold(
       backgroundColor: const Color(0xFF131127),
@@ -99,6 +111,12 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                   if (_searchQuery.isEmpty && !_onlyFavorites)
                     SliverToBoxAdapter(
                       child: _buildFeaturedCarousel(featuredCartoons),
+                    ),
+
+                  // AI Recommendation Banner (if exists and no search)
+                  if (_searchQuery.isEmpty && !_onlyFavorites && suggestedCartoon != null)
+                    SliverToBoxAdapter(
+                      child: _buildAiSuggestionCard(suggestedCartoon),
                     ),
 
                   // Search & Quick Filter Bar
@@ -168,7 +186,22 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
             ),
           ),
 
-          // Coins & Stars Pill
+          // Sticker Album Button
+          GestureDetector(
+            onTap: _openStickerAlbum,
+            child: Container(
+              margin: const EdgeInsets.only(left: 8),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.pinkAccent.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.pinkAccent.withOpacity(0.4)),
+              ),
+              child: const Icon(Icons.auto_awesome_motion_rounded, color: Colors.pinkAccent, size: 20),
+            ),
+          ),
+
+          // Coins Pill
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
@@ -268,16 +301,87 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
     );
   }
 
+  Widget _buildAiSuggestionCard(Cartoon cartoon) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 2, 16, 12),
+      child: GestureDetector(
+        onTap: () => _openCartoon(cartoon),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: cartoon.themeColor.withOpacity(0.5)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: cartoon.gradient,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Center(
+                  child: Text(cartoon.coverEmoji, style: const TextStyle(fontSize: 24)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text('🤖', style: TextStyle(fontSize: 14)),
+                        const SizedBox(width: 4),
+                        Text(
+                          'پیشنهاد هوشمند فندقی برای شما',
+                          style: TextStyle(
+                            color: cartoon.themeColor,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      cartoon.title,
+                      style: AppFonts.vazirmatn(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: cartoon.themeColor.withOpacity(0.25),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text('تماشا ▶', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildFeaturedCarousel(List<Cartoon> featured) {
     if (featured.isEmpty) return const SizedBox.shrink();
     final cartoon = featured[_featuredIndex % featured.length];
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
       child: GestureDetector(
         onTap: () => _openCartoon(cartoon),
         child: Container(
-          height: 180,
+          height: 175,
           decoration: BoxDecoration(
             gradient: cartoon.gradient,
             borderRadius: BorderRadius.circular(26),
@@ -291,7 +395,6 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
           ),
           child: Stack(
             children: [
-              // Content
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Row(
@@ -336,7 +439,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                               color: Colors.white.withOpacity(0.9),
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
                           Row(
                             children: [
                               Container(
@@ -379,7 +482,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                       child: Center(
                         child: Text(
                           cartoon.coverEmoji,
-                          style: const TextStyle(fontSize: 76),
+                          style: const TextStyle(fontSize: 74),
                         )
                             .animate(onPlay: (c) => c.repeat(reverse: true))
                             .moveY(begin: 0, end: -8, duration: 1800.ms, curve: Curves.easeInOut),

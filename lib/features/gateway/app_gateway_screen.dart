@@ -7,6 +7,7 @@ import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import 'package:amoozesh_fandoghi/core/fandoghi_coach.dart';
 import 'package:amoozesh_fandoghi/core/game_data.dart';
 import 'package:amoozesh_fandoghi/features/cartoons/widgets/cartoon_rating_dialog.dart';
+import 'package:amoozesh_fandoghi/features/profile/sticker_album_screen.dart';
 import 'package:amoozesh_fandoghi/shared/widgets/fandoghi_v2.dart';
 import 'package:amoozesh_fandoghi/shared/widgets/star_field.dart';
 
@@ -37,6 +38,14 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
     });
   }
 
+  String _timeGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour >= 5 && hour < 12) return 'صبح بخیر ☀️';
+    if (hour >= 12 && hour < 17) return 'روز بخیر 🌤️';
+    if (hour >= 17 && hour < 21) return 'عصر بخیر 🌇';
+    return 'شب بخیر 🌙';
+  }
+
   void _openCartoons() {
     HapticFeedback.heavyImpact();
     Navigator.of(context).pushNamed('/cartoons').then((_) => setState(() {}));
@@ -45,6 +54,13 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
   void _openGames() {
     HapticFeedback.heavyImpact();
     Navigator.of(context).pushNamed('/home').then((_) => setState(() {}));
+  }
+
+  void _openStickers() {
+    HapticFeedback.lightImpact();
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const StickerAlbumScreen()),
+    );
   }
 
   Future<void> _parentGate(BuildContext context) async {
@@ -150,7 +166,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
                           // 2. GAMES & LEARNING SECTION CARD
                           _buildGamesCard(),
 
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 20),
 
                           // Bottom Quick Action Badges
                           _buildBottomBadges(),
@@ -198,9 +214,9 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'سلام ${GameData.childName.isNotEmpty ? GameData.childName : 'دوست کوچولو'}! 👋',
+                  '${_timeGreeting()} ${GameData.childName.isNotEmpty ? GameData.childName : 'دوست کوچولو'}! 👋',
                   style: AppFonts.vazirmatn(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
                   ),
@@ -208,7 +224,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
                 Text(
                   'لول ${GameData.level} • ${GameData.getLevelName()}',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     color: Colors.white.withOpacity(0.75),
                   ),
                 ),
@@ -268,14 +284,14 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
 
   Widget _buildHeading() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+      padding: const EdgeInsets.fromLTRB(20, 6, 20, 10),
       child: Column(
         children: [
           Text(
             'ماجراجویی امروزت رو انتخاب کن! 🌟',
             textAlign: TextAlign.center,
             style: AppFonts.vazirmatn(
-              fontSize: 22,
+              fontSize: 21,
               fontWeight: FontWeight.w900,
               color: Colors.white,
               letterSpacing: 0.5,
@@ -325,7 +341,6 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
         ),
         child: Stack(
           children: [
-            // Decorative background patterns
             Positioned(
               top: -20,
               right: -20,
@@ -338,13 +353,11 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
                 ),
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.all(22),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top Row (Badge + Cinema Icon)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -372,10 +385,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
                       const Text('🍿🎬', style: TextStyle(fontSize: 28)),
                     ],
                   ),
-
                   const SizedBox(height: 16),
-
-                  // Main Content & Mascot Row
                   Row(
                     children: [
                       Expanded(
@@ -403,7 +413,6 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      // Animated Cartoon Popcorn Character
                       Container(
                         width: 76,
                         height: 76,
@@ -419,10 +428,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
                           .scale(begin: const Offset(0.95, 0.95), end: const Offset(1.1, 1.1), duration: 1600.ms),
                     ],
                   ),
-
                   const SizedBox(height: 18),
-
-                  // Action Button
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 14),
@@ -492,7 +498,6 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
         ),
         child: Stack(
           children: [
-            // Decorative circles
             Positioned(
               bottom: -20,
               left: -20,
@@ -505,13 +510,11 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
                 ),
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.all(22),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top Row (Badge + Games Icon)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -539,10 +542,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
                       const Text('🎮✨', style: TextStyle(fontSize: 28)),
                     ],
                   ),
-
                   const SizedBox(height: 16),
-
-                  // Main Content & Mascot Row
                   Row(
                     children: [
                       Expanded(
@@ -570,7 +570,6 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      // Animated Fandoghi Mascot
                       const FandoghiV2(
                         size: 74,
                         animate: true,
@@ -580,10 +579,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
                           .moveY(begin: 0, end: -6, duration: 1500.ms, curve: Curves.easeInOut),
                     ],
                   ),
-
                   const SizedBox(height: 18),
-
-                  // Action Button
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 14),
@@ -626,12 +622,12 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
   Widget _buildBottomBadges() {
     return Row(
       children: [
-        // 5-Star Rating Incentive
+        // 1. 5-Star Rating Incentive
         Expanded(
           child: GestureDetector(
             onTap: () => CartoonRatingDialog.show(context),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(20),
@@ -640,13 +636,45 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('⭐', style: TextStyle(fontSize: 20)),
-                  SizedBox(width: 8),
+                  Text('⭐', style: TextStyle(fontSize: 18)),
+                  SizedBox(width: 6),
                   Text(
-                    'ثبت ۵ ستاره (+۵۰ سکه)',
+                    '۵ ستاره (+۵۰ سکه)',
                     style: TextStyle(
                       color: Colors.amber,
-                      fontSize: 12,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(width: 10),
+
+        // 2. Sticker Album
+        Expanded(
+          child: GestureDetector(
+            onTap: _openStickers,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.pinkAccent.withOpacity(0.4)),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('🎀', style: TextStyle(fontSize: 18)),
+                  SizedBox(width: 6),
+                  Text(
+                    'آلبوم استیکرها',
+                    style: TextStyle(
+                      color: Colors.pinkAccent,
+                      fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// ═══════════════════════════════════════════════════════════════
-/// 🎬 KUDAKE IRAN — بانک جامع و جذاب کارتون‌ها و انیمیشن‌های کودکان
+/// 🎬 KUDAKE IRAN — بانک جامع و پیشرفته کارتون‌ها و انیمیشن‌ها
 /// ═══════════════════════════════════════════════════════════════
 
 enum CartoonCategoryType {
@@ -37,6 +37,10 @@ class CartoonEpisode {
   final String streamUrl;
   final String webUrl;
   final String coverEmoji;
+  final String catchphrase;
+  final String triviaQuestion;
+  final List<String> triviaOptions;
+  final int triviaCorrectIndex;
 
   const CartoonEpisode({
     required this.id,
@@ -47,6 +51,10 @@ class CartoonEpisode {
     required this.streamUrl,
     required this.webUrl,
     required this.coverEmoji,
+    this.catchphrase = '',
+    this.triviaQuestion = '',
+    this.triviaOptions = const [],
+    this.triviaCorrectIndex = 0,
   });
 }
 
@@ -66,6 +74,7 @@ class Cartoon {
   final String ageRating;
   final String learningGoal;
   final String badgeText;
+  final String catchphrase;
   final bool isFeatured;
   final bool isNew;
   final List<CartoonEpisode> episodes;
@@ -86,6 +95,7 @@ class Cartoon {
     required this.ageRating,
     required this.learningGoal,
     required this.badgeText,
+    required this.catchphrase,
     this.isFeatured = false,
     this.isNew = false,
     required this.episodes,
@@ -163,6 +173,7 @@ class CartoonData {
       ageRating: '۴+',
       learningGoal: 'حکمت، راستگویی، حل مسئله و شوخ‌طبعی سالم',
       badgeText: 'محبوب‌ترین ایرانی',
+      catchphrase: 'بهلول: ای قاضی محترم! باد آورده را باد می‌برد!',
       isFeatured: true,
       episodes: [
         CartoonEpisode(
@@ -174,6 +185,10 @@ class CartoonData {
           streamUrl: 'https://www.aparat.com/v/kudak_shekarestan_1',
           webUrl: 'https://www.aparat.com/result/%D8%B4%DA%A9%D8%B1%D8%B3%D8%AA%D8%A7%D9%86',
           coverEmoji: '🗝️',
+          catchphrase: 'بهلول: گنج واقعی، دوستی و دانایی است!',
+          triviaQuestion: 'در ماجرای غار، بهلول چه چیزی را بالاتر از طلا دانست؟',
+          triviaOptions: ['عقل، دانایی و دوستی 💡', 'سنگ‌های براق 💎', 'تنهایی و سکوت 🤐'],
+          triviaCorrectIndex: 0,
         ),
         CartoonEpisode(
           id: 'shekar_ep2',
@@ -184,16 +199,9 @@ class CartoonData {
           streamUrl: 'https://www.aparat.com/v/kudak_shekarestan_2',
           webUrl: 'https://www.aparat.com/result/%D8%B4%DA%A9%D8%B1%D8%B3%D8%AA%D8%A7%D9%86',
           coverEmoji: '⚖️',
-        ),
-        CartoonEpisode(
-          id: 'shekar_ep3',
-          episodeNumber: 3,
-          title: 'پرنده سخنگوی اسکندر',
-          duration: '۱۲:۵۰',
-          description: 'اسکندر یک طوطی پیدا می‌کند که همه رازها را فاش می‌کند و ماجرای خنده‌داری راه می‌اندازد.',
-          streamUrl: 'https://www.aparat.com/v/kudak_shekarestan_3',
-          webUrl: 'https://www.aparat.com/result/%D8%B4%DA%A9%D8%B1%D8%B3%D8%AA%D8%A7%D9%86',
-          coverEmoji: '🦜',
+          triviaQuestion: 'قاضی با کمک چه کسی ماجرای دزدی را حل کرد؟',
+          triviaOptions: ['بهلول دانا 🧠', 'اسکندر کوچولو 👦', 'صمد بی‌خبر 🏃'],
+          triviaCorrectIndex: 0,
         ),
       ],
     ),
@@ -220,6 +228,7 @@ class CartoonData {
       ageRating: '۵+',
       learningGoal: 'جوانمردی، شجاعت، مروت و احترام به بزرگ‌ترها',
       badgeText: 'شاهکار انیمیشن',
+      catchphrase: 'پوریای ولی: تن و جان پاک دار و دل باخدا، مروت پیشه کن در هر کجا!',
       isFeatured: true,
       episodes: [
         CartoonEpisode(
@@ -231,16 +240,9 @@ class CartoonData {
           streamUrl: 'https://www.aparat.com/v/kudak_pahlavanan_1',
           webUrl: 'https://www.aparat.com/result/%D9%BE%D9%87%D9%84%D9%88%D8%A7%D9%86%D8%A7%D9%86',
           coverEmoji: '🛡️',
-        ),
-        CartoonEpisode(
-          id: 'pahla_ep2',
-          episodeNumber: 2,
-          title: 'نجات کاروان داروها',
-          duration: '۲۰:۴۵',
-          description: 'شاگردان پوریا برای رساندن داروی بیماران به کوهستان می‌روند و با راهزنان روبرو می‌شوند.',
-          streamUrl: 'https://www.aparat.com/v/kudak_pahlavanan_2',
-          webUrl: 'https://www.aparat.com/result/%D9%BE%D9%87%D9%84%D9%88%D8%A7%D9%86%D8%A7%D9%86',
-          coverEmoji: '🐎',
+          triviaQuestion: 'پوریای ولی قدرت واقعی پهلوان را در چه می‌داند؟',
+          triviaOptions: ['مهار خشم و دستگیری از نیازمندان 🛡️', 'فقط زور بازو 💪', 'پیروزی به هر قیمتی ❌'],
+          triviaCorrectIndex: 0,
         ),
       ],
     ),
@@ -267,6 +269,7 @@ class CartoonData {
       ageRating: '۳+',
       learningGoal: 'همکاری گروهی، مسئولیت‌پذیری و آمادگی در حوادث',
       badgeText: 'دوبله اختصاصی',
+      catchphrase: 'رایدر: هیچ کاری نیست که نتونیم انجامش بدیم؛ سگ‌های نگهبان آماده‌ان!',
       isFeatured: true,
       episodes: [
         CartoonEpisode(
@@ -274,30 +277,13 @@ class CartoonData {
           episodeNumber: 1,
           title: 'عملیات نجات بزرگ در خلیج',
           duration: '۱۱:۲۰',
-          description: 'شهردار گودوی در دردسر افتاده و چیس و مارشال سریع‌ترین راه نجات را پیدا می‌کنند!',
+          description: 'شهردار در دردسر افتاده و چیس و مارشال سریع‌ترین راه نجات را پیدا می‌کنند!',
           streamUrl: 'https://www.aparat.com/v/kudak_pawpatrol_1',
           webUrl: 'https://www.aparat.com/result/%D8%B3%DA%AF%D9%87%D8%A7%DB%8C+%D9%86%DA%AF%D9%87%D8%A8%D8%A7%D9%86',
           coverEmoji: '🚒',
-        ),
-        CartoonEpisode(
-          id: 'paw_ep2',
-          episodeNumber: 2,
-          title: 'اسکای و پرواز در آسمان بارانی',
-          duration: '۱۲:۱۰',
-          description: 'پرواز نجات هوایی اسکای برای پیدا کردن اردک‌های گم‌شده در جنگل سرسبز.',
-          streamUrl: 'https://www.aparat.com/v/kudak_pawpatrol_2',
-          webUrl: 'https://www.aparat.com/result/%D8%B3%DA%AF%D9%87%D8%A7%DB%8C+%D9%86%DA%AF%D9%87%D8%A8%D8%A7%D9%86',
-          coverEmoji: '🚁',
-        ),
-        CartoonEpisode(
-          id: 'paw_ep3',
-          episodeNumber: 3,
-          title: 'رابل و ساخت پل رنگین‌کمان',
-          duration: '۱۰:۵۰',
-          description: 'سگ‌های نگهبان برای عبور قطار حیوانات یک پل زیبا و مستحکم می‌سازند.',
-          streamUrl: 'https://www.aparat.com/v/kudak_pawpatrol_3',
-          webUrl: 'https://www.aparat.com/result/%D8%B3%DA%AF%D9%87%D8%A7%DB%8C+%D9%86%DA%AF%D9%87%D8%A8%D8%A7%D9%86',
-          coverEmoji: '🏗️',
+          triviaQuestion: 'کدام سگ نگهبان با آب و نردبان آتش‌نشانی کمک می‌کند؟',
+          triviaOptions: ['مارشال (Marshall) 🚒', 'چیس پلیس 👮', 'رابل بولدوزر 🚜'],
+          triviaCorrectIndex: 0,
         ),
       ],
     ),
@@ -324,6 +310,7 @@ class CartoonData {
       ageRating: '۴+',
       learningGoal: 'شادی، انرژی مثبت، خوش‌بینی و دوستی پایدار',
       badgeText: 'پر از خنده',
+      catchphrase: 'باب اسفنجی: من آماده‌ام! من آماده‌ام! هوراااا!',
       isFeatured: true,
       episodes: [
         CartoonEpisode(
@@ -335,16 +322,9 @@ class CartoonData {
           streamUrl: 'https://www.aparat.com/v/kudak_spongebob_1',
           webUrl: 'https://www.aparat.com/result/%D8%A8%D8%A7%D8%A8+%D8%A7%D8%B3%D9%81%D9%86%D8%AC%DB%8C',
           coverEmoji: '🍔',
-        ),
-        CartoonEpisode(
-          id: 'sponge_ep2',
-          episodeNumber: 2,
-          title: 'حباب‌های خندان پاتریک',
-          duration: '۱۰:۳۰',
-          description: 'مسابقه خنده‌دار حباب درست کردن باب اسفنجی و پاتریک با اشکال حیوانات دریایی.',
-          streamUrl: 'https://www.aparat.com/v/kudak_spongebob_2',
-          webUrl: 'https://www.aparat.com/result/%D8%A8%D8%A7%D8%A8+%D8%A7%D8%B3%D9%81%D9%86%D8%AC%DB%8C',
-          coverEmoji: '🫧',
+          triviaQuestion: 'بهترین و صمیمی‌ترین دوست باب اسفنجی کیست؟',
+          triviaOptions: ['پاتریک ستاره دریایی ⭐', 'پلانکتون 🧪', 'گری حلزون 🐌'],
+          triviaCorrectIndex: 0,
         ),
       ],
     ),
@@ -371,6 +351,7 @@ class CartoonData {
       ageRating: 'همه سنین',
       learningGoal: 'خلاقیت در حل مسئله، هوش هیجانی و همدلی',
       badgeText: 'شاد و بدون کلام',
+      catchphrase: 'شان: بعععع! (با نقشه باهوشانه برای مزرعه!)',
       episodes: [
         CartoonEpisode(
           id: 'shaun_ep1',
@@ -381,16 +362,9 @@ class CartoonData {
           streamUrl: 'https://www.aparat.com/v/kudak_shaun_1',
           webUrl: 'https://www.aparat.com/result/%D8%A8%D8%B1%D9%87+%D9%86%D8%A7%D9%82%D9%84%D8%A7',
           coverEmoji: '🎂',
-        ),
-        CartoonEpisode(
-          id: 'shaun_ep2',
-          episodeNumber: 2,
-          title: 'مسابقه تراکتورهای پرنده',
-          duration: '۰۶:۵۰',
-          description: 'شان و دوستانش تراکتور مزرعه را با بادکنک‌ها به پرواز درمی‌آورند!',
-          streamUrl: 'https://www.aparat.com/v/kudak_shaun_2',
-          webUrl: 'https://www.aparat.com/result/%D8%A8%D8%B1%D9%87+%D9%86%D8%A7%D9%82%D9%84%D8%A7',
-          coverEmoji: '🚜',
+          triviaQuestion: 'سگ نگهبان مزرعه چه نام دارد؟',
+          triviaOptions: ['بیتزر (Bitzer) 🐕', 'تیموتی 🐑', 'شان 🐑'],
+          triviaCorrectIndex: 0,
         ),
       ],
     ),
@@ -417,6 +391,7 @@ class CartoonData {
       ageRating: '۲ تا ۶ سال',
       learningGoal: 'مهارت‌های اجتماعی، بهداشت فردی و ارتباط با خانواده',
       badgeText: 'آموزنده خردسالان',
+      catchphrase: 'پپا: من عاشق پریدن توی چاله‌های گِل با چکمه‌های قرمزم هستم!',
       episodes: [
         CartoonEpisode(
           id: 'peppa_ep1',
@@ -427,16 +402,9 @@ class CartoonData {
           streamUrl: 'https://www.aparat.com/v/kudak_peppa_1',
           webUrl: 'https://www.aparat.com/result/%D9%BE%D9%BE%D8%A7+%D9%BE%DB%8C%DA%AF',
           coverEmoji: '👢',
-        ),
-        CartoonEpisode(
-          id: 'peppa_ep2',
-          episodeNumber: 2,
-          title: 'دوچرخه‌سواری بدون چرخ کمکی',
-          duration: '۰۵:۴۵',
-          description: 'پپا با تشویق بابا پیگ یاد می‌گیرد چطور تعادلش را روی دوچرخه حفظ کند.',
-          streamUrl: 'https://www.aparat.com/v/kudak_peppa_2',
-          webUrl: 'https://www.aparat.com/result/%D9%BE%D9%BE%D8%A7+%D9%BE%DB%8C%DA%AF',
-          coverEmoji: '🚲',
+          triviaQuestion: 'پپا برای پریدن در چاله‌های گِل چه می‌پوشد؟',
+          triviaOptions: ['چکمه‌های مخصوص 👢', 'دمپایی 🩴', 'کفش مهمانی 👠'],
+          triviaCorrectIndex: 0,
         ),
       ],
     ),
@@ -463,6 +431,7 @@ class CartoonData {
       ageRating: '۴+',
       learningGoal: 'حفظ محیط زیست، تفکیک زباله و صرفه‌جویی در انرژی',
       badgeText: 'انیمیشن ایرانی',
+      catchphrase: 'وی: زباله را در سطل بیندازید تا شهرمان همیشه خندان باشد!',
       episodes: [
         CartoonEpisode(
           id: 'dirin_ep1',
@@ -473,16 +442,9 @@ class CartoonData {
           streamUrl: 'https://www.aparat.com/v/kudak_dirin_1',
           webUrl: 'https://www.aparat.com/result/%D8%AF%DB%8C%D8%B1%DB%8C%D9%86+%D8%AF%DB%8C%D8%B1%DB%8C%D9%86',
           coverEmoji: '🌳',
-        ),
-        CartoonEpisode(
-          id: 'dirin_ep2',
-          episodeNumber: 2,
-          title: 'قطره قطره آب زندگیست',
-          duration: '۰۲:۲۰',
-          description: 'داستان نجات شیر آب چکه کننده توسط قهرمانان کوچولوی دیرین دیرین.',
-          streamUrl: 'https://www.aparat.com/v/kudak_dirin_2',
-          webUrl: 'https://www.aparat.com/result/%D8%AF%DB%8C%D8%B1%DB%8C%D9%86+%D8%AF%DB%8C%D8%B1%DB%8C%D9%86',
-          coverEmoji: '💧',
+          triviaQuestion: 'برای داشتن هوای پاک چه کاری باید انجام دهیم؟',
+          triviaOptions: ['کاشتن درخت و مراقبت از گل‌ها 🌳🌸', 'شکستن شاخه‌ها ❌', 'ریختن زباله ❌'],
+          triviaCorrectIndex: 0,
         ),
       ],
     ),
@@ -509,6 +471,7 @@ class CartoonData {
       ageRating: 'همه سنین',
       learningGoal: 'سرگرمی، درک ریتم و شوخ‌طبعی حرکتی',
       badgeText: 'نوستالژی طلایی',
+      catchphrase: 'جری: پنیر خوشمزه مال منه تام!',
       episodes: [
         CartoonEpisode(
           id: 'tom_ep1',
@@ -519,16 +482,9 @@ class CartoonData {
           streamUrl: 'https://www.aparat.com/v/kudak_tomjerry_1',
           webUrl: 'https://www.aparat.com/result/%D8%AA%D8%A7%D9%85+%D9%88+%D8%AC%D8%B1%DB%8C',
           coverEmoji: '🎹',
-        ),
-        CartoonEpisode(
-          id: 'tom_ep2',
-          episodeNumber: 2,
-          title: 'تله پنیر جادویی و اردک کوچولو',
-          duration: '۰۶:۵۵',
-          description: 'یک جوجه اردک کوچولو وارد خانه می‌شود و جری از او در برابر تام محافظت می‌کند.',
-          streamUrl: 'https://www.aparat.com/v/kudak_tomjerry_2',
-          webUrl: 'https://www.aparat.com/result/%D8%AA%D8%A7%D9%85+%D9%88+%D8%AC%D8%B1%DB%8C',
-          coverEmoji: '🧀',
+          triviaQuestion: 'تام روی چه سازی در کنسرت آهنگ می‌نواخت؟',
+          triviaOptions: ['پیانو بزرگ 🎹', 'طبل 🥁', 'گیتار 🎸'],
+          triviaCorrectIndex: 0,
         ),
       ],
     ),
@@ -555,6 +511,7 @@ class CartoonData {
       ageRating: '۴+',
       learningGoal: 'صداقت در رقابت، وفاداری و کار تیمی',
       badgeText: 'پر از هیجان',
+      catchphrase: 'مک‌کویین: کاچااووو! من سریع‌تر از باد حرکت می‌کنم!',
       episodes: [
         CartoonEpisode(
           id: 'cars_ep1',
@@ -565,6 +522,9 @@ class CartoonData {
           streamUrl: 'https://www.aparat.com/v/kudak_cars_1',
           webUrl: 'https://www.aparat.com/result/%DA%A9%D8%A7%D8%B1%D8%AA%D9%88%D9%86+%D9%85%D8%A7%D8%B4%DB%8C%D9%86%D9%87%D8%A7',
           coverEmoji: '🏆',
+          triviaQuestion: 'تکه کلام معروف لایتنینگ مک‌کویین چیست؟',
+          triviaOptions: ['کاچاووو (Ka-Chow)! ⚡', 'یاهو! 🤠', 'پیش به سوی ستاره‌ها! 🚀'],
+          triviaCorrectIndex: 0,
         ),
       ],
     ),
@@ -591,6 +551,7 @@ class CartoonData {
       ageRating: '۵+',
       learningGoal: 'مهر برادر و خواهری، همکاری و تخیل خلاق',
       badgeText: 'کمدی هیجانی',
+      catchphrase: 'بچه رئیس: وقت خواب تموم شد! وقت جلسه‌ست!',
       episodes: [
         CartoonEpisode(
           id: 'boss_ep1',
@@ -601,6 +562,9 @@ class CartoonData {
           streamUrl: 'https://www.aparat.com/v/kudak_bossbaby_1',
           webUrl: 'https://www.aparat.com/result/%D8%A8%DA%86%D9%87+%D8%B1%D8%A6%DB%8C%D8%B3',
           coverEmoji: '🍼',
+          triviaQuestion: 'بچه رئیس چه لباسی بر تن دارد؟',
+          triviaOptions: ['کت و شلوار و کراوات 👔', 'لباس غواصی 🤿', 'لباس ورزشی 🎽'],
+          triviaCorrectIndex: 0,
         ),
       ],
     ),
@@ -627,6 +591,7 @@ class CartoonData {
       ageRating: 'همه سنین',
       learningGoal: 'شادی، تخیل و شوخ‌طبعی کودکانه',
       badgeText: 'فوق‌العاده شاد',
+      catchphrase: 'مینیون‌ها: بننننننااااا! پوپای!',
       episodes: [
         CartoonEpisode(
           id: 'minion_ep1',
@@ -637,6 +602,9 @@ class CartoonData {
           streamUrl: 'https://www.aparat.com/v/kudak_minions_1',
           webUrl: 'https://www.aparat.com/result/%D9%85%DB%8C%D9%86%DB%8C%D9%88%D9%86%D9%87%D8%A7',
           coverEmoji: '🍌',
+          triviaQuestion: 'خوراکی مورد علاقه مینیون‌ها چیست؟',
+          triviaOptions: ['موز زرد شیرین 🍌', 'سیب زمینی 🥔', 'هندوانه 🍉'],
+          triviaCorrectIndex: 0,
         ),
       ],
     ),
@@ -663,6 +631,7 @@ class CartoonData {
       ageRating: '۱ تا ۵ سال',
       learningGoal: 'مهارت‌های فردی روزمره، شعرخوانی و ریتم موزیکال',
       badgeText: 'شعر و آهنگ شاد',
+      catchphrase: 'کوکوملون: با مهربانی و لبخند، هر روز چیزهای قشنگ یاد می‌گیریم!',
       isFeatured: true,
       episodes: [
         CartoonEpisode(
@@ -674,16 +643,9 @@ class CartoonData {
           streamUrl: 'https://www.aparat.com/v/kudak_cocomelon_1',
           webUrl: 'https://www.aparat.com/result/%DA%A9%D9%88%DA%A9%D9%88%D9%85%D9%84%D9%88%D9%86+%D9%81%D8%A7%D8%B1%D8%B3%DB%8C',
           coverEmoji: '☀️',
-        ),
-        CartoonEpisode(
-          id: 'coco_ep2',
-          episodeNumber: 2,
-          title: 'شعر رنگین‌کمان و میوه‌های خوشمزه',
-          duration: '۰۳:۳۰',
-          description: 'یادگیری رنگ میوه‌ها (سیب قرمز، موز زرد، پرتقال نارنجی) با آواز شاد.',
-          streamUrl: 'https://www.aparat.com/v/kudak_cocomelon_2',
-          webUrl: 'https://www.aparat.com/result/%DA%A9%D9%88%DA%A9%D9%88%D9%85%D9%84%D9%88%D9%86+%D9%81%D8%A7%D8%B1%D8%B3%DB%8C',
-          coverEmoji: '🌈',
+          triviaQuestion: 'صبح بعد از بیدار شدن اولین کاری که برای سلامتی انجام می‌دهیم چیست؟',
+          triviaOptions: ['شستن دست و صورت و مسواک زدن 🧼🪥', 'شکلات خوردن 🍫', 'بازی با تلفن 📱'],
+          triviaCorrectIndex: 0,
         ),
       ],
     ),
@@ -710,6 +672,7 @@ class CartoonData {
       ageRating: '۴ تا ۸ سال',
       learningGoal: 'آموزش الفبای فارسی، صداها و کلمه‌سازی شاد',
       badgeText: 'آموزش الفبا با شعر',
+      catchphrase: 'فندقی: الف مثل انار، ب مثل باران، الفبا یاد بگیر آسانِ آسان!',
       isFeatured: true,
       episodes: [
         CartoonEpisode(
@@ -721,16 +684,9 @@ class CartoonData {
           streamUrl: 'https://www.aparat.com/v/kudak_alphabet_1',
           webUrl: 'https://www.aparat.com/result/%D8%A7%D9%84%D9%81%D8%A8%D8%A7%DB%8C+%D9%81%D8%A7%D8%B1%D8%B3%DB%8C+%DA%A9%D9%88%D8%AF%DA%A9%D8%A7%D9%86%D9%87',
           coverEmoji: '🦋',
-        ),
-        CartoonEpisode(
-          id: 'alph_ep2',
-          episodeNumber: 2,
-          title: 'آهنگ شاد الفبا از د تا ی',
-          duration: '۰۴:۳۰',
-          description: 'د مثل دلفین، ر مثل رنگین‌کمان، ی مثل یاسمن در دنیای شعر.',
-          streamUrl: 'https://www.aparat.com/v/kudak_alphabet_2',
-          webUrl: 'https://www.aparat.com/result/%D8%A7%D9%84%D9%81%D8%A8%D8%A7%DB%8C+%D9%81%D8%A7%D8%B1%D8%B3%DB%8C+%DA%A9%D9%88%D8%AF%DA%A9%D8%A7%D9%86%D9%87',
-          coverEmoji: '🐬',
+          triviaQuestion: 'کدام کلمه با حرف «پ» شروع می‌شود؟',
+          triviaOptions: ['پروانه 🦋', 'بادکنک 🎈', 'ماشین 🚗'],
+          triviaCorrectIndex: 0,
         ),
       ],
     ),
@@ -757,6 +713,7 @@ class CartoonData {
       ageRating: '۳ تا ۷ سال',
       learningGoal: 'شمارش اعداد، مفهوم جمع و ترتیب عددی',
       badgeText: 'شمارش موزیکال',
+      catchphrase: 'فندقی: ۱، ۲، ۳، ۴، ۵... عددها مثل ستاره‌ها می‌درخشند!',
       episodes: [
         CartoonEpisode(
           id: 'num_ep1',
@@ -767,6 +724,9 @@ class CartoonData {
           streamUrl: 'https://www.aparat.com/v/kudak_numbers_1',
           webUrl: 'https://www.aparat.com/result/%D8%B4%D9%85%D8%A7%D8%B1%D8%B4+%D8%A7%D8%B9%D8%AF%D8%A7%D8%AF+%DA%A9%D9%88%D8%AF%DA%A9%D8%A7%D9%86%D9%87',
           coverEmoji: '⭐',
+          triviaQuestion: 'هر دست ما چند انگشت دارد؟',
+          triviaOptions: ['۵ انگشت 🖐️', '۳ انگشت 3️⃣', '۱۰ انگشت 🔟'],
+          triviaCorrectIndex: 0,
         ),
       ],
     ),
@@ -793,6 +753,7 @@ class CartoonData {
       ageRating: '۳ تا ۷ سال',
       learningGoal: 'همکاری، صبوری، احترام به دیگران و حل مسئله',
       badgeText: 'محبوب شبکه کودک',
+      catchphrase: 'ببعی: با مهربانی و صبوری، همه کارها آسان می‌شود!',
       episodes: [
         CartoonEpisode(
           id: 'babi_ep1',
@@ -803,6 +764,9 @@ class CartoonData {
           streamUrl: 'https://www.aparat.com/v/kudak_babibabo_1',
           webUrl: 'https://www.aparat.com/result/%D8%A8%D8%A8%D8%B9%DB%8C+%D9%88+%D8%A8%D8%A8%D8%B9%D9%88',
           coverEmoji: '🍓',
+          triviaQuestion: 'ببعی و ببعو برای چه کسی کیک توت‌فرنگی پختند؟',
+          triviaOptions: ['مادربزرگ مهربان 👵', 'گرگ جنگل 🐺', 'روباه مکار 🦊'],
+          triviaCorrectIndex: 0,
         ),
       ],
     ),
@@ -829,6 +793,7 @@ class CartoonData {
       ageRating: '۲ تا ۵ سال',
       learningGoal: 'کشف محیط اطراف، بازی با رنگ‌ها و کنترل احساسات',
       badgeText: 'ویژه نوپایان',
+      catchphrase: 'پوکویو: بیایید با هم کشف کنیم و به صدای دنیا گوش بدیم!',
       episodes: [
         CartoonEpisode(
           id: 'poco_ep1',
@@ -839,6 +804,9 @@ class CartoonData {
           streamUrl: 'https://www.aparat.com/v/kudak_pocoyo_1',
           webUrl: 'https://www.aparat.com/result/%D9%BE%D9%88%DA%A9%D9%88%DB%8C%D9%88',
           coverEmoji: '🎺',
+          triviaQuestion: 'الی دوست پوکویو چه حیوانی است؟',
+          triviaOptions: ['فیل صورتی مهربان 🐘', 'اردک زرد 🦆', 'سگ قهوه‌ای 🐕'],
+          triviaCorrectIndex: 0,
         ),
       ],
     ),
@@ -865,6 +833,7 @@ class CartoonData {
       ageRating: '۵+',
       learningGoal: 'پشتکار، اعتماد به نفس و مهربانی با همه',
       badgeText: 'قهرمان شجاع',
+      catchphrase: 'پو: راز یک قهرمان بزرگ، قلب پاک و پشتکار است!',
       episodes: [
         CartoonEpisode(
           id: 'panda_ep1',
@@ -875,6 +844,9 @@ class CartoonData {
           streamUrl: 'https://www.aparat.com/v/kudak_panda_1',
           webUrl: 'https://www.aparat.com/result/%D9%BE%D8%A7%D9%86%D8%AF%D8%A7%DB%8C+%DA%A9%D9%88%D9%86%DA%AF+%D9%81%D9%88+%DA%A9%D8%A7%D8%B1',
           coverEmoji: '🥋',
+          triviaQuestion: 'پو پاندای قهرمان چگونه به هدفش رسید؟',
+          triviaOptions: ['با تمرین و ناامید نشدن 🥋', 'با تنبلی ❌', 'با تسلیم شدن ❌'],
+          triviaCorrectIndex: 0,
         ),
       ],
     ),
@@ -901,6 +873,7 @@ class CartoonData {
       ageRating: '۵+',
       learningGoal: 'آشنایی با فرهنگ کهن، راستی، دانایی و وفاداری',
       badgeText: 'فرهنگ و ادب ایران',
+      catchphrase: 'سیمرغ: پر من را بسوزان تا در سختی‌ها به یاری‌ات آیم!',
       episodes: [
         CartoonEpisode(
           id: 'classic_ep1',
@@ -911,16 +884,9 @@ class CartoonData {
           streamUrl: 'https://www.aparat.com/v/kudak_shahnameh_1',
           webUrl: 'https://www.aparat.com/result/%D8%AF%D8%A7%D8%B3%D8%AA%D8%A7%D9%86%D9%87%D8%A7%DB%8C+%D8%B4%D8%A7%D9%87%D9%86%D8%A7%D9%85%D9%87+%D8%A8%D8%B1%D8%A7%DB%8C+%DA%A9%D9%88%D8%AF%DA%A9%D8%A7%D9%86',
           coverEmoji: '🪶',
-        ),
-        CartoonEpisode(
-          id: 'classic_ep2',
-          episodeNumber: 2,
-          title: 'حکایت شیر دانا و خرگوش باهوش',
-          duration: '۱۰:۲۰',
-          description: 'داستان آموزنده کلیله و دمنه درباره پیروزی فکر و عقل بر زور و خشونت.',
-          streamUrl: 'https://www.aparat.com/v/kudak_kelileh_1',
-          webUrl: 'https://www.aparat.com/result/%DA%A9%D9%84%DB%8C%D9%84%D9%87+%D9%88+%D8%AF%D9%85%D9%86%D9%87+%DA%A9%D9%88%D8%AF%DA%A9%D8%A7%D9%86',
-          coverEmoji: '🦁',
+          triviaQuestion: 'پرنده افسانه‌ای شاهنامه چه نام دارد؟',
+          triviaOptions: ['سیمرغ 🦅', 'طاووس 🦚', 'شاهین 🦅'],
+          triviaCorrectIndex: 0,
         ),
       ],
     ),

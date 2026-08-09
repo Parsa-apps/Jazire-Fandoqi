@@ -5,12 +5,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:amoozesh_fandoghi/app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import 'package:amoozesh_fandoghi/core/audio_service.dart';
 import 'package:amoozesh_fandoghi/core/cartoons/cartoon_data.dart';
 import 'package:amoozesh_fandoghi/core/fandoghi_coach.dart';
 import 'package:amoozesh_fandoghi/core/game_data.dart';
+import 'package:amoozesh_fandoghi/features/cartoons/widgets/cartoon_rating_dialog.dart';
+import 'package:amoozesh_fandoghi/features/cartoons/widgets/cartoon_trivia_dialog.dart';
 import 'package:amoozesh_fandoghi/shared/widgets/fandoghi_v2.dart';
 import 'package:amoozesh_fandoghi/shared/widgets/star_field.dart';
-import 'widgets/cartoon_rating_dialog.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// 🍿 CARTOON PLAYER SCREEN — سینما کارتون تعاملی کودک
@@ -36,7 +38,10 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
   double _progress = 0.15;
   int _secondsWatched = 0;
   Timer? _playbackTimer;
-  Timer? _restReminderTimer;
+
+  // Cinema features
+  bool _cinemaDimMode = false;
+  double _playbackSpeed = 1.0;
 
   // Popcorn minigame
   int _popcornTaps = 0;
@@ -67,7 +72,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
       if (_isPlaying) {
         setState(() {
           _secondsWatched++;
-          _progress = (_progress + 0.005).clamp(0.0, 1.0);
+          _progress = (_progress + 0.005 * _playbackSpeed).clamp(0.0, 1.0);
           if (_progress >= 1.0) {
             _progress = 0.0; // loop episode
           }
@@ -91,7 +96,6 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
   @override
   void dispose() {
     _playbackTimer?.cancel();
-    _restReminderTimer?.cancel();
     _beamCtrl.dispose();
     _pulseCtrl.dispose();
     super.dispose();
@@ -116,11 +120,44 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
     });
   }
 
+  void _cycleSpeed() {
+    HapticFeedback.selectionClick();
+    setState(() {
+      if (_playbackSpeed == 0.75) {
+        _playbackSpeed = 1.0;
+      } else if (_playbackSpeed == 1.0) {
+        _playbackSpeed = 1.25;
+      } else {
+        _playbackSpeed = 0.75;
+      }
+    });
+    FandoghiCoach.say('سرعت پخش: ${_playbackSpeed}x ⚡', mood: FandoghiMood.wink);
+  }
+
+  void _playCatchphrase() {
+    HapticFeedback.mediumImpact();
+    final phrase = _currentEpisode.catchphrase.isNotEmpty
+        ? _currentEpisode.catchphrase
+        : widget.cartoon.catchphrase;
+    if (phrase.isNotEmpty) {
+      AudioService.speak(phrase);
+      FandoghiCoach.say(phrase, mood: FandoghiMood.excited, duration: const Duration(seconds: 4));
+    }
+  }
+
+  void _openTrivia() {
+    HapticFeedback.mediumImpact();
+    CartoonTriviaDialog.show(
+      context,
+      cartoon: widget.cartoon,
+      episode: _currentEpisode,
+    );
+  }
+
   void _onPopcornTap() {
     HapticFeedback.mediumImpact();
     setState(() {
       _popcornTaps++;
-      // Spawn 4 popcorn particles
       final random = Random();
       for (int i = 0; i < 4; i++) {
         _popcornParticles.add(_PopcornParticle(
@@ -136,7 +173,6 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
       }
     });
 
-    // Reward 1 coin every 5 taps
     if (_popcornTaps % 5 == 0) {
       GameData.addCoins(1);
       FandoghiCoach.say('به‌به! یک سکه پاپ‌کورنی گرفتی! 🪙🍿', mood: FandoghiMood.excited);
@@ -168,11 +204,11 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
     final isFav = GameData.isCartoonFavorite(widget.cartoon.id);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0C20),
+      backgroundColor: _cinemaDimMode ? Colors.black : const Color(0xFF0F0C20),
       body: Stack(
         children: [
           // Cinema Starfield
-          const StarFieldBackground(starCount: 45),
+          if (!_cinemaDimMode) const StarFieldBackground(starCount: 45),
 
           // Projector Beam
           _buildProjectorBeam(),
@@ -196,6 +232,11 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
 
                         // Cinema Theater Box
                         _buildCinemaScreen(),
+
+                        const SizedBox(height: 14),
+
+                        // Cinema Quick Toolbar (Trivia, Voice, Dim, Speed)
+                        _buildCinemaToolbar(),
 
                         const SizedBox(height: 16),
 
@@ -235,7 +276,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
           right: 0,
           height: 300,
           child: Opacity(
-            opacity: 0.12 + _beamCtrl.value * 0.08,
+            opacity: _cinemaDimMode ? 0.05 : (0.12 + _beamCtrl.value * 0.08),
             child: Container(
               decoration: BoxDecoration(
                 gradient: RadialGradient(
@@ -316,6 +357,30 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
+            ),
+          ),
+
+          // Cinema Light Dimmer
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              setState(() => _cinemaDimMode = !_cinemaDimMode);
+            },
+            child: Container(
+              margin: const EdgeInsets.only(left: 8),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: _cinemaDimMode ? Colors.amber.withOpacity(0.2) : Colors.white.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: _cinemaDimMode ? Colors.amber : Colors.white24,
+                ),
+              ),
+              child: Icon(
+                _cinemaDimMode ? Icons.lightbulb_rounded : Icons.lightbulb_outline_rounded,
+                color: _cinemaDimMode ? Colors.amber : Colors.white70,
+                size: 22,
+              ),
             ),
           ),
 
@@ -409,26 +474,6 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                  ),
-
-                  // Theater Curtains Overlay (Top Header)
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      height: 24,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withOpacity(0.6),
-                            Colors.transparent,
-                          ],
-                        ),
                       ),
                     ),
                   ),
@@ -585,6 +630,99 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCinemaToolbar() {
+    return Row(
+      children: [
+        // 1. Trivia Riddle Button
+        Expanded(
+          flex: 2,
+          child: GestureDetector(
+            onTap: _openTrivia,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.amber.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.amber.withOpacity(0.5)),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('💡', style: TextStyle(fontSize: 16)),
+                  SizedBox(width: 6),
+                  Text(
+                    'معمای فندقی (+۱۰ سکه)',
+                    style: TextStyle(
+                      color: Colors.amber,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(width: 8),
+
+        // 2. Character Catchphrase Voice Button
+        Expanded(
+          flex: 2,
+          child: GestureDetector(
+            onTap: _playCatchphrase,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.primary.withOpacity(0.5)),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('🎙️', style: TextStyle(fontSize: 16)),
+                  SizedBox(width: 6),
+                  Text(
+                    'صدای شخصیت',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(width: 8),
+
+        // 3. Playback Speed Selector
+        GestureDetector(
+          onTap: _cycleSpeed,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white24),
+            ),
+            child: Text(
+              '${_playbackSpeed}x',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

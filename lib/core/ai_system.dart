@@ -162,6 +162,27 @@ class AI {
     return suggestions;
   }
 
+  /// پیشنهاد هوشمند کارتون بر اساس سن کودک و تاریخچه تماشا.
+  static String suggestCartoon() {
+    final age = GameData.childAge;
+    final watched = GameData.watchedCartoons.toSet();
+
+    List<String> pool;
+    if (age <= 4) {
+      pool = ['cocomelon_fa', 'peppa_pig', 'pocoyo', 'alphabet_song_cartoon', 'numbers_song_cartoon'];
+    } else if (age <= 6) {
+      pool = ['shekarestan', 'paw_patrol', 'spongebob', 'babi_babo', 'shaun_sheep', 'dirin_dirin'];
+    } else {
+      pool = ['pahlavanan', 'cars_mcqueen', 'persian_classics', 'boss_baby', 'minions', 'kungfu_panda'];
+    }
+
+    final unvisited = pool.where((id) => !watched.contains(id)).toList();
+    if (unvisited.isNotEmpty) {
+      return unvisited[Random().nextInt(unvisited.length)];
+    }
+    return pool[Random().nextInt(pool.length)];
+  }
+
   /// فاز ۴۷: پیش‌بینی یک ماه آینده (روند ساده با شیب مهارت‌ها).
   static Map<String, double> predictOneMonth() {
     final result = <String, double>{};

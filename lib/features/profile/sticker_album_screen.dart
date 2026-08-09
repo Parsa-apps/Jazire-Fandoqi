@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../app/app_colors.dart';
+import '../../../app/app_fonts.dart';
 import '../../../core/game_data.dart';
 import '../../../shared/widgets/child_touch_target.dart';
 
 /// ────────────────────────────────────────────────────────────
-/// 🎀 فاز ۵۹: آلبوم استیکر کودک
-///
-/// تمام استیکرهای خریداری‌شده را نمایش می‌دهد؛ استیکرهای نداشته
-/// به‌صورت قفل دیده می‌شوند (انگیزه جمع‌آوری).
+/// 🎀 فاز ۵۹ + بخش کارتون‌ها: آلبوم جامع استیکرهای کودک
 /// ────────────────────────────────────────────────────────────
 class StickerAlbumScreen extends StatefulWidget {
   const StickerAlbumScreen({super.key});
@@ -18,19 +17,42 @@ class StickerAlbumScreen extends StatefulWidget {
 }
 
 class _StickerAlbumScreenState extends State<StickerAlbumScreen> {
-  static const List<(String, String, String)> _catalog = <(String, String, String)>[
-    ('sticker_star', '⭐', 'ستاره طلایی'),
-    ('sticker_heart', '❤️', 'قلب قرمز'),
-    ('sticker_rainbow', '🌈', 'رنگین‌کمان'),
-    ('sticker_crown', '👑', 'تاج طلایی'),
-    ('sticker_rocket', '🚀', 'موشک فضایی'),
-    ('sticker_unicorn', '🦄', 'تک‌شاخ جادویی'),
-    ('sticker_palm', '🌴', 'نخل جزیره'),
-    ('sticker_flower', '🌺', 'گل بهاری'),
-    ('sticker_bunny', '🐰', 'خرگوش فندقی'),
-    ('sticker_butterfly', '🦋', 'پروانه رنگین'),
-    ('sticker_icecream', '🍦', 'بستنی خوشمزه'),
-    ('sticker_sun', '🌞', 'خورشید خانم'),
+  int _selectedTab = 0; // 0: All, 1: Cartoons, 2: Games
+
+  static const List<(String, String, String, String)> _allStickers = <(String, String, String, String)>[
+    // Cartoon Stickers
+    ('sticker_shekarestan', '🏰', 'شکرستان', 'cartoons'),
+    ('sticker_pahlavanan', '⚔️', 'پوریای ولی', 'cartoons'),
+    ('sticker_paw_patrol', '🐾', 'سگ‌های نگهبان', 'cartoons'),
+    ('sticker_spongebob', '🧽', 'باب اسفنجی', 'cartoons'),
+    ('sticker_shaun_sheep', '🐑', 'بره ناقلا', 'cartoons'),
+    ('sticker_peppa_pig', '🐷', 'پپا پیگ', 'cartoons'),
+    ('sticker_dirin_dirin', '🦖', 'دیرین دیرین', 'cartoons'),
+    ('sticker_tom_jerry', '🐱', 'تام و جری', 'cartoons'),
+    ('sticker_cars_mcqueen', '🏎️', 'مک‌کویین', 'cartoons'),
+    ('sticker_boss_baby', '🍼', 'بچه رئیس', 'cartoons'),
+    ('sticker_minions', '🍌', 'مینیون‌ها', 'cartoons'),
+    ('sticker_cocomelon_fa', '🍉', 'کوکوملون', 'cartoons'),
+    ('sticker_alphabet_song_cartoon', '🔤', 'الفبای موزیکال', 'cartoons'),
+    ('sticker_numbers_song_cartoon', '🔢', 'اعداد موزیکال', 'cartoons'),
+    ('sticker_babi_babo', '🍓', 'ببعی و ببعو', 'cartoons'),
+    ('sticker_pocoyo', '🎈', 'پوکویو', 'cartoons'),
+    ('sticker_kungfu_panda', '🐼', 'پاندا کونگ‌فو', 'cartoons'),
+    ('sticker_persian_classics', '🦅', 'سیمرغ کهن', 'cartoons'),
+
+    // Game Stickers
+    ('sticker_star', '⭐', 'ستاره طلایی', 'games'),
+    ('sticker_heart', '❤️', 'قلب قرمز', 'games'),
+    ('sticker_rainbow', '🌈', 'رنگین‌کمان', 'games'),
+    ('sticker_crown', '👑', 'تاج طلایی', 'games'),
+    ('sticker_rocket', '🚀', 'موشک فضایی', 'games'),
+    ('sticker_unicorn', '🦄', 'تک‌شاخ جادویی', 'games'),
+    ('sticker_palm', '🌴', 'نخل جزیره', 'games'),
+    ('sticker_flower', '🌺', 'گل بهاری', 'games'),
+    ('sticker_bunny', '🐰', 'خرگوش فندقی', 'games'),
+    ('sticker_butterfly', '🦋', 'پروانه رنگین', 'games'),
+    ('sticker_icecream', '🍦', 'بستنی خوشمزه', 'games'),
+    ('sticker_sun', '🌞', 'خورشید خانم', 'games'),
   ];
 
   @override
@@ -49,74 +71,112 @@ class _StickerAlbumScreenState extends State<StickerAlbumScreen> {
     super.dispose();
   }
 
+  List<(String, String, String, String)> get _filteredStickers {
+    if (_selectedTab == 1) {
+      return _allStickers.where((s) => s.$4 == 'cartoons').toList();
+    } else if (_selectedTab == 2) {
+      return _allStickers.where((s) => s.$4 == 'games').toList();
+    }
+    return _allStickers;
+  }
+
   @override
   Widget build(BuildContext context) {
     final owned = <String>{
       ...GameData.ownedItems,
       ...GameData.stickers,
     };
-    final ownedCount = _catalog.where((c) => owned.contains(c.$1)).length;
+    final totalOwnedCount = _allStickers.where((c) => owned.contains(c.$1)).length;
+    final currentList = _filteredStickers;
 
     return Scaffold(
       body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: AppGradients.candy),
+        decoration: const BoxDecoration(gradient: AppGradients.nightSky),
         child: SafeArea(
           child: Column(
             children: [
+              // Header
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: Row(
                   children: [
                     ChildTouchTarget(
                       onTap: () => Navigator.pop(context),
-                      child: const Icon(Icons.arrow_back_rounded,
-                          color: Colors.white, size: 28),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 24),
+                      ),
                     ),
                     const SizedBox(width: 8),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'آلبوم استیکر 🎀',
+                        'آلبوم استیکرهای فندقی 🎀',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: AppFonts.vazirmatn(
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 36),
+                    const SizedBox(width: 40),
                   ],
                 ),
               ),
-              const SizedBox(height: 10),
+
+              const SizedBox(height: 12),
+
+              // Total Badge
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white24),
                 ),
                 child: Text(
-                  '$ownedCount از ${_catalog.length} استیکر 🎁',
+                  '$totalOwnedCount از ${_allStickers.length} استیکر باز شده 🎁',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
-              const SizedBox(height: 18),
+
+              const SizedBox(height: 14),
+
+              // Tabs
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    _tabButton(0, 'همه (${_allStickers.length})'),
+                    const SizedBox(width: 8),
+                    _tabButton(1, 'کارتون‌ها 🎬'),
+                    const SizedBox(width: 8),
+                    _tabButton(2, 'بازی‌ها 🎮'),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              // Grid
               Expanded(
                 child: GridView.count(
                   crossAxisCount: 3,
-                  padding: const EdgeInsets.all(20),
-                  mainAxisSpacing: 14,
-                  crossAxisSpacing: 14,
-                  childAspectRatio: 0.9,
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.88,
                   children: [
-                    for (final item in _catalog)
-                      _stickerCard(item.$1, item.$2, item.$3,
-                          owned.contains(item.$1)),
+                    for (final item in currentList)
+                      _stickerCard(item.$1, item.$2, item.$3, owned.contains(item.$1)),
                   ],
                 ),
               ),
@@ -127,17 +187,56 @@ class _StickerAlbumScreenState extends State<StickerAlbumScreen> {
     );
   }
 
+  Widget _tabButton(int index, String label) {
+    final isSelected = _selectedTab == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          setState(() => _selectedTab = index);
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : Colors.white.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: isSelected ? Colors.white38 : Colors.transparent),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: isSelected ? Colors.white : Colors.white70,
+              fontSize: 12,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _stickerCard(String id, String emoji, String name, bool unlocked) {
     return Container(
       decoration: BoxDecoration(
         color: unlocked
-            ? Colors.white.withOpacity(0.2)
-            : Colors.black.withOpacity(0.25),
-        borderRadius: BorderRadius.circular(18),
+            ? Colors.white.withOpacity(0.12)
+            : Colors.black.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: unlocked ? Colors.white54 : Colors.white24,
+          color: unlocked ? Colors.amber.withOpacity(0.6) : Colors.white12,
           width: unlocked ? 2 : 1,
         ),
+        boxShadow: unlocked
+            ? [
+                BoxShadow(
+                  color: Colors.amber.withOpacity(0.15),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -146,17 +245,22 @@ class _StickerAlbumScreenState extends State<StickerAlbumScreen> {
             unlocked ? emoji : '🔒',
             style: TextStyle(
               fontSize: 38,
-              color: unlocked ? null : Colors.white38,
+              color: unlocked ? null : Colors.white24,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            name,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: unlocked ? Colors.white : Colors.white38,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              name,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: unlocked ? Colors.white : Colors.white38,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],

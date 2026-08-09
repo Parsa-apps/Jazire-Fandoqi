@@ -1,7 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:amoozesh_fandoghi/core/ai_system.dart';
 import 'package:amoozesh_fandoghi/core/cartoons/cartoon_data.dart';
+import 'package:amoozesh_fandoghi/core/game_data.dart';
 
 void main() {
+  setUp(() {
+    GameData.resetForTesting();
+  });
+
   test('cartoon catalog has valid data and categories', () {
     expect(CartoonData.allCartoons.length, greaterThanOrEqualTo(15));
 
@@ -12,6 +18,7 @@ void main() {
       expect(cartoon.title, isNotEmpty);
       expect(cartoon.description, isNotEmpty);
       expect(cartoon.episodes, isNotEmpty);
+      expect(cartoon.catchphrase, isNotEmpty);
       for (final ep in cartoon.episodes) {
         expect(ep.id, isNotEmpty);
         expect(ep.title, isNotEmpty);
@@ -39,5 +46,15 @@ void main() {
 
     final pahlavan = CartoonData.search('پوریای ولی');
     expect(pahlavan, isNotEmpty);
+  });
+
+  test('AI suggests cartoon appropriate for child age', () {
+    GameData.childAge = 4;
+    final youngSuggestion = AI.suggestCartoon();
+    expect(youngSuggestion, isNotEmpty);
+
+    GameData.childAge = 8;
+    final olderSuggestion = AI.suggestCartoon();
+    expect(olderSuggestion, isNotEmpty);
   });
 }
