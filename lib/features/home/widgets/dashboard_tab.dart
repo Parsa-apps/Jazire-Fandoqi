@@ -82,6 +82,11 @@ class _DashboardState extends ConsumerState<DashboardTab> {
       slivers.add(SliverToBoxAdapter(child: _buildFandoghiTip()));
     }
 
+    // فاز ۵۰/۶۲: یادآوری استراحت برای همه سن‌ها (حتی حالت ساده)
+    if (AI.needsBreak() && !GameData.isDailyLimitReached) {
+      slivers.add(SliverToBoxAdapter(child: _buildBreakReminder()));
+    }
+
     // Bottom padding
     slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 120)));
 
@@ -926,50 +931,49 @@ class _DashboardState extends ConsumerState<DashboardTab> {
   }
 
   // ─── FANDOGHI TIP ─────────────────────────────
-  Widget _buildFandoghiTip() {
-    // فاز ۵۰: ضد اعتیاد — بعد از ۲۰ دقیقه بازی بی‌وقفه، استراحت پیشنهاد بده
-    if (AI.needsBreak() && !GameData.isDailyLimitReached) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-        child: GradientGlassCard(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
-          ),
-          borderRadius: 30,
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              const Text('😴', style: TextStyle(fontSize: 46)),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'وقت یک استراحت کوچک است!',
-                      style: AppFonts.vazirmatn(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 16,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      // فاز ۶۲: قانون 20-20-20 — هر ۲۰ دقیقه، ۲۰ ثانیه به فاصله ۶ متری نگاه کن
-                      'قانون ۲۰-۲۰-۲۰: بیا ۲۰ ثانیه به جای دور نگاه کنیم؛ چشم‌ها خسته نشوند 🌈',
-                      style: TextStyle(fontSize: 13, height: 1.5),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+  /// فاز ۵۰/۶۲: کارت استراحت چشم (قانون 20-20-20) — برای همه سن‌ها.
+  Widget _buildBreakReminder() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+      child: GradientGlassCard(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
         ),
-      );
-    }
+        borderRadius: 30,
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            const Text('😴', style: TextStyle(fontSize: 46)),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'وقت یک استراحت کوچک است!',
+                    style: AppFonts.vazirmatn(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'قانون ۲۰-۲۰-۲۰: بیا ۲۰ ثانیه به جای دور نگاه کنیم؛ چشم‌ها خسته نشوند 🌈',
+                    style: TextStyle(fontSize: 13, height: 1.5),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
+  Widget _buildFandoghiTip() {
     // فاز ۴۶: پیشنهاد ۳ بازی هوشمند بر اساس مهارت ضعیف
     final suggestions = AI.suggestGames();
     final coachText = GameData.totalCorrect == 0

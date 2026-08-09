@@ -146,13 +146,14 @@ class AI {
     suggestions.add(_gameBySkill[weak] ?? 'الفبا');
     final pool = _gameBySkill.values.toSet()..remove(suggestions.first);
     final played = GameData.playedGames.toSet();
-    final unplayed = pool.where((g) => !played.contains(g)).toList();
     final rng = Random();
-    while (suggestions.length < 3 && (unplayed.isNotEmpty || pool.isNotEmpty)) {
-      final source = unplayed.isNotEmpty ? unplayed : pool.toList();
-      final pick = source[rng.nextInt(source.length)];
-      if (!suggestions.contains(pick)) suggestions.add(pick);
-      unplayed.remove(pick);
+
+    // اولویت با بازی‌های کمتر انجام‌شده؛ بعد بقیه — پایان‌پذیر و قطعی
+    final unplayed = pool.where((g) => !played.contains(g)).toList()..shuffle(rng);
+    final rest = pool.where((g) => played.contains(g)).toList()..shuffle(rng);
+    for (final game in [...unplayed, ...rest]) {
+      if (suggestions.length >= 3) break;
+      if (!suggestions.contains(game)) suggestions.add(game);
     }
     return suggestions;
   }

@@ -8,7 +8,6 @@ import '../../../app/app_colors.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
-import '../../../core/play_limit.dart';
 import '../../../shared/widgets/child_touch_target.dart';
 import '../../../shared/widgets/premium_button.dart';
 
@@ -168,7 +167,10 @@ class _PuzzleGameState extends State<PuzzleGame> {
             runSpacing: 12,
             children: [
               for (final tile in _shuffled)
-                if (!_placed.contains(tile) && _countUnplaced(tile) > 0)
+                // فقط تکه‌هایی که هنوز جایشان خالی است نمایش داده می‌شوند
+                // (در پازل ۳×۳ تکه‌های تکراری داریم؛ یکی که نشست،
+                //  بقیه همان تکه باید همچنان قابل کشیدن باشند)
+                if (_countUnplaced(tile) > 0)
                   MagneticDraggable(
                     data: tile,
                     child: _tile(tile),

@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/achievement_system.dart';
 import '../../core/game_data.dart';
 
 /// ────────────────────────────────────────────────────────────
@@ -70,6 +70,8 @@ class GameStateNotifier extends StateNotifier<GameStateSnapshot> {
   }
 
   void _onGameDataChanged() {
+    // فاز ۵۴: هر تغییری در وضعیت، مدال‌های تازه بازشده را ثبت می‌کند
+    AchievementSystem.checkAndUnlock();
     state = GameStateSnapshot.fromGameData();
   }
 

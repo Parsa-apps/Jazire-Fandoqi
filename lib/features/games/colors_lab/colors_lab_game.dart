@@ -52,7 +52,11 @@ class _ColorsLabGameState extends State<ColorsLabGame> {
   bool _finished = false;
   int? _selected;
 
-  List<String> get _options {
+  /// گزینه‌های دور جاری — یک‌بار ساخته و کش می‌شوند تا مقایسه پاسخ
+  /// همیشه با همان لیستی که کودک دیده انجام شود (رفع باگ شافل مجدد).
+  late List<String> _roundOptions = _buildOptions();
+
+  List<String> _buildOptions() {
     final correct = _resultOf['${_mixes[_round].$1}+${_mixes[_round].$2}']!;
     final others = _resultOf.values.where((v) => v != correct).toList()
       ..shuffle();
@@ -94,7 +98,7 @@ class _ColorsLabGameState extends State<ColorsLabGame> {
     if (_locked || _finished) return;
     if (!canStartPlay(context)) return;
     final mix = '${_mixes[_round].$1}+${_mixes[_round].$2}';
-    final correct = _options[index] == _resultOf[mix];
+    final correct = _roundOptions[index] == _resultOf[mix];
     setState(() {
       _locked = true;
       _selected = index;
@@ -124,6 +128,7 @@ class _ColorsLabGameState extends State<ColorsLabGame> {
       } else {
         setState(() {
           _round++;
+          _roundOptions = _buildOptions();
           _selected = null;
           _locked = false;
         });
@@ -146,7 +151,7 @@ class _ColorsLabGameState extends State<ColorsLabGame> {
   Widget _buildGame() {
     final a = _mixes[_round].$1;
     final b = _mixes[_round].$2;
-    final options = _options;
+    final options = _roundOptions;
     return Column(
       children: [
         Padding(
@@ -305,7 +310,7 @@ class _ColorsLabGameState extends State<ColorsLabGame> {
 
   bool _correctFor(int index) {
     final mix = '${_mixes[_round].$1}+${_mixes[_round].$2}';
-    return _options[index] == _resultOf[mix];
+    return _roundOptions[index] == _resultOf[mix];
   }
 
   Widget _buildResult() {
@@ -334,6 +339,7 @@ class _ColorsLabGameState extends State<ColorsLabGame> {
             icon: Icons.replay_rounded,
             onPressed: () => setState(() {
               _round = 0;
+              _roundOptions = _buildOptions();
               _score = 0;
               _correct = 0;
               _locked = false;

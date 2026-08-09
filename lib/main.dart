@@ -215,6 +215,8 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
   /// learning map misleading.
   Widget _gameFor(GameLaunch launch) {
     final name = launch.gameName.toLowerCase();
+    // فاز ۵۴: مدال «کاوشگر بازی‌ها» — هر بازی انجام‌شده یک‌بار ثبت می‌شود
+    GameData.recordGamePlayed(launch.gameName);
     if (name.contains('الفبا') || name.contains('alphabet')) {
       return AlphabetAcademyGame(
         stageId: launch.stageId,

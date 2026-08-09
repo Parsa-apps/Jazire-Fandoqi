@@ -121,6 +121,7 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
     if (result == true && controller.text.length == 4) {
       if (GameData.verifyParentPin(controller.text)) {
         setState(() => _isUnlocked = true);
+        _armLockTimer(); // فاز ۶۱: قفل خودکار از لحظه ورود
         HapticFeedback.lightImpact();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -163,6 +164,7 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
     if (result != null && result.length == 4) {
       GameData.setParentPin(result);
       setState(() => _isUnlocked = true);
+      _armLockTimer(); // فاز ۶۱
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('پین با موفقیت ذخیره شد')),
       );

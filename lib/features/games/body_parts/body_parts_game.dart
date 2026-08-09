@@ -7,7 +7,6 @@ import '../../../app/app_colors.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
-import '../../../core/play_limit.dart';
 import '../../../shared/widgets/child_touch_target.dart';
 import '../../../shared/widgets/magnetic_drag.dart';
 import '../../../shared/widgets/premium_button.dart';

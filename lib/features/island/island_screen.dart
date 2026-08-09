@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
 import 'painters/sky_painter.dart';

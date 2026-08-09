@@ -46,6 +46,7 @@ class _PatternGameState extends State<PatternGame> {
   void initState() {
     super.initState();
     _newPattern();
+    _roundOptions = _buildOptions();
     FandoghiCoach.enablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -130,6 +131,7 @@ class _PatternGameState extends State<PatternGame> {
           _locked = false;
         });
         _newPattern();
+        _roundOptions = _buildOptions();
       }
     });
   }
@@ -146,12 +148,20 @@ class _PatternGameState extends State<PatternGame> {
     );
   }
 
-  Widget _buildGame() {
+  /// گزینه‌های دور جاری — یک‌بار ساخته می‌شوند تا نمایش، پاسخ و
+  /// هایلایت درست/غلط همیشه روی یک لیست باشند.
+  late List<String> _roundOptions = _buildOptions();
+
+  List<String> _buildOptions() {
     final others = _pool
         .where((x) => x != _correctNext)
         .toList()
       ..shuffle();
-    final options = <String>[_correctNext, others[0], others[1]]..shuffle();
+    return <String>[_correctNext, others[0], others[1]]..shuffle();
+  }
+
+  Widget _buildGame() {
+    final options = _roundOptions;
     return Column(
       children: [
         Padding(
@@ -292,6 +302,7 @@ class _PatternGameState extends State<PatternGame> {
               _finished = false;
               _selected = null;
               _newPattern();
+              _roundOptions = _buildOptions();
             }),
           ),
           const SizedBox(height: 12),
