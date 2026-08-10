@@ -16,6 +16,7 @@ import '../../../core/game_data.dart';
 import '../../../core/monetization.dart';
 import '../../../presentation/providers/game_state_provider.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
+import '../../../shared/widgets/premium_daily_missions.dart';
 import '../../../shared/widgets/premium_streak_calendar.dart';
 import '../../profile/profile_editor.dart';
 import '../../shop/full_version_paywall.dart';
@@ -436,6 +437,8 @@ class _DashboardState extends ConsumerState<DashboardTab>
                                     );
                                   },
                                 ),
+                                const SizedBox(height: 12),
+                                const PremiumDailyMissions(),
                                 const SizedBox(height: 12),
                                 _buildDailyMotivationCard(),
                                 if (AI.needsBreak() &&
