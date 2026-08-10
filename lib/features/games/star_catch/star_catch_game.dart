@@ -5,13 +5,16 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../app/app_colors.dart';
-import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import '../../../app/design_tokens.dart';
+import '../../../app/app_fonts.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
+import '../../../shared/widgets/fandoghi_premium.dart';
 import '../../../shared/widgets/particle_celebration.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 /// ═══════════════════════════════════════════════
 /// ⭐ STAR CATCH GAME — Flame Engine Demo
@@ -238,7 +241,7 @@ class _StarCatchState extends State<StarCatchGame> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('⭐', style: TextStyle(fontSize: 80)),
+                const FandoghiPremium(size: 90, mood: FandoghiMood.excited, showParticles: true).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
                 const SizedBox(height: 20),
                 Text(
                   'ستاره‌گیری',
@@ -303,13 +306,23 @@ class _StarCatchState extends State<StarCatchGame> {
   }
 
   Widget _buildGameOver() {
+    final stars = _game.score >= 80 ? 3 : _game.score >= 40 ? 2 : _game.score >= 15 ? 1 : 0;
+    final isWin = _game.score >= 40;
     return Container(
       color: Colors.black.withOpacity(0.7),
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('🎉', style: TextStyle(fontSize: 80)),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+            FandoghiPremium(size: 96, mood: isWin ? FandoghiMood.celebrating : FandoghiMood.happy, showParticles: isWin).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(3, (i) => Padding(padding: const EdgeInsets.symmetric(horizontal: 3), child: Icon(i < stars ? Icons.star_rounded : Icons.star_border_rounded, size: 32, color: i < stars ? const Color(0xFFFFD700) : Colors.white24).animate(delay: (i * 100).ms).scale(begin: const Offset(0, 0), end: const Offset(1, 1), duration: 400.ms, curve: Curves.elasticOut))),
+            ),
+            const SizedBox(height: 12),
             const SizedBox(height: 20),
             Text(
               'بازی تموم شد!',
@@ -341,6 +354,7 @@ class _StarCatchState extends State<StarCatchGame> {
                     ),
                   ),
                   onPressed: () {
+                    HapticFeedback.mediumImpact();
                     if (canStartPlay(context)) {
                       _game.startGame();
                       setState(() {});
@@ -371,7 +385,8 @@ class _StarCatchState extends State<StarCatchGame> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }
 
