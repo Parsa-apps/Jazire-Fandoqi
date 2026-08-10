@@ -14,7 +14,7 @@ import '../../app/app_colors.dart';
 class FandoghiPremium extends StatefulWidget {
   final double size;
   final FandoghiMood mood;
-  final bool animate;
+  final bool animated;
   final String? message;
   final VoidCallback? onTap;
   final bool showShadow;
@@ -24,7 +24,7 @@ class FandoghiPremium extends StatefulWidget {
     super.key,
     this.size = 96,
     this.mood = FandoghiMood.happy,
-    this.animate = true,
+    this.animated = true,
     this.message,
     this.onTap,
     this.showShadow = true,
@@ -43,18 +43,18 @@ class _FandoghiPremiumState extends State<FandoghiPremium> with SingleTickerProv
   void initState() {
     super.initState();
     _floatCtrl = AnimationController(vsync: this, duration: Duration(milliseconds: 2000 + _rng.nextInt(800)));
-    if (widget.animate) _floatCtrl.repeat(reverse: true);
+    if (widget.animated) _floatCtrl.repeat(reverse: true);
   }
 
   @override
   void didUpdateWidget(covariant FandoghiPremium oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.animate && !oldWidget.animate) {
+    if (widget.animated && !oldWidget.animated) {
       _floatCtrl.repeat(reverse: true);
-    } else if (!widget.animate && oldWidget.animate) {
+    } else if (!widget.animated && oldWidget.animated) {
       _floatCtrl.stop();
     }
-    if (widget.mood != oldWidget.mood && widget.animate) {
+    if (widget.mood != oldWidget.mood && widget.animated) {
       // ضربه کوچک هنگام تغییر حالت
       _floatCtrl.forward(from: 0);
     }
@@ -78,7 +78,7 @@ class _FandoghiPremiumState extends State<FandoghiPremium> with SingleTickerProv
         children: [
           // هاله پشت فندقی
           if (widget.showShadow)
-            _GlowHalo(size: widget.size, color: moodConfig.glowColor, animate: widget.animate),
+            _GlowHalo(size: widget.size, color: moodConfig.glowColor, animate: widget.animated),
 
           // ذرات اطراف برای حالت‌های جشن
           if (widget.showParticles && moodConfig.showParticles)
@@ -89,7 +89,7 @@ class _FandoghiPremiumState extends State<FandoghiPremium> with SingleTickerProv
             size: widget.size,
             mood: widget.mood,
             floatCtrl: _floatCtrl,
-            animate: widget.animate,
+            animate: widget.animated,
           ),
 
           // ایموجی شناور برای حالت‌هایی که تصویر ندارند (fallback)
@@ -103,7 +103,7 @@ class _FandoghiPremiumState extends State<FandoghiPremium> with SingleTickerProv
             ),
 
           // Zzz برای خواب
-          if (widget.mood == FandoghiMood.sleeping && widget.animate)
+          if (widget.mood == FandoghiMood.sleeping && widget.animated)
             Positioned(
               right: -widget.size * 0.15,
               top: widget.size * 0.05,
@@ -124,7 +124,7 @@ class _FandoghiPremiumState extends State<FandoghiPremium> with SingleTickerProv
     );
 
     // انیمیشن ورودی بر اساس mood
-    bunny = _wrapWithMoodEntrance(bunny, widget.mood, widget.animate);
+    bunny = _wrapWithMoodEntrance(bunny, widget.mood, widget.animated);
 
     if (widget.message != null && widget.message!.isNotEmpty) {
       bunny = Column(

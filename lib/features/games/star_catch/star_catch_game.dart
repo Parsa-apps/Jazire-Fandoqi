@@ -15,6 +15,7 @@ import '../../../core/play_limit.dart';
 import '../../../shared/widgets/fandoghi_premium.dart';
 import '../../../shared/widgets/particle_celebration.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 /// ═══════════════════════════════════════════════
 /// ⭐ STAR CATCH GAME — Flame Engine Demo
