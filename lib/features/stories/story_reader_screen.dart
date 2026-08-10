@@ -95,17 +95,17 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
     );
 
     if (playedPreRecorded) {
-      // استفاده از position stream برای هماهنگی خط به خط با صدا
+      // استفاده از getCurrentPosition برای هماهنگی خط به خط با صدا
       final duration = await StoryAudioService.durationStream.first;
       if (duration.inMilliseconds > 0) {
         _readingWordTimer?.cancel();
-        _readingWordTimer = Timer.periodic(const Duration(milliseconds: 150), (_) {
+        _readingWordTimer = Timer.periodic(const Duration(milliseconds: 150), (_) async {
           if (!mounted) return;
-          final pos = StoryAudioService.positionStream.valueOrNull ?? Duration.zero;
+          final pos = await StoryAudioService.getCurrentPosition() ?? Duration.zero;
           final progress = duration.inMilliseconds > 0
               ? (pos.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0)
               : 0.0;
-          setState(() => _audioProgress = progress);
+          if (mounted) setState(() => _audioProgress = progress);
         });
       }
 

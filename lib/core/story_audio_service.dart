@@ -129,6 +129,9 @@ class StoryAudioService {
   static Stream<Duration?> get durationStream => _player.durationStream;
   static Stream<PlayerState> get playerStateStream => _player.playerStateStream;
 
+  /// دریافت موقعیت فعلی پلیر (برای هماهنگی هایلایت با صدا)
+  static Future<Duration> getCurrentPosition() async => _player.getCurrentPosition();
+
   static void dispose() {
     _player.dispose();
   }
