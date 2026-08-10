@@ -42,7 +42,8 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
   bool _celebrating = false;
   Timer? _autoPlayTimer;
   Timer? _readingWordTimer;
-  int _highlightedWordIndex = 0;
+  int _highlightedLineIndex = 0;
+  double _audioProgress = 0.0; // 0..1 — هماهنگ با posisi
 
   @override
   void initState() {
@@ -77,38 +78,44 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
 
   Future<void> _playPageAudio(int pageIndex) async {
     _readingWordTimer?.cancel();
-    setState(() => _highlightedWordIndex = 0);
+    setState(() {
+      _highlightedLineIndex = 0;
+      _audioProgress = 0.0;
+    });
     if (pageIndex < 0 || pageIndex >= widget.story.pages.length) return;
     final page = widget.story.pages[pageIndex];
     // عنوان + متن با لحن کودکانه - صدای بچگانه حرفه‌ای
     final pageText = '${page.title}. ${page.text}';
-    final words = pageText.split(' ');
     setState(() => _isSpeaking = true);
 
-    // شروع تایمر پیشرفت کلمه با هاله رنگی
-    _readingWordTimer?.cancel();
-    final wordDurationMs = ((pageText.split(' ').length / 2.2) * 1000 / words.length).clamp(350, 900).toInt();
-    _readingWordTimer = Timer.periodic(Duration(milliseconds: wordDurationMs), (_) {
-      if (mounted) {
-        setState(() {
-          _highlightedWordIndex = (_highlightedWordIndex + 1) % (words.length + 1);
-        });
-      }
-    });
-
-    // اول سعی کن فایل پیش‌ضبط شده با صدای بچگانه را پخش کنی
+    // ─── فایل صوتی پیش‌ضبط شده ──────────────────────────────────────────
     final playedPreRecorded = await StoryAudioService.playPreRecordedOnly(
       widget.story.id,
       page.pageNumber,
     );
 
     if (playedPreRecorded) {
+      // استفاده از position stream برای هماهنگی خط به خط با صدا
+      final duration = await StoryAudioService.durationStream.first;
+      if (duration.inMilliseconds > 0) {
+        _readingWordTimer?.cancel();
+        _readingWordTimer = Timer.periodic(const Duration(milliseconds: 150), (_) {
+          if (!mounted) return;
+          final pos = StoryAudioService.positionStream.valueOrNull ?? Duration.zero;
+          final progress = duration.inMilliseconds > 0
+              ? (pos.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0)
+              : 0.0;
+          setState(() => _audioProgress = progress);
+        });
+      }
+
       // گوش دادن به پایان پخش فایل ضبط شده
       StoryAudioService.playerStateStream.listen((state) {
         if (state.processingState == ProcessingState.completed) {
           if (mounted) {
             setState(() {
               _isSpeaking = false;
+              _audioProgress = 1.0;
               _readingWordTimer?.cancel();
               _readingWordTimer = null;
             });
@@ -121,16 +128,8 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
           }
         }
       });
-      // fallback تایمری اگر استریم نیامد (تخمین طول فایل)
-      Future.delayed(Duration(seconds: (pageText.split(' ').length / 2.5).ceil() + 6), () {
-        if (mounted && _isSpeaking && _isAutoPlaying && !_isLastPage) {
-          // اگر هنوز speaking بود و autoPlay روشن است، برو صفحه بعد
-        }
-      });
-      // همچنین شنونده برای تغییر isPlaying
-      // اگر فایل وجود نداشت، fallback به TTS
     } else {
-      // fallback: TTS سیستم با لحن کودکانه (pitch بالا)
+      // ─── fallback TTS ──────────────────────────────────────────────────
       try {
         await AudioService.speak(pageText);
         // تخمین زمان پایان TTS
@@ -138,6 +137,28 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
         final est = Duration(seconds: (wordCount / 2.2).ceil() + 2);
         await Future.delayed(est);
       } catch (_) {}
+
+      // برای TTS: تایمر خط به خط (تقسیم متن به خطوط و پیش بردن تدریجی)
+      final lines = _splitIntoLines(pageText);
+      if (lines.isNotEmpty) {
+        final lineInterval = const Duration(milliseconds: 1800).clamp(
+          Duration(milliseconds: 1200),
+          Duration(milliseconds: 3000),
+        );
+        _readingWordTimer?.cancel();
+        int lineIdx = 0;
+        _readingWordTimer = Timer.periodic(lineInterval, (_) {
+          if (!mounted) return;
+          if (lineIdx >= lines.length) {
+            _readingWordTimer?.cancel();
+            _readingWordTimer = null;
+            return;
+          }
+          setState(() => _highlightedLineIndex = lineIdx);
+          lineIdx++;
+        });
+      }
+
       if (mounted) {
         setState(() {
           _isSpeaking = false;
@@ -152,6 +173,28 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
         }
       }
     }
+  }
+
+  /// تقسیم متن به خطوط تقریبی برای هایلایت خط به خط
+  List<String> _splitIntoLines(String text) {
+    // اول مرکز خطوط با حفظ پاراگراف‌ها
+    final paragraphs = text.split('\n').where((l) => l.trim().isNotEmpty).toList();
+    final result = <String>[];
+    for (final para in paragraphs) {
+      // هر پاراگراف را به خطوط تقریبی تقسیم کن (حدود ۳۵-۴۰ کاراکتر)
+      final words = para.split(' ');
+      String currentLine = '';
+      for (final word in words) {
+        if ((currentLine + ' ' + word).length > 38 && currentLine.isNotEmpty) {
+          result.add(currentLine.trim());
+          currentLine = word;
+        } else {
+          currentLine = (currentLine.isEmpty ? word : currentLine + ' ' + word);
+        }
+      }
+      if (currentLine.isNotEmpty) result.add(currentLine.trim());
+    }
+    return result.isEmpty ? [text] : result;
   }
 
   void _toggleAutoPlay() {
@@ -784,10 +827,11 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
                   ],
                 ),
                 const SizedBox(height: 14),
-                // متن داستان با هاله رنگی دور کلمه خوانده‌شده
+                // متن داستان با هایلایت خط به خط در زمان خواندن
                 _ReadingTextHighlight(
                   text: page.text,
-                  highlightedIndex: _isSpeaking ? _highlightedWordIndex : 0,
+                  highlightedLineIndex: _isSpeaking ? _highlightedLineIndex : 0,
+                  audioProgress: _audioProgress,
                   isActive: _isSpeaking,
                 ),
               ],
@@ -989,75 +1033,105 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
 }
 
 /// ════════════════════════════════════════════════════════════
-/// 🌈 متن داستان با هاله رنگی دور کلمه در حال خواندن
+/// 🌈 متن داستان با هایلایت خط به خط در زمان خواندن
+/// هر خط که صدا رسیده، هاله رنگی می‌گیرد
 /// ════════════════════════════════════════════════════════════
 class _ReadingTextHighlight extends StatelessWidget {
   final String text;
-  final int highlightedIndex;
+  final int highlightedLineIndex;
+  final double audioProgress;
   final bool isActive;
 
   const _ReadingTextHighlight({
     required this.text,
-    required this.highlightedIndex,
+    required this.highlightedLineIndex,
+    required this.audioProgress,
     required this.isActive,
   });
 
   @override
   Widget build(BuildContext context) {
-    final words = text.split(' ');
-    return Wrap(
-      spacing: 6,
-      runSpacing: 6,
-      children: List.generate(words.length, (index) {
-        final word = words[index];
-        final wordText = word.replaceAll(RegExp(r'[^\w\s]'), '').trim();
-        final isHighlighted = isActive && index == highlightedIndex % words.length;
-        return GestureDetector(
-          onTap: () {
-            if (wordText.isNotEmpty) {
-              AudioService.speak(wordText);
-            }
-          },
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 350),
-            transitionBuilder: (child, animation) => ScaleTransition(
-              scale: animation,
-              child: FadeTransition(opacity: animation, child: child),
-            ),
-            child: isHighlighted
-                ? _GlowingWord(
-                    key: ValueKey('glow_$index'),
-                    word: word,
-                  )
-                : Text(
-                    word,
-                    key: ValueKey('normal_$index'),
-                    style: AppFonts.vazirmatn(
-                      color: Colors.white,
-                      fontSize: 17 * GameData.textScale,
-                      fontWeight: FontWeight.w700,
-                      height: 1.9,
+    final lines = _splitIntoLines(text);
+    if (lines.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: List.generate(lines.length, (index) {
+        final line = lines[index];
+        final progressForLine = index / lines.length;
+
+        // خط‌هایی که از پیش رسیده‌اند یا خط فعلی که صدا به آن رسیده است
+        final isHighlighted = isActive &&
+            (index < highlightedLineIndex ||
+                (index == highlightedLineIndex && audioProgress >= progressForLine));
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: GestureDetector(
+            onTap: () {
+              if (line.isNotEmpty) AudioService.speak(line);
+            },
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 400),
+              transitionBuilder: (child, animation) => ScaleTransition(
+                scale: animation,
+                child: FadeTransition(opacity: animation, child: child),
+              ),
+              child: isHighlighted
+                  ? _GlowingLine(
+                      key: ValueKey('glow_line_$index'),
+                      line: line,
+                    )
+                  : Text(
+                      line,
+                      key: ValueKey('normal_line_$index'),
+                      style: AppFonts.vazirmatn(
+                        color: Colors.white,
+                        fontSize: 17 * GameData.textScale,
+                        fontWeight: FontWeight.w700,
+                        height: 1.9,
+                      ),
                     ),
-                  ),
+            ),
           ),
         );
       }),
     );
   }
+
+  /// تقسیم متن به خطوط (مشابه متد بالادست página)
+  static List<String> _splitIntoLines(String text) {
+    final paragraphs = text.split('\n').where((l) => l.trim().isNotEmpty).toList();
+    final result = <String>[];
+    for (final para in paragraphs) {
+      final words = para.split(' ');
+      String currentLine = '';
+      for (final word in words) {
+        if ((currentLine + ' ' + word).length > 38 && currentLine.isNotEmpty) {
+          result.add(currentLine.trim());
+          currentLine = word;
+        } else {
+          currentLine = (currentLine.isEmpty ? word : currentLine + ' ' + word);
+        }
+      }
+      if (currentLine.isNotEmpty) result.add(currentLine.trim());
+    }
+    return result.isEmpty ? [text] : result;
+  }
 }
 
-/// کلمه با هاله رنگی خوشگل (گرادیان + سایه چندرنگ)
-class _GlowingWord extends StatelessWidget {
-  final String word;
+/// خط با هاله رنگی خوشگل (گرادیان + سایه چندرنگ)
+class _GlowingLine extends StatelessWidget {
+  final String line;
 
-  const _GlowingWord({required this.word, Key? key}) : super(key: key);
+  const _GlowingLine({required this.line, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         gradient: const LinearGradient(
           colors: [Color(0xFFFFA726), Color(0xFFF06292), Color(0xFFBA68C8), Color(0xFF4FC3F7)],
           begin: Alignment.centerLeft,
@@ -1085,7 +1159,7 @@ class _GlowingWord extends StatelessWidget {
         ],
       ),
       child: Text(
-        word,
+        line,
         style: AppFonts.vazirmatn(
           color: Colors.white,
           fontSize: (17 * GameData.textScale).clamp(12, 28),
@@ -1103,7 +1177,7 @@ class _GlowingWord extends StatelessWidget {
     )
         .animate()
         .fadeIn(duration: 300.ms)
-        .scale(begin: const Offset(0.92, 0.92), end: const Offset(1.0, 1.0), duration: 350.ms, curve: Curves.elasticOut)
+        .scale(begin: const Offset(0.97, 0.97), end: const Offset(1.0, 1.0), duration: 350.ms, curve: Curves.elasticOut)
         .shimmer(duration: 1200.ms, color: Colors.white.withOpacity(0.35));
   }
 }
