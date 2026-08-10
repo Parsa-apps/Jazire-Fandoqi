@@ -122,6 +122,9 @@ class GameData {
   // فاز ۲۹ (تکمیل): داستان‌های خوانده‌شده — پاداش فقط یک‌بار برای هر داستان
   static List<String> completedStories = <String>[];
   static List<String> storyFavorites = <String>[];
+  // ذخیره‌ی وضعیت خواندن داستان برای ادامه‌ی مطالعه
+  static String lastStoryPageStoryId = '';
+  static int lastStoryPageIndex = 0;
 
   // 🎬 کارتون‌ها و انیمیشن‌ها — علاقه‌مندی‌ها و تاریخچه تماشا
   static List<String> cartoonFavorites = <String>[];
@@ -218,6 +221,8 @@ class GameData {
       islandDecorations = _readIslandDecorations();
       completedStories = _readList('stories');
       storyFavorites = _readList('sfav');
+      lastStoryPageStoryId = _prefs?.getString('lastStoryId') ?? '';
+      lastStoryPageIndex = _prefs?.getInt('lastStoryPage') ?? 0;
       cartoonFavorites = _readList('cfav');
       watchedCartoons = _readList('cw');
       cartoonWatchSeconds = _readInt('cws', 0);
@@ -402,6 +407,9 @@ class GameData {
     openedPrizes = asList('op');
     completedStories = asList('stories');
     storyFavorites = asList('sfav');
+    lastStoryPageStoryId = asString('lastStoryId', '');
+    final lsp = d['lastStoryPage'];
+    lastStoryPageIndex = (lsp is num ? lsp.toInt() : 0).clamp(0, 100);
     cartoonFavorites = asList('cfav');
     watchedCartoons = asList('cw');
     cartoonWatchSeconds = asInt('cws', 0).clamp(0, _maxStoredCounter);
@@ -466,6 +474,8 @@ class GameData {
         'op': openedPrizes,
         'stories': completedStories,
         'sfav': storyFavorites,
+        'lastStoryId': lastStoryPageStoryId,
+        'lastStoryPage': lastStoryPageIndex,
         'cfav': cartoonFavorites,
         'cw': watchedCartoons,
         'cws': cartoonWatchSeconds,
@@ -607,6 +617,8 @@ class GameData {
     await prefs.setStringList('op', List<String>.from(openedPrizes));
     await prefs.setStringList('stories', List<String>.from(completedStories));
     await prefs.setStringList('sfav', List<String>.from(storyFavorites));
+    await prefs.setString('lastStoryId', lastStoryPageStoryId);
+    await prefs.setInt('lastStoryPage', lastStoryPageIndex);
     await prefs.setStringList('cfav', List<String>.from(cartoonFavorites));
     await prefs.setStringList('cw', List<String>.from(watchedCartoons));
     await prefs.setInt('cws', cartoonWatchSeconds);
@@ -785,6 +797,16 @@ class GameData {
   }
 
   static bool isStoryFavorite(String id) => storyFavorites.contains(id);
+
+  static void saveStoryProgress(String storyId, int pageIndex) {
+    if (!_isLoaded) return;
+    lastStoryPageStoryId = storyId;
+    lastStoryPageIndex = pageIndex;
+    unawaited(save());
+  }
+
+  static String get lastStoryId => lastStoryPageStoryId;
+  static int get lastStoryPage => lastStoryPageIndex;
 
   static void toggleStoryFavorite(String id) {
     if (!_isLoaded || id.isEmpty) return;

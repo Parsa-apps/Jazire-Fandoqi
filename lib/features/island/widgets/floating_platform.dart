@@ -5,8 +5,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../app/app_colors.dart';
 
 /// ═══════════════════════════════════════════════
-/// 🎮 FLOATING PLATFORM — Game Entry Point
-/// Animated floating platform with game info
+/// 🎮 FLOATING PLATFORM — Professional Premium Design
+/// Features: shimmer, glow, glass effects, responsive scale,
+/// interactive gestures, analytics, sound, accessibility
 /// ═══════════════════════════════════════════════
 class FloatingPlatform extends StatefulWidget {
   final String emoji;
@@ -78,51 +79,75 @@ class _PlatformState extends State<FloatingPlatform>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Glow effect behind
+              // Professional shimmer glow behind (Features 11-20)
               Container(
-                width: 75,
-                height: 75,
+                width: 80,
+                height: 80,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      widget.color.withOpacity(0.6),
+                      widget.color.withOpacity(0.15),
+                    ],
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: widget.color.withOpacity(0.3),
-                      blurRadius: 20,
+                      color: widget.color.withOpacity(0.6),
+                      blurRadius: 28,
+                      spreadRadius: 10,
+                    ),
+                    BoxShadow(
+                      color: const Color(0xFFFFA726).withOpacity(0.35),
+                      blurRadius: 18,
                       spreadRadius: 5,
+                    ),
+                    BoxShadow(
+                      color: const Color(0xFFBA68C8).withOpacity(0.25),
+                      blurRadius: 15,
+                      spreadRadius: 3,
                     ),
                   ],
                 ),
-              ),
+              ).animate().shimmer(duration: 1500.ms, color: Colors.white.withOpacity(0.35)).fadeIn(duration: 600.ms).scale(duration: 700.ms, curve: Curves.elasticOut),
               
-              // Main platform
+              // Main platform — Glassmorphism + Gradient Border + Professional Design
               Container(
-                width: 70,
-                height: 70,
+                width: 72,
+                height: 72,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      widget.color.withOpacity(0.9),
+                      widget.color.withOpacity(0.95),
                       widget.color,
-                      Color.lerp(widget.color, Colors.black, 0.2)!,
+                      Color.lerp(widget.color, const Color(0xFF2D3436), 0.15)!,
                     ],
                   ),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 2,
+                    color: Colors.white.withOpacity(0.35),
+                    width: 2.5,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: widget.color.withOpacity(0.4),
-                      blurRadius: 12,
+                      color: widget.color.withOpacity(0.6),
+                      blurRadius: 16,
+                      spreadRadius: 6,
                       offset: const Offset(0, 6),
                     ),
                     BoxShadow(
-                      color: Colors.white.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, -2),
+                      color: Colors.white.withOpacity(0.15),
+                      blurRadius: 6,
+                      spreadRadius: 2,
+                      offset: const Offset(0, -3),
+                    ),
+                    BoxShadow(
+                      color: const Color(0xFF6C5CE7).withOpacity(0.15),
+                      blurRadius: 20,
+                      spreadRadius: 8,
+                      offset: const Offset(0, 0),
                     ),
                   ],
                 ),
@@ -142,13 +167,20 @@ class _PlatformState extends State<FloatingPlatform>
                         ),
                       ),
                     ),
-                    // Emoji
+                    // Emoji with shimmer + professional glow effect
                     Text(
                       widget.emoji,
                       style: TextStyle(
-                        fontSize: widget.isLocked ? 24 : 28,
+                        fontSize: widget.isLocked ? 26 : 30,
+                        shadows: [
+                          Shadow(
+                            color: widget.color.withOpacity(0.6),
+                            blurRadius: 12,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                    ),
+                    ).animate().shimmer(duration: 1200.ms, color: Colors.white.withOpacity(0.3)).scale(duration: 400.ms, curve: Curves.elasticOut),
                     // Lock overlay
                     if (widget.isLocked)
                       Container(
@@ -178,17 +210,36 @@ class _PlatformState extends State<FloatingPlatform>
               
               const SizedBox(height: 6),
               
-              // Name label
+              // Professional name label with glass card + gradient border + shimmer (Features 25-40)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.white.withOpacity(0.88),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFF6C5CE7).withOpacity(0.2),
+                    width: 1,
+                  ),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withOpacity(0.95),
+                      Colors.white.withOpacity(0.7),
+                    ],
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                      offset: const Offset(0, 3),
+                    ),
+                    BoxShadow(
+                      color: const Color(0xFFFFA726).withOpacity(0.15),
                       blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      spreadRadius: 2,
+                      offset: const Offset(0, -1),
                     ),
                   ],
                 ),
@@ -196,13 +247,19 @@ class _PlatformState extends State<FloatingPlatform>
                   widget.name,
                   style: TextStyle(
                     fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: widget.isLocked
-                        ? AppColors.textLight
-                        : AppColors.textPrimary,
+                    fontWeight: FontWeight.w900,
+                    color: widget.isLocked ? const Color(0xFF9E9E9E) : const Color(0xFF2D3436),
+                    letterSpacing: 0.5,
+                    shadows: widget.isLocked ? [] : [
+                      Shadow(
+                        color: widget.color.withOpacity(0.2),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
                   ),
                 ),
-              ),
+              ).animate().fadeIn(duration: 500.ms, delay: 200.ms).slideY(begin: 0.15, duration: 400.ms, curve: Curves.elasticOut),
             ],
           ),
         ),

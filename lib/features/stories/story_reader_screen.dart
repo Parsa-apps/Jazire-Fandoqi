@@ -40,14 +40,23 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
   bool _isBedtimeMode = false;
   bool _celebrating = false;
   Timer? _autoPlayTimer;
+  Timer? _readingWordTimer;
+  int _highlightedWordIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
     FandoghiCoach.enablePersistentPresence();
+    // بازیابی آخرین صفحه‌ی خوانده‌شده از ذخیره‌ی حرفه‌ای
+    final savedPage = GameData.lastStoryPage;
+    final savedStory = GameData.lastStoryId;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      if (savedStory == widget.story.id && savedPage > 0 && savedPage < widget.story.pages.length) {
+        _currentPageIndex = savedPage;
+        _pageController.jumpToPage(savedPage);
+      }
       _playPageAudio(_currentPageIndex);
     });
   }
@@ -55,6 +64,7 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
   @override
   void dispose() {
     _autoPlayTimer?.cancel();
+    _readingWordTimer?.cancel();
     _pageController.dispose();
     StoryAudioService.stop();
     FandoghiCoach.clear();
@@ -65,11 +75,25 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
   bool get _isLastPage => _currentPageIndex == widget.story.pages.length - 1;
 
   Future<void> _playPageAudio(int pageIndex) async {
+    _readingWordTimer?.cancel();
+    setState(() => _highlightedWordIndex = 0);
     if (pageIndex < 0 || pageIndex >= widget.story.pages.length) return;
     final page = widget.story.pages[pageIndex];
     // عنوان + متن با لحن کودکانه - صدای بچگانه حرفه‌ای
     final pageText = '${page.title}. ${page.text}';
+    final words = pageText.split(' ');
     setState(() => _isSpeaking = true);
+
+    // شروع تایمر پیشرفت کلمه با هاله رنگی
+    _readingWordTimer?.cancel();
+    final wordDurationMs = ((pageText.split(' ').length / 2.2) * 1000 / words.length).clamp(350, 900).toInt();
+    _readingWordTimer = Timer.periodic(Duration(milliseconds: wordDurationMs), (_) {
+      if (mounted) {
+        setState(() {
+          _highlightedWordIndex = (_highlightedWordIndex + 1) % (words.length + 1);
+        });
+      }
+    });
 
     // اول سعی کن فایل پیش‌ضبط شده با صدای بچگانه را پخش کنی
     final playedPreRecorded = await StoryAudioService.playPreRecordedOnly(
@@ -82,7 +106,11 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
       StoryAudioService.playerStateStream.listen((state) {
         if (state.processingState == ProcessingState.completed) {
           if (mounted) {
-            setState(() => _isSpeaking = false);
+            setState(() {
+              _isSpeaking = false;
+              _readingWordTimer?.cancel();
+              _readingWordTimer = null;
+            });
             if (_isAutoPlaying && !_isLastPage) {
               _autoPlayTimer?.cancel();
               _autoPlayTimer = Timer(const Duration(seconds: 1), () {
@@ -110,7 +138,11 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
         await Future.delayed(est);
       } catch (_) {}
       if (mounted) {
-        setState(() => _isSpeaking = false);
+        setState(() {
+          _isSpeaking = false;
+          _readingWordTimer?.cancel();
+          _readingWordTimer = null;
+        });
         if (_isAutoPlaying && !_isLastPage) {
           _autoPlayTimer?.cancel();
           _autoPlayTimer = Timer(const Duration(seconds: 2), () {
@@ -131,7 +163,11 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
     } else {
       _autoPlayTimer?.cancel();
       StoryAudioService.stop();
-      setState(() => _isSpeaking = false);
+      setState(() {
+        _isSpeaking = false;
+        _readingWordTimer?.cancel();
+        _readingWordTimer = null;
+      });
     }
   }
 
@@ -277,7 +313,26 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
     // ثبت تکمیل داستان برای بار اول
     final isNew = GameData.markStoryCompleted(widget.story.id);
     GameData.recordAnswer(correct: true, skill: 'vocab');
-    if (isNew) AudioService.win();
+
+    // ثبت رویداد حرفه‌ای برای تحلیل
+    LoggerService.event(
+      event: 'story_completed',
+      properties: {
+        'story_id': widget.story.id,
+        'story_title': widget.story.title,
+        'is_first_time': isNew,
+        'page_index': _currentPageIndex,
+        'reading_time': widget.story.readingTime,
+      },
+    );
+
+    if (isNew) {
+      AudioService.win();
+      setState(() => _celebrating = true);
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) setState(() => _celebrating = false);
+      });
+    }
 
     // نمایش مسابقه درک مطلب داستان
     StoryQuizModal.show(context, widget.story);
@@ -318,6 +373,7 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
                       itemCount: story.pages.length,
                       onPageChanged: (index) {
                         setState(() => _currentPageIndex = index);
+                        GameData.saveStoryProgress(widget.story.id, index);
                         _autoPlayTimer?.cancel();
                         StoryAudioService.stop();
                         _playPageAudio(index);
@@ -483,21 +539,53 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
-        child: LinearProgressIndicator(
-          value: progress,
-          backgroundColor: Colors.white.withOpacity(0.18),
-          valueColor: AlwaysStoppedAnimation<Color>(
-            _isBedtimeMode ? Colors.amberAccent : Colors.amberAccent,
+        child: Container(
+          height: 8,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: Colors.white.withOpacity(0.1),
           ),
-          minHeight: 6,
+          child: Stack(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: MediaQuery.of(context).size.width * 0.82 * progress,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.amberAccent,
+                      Colors.orangeAccent,
+                      Colors.pinkAccent,
+                    ],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.amberAccent.withOpacity(0.4),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildPageCard(ChildrenStoryPage page) {
+    // واکنش‌گرا: تنظیم اندازه فونت بر اساس عرض صفحه
+    final screenWidth = MediaQuery.of(context).size.width;
+    final responsiveScale = (screenWidth / 360).clamp(0.85, 1.3);
     return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
+      physics: BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+        decelerationRate: ScrollDecelerationRate.fast,
+      ),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -609,7 +697,13 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
                     runSpacing: 8,
                     children: page.goldenWords.map((w) {
                       return GestureDetector(
-                        onTap: () => _showWordModal(w),
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          AudioService.coin();
+                          AudioService.speak('${w.word}. ${w.meaning}');
+                          GameData.addCoins(1);
+                          _showWordModal(w);
+                        },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 6),
@@ -677,23 +771,23 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
                       child: Text(
                         page.title,
                         style: AppFonts.vazirmatn(
-                          color: Colors.amberAccent,
+                          color: _isBedtimeMode ? const Color(0xFFFFF3E0) : Colors.amberAccent,
                           fontSize: 17,
                           fontWeight: FontWeight.w900,
+                          shadows: const [
+                            Shadow(color: Color(0xFFFFA726), blurRadius: 10, offset: Offset(0, 2)),
+                          ],
                         ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 14),
-                Text(
-                  page.text,
-                  style: AppFonts.vazirmatn(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    height: 1.9,
-                  ),
+                // متن داستان با هاله رنگی دور کلمه خوانده‌شده
+                _ReadingTextHighlight(
+                  text: page.text,
+                  highlightedIndex: _isSpeaking ? _highlightedWordIndex : 0,
+                  isActive: _isSpeaking,
                 ),
               ],
             ),
@@ -890,5 +984,124 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
         ],
       ),
     );
+  }
+}
+
+/// ════════════════════════════════════════════════════════════
+/// 🌈 متن داستان با هاله رنگی دور کلمه در حال خواندن
+/// ════════════════════════════════════════════════════════════
+class _ReadingTextHighlight extends StatelessWidget {
+  final String text;
+  final int highlightedIndex;
+  final bool isActive;
+
+  const _ReadingTextHighlight({
+    required this.text,
+    required this.highlightedIndex,
+    required this.isActive,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final words = text.split(' ');
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: List.generate(words.length, (index) {
+        final word = words[index];
+        final wordText = word.replaceAll(RegExp(r'[^\w\s]'), '').trim();
+        final isHighlighted = isActive && index == highlightedIndex % words.length;
+        return GestureDetector(
+          onTap: () {
+            if (wordText.isNotEmpty) {
+              AudioService.speak(wordText);
+            }
+          },
+          child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 350),
+          transitionBuilder: (child, animation) => ScaleTransition(
+            scale: animation,
+            child: FadeTransition(opacity: animation, child: child),
+          ),
+          child: isHighlighted
+              ? _GlowingWord(
+                  key: ValueKey('glow_$index'),
+                  word: word,
+                )
+              : Text(
+                  word,
+                  key: ValueKey('normal_$index'),
+                  style: AppFonts.vazirmatn(
+                    color: Colors.white,
+                    fontSize: 17 * GameData.textScale,
+                    fontWeight: FontWeight.w700,
+                    height: 1.9,
+                  ),
+                ),
+        );
+      }),
+    );
+  }
+}
+
+/// کلمه با هاله رنگی خوشگل (گرادیان + سایه چندرنگ)
+class _GlowingWord extends StatelessWidget {
+  final String word;
+
+  const _GlowingWord({required this.word, Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFA726), Color(0xFFF06292), Color(0xFFBA68C8), Color(0xFF4FC3F7)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFFA726).withOpacity(0.55),
+            blurRadius: 14,
+            spreadRadius: 2,
+            offset: const Offset(0, 0),
+          ),
+          BoxShadow(
+            color: const Color(0xFFF06292).withOpacity(0.45),
+            blurRadius: 18,
+            spreadRadius: 3,
+            offset: const Offset(0, 0),
+          ),
+          BoxShadow(
+            color: const Color(0xFFBA68C8).withOpacity(0.35),
+            blurRadius: 22,
+            spreadRadius: 4,
+            offset: const Offset(0, 0),
+          ),
+        ],
+      ),
+      child: Text(
+        word,
+        style: AppFonts.vazirmatn(
+          color: Colors.white,
+          fontSize: (17 * GameData.textScale).clamp(12, 28),
+          fontWeight: FontWeight.w900,
+          height: 1.9,
+          shadows: [
+            Shadow(
+              color: const Color(0xFFFFF8E1).withOpacity(0.9),
+              blurRadius: 8,
+              offset: const Offset(0, 0),
+            ),
+          ],
+        ),
+      ),
+    )
+        .animate()
+        .fadeIn(duration: 300.ms)
+        .scale(begin: const Offset(0.92, 0.92), end: const Offset(1.0, 1.0), duration: 350.ms, curve: Curves.elasticOut)
+        .shimmer(duration: 1200.ms, color: Colors.white.withOpacity(0.35));
   }
 }
