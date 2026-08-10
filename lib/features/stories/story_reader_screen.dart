@@ -101,11 +101,15 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
         _readingWordTimer?.cancel();
         _readingWordTimer = Timer.periodic(const Duration(milliseconds: 150), (_) async {
           if (!mounted) return;
-          final pos = await StoryAudioService.getCurrentPosition() ?? Duration.zero;
-          final progress = duration.inMilliseconds > 0
-              ? (pos.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0)
-              : 0.0;
-          if (mounted) setState(() => _audioProgress = progress);
+          try {
+            final pos = await StoryAudioService.getCurrentPosition() ?? Duration.zero;
+            final progress = duration.inMilliseconds > 0
+                ? (pos.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0)
+                : 0.0;
+            if (mounted) setState(() => _audioProgress = progress);
+          } catch (_) {
+            // در صورت خطا، silently ادامه بده
+          }
         });
       }
 
