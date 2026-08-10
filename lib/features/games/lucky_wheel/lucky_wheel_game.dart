@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app/app_colors.dart';
+import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../shared/widgets/child_touch_target.dart';
@@ -82,6 +83,7 @@ class _LuckyWheelGameState extends State<LuckyWheelGame>
     if (_spinning || GameData.luckyWheelSpunToday) return;
     setState(() => _spinning = true);
     HapticFeedback.mediumImpact();
+    AudioService.swoosh();
     _controller.forward(from: 0);
   }
 
@@ -94,6 +96,12 @@ class _LuckyWheelGameState extends State<LuckyWheelGame>
     GameData.spinLucky();
     GameData.addStars(_result!.$3);
     GameData.addCoins(_result!.$4);
+    if (_result!.$3 > 0) {
+      AudioService.star();
+    } else if (_result!.$4 > 0) {
+      AudioService.coin();
+    }
+    AudioService.unlock();
     FandoghiCoach.reward(
       'جایزه‌ی تو: ${_result!.$1} ${_result!.$2}! به دست آوردی 🎊',
     );

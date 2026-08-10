@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
@@ -434,6 +435,7 @@ class StarCatchFlameGame extends FlameGame {
     add(_basket);
 
     _pickTarget();
+    unawaited(AudioService.go());
     onScore();
   }
 
@@ -491,6 +493,7 @@ class StarCatchFlameGame extends FlameGame {
       } else if (item.emoji == targetEmoji) {
         // فقط هدف اگه جا بمونه، life کم می‌کنه
         FandoghiCoach.judge('$targetLabel $targetEmoji جا ماند؛ حواست به سبد باشد ⭐');
+        unawaited(AudioService.wrong());
         GameData.recordAnswer(correct: false, skill: 'counting');
         lives--;
         HapticFeedback.heavyImpact();
@@ -550,6 +553,7 @@ class StarCatchFlameGame extends FlameGame {
     if (gameOver) return;
     if (item.isBad) {
       FandoghiCoach.judge('اوه! این بمب بود، نه $targetLabel! با دقت‌تر بگیر 💥');
+      unawaited(AudioService.wrong());
       lives--;
       GameData.recordAnswer(correct: false, skill: 'counting');
       HapticFeedback.heavyImpact();
@@ -559,16 +563,20 @@ class StarCatchFlameGame extends FlameGame {
       if (item.powerType == 'heart') {
         lives = (lives + 1).clamp(1, 5);
         FandoghiCoach.reward('وای! قلب جادویی گرفتی! ❤️ جان اضافی!');
+        unawaited(AudioService.unlock());
         HapticFeedback.mediumImpact();
       } else if (item.powerType == 'double') {
         score += 20;
         FandoghiCoach.correct('عالی! امتیاز دوبل! 💎');
+        unawaited(AudioService.coin());
         HapticFeedback.lightImpact();
         if (score % 40 == 0) onCelebrate();
       }
     } else if (item.emoji == targetEmoji) {
       // آیتم درست = همان هدف فعلی
       FandoghiCoach.correct('$targetLabel را گرفتی! امتیاز برای قهرمان من ${item.emoji}🌟');
+      unawaited(AudioService.star());
+      unawaited(AudioService.correct());
       score += 10;
       combo++;
       GameData.recordAnswer(correct: true, skill: 'counting');
@@ -592,6 +600,7 @@ class StarCatchFlameGame extends FlameGame {
       score += 2; // امتیاز کم برای شرکت در بازی
       combo = 0; // کمبوی ناقص
       GameData.recordAnswer(correct: false, skill: 'counting');
+      unawaited(AudioService.bubble());
       HapticFeedback.selectionClick();
     }
     item.removeFromParent();
@@ -606,6 +615,11 @@ class StarCatchFlameGame extends FlameGame {
     GameData.updateHighScore(score, 'quiz');
     if (stageId != null && score >= 50) {
       GameData.completeStage(stageId!, stageNumber: stageNumber);
+    }
+    if (score >= 50) {
+      unawaited(AudioService.win());
+    } else {
+      unawaited(AudioService.lose());
     }
     FandoghiCoach.reward(
       score >= 50

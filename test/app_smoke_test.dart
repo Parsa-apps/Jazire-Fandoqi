@@ -31,7 +31,7 @@ void main() {
     expect(find.text('دسته‌بندی بازی‌ها'), findsOneWidget);
   });
 
-  testWidgets('gateway screen renders dual portals for cartoons and learning', (tester) async {
+  testWidgets('gateway island renders six section tiles', (tester) async {
     GameData.resetForTesting();
     GameData.onboardingSeen = true;
 
@@ -42,8 +42,12 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 250));
 
-    expect(find.text('کارتون‌کده و سینما'), findsOneWidget);
-    expect(find.text('دنیای بازی و آموزش'), findsOneWidget);
+    expect(find.text('بازی و یادگیری'), findsOneWidget);
+    expect(find.text('سینما کارتون'), findsOneWidget);
+    expect(find.text('قصه‌خانه'), findsOneWidget);
+    expect(find.text('لالایی‌های شب'), findsOneWidget);
+    expect(find.text('پروفایل من'), findsOneWidget);
+    expect(find.text('درباره ما'), findsOneWidget);
   });
 
   testWidgets('cartoon hub screen renders cartoon sections and categories', (tester) async {

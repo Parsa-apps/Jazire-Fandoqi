@@ -446,6 +446,8 @@ class _TraceScreenState extends State<_TraceScreen> {
         GameData.progressMission('alphabet');
         GameData.addCoins(8);
         GameData.addStars(1);
+        AudioService.star();
+        AudioService.correct();
         if (widget.stageId != null) {
           GameData.completeStage(widget.stageId!,
               stageNumber: widget.stageNumber);
@@ -464,6 +466,7 @@ class _TraceScreenState extends State<_TraceScreen> {
           unawaited(AudioService.pronounceLetter(_lesson.letter));
         });
       } else {
+        AudioService.wrong();
         FandoghiCoach.say(
           'هنوز کمی بیرون راهنما رفتی. از نقطه‌های کم‌رنگ آرام‌تر رد شو و دوباره امتحان کن 💪',
           mood: FandoghiMood.thinking,

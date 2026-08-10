@@ -100,6 +100,7 @@ class _AcademyGameState extends State<AcademyGame> {
   }
 
   void _speakCurrent() {
+    AudioService.tap();
     unawaited(AudioService.speak(_currentCard.sound));
   }
 
@@ -107,6 +108,7 @@ class _AcademyGameState extends State<AcademyGame> {
     if (_locked || _finished) return;
     if (!canStartPlay(context)) return;
     FandoghiCoach.cancelSmartHint();
+    AudioService.tap();
     final correct = options[optionIndex].id == _currentCard.id;
     setState(() {
       _locked = true;

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
@@ -104,6 +105,7 @@ class _DrawingGameState extends State<DrawingGame> {
   void _addSticker(TapUpDetails details) {
     if (_tool != _DrawingTool.sticker) return;
     final sticker = _Sticker(details.localPosition, _stickerIndex);
+    AudioService.tap();
     setState(() {
       _stickers.add(sticker);
       _history.add(_CanvasAction.sticker(sticker));
@@ -176,6 +178,7 @@ class _DrawingGameState extends State<DrawingGame> {
       FandoghiCoach.reward(
         'نقاشی‌ات ثبت شد! فندقی به خلاقیتت امتیاز کامل می‌دهد 🎨🏆',
       );
+      AudioService.unlock();
     }
     Navigator.pop(context);
   }

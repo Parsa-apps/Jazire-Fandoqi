@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/app_colors.dart';
+import '../../core/audio_service.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/game_data.dart';
 import '../../presentation/providers/game_state_provider.dart';
@@ -30,6 +31,8 @@ class _HomeState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    // فندقی (راهنما/معلم) فقط در بخش بازی و یادگیری حاضر می‌شود.
+    FandoghiCoach.enablePersistentPresence();
     _tabWidgets[0] = const DashboardTab();
     // نمایش انیمیشن خوش‌آمدگویی فندقی بعد از اولین فریم صفحه اصلی.
     // فقط یک‌بار در هر اجرای اپ نمایش داده می‌شود.
@@ -112,6 +115,7 @@ class _HomeState extends ConsumerState<HomeScreen> {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
+        AudioService.tap();
         setState(() => _currentTab = index);
       },
       child: AnimatedContainer(
@@ -156,6 +160,7 @@ class _HomeState extends ConsumerState<HomeScreen> {
     return GestureDetector(
       onTap: () {
         HapticFeedback.mediumImpact();
+        AudioService.select();
         setState(() => _currentTab = 2);
       },
       child: Container(

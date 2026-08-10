@@ -151,6 +151,7 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
 
   void _goToNextPage() {
     HapticFeedback.lightImpact();
+    AudioService.page();
     if (_currentPageIndex < widget.story.pages.length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 450),
@@ -161,6 +162,7 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
 
   void _goToPrevPage() {
     HapticFeedback.lightImpact();
+    AudioService.page();
     if (_currentPageIndex > 0) {
       _pageController.previousPage(
         duration: const Duration(milliseconds: 450),
@@ -171,6 +173,7 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
 
   void _showWordModal(StoryVocabularyWord word) {
     HapticFeedback.selectionClick();
+    AudioService.coin();
     AudioService.speak('${word.word}. ${word.meaning}');
     GameData.addCoins(1);
 
@@ -272,8 +275,9 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
     StoryAudioService.stop();
 
     // ثبت تکمیل داستان برای بار اول
-    GameData.markStoryCompleted(widget.story.id);
+    final isNew = GameData.markStoryCompleted(widget.story.id);
     GameData.recordAnswer(correct: true, skill: 'vocab');
+    if (isNew) AudioService.win();
 
     // نمایش مسابقه درک مطلب داستان
     StoryQuizModal.show(context, widget.story);

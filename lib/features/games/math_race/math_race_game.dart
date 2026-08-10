@@ -130,6 +130,11 @@ class _MathRaceGameState extends State<MathRaceGame> {
     if (widget.stageId != null) {
       GameData.completeStage(widget.stageId!, stageNumber: widget.stageNumber);
     }
+    if (_correct >= 7) {
+      unawaited(AudioService.win());
+    } else {
+      unawaited(AudioService.lose());
+    }
     FandoghiCoach.reward(
       _correct >= 7
           ? 'چه راننده‌ی سریعی! $_correct جواب درست دادی 🏆'

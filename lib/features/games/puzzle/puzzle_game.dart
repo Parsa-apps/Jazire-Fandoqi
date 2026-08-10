@@ -104,6 +104,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
     if (widget.stageId != null) {
       GameData.completeStage(widget.stageId!, stageNumber: widget.stageNumber);
     }
+    unawaited(AudioService.win());
     FandoghiCoach.reward('پازل کامل شد! تو یک حل‌کننده‌ی حرفه‌ای هستی 🏆');
   }
 

@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:math';
 
+import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
@@ -7,79 +9,186 @@ import 'game_data.dart';
 import 'logger_service.dart';
 
 /// ────────────────────────────────────────────────────────────
-/// 🔊 فاز ۶: طراحی سیستم صوتی حرفه‌ای
+/// 🔊 سامانه صوتی آفلاین فندقی
 ///
-/// - دو پخش‌کننده جدا: افکت و موسیقی پس‌زمینه (بدون تداخل)
-/// - صف TTS: جملات پشت سر هم قطع نمی‌شوند و overlap ندارند
-/// - افکت‌های تشویقی/درست/غلط از طریق TTS کودکانه (بدون نیاز به
-///   فایل صوتی سنگین؛ صدای فندقی) + امکان جایگزینی با asset بعداً
-/// - تلفظ فارسی حروف الفبا برای آکادمی الفبا
-/// - خاموش/روشن کردن با یک پرچم سراسری
+/// همهٔ افکت‌های بازی (کلیک، درست، غلط، برد، باخت، سکه، ستاره،
+/// ترکیدن حباب و...) و تلفظ حروف الفبا به‌صورت فایل‌های صوتی
+/// داخل اپ (assets/audio) پخش می‌شوند تا روی هیچ دستگاهی به
+/// موتور TTS وابسته نباشند.
+///
+/// یک استخر از پخش‌کننده‌ها برای همپوشانی افکت‌ها استفاده می‌شود
+/// (مثلاً ترکیدن پشت سر هم حباب‌ها).
+///
+/// TTS فقط برای محتوای کاملاً پویا (مثل پاسخ‌های هوش مصنوعی
+/// دوست فندقی) باقی مانده و در صورت عدم پشتیبانی، بی‌صدا رد می‌شود.
 /// ────────────────────────────────────────────────────────────
 class AudioService {
-  static final AudioPlayer _effectPlayer = AudioPlayer();
+  static const String _sfxPath = 'assets/audio/sfx/';
+  static const String _lettersPath = 'assets/audio/letters/';
+  static const String _numbersPath = 'assets/audio/numbers/';
+
+  // استخر افکت برای پخش همزمان چند صدا
+  static const int _poolSize = 5;
+  static final List<AudioPlayer> _sfxPool =
+      List.generate(_poolSize, (_) => AudioPlayer());
+  static int _poolIndex = 0;
+
   static final AudioPlayer _bgmPlayer = AudioPlayer();
 
-  /// صدای مربی فندقی (TTS)
+  /// موتور TTS — فقط برای محتوای پویا و به‌عنوان آخرین راه.
   static final FlutterTts _tts = FlutterTts();
 
-  /// صف جملات: تا جمله قبلی تمام نشود، جمله بعدی شروع نمی‌شود.
   static final List<String> _speechQueue = <String>[];
   static bool _speaking = false;
 
   static bool _initialized = false;
+  static bool _ttsAvailable = false;
 
   static Future<void> init() async {
     if (_initialized) return;
+
+    // صدای همه پخش‌کننده‌ها
+    for (final p in _sfxPool) {
+      p.setVolume(1.0);
+    }
+
+    // TTS را اختیاری راه‌اندازی کن؛ روی دستگاه‌هایی که ندارند،
+    // خطا را بی‌صدا می‌بلعیم و بدونش ادامه می‌دهیم.
     try {
       await _tts.setLanguage('fa-IR');
-      await _tts.setPitch(1.35); // صدای بچگانه شیرین — فارسی روان بدون لهجه
-      await _tts.setSpeechRate(0.46); // آرام و شمرده برای درک کودک
-      await _tts.setVolume(1.0);
-      _initialized = true;
-    } catch (error) {
-      LoggerService.e('AudioService.init failed', error);
-    }
-  }
-
-  /// حالت کودکانه حرفه‌ای — برای قصه‌خوانی
-  static Future<void> enableChildVoice() async {
-    try {
-      await _tts.setPitch(1.4);
-      await _tts.setSpeechRate(0.44);
-    } catch (_) {}
-  }
-
-  static Future<void> enableNormalVoice() async {
-    try {
       await _tts.setPitch(1.35);
       await _tts.setSpeechRate(0.46);
-    } catch (_) {}
+      await _tts.setVolume(1.0);
+      _ttsAvailable = true;
+    } catch (error) {
+      _ttsAvailable = false;
+      LoggerService.e('TTS unavailable on this device', error);
+    }
+
+    _initialized = true;
   }
 
-  // ─────────────────────────── افکت ───────────────────────────
+  // ─────────────────────────── افکت‌های آفلاین ───────────────────────────
 
-  /// پخش افکت صوتی از asset. اگر فایل نبود، خطا فقط لاگ می‌شود.
-  static Future<void> playEffect(String assetPath) async {
+  /// پخش یک افکت از استخر (بدون قطع صدای قبلی).
+  static Future<void> _playFromPool(String assetPath) async {
     if (!GameData.soundEnabled) return;
     try {
-      await _effectPlayer.setAsset(assetPath);
-      await _effectPlayer.play();
+      final player = _sfxPool[_poolIndex];
+      _poolIndex = (_poolIndex + 1) % _poolSize;
+      await player.stop();
+      await player.setAsset(assetPath);
+      await player.play();
     } catch (error) {
-      LoggerService.e('Error playing effect: $assetPath', error);
+      // فایل صوتی ممکن است هنوز تولید نشده باشد؛ بی‌صدا رد شو.
+      LoggerService.e('SFX missing: $assetPath', error);
     }
   }
+
+  static Future<void> playSfx(String name) =>
+      _playFromPool('$_sfxPath$name.wav');
+
+  // ── افکت‌های آماده ──
+  static Future<void> tap() => playSfx('tap');
+  static Future<void> click() => playSfx('click');
+  static Future<void> select() => playSfx('select');
+  static Future<void> back() => playSfx('back');
+  static Future<void> page() => playSfx('page');
+  static Future<void> swoosh() => playSfx('swoosh');
+  static Future<void> bubble() => playSfx('bubble');
+  static Future<void> coin() => playSfx('coin');
+  static Future<void> star() => playSfx('star');
+  static Future<void> correct() => playSfx('correct');
+  static Future<void> wrong() => playSfx('wrong');
+  static Future<void> win() => playSfx('win');
+  static Future<void> lose() => playSfx('lose');
+  static Future<void> levelUp() => playSfx('levelup');
+  static Future<void> unlock() => playSfx('unlock');
+  static Future<void> tick() => playSfx('tick');
+  static Future<void> countdown() => playSfx('countdown');
+  static Future<void> go() => playSfx('go');
+  static Future<void> sleepChime() => playSfx('sleep');
+
+  /// بازخورد لمسی + صوتی برای دکمه‌ها.
+  static Future<void> buttonTap() async {
+    HapticFeedback.lightImpact();
+    await tap();
+  }
+
+  // ─────────────────────────── حروف الفبا (آفلاین) ───────────────────────────
+
+  /// نگاشت حرف فارسی به شماره فایل صوتی (l01..l32).
+  static const Map<String, int> _letterIndex = {
+    'آ': 1, 'ا': 1,
+    'ب': 2,
+    'پ': 3,
+    'ت': 4,
+    'ث': 5,
+    'ج': 6,
+    'چ': 7,
+    'ح': 8,
+    'خ': 9,
+    'د': 10,
+    'ذ': 11,
+    'ر': 12,
+    'ز': 13,
+    'ژ': 14,
+    'س': 15,
+    'ش': 16,
+    'ص': 17,
+    'ض': 18,
+    'ط': 19,
+    'ظ': 20,
+    'ع': 21,
+    'غ': 22,
+    'ف': 23,
+    'ق': 24,
+    'ک': 25,
+    'گ': 26,
+    'ل': 27,
+    'م': 28,
+    'ن': 29,
+    'و': 30,
+    'ه': 31,
+    'ی': 32,
+  };
+
+  /// تلفظ رسای حرف فارسی از فایل آفلاین.
+  static Future<void> pronounceLetter(String letter) async {
+    if (!GameData.soundEnabled) return;
+    final idx = _letterIndex[letter];
+    if (idx == null) {
+      // حرف ناشناخته — بی‌صدا
+      return;
+    }
+    final fileName = 'l${idx.toString().padLeft(2, '0')}.mp3';
+    await _playFromPool('$_lettersPath$fileName');
+  }
+
+  // ─────────────────────────── اعداد (آفلاین) ───────────────────────────
+
+  static const Map<int, int> _numberIndex = {
+    0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5,
+    6: 6, 7: 7, 8: 8, 9: 9, 10: 10,
+    11: 11, 12: 12, 13: 13, 14: 14, 15: 15,
+    16: 16, 17: 17, 18: 18, 19: 19, 20: 20,
+  };
+
+  /// تلفظ عدد فارسی از فایل آفلاین (در صورت موجود بودن).
+  static Future<void> speakNumber(int number) async {
+    if (!GameData.soundEnabled) return;
+    final idx = _numberIndex[number];
+    if (idx == null) return;
+    final fileName = 'n${idx.toString().padLeft(2, '0')}.mp3';
+    await _playFromPool('$_numbersPath$fileName');
+  }
+
+  // ─────────────────────────── موسیقی پس‌زمینه ───────────────────────────
+  // به‌درخواست کاربر: هیچ موسیقی پس‌زمینه‌ای پخش نمی‌شود.
+  // متدها برای سازگاری با کدهای قدیمی نگه داشته شده ولی بی‌اثرند.
 
   static Future<void> playBgm(String assetPath) async {
-    if (!GameData.soundEnabled) return;
-    try {
-      await _bgmPlayer.setAsset(assetPath);
-      await _bgmPlayer.setLoopMode(LoopMode.one);
-      await _bgmPlayer.setVolume(0.5);
-      await _bgmPlayer.play();
-    } catch (error) {
-      LoggerService.e('Error playing BGM: $assetPath', error);
-    }
+    // عمداً خالی — موسیقی پس‌زمینه خاموش است.
   }
 
   static void stopBgm() {
@@ -87,36 +196,41 @@ class AudioService {
   }
 
   static void setBgmVolume(double volume) {
-    _bgmPlayer.setVolume(volume.clamp(0.0, 1.0).toDouble());
+    // بدون تغییر — BGM خاموش است.
   }
 
-  // ─────────────────────────── TTS ───────────────────────────
+  // ─────────────────────────── TTS پویا (فقط محتوای زنده) ───────────────────────────
 
-  /// سخن گفتن فندقی — جمله در صف قرار می‌گیرد.
+  /// سخن گفتن برای محتوای کاملاً پویا که نمی‌توان از قبل ضبط کرد
+  /// (مثل پاسخ‌های هوش مصنوعی دوست فندقی). روی دستگاه‌های بدون
+  /// TTS بی‌صدا رد می‌شود.
   static Future<void> speak(String text) async {
     final clean = text.trim();
-    if (clean.isEmpty) return;
-    if (!GameData.soundEnabled) return;
+    if (clean.isEmpty || !GameData.soundEnabled || !_ttsAvailable) return;
 
-    _speechQueue.add(clean);
+    // پاکسازی اموجی‌ها برای گفتار روان‌تر
+    final spoken = clean.replaceAll(RegExp(r'[\p{Extended_Pictographic}]', unicode: true), ' ').trim();
+    if (spoken.isEmpty) return;
+
+    _speechQueue.add(spoken);
     if (!_speaking) {
       unawaited(_drainQueue());
     }
   }
 
-  /// آیا هم‌اکنون فندقی در حال حرف زدن است؟
   static bool get isSpeaking => _speaking;
 
-  /// متوقف کردن همه جمله‌های در صف (مثلاً موقع ناوبری).
   static void stopSpeaking() {
     _speechQueue.clear();
-    _tts.stop();
+    try {
+      _tts.stop();
+    } catch (_) {}
     _speaking = false;
   }
 
   static Future<void> _drainQueue() async {
     _speaking = true;
-    while (_speechQueue.isNotEmpty && GameData.soundEnabled) {
+    while (_speechQueue.isNotEmpty && GameData.soundEnabled && _ttsAvailable) {
       final text = _speechQueue.removeAt(0);
       try {
         await _tts.speak(text);
@@ -128,81 +242,33 @@ class AudioService {
     _speaking = false;
   }
 
-  // ─────────────── افکت‌های آماده (بدون فایل) ───────────────
+  // ─────────────────────────── سازگاری با نسخه قدیم ───────────────────────────
 
-  /// تشویق کوتاه بعد از جواب درست.
-  static Future<void> playCorrect() =>
-      speak(_randomChoice(<String>['آفرین! 🎉', 'عالی بود! 🌟', 'همین‌طور ادامه بده! 💪']));
+  static final Random _rng = Random();
 
-  /// بازخورد ملایم بعد از جواب نادرست (بدون سرزنش — روانشناسی کودک).
-  static Future<void> playWrong() =>
-      speak(_randomChoice(<String>['اشکالی نداره، دوباره تلاش کن 🌱', 'نزدیک بود! دوباره 🎯']));
+  /// تشویق کوتاه بعد از جواب درست (صدای آفلاین).
+  static Future<void> playCorrect() => correct();
 
-  /// صدای سکه/ستاره.
-  static Future<void> playCoin() =>
-      speak(_randomChoice(<String>['یک سکه گرفتی! 🪙', 'ستاره گرفتی! ✨']));
+  /// بازخورد ملایم بعد از جواب نادرست (صدای آفلاین).
+  static Future<void> playWrong() => wrong();
 
-  /// جشن برد بازی.
-  static Future<void> playWin() =>
-      speak(_randomChoice(<String>['بردی! آفرین قهرمان! 🏆', 'چه بازی قشنگی! تو برنده‌ای! 🎊']));
+  /// جشن برد (صدای آفلاین).
+  static Future<void> playWin() => win();
 
-  /// تلفظ یک حرف فارسی برای آکادمی الفبا.
-  static Future<void> pronounceLetter(String letter) async {
-    const Map<String, String> letters = <String, String>{
-      'آ': 'الف',
-      'ا': 'الف',
-      'ب': 'ب',
-      'پ': 'پ',
-      'ت': 'ت',
-      'ث': 'ث',
-      'ج': 'ج',
-      'چ': 'چ',
-      'ح': 'ح',
-      'خ': 'خ',
-      'د': 'د',
-      'ذ': 'ذ',
-      'ر': 'ر',
-      'ز': 'ز',
-      'ژ': 'ژ',
-      'س': 'س',
-      'ش': 'ش',
-      'ص': 'ص',
-      'ض': 'ض',
-      'ط': 'ط',
-      'ظ': 'ظ',
-      'ع': 'ع',
-      'غ': 'غ',
-      'ف': 'ف',
-      'ق': 'ق',
-      'ک': 'ک',
-      'گ': 'گ',
-      'ل': 'ل',
-      'م': 'م',
-      'ن': 'ن',
-      'و': 'و',
-      'ه': 'ه',
-      'ی': 'ی',
-    };
-    await speak(letters[letter] ?? letter);
-  }
+  /// دریافت سکه.
+  static Future<void> playCoin() => coin();
 
-  static String _randomChoice(List<String> options) {
-    return options[DateTime.now().microsecondsSinceEpoch % options.length];
-  }
+  /// ارجاعات قدیمی به playEffect — به استخر هدایت می‌شود.
+  static Future<void> playEffect(String assetPath) =>
+      _playFromPool(assetPath);
 
-  /// فاز ۴۴: تلفظ اعداد فارسی با کلمات (برای آکادمی اعداد).
-  static Future<void> speakNumber(int number) async {
-    const Map<int, String> words = <int, String>{
-      0: 'صفر', 1: 'یک', 2: 'دو', 3: 'سه', 4: 'چهار', 5: 'پنج',
-      6: 'شش', 7: 'هفت', 8: 'هشت', 9: 'نه', 10: 'ده',
-      11: 'یازده', 12: 'دوازده', 13: 'سیزده', 14: 'چهارده', 15: 'پانزده',
-      16: 'شانزده', 17: 'هفده', 18: 'هجده', 19: 'نوزده', 20: 'بیست',
-    };
-    await speak(words[number] ?? '$number');
-  }
+  static String _randomChoice(List<String> options) =>
+      options[_rng.nextInt(options.length)];
 
   static void dispose() {
-    _effectPlayer.dispose();
+    for (final p in _sfxPool) {
+      p.dispose();
+    }
     _bgmPlayer.dispose();
   }
 }

@@ -78,6 +78,7 @@ class _SoundMatchGameState extends State<SoundMatchGame> {
   }
 
   void _playSound() {
+    AudioService.tap();
     unawaited(AudioService.speak(_target.sound));
   }
 
@@ -110,6 +111,11 @@ class _SoundMatchGameState extends State<SoundMatchGame> {
         GameData.addStars(_correct);
         if (widget.stageId != null) {
           GameData.completeStage(widget.stageId!, stageNumber: widget.stageNumber);
+        }
+        if (_correct >= 4) {
+          unawaited(AudioService.win());
+        } else {
+          unawaited(AudioService.lose());
         }
         FandoghiCoach.reward('حافظه شنیداری‌ات قوی شد! 🎧🏆');
       } else {

@@ -74,12 +74,14 @@ class _BodyPartsGameState extends State<BodyPartsGame> {
         if (widget.stageId != null) {
           GameData.completeStage(widget.stageId!, stageNumber: widget.stageNumber);
         }
+        unawaited(AudioService.win());
         FandoghiCoach.reward('بدنت را کامل ساختی! حالا حواس پنج‌گانه را می‌شناسی 👏');
       });
     }
   }
 
   void _saySense(int index) {
+    AudioService.tap();
     unawaited(AudioService.speak('${_parts[index].$1}، ${_parts[index].$3}'));
   }
 

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
@@ -219,6 +220,7 @@ class _MemoryState extends State<MemoryMatchGame>
     if (!canStartPlay(context)) return;
 
     HapticFeedback.lightImpact();
+    AudioService.tap();
     if (_firstFlipped == null) {
       setState(() {
         _cards[index].isFlipped = true;
@@ -260,6 +262,8 @@ class _MemoryState extends State<MemoryMatchGame>
       // فاز ۵۲: پیشرفت مأموریت روزانه حافظه
       GameData.progressMission('memory');
       FandoghiCoach.correct('جفت درست پیدا شد! حافظه‌ات عالی کار می‌کند 🧠🌟');
+      AudioService.correct();
+      if (bonus > 0) AudioService.coin();
       HapticFeedback.mediumImpact();
       if (won) {
         setState(() => _showCelebration = true);
@@ -278,6 +282,7 @@ class _MemoryState extends State<MemoryMatchGame>
       mood: FandoghiMood.thinking,
       tone: FandoghiCoachTone.encouragement,
     );
+    AudioService.wrong();
     HapticFeedback.heavyImpact();
     Future<void>.delayed(const Duration(milliseconds: 800), () {
       if (!mounted || token != _gameToken || _gameOver) return;
@@ -303,6 +308,11 @@ class _MemoryState extends State<MemoryMatchGame>
     GameData.updateHighScore(_score, 'quiz');
     if (won && widget.stageId != null) {
       GameData.completeStage(widget.stageId!, stageNumber: widget.stageNumber);
+    }
+    if (won) {
+      AudioService.win();
+    } else {
+      AudioService.lose();
     }
     FandoghiCoach.reward(
       won
