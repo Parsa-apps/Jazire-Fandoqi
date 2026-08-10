@@ -305,7 +305,4 @@ class _SoundMatchGameState extends State<SoundMatchGame> {
       ),
     );
   }
-      ),
-    );
-  }
 }
