@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/app_colors.dart';
-import '../../../core/ai_system.dart';
-import '../../../core/audio_service.dart';
-import '../../../core/game_data.dart';
-import '../../../shared/widgets/fandoghi_v2.dart';
+import '../../app/app_colors.dart';
+import '../../core/ai_system.dart';
+import '../../core/audio_service.dart';
+import '../../core/game_data.dart';
+import '../../shared/widgets/fandoghi_v2.dart';
 
 /// ────────────────────────────────────────────────────────────
 /// 💬 فاز ۴۸: دوست خیالی فندقی — گفتگوی آفلاین قانون‌محور
