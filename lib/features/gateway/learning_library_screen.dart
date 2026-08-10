@@ -6,6 +6,7 @@ import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
 import '../../app/design_tokens.dart';
 import '../../core/fandoghi_coach.dart';
+import '../../core/fandoghi_models.dart';
 import '../../shared/widgets/child_touch_target.dart';
 import '../../shared/widgets/fandoghi_premium.dart';
 
@@ -202,7 +203,7 @@ class _LibraryCard extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.95),
-            borderRadius: AppRadii.xl,
+            borderRadius: BorderRadius.circular(AppRadii.xl),
             border: Border.all(color: entry.color.withOpacity(0.45), width: 2),
             boxShadow: AppShadows.colored(entry.color, opacity: 0.22),
           ),
