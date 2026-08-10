@@ -147,7 +147,7 @@ class AboutScreen extends StatelessWidget {
           const SizedBox(height: 16),
           const Center(
             child: Text(
-              'آموزش فندقی • نسخه ۶.۰.۰\nساخته‌شده با دقت برای کودکان ایران',
+              'آموزش فندقی • نسخه ۶.۱.۰ پریمیوم\nساخته‌شده با دقت برای کودکان ایران',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.textSecondary,
