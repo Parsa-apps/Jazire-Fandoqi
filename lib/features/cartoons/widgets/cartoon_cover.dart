@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:amoozesh_fandoghi/core/cartoons/aparat_service.dart';
+import 'package:amoozesh_fandoghi/shared/widgets/professional_skeleton.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// 🖼️ CARTOON COVER IMAGE — نمایش «عکس واقعی» شخصیت‌های کارتون
@@ -42,6 +43,7 @@ class CartoonCoverImage extends StatefulWidget {
 
 class _CartoonCoverImageState extends State<CartoonCoverImage> {
   String? _url;
+  bool _loading = false;
 
   @override
   void initState() {
@@ -75,15 +77,20 @@ class _CartoonCoverImageState extends State<CartoonCoverImage> {
       (widget.searchQuery != null && widget.searchQuery!.trim().isNotEmpty);
 
   Future<void> _load() async {
+    if (mounted) setState(() => _loading = true);
     try {
       final url = await AparatService.thumbnailFor(
         videoHash: widget.videoHash,
         searchQuery: widget.searchQuery,
       );
-      if (!mounted || url == null || url == _url) return;
-      setState(() => _url = url);
+      if (!mounted) return;
+      setState(() {
+        _url = url;
+        _loading = false;
+      });
     } catch (_) {
       // در حالت آفلاین/خطا همان پوستر ایموجی باقی می‌ماند.
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -142,7 +149,19 @@ class _CartoonCoverImageState extends State<CartoonCoverImage> {
 
     final url = _url;
 
-    if (url == null) return fallback;
+    if (url == null) {
+      if (_loading) {
+        return Center(
+          child: ProfessionalSkeleton(
+            isLoading: true,
+            child: fallback,
+            itemCount: 1,
+            type: SkeletonType.card,
+          ),
+        );
+      }
+      return fallback;
+    }
 
     return Stack(
       fit: StackFit.expand,

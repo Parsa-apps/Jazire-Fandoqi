@@ -17,6 +17,7 @@ import 'game_data.dart';
 /// ────────────────────────────────────────────────────────────
 class BackupService {
   static const String _fileName = 'kudake_backup.parsa';
+  static const MethodChannel _fileChannel = MethodChannel('kudake_iran/backup');
 
   /// کلید ۳۲ بایتی AES-256 — ثابت برای بازیابی در همهٔ دستگاه‌ها
   /// (از هش SHA-256 نام اپ ساخته شده؛ در کد نهایی می‌ماند چون
@@ -32,6 +33,9 @@ class BackupService {
 
   /// خروجی بکاپ رمزنگاری‌شدهٔ AES-GCM (فرمت v2)
   static Future<String> exportBackup() async {
+    // The last write may still be queued after a game reward. Flush it before
+    // reading Hive so the exported file contains the newest progress.
+    await GameData.save();
     final snapshot = await HivePlayerStore.readSnapshot() ?? <String, dynamic>{};
     // اگر Hive خالی بود، از GameData snapshot بساز (fallback)
     final effective = snapshot.isEmpty ? _fallbackSnapshot() : snapshot;
@@ -107,8 +111,11 @@ class BackupService {
       }
 
       final snapshot = jsonDecode(jsonStr) as Map<String, dynamic>;
+      // Let any reward write already queued by the current session finish
+      // before the imported snapshot becomes the source of truth.
+      await GameData.save();
       await HivePlayerStore.writeSnapshot(snapshot);
-      await GameData.load();
+      await GameData.reload();
       HapticFeedback.heavyImpact();
       return true;
     } catch (_) {
@@ -123,6 +130,22 @@ class BackupService {
       sum = (sum + input.codeUnitAt(i) * (i + 1)) % 100000;
     }
     return sum.toString();
+  }
+
+  /// Opens the native document picker and imports a selected `.parsa` file.
+  /// Android copies the content URI to a private temporary file first, so the
+  /// crypto layer stays platform-independent and never needs broad storage
+  /// permissions.
+  static Future<bool> pickAndImportBackup() async {
+    try {
+      final path = await _fileChannel.invokeMethod<String>('pickBackupFile');
+      if (path == null || path.trim().isEmpty) return false;
+      return importBackup(path);
+    } on MissingPluginException {
+      return false;
+    } on PlatformException {
+      return false;
+    }
   }
 
   /// مسیر پیشنهادی برای ذخیره در Downloads (برای اشتراک)

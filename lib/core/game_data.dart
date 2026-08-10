@@ -54,7 +54,7 @@ class GameData {
   static String childName = '';
   static String profilePhotoPath = '';
   static int childAge = 5;
-  static bool onboardingSeen = true;
+  static bool onboardingSeen = false;
 
   // Feature state
   static String lastWeekReset = '';
@@ -90,6 +90,8 @@ class GameData {
     'weather': 0,
     'emotions': 0,
     'jobs': 0,
+    'stories': 0,
+    'lullaby': 0,
   };
 
   // Settings
@@ -142,6 +144,16 @@ class GameData {
     return _loadFuture ??= _loadInternal();
   }
 
+  /// Reloads the latest local snapshot after an import or an external storage
+  /// operation. [load] is intentionally idempotent during app startup, so an
+  /// explicit reload is needed when the completed Future is already cached.
+  static Future<void> reload() async {
+    _loadFuture = null;
+    _isLoaded = false;
+    _persistenceAvailable = false;
+    await load();
+  }
+
   static Future<void> _loadInternal() async {
     try {
       // ── فاز ۴: دیتابیس Hive اول ─────────────────────────────
@@ -175,7 +187,9 @@ class GameData {
       childName = _readString('childName', '', maxLength: 24).trim();
       profilePhotoPath = _readString('profilePhotoPath', '', maxLength: 512);
       childAge = _readInt('childAge', 5, min: 3, max: 12);
-      onboardingSeen = prefs.getBool('onboardingSeen') ?? true;
+      // A missing flag means a fresh install. Existing installs that already
+      // wrote the flag keep their previous onboarding decision.
+      onboardingSeen = prefs.getBool('onboardingSeen') ?? false;
       dailyMissions = _readInt('dm', 0, min: 0, max: missionTargets.length);
       _missionDay = prefs.getString('missionDay') ?? '';
 
@@ -428,7 +442,11 @@ class GameData {
       ..clear()
       ..addAll(playedGames);
     final sk = asSkillMap('skills');
-    if (sk.isNotEmpty) skills = sk;
+    if (sk.isNotEmpty) {
+      // Merge old snapshots into the current skill schema so new PR80
+      // achievements (stories/lullaby) are not lost during migration.
+      skills = <String, int>{...skills, ...sk};
+    }
   }
 
   /// ساخت اسنپ‌شات Hive از وضعیت فعلی (فاز ۴).
@@ -548,7 +566,7 @@ class GameData {
   }
 
   static Future<void> save() {
-    if (!_isLoaded || !_persistenceAvailable || _prefs == null) {
+    if (!_isLoaded || !_persistenceAvailable) {
       return Future<void>.value();
     }
 
@@ -569,7 +587,12 @@ class GameData {
 
   static Future<void> _writeAll() async {
     final prefs = _prefs;
-    if (prefs == null) return;
+    // Hive snapshot mode is the normal path after the first migrated load.
+    // Do not silently drop writes just because SharedPreferences is absent.
+    if (prefs == null) {
+      await HivePlayerStore.writeSnapshot(_buildSnapshot());
+      return;
+    }
 
     await prefs.setInt('stars', stars);
     await prefs.setInt('c', coins);
@@ -665,6 +688,28 @@ class GameData {
     unawaited(save());
   }
 
+  /// Spends currency atomically. Negative calls to [addCoins] used to be
+  /// silently ignored, which made the PR80 ice-heart purchase appear to work
+  /// while never charging the child.
+  static bool spendCoins(int amount) {
+    if (!_isLoaded || amount <= 0 || coins < amount) return false;
+    coins -= amount;
+    _notify();
+    unawaited(save());
+    return true;
+  }
+
+  /// Uses the ice heart once to restart a broken streak without allowing a
+  /// negative balance or a fake purchase.
+  static bool activateIceHeart({int cost = 50}) {
+    if (!_isLoaded || cost <= 0 || !spendCoins(cost)) return false;
+    streak = max(1, streak);
+    lastLogin = _dateKey();
+    _notify();
+    unawaited(save());
+    return true;
+  }
+
   static void recordCorrect({String? skill}) {
     recordAnswer(correct: true, skill: skill);
   }
@@ -734,6 +779,22 @@ class GameData {
 
   static int missionValue(String id) => missionProgress[id] ?? 0;
 
+  /// صندوق مأموریت روزانه فقط یک بار در هر روز قابل دریافت است.
+  static bool get canClaimDailyMissionChest =>
+      _isLoaded && dailyMissions >= 3 && lastSurpriseClaimDate != _dateKey();
+
+  static bool claimDailyMissionChest({int reward = 20}) {
+    if (!_isLoaded || reward <= 0) return false;
+    if (_missionDay.isNotEmpty) _refreshDateBoundaries();
+    if (!canClaimDailyMissionChest) return false;
+    lastSurpriseClaimDate = _dateKey();
+    coins = min(_maxStoredCounter, coins + reward);
+    _autoAchieve();
+    _notify();
+    unawaited(save());
+    return true;
+  }
+
   static void unlockAch(String id) {
     if (!_isLoaded || id.isEmpty || achievements.contains(id)) return;
     achievements.add(id);
@@ -791,6 +852,10 @@ class GameData {
   static bool markStoryCompleted(String id) {
     if (!_isLoaded || id.isEmpty || completedStories.contains(id)) return false;
     completedStories.add(id);
+    // Keep the dedicated story skill in sync for the PR80 story achievements.
+    if (skills.containsKey('stories')) {
+      skills['stories'] = min(_maxStoredCounter, (skills['stories'] ?? 0) + 1);
+    }
     _notify();
     unawaited(save());
     return true;
@@ -1188,6 +1253,8 @@ class GameData {
       'weather': 0,
       'emotions': 0,
       'jobs': 0,
+      'stories': 0,
+      'lullaby': 0,
     };
     timeLimitMinutes = 60;
     treasureOpened = false;

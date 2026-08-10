@@ -7,6 +7,7 @@ import '../../app/app_colors.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../core/app_legal.dart';
 import '../../core/billing_service.dart';
+import '../../core/store_rating_service.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
 
 /// Publisher, support and privacy information for parents and store review.
@@ -311,9 +312,11 @@ void _showRatingDialog(BuildContext context) {
           child: const Text('بعداً'),
         ),
         ElevatedButton(
-          onPressed: () {
-            BillingService.openBazaarReview();
-            Navigator.pop(dialogContext);
+          onPressed: () async {
+            await StoreRatingService.markPrompted();
+            await StoreRatingService.markRated();
+            await BillingService.openBazaarReview();
+            if (dialogContext.mounted) Navigator.pop(dialogContext);
           },
           child: const Text('ثبت در کافه‌بازار ⭐'),
         ),

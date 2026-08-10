@@ -9,6 +9,7 @@ import '../../app/design_tokens.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../core/ai_system.dart';
 import '../../core/app_legal.dart';
+import '../../core/backup_service.dart';
 import '../../core/game_data.dart';
 import '../../shared/widgets/skill_radar_chart.dart';
 import '../../data/datasources/crash_report_store.dart';
@@ -232,6 +233,11 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
 
           // ==================== REPORT ====================
           _buildReportCard(),
+
+          const SizedBox(height: 24),
+
+          // ==================== OFFLINE BACKUP (PR80) ====================
+          _buildBackupCard(),
 
           const SizedBox(height: 24),
 
@@ -680,6 +686,90 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
         ),
       ],
     );
+  }
+
+  Widget _buildBackupCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.primary.withOpacity(0.12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('💾', style: TextStyle(fontSize: 22)),
+              const SizedBox(width: 8),
+              Text(
+                'بکاپ امن پیشرفت کودک',
+                style: AppFonts.vazirmatn(fontSize: 18, fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'یک فایل رمزگذاری‌شدهٔ .parsa بسازید یا بکاپ قبلی را برگردانید. فایل فقط روی دستگاه شما رمزگشایی می‌شود.',
+            style: TextStyle(color: Colors.grey, fontSize: 13, height: 1.6),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: PremiumButton(
+                  text: 'ساخت بکاپ',
+                  color: AppColors.primary,
+                  icon: Icons.save_alt_rounded,
+                  onPressed: _exportBackup,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: PremiumButton(
+                  text: 'بازیابی',
+                  color: const Color(0xFF00B894),
+                  icon: Icons.restore_rounded,
+                  onPressed: _importBackup,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _exportBackup() async {
+    try {
+      final path = await BackupService.exportBackup();
+      if (!mounted) return;
+      await Clipboard.setData(ClipboardData(text: path));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('بکاپ ساخته شد و مسیر آن کپی شد: $path')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ساخت بکاپ انجام نشد؛ دوباره تلاش کنید.')),
+      );
+    }
+  }
+
+  Future<void> _importBackup() async {
+    final restored = await BackupService.pickAndImportBackup();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          restored
+              ? 'بکاپ با موفقیت بازیابی شد؛ اطلاعات پنل تازه شد ✅'
+              : 'فایل بکاپ انتخاب نشد یا معتبر نبود.',
+        ),
+      ),
+    );
+    if (restored) setState(() {});
   }
 
   Widget _buildPinCard() {

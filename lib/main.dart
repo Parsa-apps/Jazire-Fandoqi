@@ -44,6 +44,12 @@ import 'core/learning_content/lullabies_data.dart';
 import 'features/home/home_screen.dart';
 import 'features/profile/sticker_album_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
+import 'features/animals/animal_encyclopedia_screen.dart';
+import 'features/concepts/concepts_hub_screen.dart';
+import 'features/jobs/jobs_hub_screen.dart';
+import 'features/numbers/numbers_hub_screen.dart';
+import 'features/sel/sel_hub_screen.dart';
+import 'features/gateway/learning_library_screen.dart';
 import 'features/parent/parent_panel.dart';
 import 'features/splash/splash_screen.dart';
 import 'features/shop/game_access_gate.dart';
@@ -155,8 +161,29 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
           initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
-        '/onboarding': (context) => const AppGatewayScreen(),
+        '/onboarding': (context) => const OnboardingScreen(),
         '/gateway': (context) => const AppGatewayScreen(),
+        '/learning-library': (context) => const LearningLibraryScreen(),
+        '/animals': (context) => GameAccessGate(
+              gameName: 'حیوانات',
+              child: const AnimalEncyclopediaScreen(),
+            ),
+        '/numbers': (context) => GameAccessGate(
+              gameName: 'اعداد',
+              child: const NumbersHubScreen(),
+            ),
+        '/jobs': (context) => GameAccessGate(
+              gameName: 'شغل‌ها',
+              child: const JobsHubScreen(),
+            ),
+        '/concepts': (context) => GameAccessGate(
+              gameName: 'مفاهیم',
+              child: const ConceptsHubScreen(),
+            ),
+        '/sel': (context) => GameAccessGate(
+              gameName: 'احساسات',
+              child: const SelHubScreen(),
+            ),
         '/cartoons': (context) => const CartoonHubScreen(),
         '/stories': (context) => const StoriesHubScreen(),
         '/lullabies': (context) => const LullabyHubScreen(),
@@ -356,32 +383,47 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
       );
     }
     if (name.contains('مفاهیم') || name.contains('concept')) {
-      return AcademyGame(
-        topicId: 'concepts',
-        stageId: launch.stageId,
-        stageNumber: launch.stageNumber,
-      );
+      if (launch.stageId != null) {
+        return AcademyGame(
+          topicId: 'concepts',
+          stageId: launch.stageId,
+          stageNumber: launch.stageNumber,
+        );
+      }
+      return const ConceptsHubScreen();
     }
+    // PR80 hubs are real destinations, not dead files or generic quiz fallbacks.
+    // A stage launch keeps its completion callback; dashboard/library launches
+    // open the richer premium experiences.
     if (name.contains('حیوان') || name.contains('animal')) {
-      return AcademyGame(
-        topicId: 'animals',
-        stageId: launch.stageId,
-        stageNumber: launch.stageNumber,
-      );
+      if (launch.stageId != null) {
+        return AcademyGame(
+          topicId: 'animals',
+          stageId: launch.stageId,
+          stageNumber: launch.stageNumber,
+        );
+      }
+      return const AnimalEncyclopediaScreen();
     }
     if (name.contains('شغل') || name.contains('job')) {
-      return AcademyGame(
-        topicId: 'jobs',
-        stageId: launch.stageId,
-        stageNumber: launch.stageNumber,
-      );
+      if (launch.stageId != null) {
+        return AcademyGame(
+          topicId: 'jobs',
+          stageId: launch.stageId,
+          stageNumber: launch.stageNumber,
+        );
+      }
+      return const JobsHubScreen();
     }
-    if (name.contains('احساس') || name.contains('emotion')) {
-      return AcademyGame(
-        topicId: 'emotions',
-        stageId: launch.stageId,
-        stageNumber: launch.stageNumber,
-      );
+    if (name.contains('احساس') || name.contains('emotion') || name.contains('sel')) {
+      if (launch.stageId != null) {
+        return AcademyGame(
+          topicId: 'emotions',
+          stageId: launch.stageId,
+          stageNumber: launch.stageNumber,
+        );
+      }
+      return const SelHubScreen();
     }
     if (name.contains('میوه') || name.contains('fruit')) {
       return AcademyGame(
@@ -393,11 +435,14 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
     if (name.contains('عدد') || name.contains('اعداد') ||
         name.contains('ترتیب') || name.contains('number') ||
         name.contains('شمار')) {
-      return AcademyGame(
-        topicId: 'numbers',
-        stageId: launch.stageId,
-        stageNumber: launch.stageNumber,
-      );
+      if (launch.stageId != null) {
+        return AcademyGame(
+          topicId: 'numbers',
+          stageId: launch.stageId,
+          stageNumber: launch.stageNumber,
+        );
+      }
+      return const NumbersHubScreen();
     }
 
     return LearningQuizGame(

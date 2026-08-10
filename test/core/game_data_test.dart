@@ -143,4 +143,18 @@ void main() {
     // بار دوم نباید پاداش تکراری بدهد
     expect(GameData.claimRatingReward(), isFalse);
   });
+
+  test('coin spending is atomic and the daily mission chest is one-time', () {
+    GameData.coins = 60;
+    expect(GameData.spendCoins(50), isTrue);
+    expect(GameData.coins, 10);
+    expect(GameData.spendCoins(20), isFalse);
+
+    GameData.dailyMissions = 3;
+    expect(GameData.canClaimDailyMissionChest, isTrue);
+    expect(GameData.claimDailyMissionChest(), isTrue);
+    expect(GameData.coins, 30);
+    expect(GameData.claimDailyMissionChest(), isFalse);
+    expect(GameData.coins, 30);
+  });
 }

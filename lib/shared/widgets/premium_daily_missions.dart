@@ -11,7 +11,9 @@ import '../../core/game_data.dart';
 /// ۳ مأموریت روزانه با rollover نیمه‌شب، نوار پیشرفت و جایزه
 /// ═══════════════════════════════════════════════════════════════
 class PremiumDailyMissions extends StatelessWidget {
-  const PremiumDailyMissions({super.key});
+  final VoidCallback? onClaimChest;
+
+  const PremiumDailyMissions({super.key, this.onClaimChest});
 
   static const List<_MissionMeta> _metas = [
     _MissionMeta(id: 'questions', title: '۵ سوال جواب بده', emoji: '❓', color: Color(0xFF6C5CE7), reward: '۸ سکه'),
@@ -138,19 +140,53 @@ class PremiumDailyMissions extends StatelessWidget {
           }).toList(),
           if (allDone) ...[
             const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFFF8E53)]), borderRadius: BorderRadius.circular(AppRadii.lg), boxShadow: AppShadows.colored(const Color(0xFFFFD700))),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('🎁', style: TextStyle(fontSize: 18)),
-                  const SizedBox(width: 8),
-                  Text('صندوق روزانه باز شد! +۲۰ سکه', style: AppFonts.vazirmatn(fontSize: 13, fontWeight: FontWeight.w900, color: Colors.white)),
-                ],
+            Semantics(
+              button: onClaimChest != null && GameData.canClaimDailyMissionChest,
+              label: GameData.canClaimDailyMissionChest
+                  ? 'دریافت صندوق روزانه، بیست سکه'
+                  : 'صندوق روزانه دریافت شده',
+              child: GestureDetector(
+                onTap: GameData.canClaimDailyMissionChest ? onClaimChest : null,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    gradient: GameData.canClaimDailyMissionChest
+                        ? const LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFFF8E53)])
+                        : null,
+                    color: GameData.canClaimDailyMissionChest
+                        ? null
+                        : Colors.grey.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(AppRadii.lg),
+                    boxShadow: GameData.canClaimDailyMissionChest
+                        ? AppShadows.colored(const Color(0xFFFFD700))
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        GameData.canClaimDailyMissionChest ? '🎁' : '✅',
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        GameData.canClaimDailyMissionChest
+                            ? 'دریافت صندوق روزانه: +۲۰ سکه'
+                            : 'صندوق روزانه دریافت شد',
+                        style: AppFonts.vazirmatn(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                          color: GameData.canClaimDailyMissionChest
+                              ? Colors.white
+                              : (isDark ? Colors.white70 : Colors.black54),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ).animate().scale(duration: 500.ms, curve: Curves.elasticOut).shimmer(duration: 1000.ms, color: Colors.white.withOpacity(0.4)),
+            ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
           ],
         ],
       ),

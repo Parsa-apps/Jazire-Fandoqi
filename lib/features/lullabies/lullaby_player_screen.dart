@@ -7,6 +7,7 @@ import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/fandoghi_models.dart';
+import '../../core/game_data.dart';
 import '../../core/learning_content/lullabies_data.dart';
 import '../../shared/widgets/star_field.dart';
 
@@ -39,6 +40,7 @@ class _LullabyPlayerScreenState extends State<LullabyPlayerScreen> {
   Future<void> _initAudio() async {
     try {
       await _player.setAsset(widget.lullaby.audioAsset);
+      GameData.addSkill('lullaby');
       _duration = _player.duration ?? const Duration(seconds: 150);
       _player.setLoopMode(_isLooping ? LoopMode.one : LoopMode.off);
       _player.positionStream.listen((pos) {

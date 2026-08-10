@@ -182,7 +182,6 @@ class _AnimalEncyclopediaState extends State<AnimalEncyclopediaScreen> {
     // TTS ساده
     FandoghiCoach.say('${card.name}! ${card.fact ?? ''} زیستگاهش: ${_habitatOf(card.name)} 🗺️', mood: FandoghiMood.happy, duration: const Duration(seconds: 3));
     GameData.recordAnswer(correct: true, skill: 'animals');
-    GameData.addSkill('animals');
     setState(() {});
     showModalBottomSheet<void>(
       context: context,

@@ -311,6 +311,8 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
                 ),
                 _buildStickerButton(),
                 const SizedBox(height: 10),
+                _buildLearningLibraryButton(),
+                const SizedBox(height: 10),
               ],
             ),
           ),
@@ -627,6 +629,51 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
       )
           .animate()
           .fadeIn(delay: 600.ms, duration: 400.ms)
+          .slideY(begin: 0.3, curve: Curves.easeOutBack),
+    );
+  }
+
+  Widget _buildLearningLibraryButton() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: GestureDetector(
+        onTap: () => _openSection(
+          '/learning-library',
+          announcement: 'کتابخانه یادگیری باز شد؛ دنیای مورد علاقه‌ات را انتخاب کن 📚',
+        ),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF6C5CE7), Color(0xFF00B894)],
+            ),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: Colors.white.withOpacity(0.8), width: 1.5),
+            boxShadow: AppShadows.colored(AppColors.primary, opacity: 0.28),
+          ),
+          child: Row(
+            children: [
+              const Text('📚', style: TextStyle(fontSize: 24)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'کتابخانه یادگیری — حیوانات، اعداد، شغل‌ها و احساسات',
+                  textAlign: TextAlign.center,
+                  style: AppFonts.vazirmatn(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+            ],
+          ),
+        ),
+      )
+          .animate()
+          .fadeIn(delay: 800.ms, duration: 400.ms)
           .slideY(begin: 0.3, curve: Curves.easeOutBack),
     );
   }
