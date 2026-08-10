@@ -282,7 +282,7 @@ class _LullabyHubScreenState extends State<LullabyHubScreen> {
                 ),
               ),
             ),
-          ).animate(delay: Duration(milliseconds: index * 80)).fadeIn(duration: 400.ms).slideY(begin: 0.2),
+          ).animate(delay: Duration(milliseconds: index * 80)).fadeIn(duration: 400.ms).slideY(begin: 0.2);
         },
         childCount: LullabiesData.all.length,
       ),

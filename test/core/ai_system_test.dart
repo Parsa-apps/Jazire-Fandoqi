@@ -42,7 +42,6 @@ void main() {
   test('masteryOf starts near 0.5 for untouched skills', () {
     expect(AI.masteryOf('math'), closeTo(0.5, 0.05));
   });
-}
 
   test('every skill maps to a suggested game (دور ۱۰)', () {
     // همه ۱۷ مهارت باید بازی پیشنهادی داشته باشند
