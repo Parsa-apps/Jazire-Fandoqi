@@ -193,8 +193,9 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
     }
 
     // تفکیک بر اساس علائم نگارشی پایان جمله (. ! ؟ ?)
-    final pattern =
-        RegExp(r'(?<=[.!؟?][»\"\'\s])\s+|(?<=[.!؟?])\s+(?=[^\s])');
+    final pattern = RegExp(
+      "(?<=[.!؟?][»\"'\\s])\\s+|(?<=[.!؟?])\\s+(?=[^\\s])",
+    );
     final rawChunks = clean
         .split(pattern)
         .map((c) => c.trim())
