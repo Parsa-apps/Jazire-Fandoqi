@@ -48,6 +48,7 @@ void main() {
     expect(find.text('لالایی‌های شب'), findsOneWidget);
     expect(find.text('پروفایل من'), findsOneWidget);
     expect(find.text('درباره ما'), findsOneWidget);
+    expect(find.textContaining('کتابخانه یادگیری'), findsOneWidget);
   });
 
   testWidgets('cartoon hub screen renders cartoon sections and categories', (tester) async {

@@ -3,6 +3,8 @@ package com.parsaapps.amoozesh_fandoghi
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.net.Uri
+import androidx.activity.result.contract.ActivityResultContracts
+import java.io.File
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -24,8 +26,34 @@ import java.util.UUID
  */
 class MainActivity : FlutterFragmentActivity() {
     private val channelName = "kudake_iran/billing"
+    private val backupChannelName = "kudake_iran/backup"
     private var paymentConnection: Connection? = null
     private var purchaseInProgress = false
+    private var pendingBackupResult: MethodChannel.Result? = null
+
+    private val backupPicker = registerForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        val result = pendingBackupResult
+        pendingBackupResult = null
+        if (result != null) {
+            if (uri == null) {
+                result.success(null)
+            } else {
+                try {
+                    val target = File(cacheDir, "kudake_import_${System.currentTimeMillis()}.parsa")
+                    val input = contentResolver.openInputStream(uri)
+                        ?: throw IllegalStateException("Unable to read selected backup")
+                    input.use { stream ->
+                        target.outputStream().use { output -> stream.copyTo(output) }
+                    }
+                    result.success(target.absolutePath)
+                } catch (_: Exception) {
+                    result.success(null)
+                }
+            }
+        }
+    }
 
     private val payment: Payment? by lazy(LazyThreadSafetyMode.NONE) {
         BuildConfig.BAZAAR_RSA_PUBLIC_KEY.takeIf { it.isNotBlank() }?.let { publicKey ->
@@ -43,6 +71,20 @@ class MainActivity : FlutterFragmentActivity() {
                     "consume" -> consume(call.arguments as? Map<*, *>, result)
                     "restore" -> restore(result)
                     "openBazaarReview" -> openBazaarReview(result)
+                    else -> result.notImplemented()
+                }
+            }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, backupChannelName)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "pickBackupFile" -> {
+                        if (pendingBackupResult != null) {
+                            result.error("backup_busy", "یک انتخاب فایل دیگر در حال انجام است", null)
+                        } else {
+                            pendingBackupResult = result
+                            backupPicker.launch(arrayOf("application/octet-stream", "application/json", "*/*"))
+                        }
+                    }
                     else -> result.notImplemented()
                 }
             }

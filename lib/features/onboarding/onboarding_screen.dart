@@ -664,7 +664,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
     });
     if (correct) _quizScore++;
     GameData.recordAnswer(correct: correct, skill: question.skill);
-    GameData.addSkill(question.skill);
     if (correct) {
       FandoghiCoach.correct('آفرین! تو بلدی! 🌟');
       HapticFeedback.lightImpact();

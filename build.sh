@@ -80,13 +80,13 @@ if [[ "$BUILD_MODE" == "release" ]]; then
     ok 'فایل امضای انتشار پیدا شد → استفاده از کلید اصلی'
   fi
 
-  log 'ساخت APK (split per ABI)...'
-  if ! flutter build apk --release --split-per-abi; then
+  log 'ساخت APK (split per ABI + obfuscation)...'
+  if ! flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build/symbols; then
     fail 'ساخت APK شکست خورد'
     exit 1
   fi
   log 'ساخت AAB...'
-  if ! flutter build appbundle --release; then
+  if ! flutter build appbundle --release --obfuscate --split-debug-info=build/symbols; then
     fail 'ساخت AAB شکست خورد'
     exit 1
   fi
@@ -96,6 +96,10 @@ if [[ "$BUILD_MODE" == "release" ]]; then
     SIZE=$(du -m "$apk" | cut -f1)
     TOTAL=$((TOTAL + SIZE))
     ok "APK: $(basename "$apk") → ${SIZE}MB"
+    if (( SIZE >= 35 )); then
+      fail "حجم APK از سقف ۳۵MB بیشتر است: $(basename "$apk")"
+      exit 1
+    fi
     # Verify signature exists
     if command -v apksigner >/dev/null 2>&1; then
       apksigner verify --print-certs "$apk" >/dev/null 2>&1 && ok "امضا تایید شد: $(basename "$apk")" || fail "APK بدون امضا است: $(basename "$apk")"

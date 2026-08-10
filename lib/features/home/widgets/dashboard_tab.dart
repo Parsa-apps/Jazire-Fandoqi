@@ -413,8 +413,7 @@ class _DashboardState extends ConsumerState<DashboardTab>
                                 PremiumStreakCalendar(
                                   onHeartIceTap: () {
                                     if (GameData.streak == 0) {
-                                      if (GameData.coins >= 50) {
-                                        GameData.addCoins(-50);
+                                      if (GameData.activateIceHeart()) {
                                         // قلب یخی یک روز streak را نجات می‌دهد
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           const SnackBar(content: Text('🧊 قلب یخی فعال شد! فردا جای خالی را پر می‌کند — ۵۰ سکه کم شد')),
@@ -438,7 +437,16 @@ class _DashboardState extends ConsumerState<DashboardTab>
                                   },
                                 ),
                                 const SizedBox(height: 12),
-                                const PremiumDailyMissions(),
+                                PremiumDailyMissions(
+                                  onClaimChest: () {
+                                    if (GameData.claimDailyMissionChest()) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('صندوق روزانه باز شد! +۲۰ سکه گرفتی 🎁')),
+                                      );
+                                      setState(() {});
+                                    }
+                                  },
+                                ),
                                 const SizedBox(height: 12),
                                 _buildDailyMotivationCard(),
                                 if (AI.needsBreak() &&

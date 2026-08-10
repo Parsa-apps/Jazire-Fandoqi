@@ -59,7 +59,6 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
     setState(() => _selectedEmotion = e.id);
     FandoghiCoach.say(e.story, mood: e.id == 'sad' || e.id == 'angry' || e.id == 'fear' ? FandoghiMood.shy : FandoghiMood.happy, duration: const Duration(seconds: 5));
     GameData.recordAnswer(correct: true, skill: 'emotions');
-    GameData.addSkill('emotions');
   }
 
   void _startBreathing() {

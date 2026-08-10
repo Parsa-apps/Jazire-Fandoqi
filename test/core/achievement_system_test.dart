@@ -8,10 +8,10 @@ void main() {
     GameData.resetForTesting();
   });
 
-  test('26 achievements are registered with unique ids', () {
+  test('the complete premium achievement catalogue has unique ids', () {
     final ids = AchievementSystem.allAchievements.map((a) => a.id).toSet();
-    expect(AchievementSystem.allAchievements.length, 26);
-    expect(ids.length, 26, reason: 'idها نباید تکراری باشند');
+    expect(AchievementSystem.allAchievements.length, 52);
+    expect(ids.length, 52, reason: 'idها نباید تکراری باشند');
   });
 
   test('cartoon achievements unlock after watching cartoons', () {
@@ -45,5 +45,12 @@ void main() {
     expect(AchievementSystem.getProgress(starAch), 1.0);
     GameData.stars = 0;
     expect(AchievementSystem.getProgress(starAch), 0.0);
+  });
+
+  test('story skill achievements are reachable after a story completion', () {
+    expect(GameData.markStoryCompleted('story_for_achievement'), isTrue);
+    AchievementSystem.checkAndUnlock();
+    expect(GameData.skills['stories'], 1);
+    expect(GameData.achievements, contains('story_teller'));
   });
 }
