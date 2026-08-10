@@ -122,7 +122,7 @@ class _LullabyPlayerScreenState extends State<LullabyPlayerScreen> {
         child: SafeArea(
           child: Stack(
             children: [
-              const Positioned.fill(child: IgnorePointer(child: StarField())),
+              const Positioned.fill(child: IgnorePointer(child: StarFieldBackground())),
               Column(
                 children: [
                   _buildTopBar(),

@@ -299,7 +299,7 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
               // پس‌زمینه ستاره‌های خواب در حالت شب
               if (_isBedtimeMode)
                 const Positioned.fill(
-                  child: IgnorePointer(child: StarField()),
+                  child: IgnorePointer(child: StarFieldBackground()),
                 ),
 
               Column(
