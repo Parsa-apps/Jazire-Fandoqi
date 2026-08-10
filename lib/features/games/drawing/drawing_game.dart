@@ -104,7 +104,9 @@ class _DrawingGameState extends State<DrawingGame> {
 
   void _continueStroke(DragUpdateDetails details) {
     if (_tool == _DrawingTool.sticker || _strokes.isEmpty) return;
-    setState(() => _strokes.last.points.add(details.localPosition));
+    if (_strokes.last.addPoint(details.localPosition)) {
+      setState(() {});
+    }
   }
 
   void _addSticker(TapUpDetails details) {
@@ -251,7 +253,14 @@ class _DrawingGameState extends State<DrawingGame> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      CustomPaint(painter: _DrawingPainter(_strokes)),
+                      // Keep the canvas in its own layer. Each stroke owns a
+                      // Path that is extended while drawing, so repainting no
+                      // longer rebuilds a Path from every historical point.
+                      RepaintBoundary(
+                        child: CustomPaint(
+                          painter: _DrawingPainter(_strokes),
+                        ),
+                      ),
                       ..._stickers.map(
                         (sticker) => Positioned(
                           left: sticker.position.dx - 30,
@@ -434,12 +443,32 @@ class _DrawingGameState extends State<DrawingGame> {
 }
 
 class _Stroke {
+  /// Kept for the one-point dot check and for future export functionality.
+  /// The renderer uses [_path], which is built incrementally during the drag.
   final List<Offset> points;
+  final Path _path;
   final Color color;
   final double width;
   final bool eraser;
 
-  _Stroke(this.points, this.color, this.width, this.eraser);
+  _Stroke(List<Offset> initialPoints, this.color, this.width, this.eraser)
+      : points = List<Offset>.from(initialPoints),
+        _path = Path() {
+    if (points.isNotEmpty) {
+      _path.moveTo(points.first.dx, points.first.dy);
+    }
+  }
+
+  /// Adds only meaningful movement. Trackpads and high-refresh touchscreens
+  /// can emit hundreds of almost identical points for one short gesture.
+  bool addPoint(Offset point) {
+    if (points.isNotEmpty && (point - points.last).distance < 1.2) {
+      return false;
+    }
+    points.add(point);
+    _path.lineTo(point.dx, point.dy);
+    return true;
+  }
 }
 
 class _Sticker {
@@ -481,11 +510,7 @@ class _DrawingPainter extends CustomPainter {
         );
         continue;
       }
-      final path = Path()..moveTo(stroke.points.first.dx, stroke.points.first.dy);
-      for (final point in stroke.points.skip(1)) {
-        path.lineTo(point.dx, point.dy);
-      }
-      canvas.drawPath(path, paint);
+      canvas.drawPath(stroke._path, paint);
     }
   }
 

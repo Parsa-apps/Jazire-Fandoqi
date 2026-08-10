@@ -15,7 +15,6 @@ import '../../../core/play_limit.dart';
 import '../../../shared/widgets/fandoghi_premium.dart';
 import '../../../shared/widgets/particle_celebration.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 
 /// ═══════════════════════════════════════════════
 /// ⭐ STAR CATCH GAME — Flame Engine Demo
@@ -130,13 +129,16 @@ class _StarCatchState extends State<StarCatchGame> {
                           border: Border.all(color: Colors.white.withOpacity(0.2)),
                         ),
                         child: Row(
-                          children: List.generate(5, (i) => Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 2),
-                            child: Text(
-                              i < _game.lives ? '❤️' : '🖤',
-                              style: const TextStyle(fontSize: 18),
+                          children: List.generate(
+                            StarCatchFlameGame.maxLives,
+                            (i) => Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 2),
+                              child: Text(
+                                i < _game.lives ? '❤️' : '🖤',
+                                style: const TextStyle(fontSize: 18),
+                              ),
                             ),
-                          )),
+                          ),
                         ),
                       ),
                     ],
@@ -400,6 +402,8 @@ class StarCatchFlameGame extends FlameGame {
   final String? stageId;
   final int? stageNumber;
 
+  static const int maxLives = 5;
+
   int score = 0;
   int lives = 3;
   int combo = 0;
@@ -578,7 +582,7 @@ class StarCatchFlameGame extends FlameGame {
     } else if (item.isPowerUp) {
       // ===== پاورآپ‌های جدید =====
       if (item.powerType == 'heart') {
-        lives = (lives + 1).clamp(1, 5);
+        lives = (lives + 1).clamp(1, maxLives);
         FandoghiCoach.reward('وای! قلب جادویی گرفتی! ❤️ جان اضافی!');
         unawaited(AudioService.unlock());
         HapticFeedback.mediumImpact();

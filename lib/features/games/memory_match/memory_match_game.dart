@@ -1,11 +1,13 @@
+import 'dart:async';
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+
 import '../../../app/app_colors.dart';
+import '../../../app/app_fonts.dart';
 import '../../../app/design_tokens.dart';
-import 'package:amoozesh_fandoghi/app/app_fonts.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/fandoghi_models.dart';
@@ -51,6 +53,7 @@ class _MemoryState extends State<MemoryMatchGame>
   int _timeLeft = 120;
   String _selectedLevel = 'medium';
   int _gameToken = 0;
+  Timer? _countdownTimer;
   bool _pausedByBackground = false;
 
   static const String _memoryAsset =
@@ -110,17 +113,22 @@ class _MemoryState extends State<MemoryMatchGame>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // ✅ فیکس عمیق فاز ۳۱: تایمر در پس‌زمینه متوقف می‌شود تا باتری نخورد
+    // فاز ۳۱: در پس‌زمینه هیچ Timer فعالی باقی نمی‌ماند. این کار علاوه بر
+    // ثابت نگه‌داشتن زمان، بیدارشدن دوره‌ای و مصرف باتری را هم حذف می‌کند.
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
       _pausedByBackground = true;
+      _stopCountdown();
     } else if (state == AppLifecycleState.resumed) {
+      final wasPaused = _pausedByBackground;
       _pausedByBackground = false;
+      if (wasPaused) _startCountdown();
     }
   }
 
   @override
   void dispose() {
+    _stopCountdown();
     WidgetsBinding.instance.removeObserver(this);
     FandoghiCoach.clear();
     super.dispose();
@@ -128,6 +136,8 @@ class _MemoryState extends State<MemoryMatchGame>
 
   void _startGame(String type) {
     if (!canStartPlay(context)) return;
+    _stopCountdown();
+    _pausedByBackground = false;
     _gameToken++;
     _selectedLevel = type;
 
@@ -199,22 +209,37 @@ class _MemoryState extends State<MemoryMatchGame>
     FandoghiCoach.instruction(
       'کارت‌ها را با دقت نگاه کن؛ هر جفت درست یک امتیاز برایت دارد 🌰',
     );
-    _tick(_gameToken);
+    _startCountdown();
   }
 
-  Future<void> _tick(int token) async {
-    while (token == _gameToken &&
-        _timeLeft > 0 &&
-        _started &&
-        !_gameOver &&
-        mounted) {
-      await Future<void>.delayed(const Duration(seconds: 1));
-      if (!mounted || token != _gameToken || _gameOver) return;
-      // ✅ فیکس: اگر اپ در پس‌زمینه است، تایمر را کم نکن
-      if (_pausedByBackground) continue;
-      setState(() => _timeLeft--);
-      if (_timeLeft <= 0) _endGame(won: false);
+  /// Runs only while the game is visible. A periodic timer is easier to stop
+  /// at the lifecycle boundary than a delayed async loop, which would still
+  /// wake up once per second while the app is in the background.
+  void _startCountdown() {
+    _countdownTimer?.cancel();
+    _countdownTimer = null;
+    if (!mounted || !_started || _gameOver || _pausedByBackground || _timeLeft <= 0) {
+      return;
     }
+
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted || !_started || _gameOver || _pausedByBackground) {
+        _stopCountdown();
+        return;
+      }
+
+      var shouldEnd = false;
+      setState(() {
+        if (_timeLeft > 0) _timeLeft--;
+        shouldEnd = _timeLeft <= 0;
+      });
+      if (shouldEnd) _endGame(won: false);
+    });
+  }
+
+  void _stopCountdown() {
+    _countdownTimer?.cancel();
+    _countdownTimer = null;
   }
 
   void _onCardTap(int index) {
@@ -303,6 +328,7 @@ class _MemoryState extends State<MemoryMatchGame>
   void _endGame({required bool won}) {
     if (_gameOver) return;
     _gameOver = true;
+    _stopCountdown();
     final timeBonus = won ? _timeLeft * 2 : 0;
     _score += timeBonus;
 
