@@ -68,6 +68,10 @@ android {
 
     buildTypes {
         release {
+            // Professional build optimization: minify + shrink resources
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             // If key.properties exists → use real release keystore (for Bazaar/Play).
             // If not → fallback to debug keystore so the APK is still signed and
             // installable on device for testing. This prevents:

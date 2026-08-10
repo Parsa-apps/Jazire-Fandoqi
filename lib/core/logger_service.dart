@@ -62,4 +62,14 @@ class LoggerService {
     // (متد generateTextField در این نسخه وجود ندارد و بیلد را خراب می‌کند)
     return talker.history.map((e) => e.generateTextMessage()).join('\n');
   }
+
+  /// آنالیتیکس حرفه‌ای — ثبت رویداد ساختاریافته برای تحلیل رفتار کودک
+  static void event({
+    required String event,
+    Map<String, dynamic>? properties,
+  }) {
+    final propsStr = properties?.entries.map((e) => '${e.key}:${e.value}').join(',') ?? '';
+    talker.info('[EVENT] $event | $propsStr');
+    unawaitedPersist('[EVENT] $event | $propsStr', null, source: 'analytics');
+  }
 }

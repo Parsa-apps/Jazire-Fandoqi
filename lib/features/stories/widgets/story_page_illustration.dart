@@ -13,17 +13,34 @@ class StoryPageIllustration extends StatelessWidget {
   final ChildrenStoryPage page;
   final VoidCallback? onTap;
 
+  /// تعامل حرفه‌ای: ضربه روی تصویر → پخش افکت صوتی + انیمیشن
+  final bool enableInteractive;
+
   const StoryPageIllustration({
     super.key,
     required this.story,
     required this.page,
     this.onTap,
+    this.enableInteractive = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
+    Widget content = GestureDetector(
+      onTap: () {
+        if (enableInteractive) {
+          AudioService.tap();
+          if (onTap != null) onTap!();
+        } else {
+          if (onTap != null) onTap!();
+        }
+      },
+      onDoubleTap: () {
+        if (enableInteractive) {
+          AudioService.select();
+          HapticFeedback.mediumImpact();
+        }
+      },
       child: Container(
         height: 250,
         width: double.infinity,
@@ -143,6 +160,7 @@ class StoryPageIllustration extends StatelessWidget {
         ),
       ),
     );
+    return content;
   }
 
   Widget _buildDecorativeCanvas() {

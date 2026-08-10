@@ -1089,6 +1089,17 @@ class _DashboardState extends ConsumerState<DashboardTab> {
     ).animate().fadeIn(delay: 1000.ms).slideY(begin: 0.3);
   }
 
+/// تبدیل اعداد فارسی به انگلیسی برای مقایسه صحیح
+String _normalizeDigits(String input) {
+  const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+  const englishDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+  String result = input;
+  for (int i = 0; i < persianDigits.length; i++) {
+    result = result.replaceAll(persianDigits[i], englishDigits[i]);
+  }
+  return result;
+}
+
   // ─── PARENT GATE ──────────────────────────────
   Future<void> _parentGate(BuildContext context) async {
     final n1 = Random().nextInt(10) + 1;
@@ -1138,7 +1149,8 @@ class _DashboardState extends ConsumerState<DashboardTab> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (int.tryParse(controller.text) == n1 + n2) {
+                final normalized = _normalizeDigits(controller.text.trim());
+                if (int.tryParse(normalized) == n1 + n2) {
                   Navigator.pop(dialogContext, true);
                 } else {
                   setDialogState(() => errorText = 'جواب درست نیست. دوباره امتحان کنید.');
