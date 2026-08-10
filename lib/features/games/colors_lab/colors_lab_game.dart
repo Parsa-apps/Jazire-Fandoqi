@@ -99,6 +99,7 @@ class _ColorsLabGameState extends State<ColorsLabGame> {
     if (!canStartPlay(context)) return;
     final mix = '${_mixes[_round].$1}+${_mixes[_round].$2}';
     final correct = _roundOptions[index] == _resultOf[mix];
+    AudioService.tap();
     setState(() {
       _locked = true;
       _selected = index;
@@ -124,6 +125,11 @@ class _ColorsLabGameState extends State<ColorsLabGame> {
         setState(() => _finished = true);
         GameData.addCoins(_score);
         GameData.addStars(_correct);
+        if (_correct >= 4) {
+          unawaited(AudioService.win());
+        } else {
+          unawaited(AudioService.lose());
+        }
         FandoghiCoach.reward('آزمایشگاه رنگ را عالی تمام کردی! دانشمند کوچولو! 🧪');
       } else {
         setState(() {

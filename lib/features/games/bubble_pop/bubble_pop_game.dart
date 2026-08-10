@@ -456,6 +456,11 @@ class BubblePopFlameGame extends FlameGame {
     if (stageId != null && score >= 50) {
       GameData.completeStage(stageId!, stageNumber: stageNumber);
     }
+    if (score >= 50) {
+      unawaited(AudioService.win());
+    } else {
+      unawaited(AudioService.lose());
+    }
     FandoghiCoach.reward(
       score >= 50
           ? 'چه مسابقه‌ای بود! امتیازت عالی شد؛ فندقی بهت افتخار می‌کند 🏆'
@@ -486,6 +491,8 @@ class BubblePopFlameGame extends FlameGame {
     );
     if (isCorrect) {
       FandoghiCoach.correct('ترکاندی! این حباب هدف بود 🫧🌟');
+      unawaited(AudioService.bubble());
+      unawaited(AudioService.correct());
       combo++;
       if (combo > bestCombo) bestCombo = combo;
       score += 10 + (combo > 3 ? combo * 2 : 0);
@@ -501,7 +508,12 @@ class BubblePopFlameGame extends FlameGame {
         case BubbleMode.letters:
           unawaited(AudioService.pronounceLetter(_targetKey));
         case BubbleMode.numbers:
-          unawaited(AudioService.speak(_targetKey));
+          final n = int.tryParse(_targetKey);
+          if (n != null) {
+            unawaited(AudioService.speakNumber(n));
+          } else {
+            unawaited(AudioService.speak(_targetKey));
+          }
         case BubbleMode.colors:
           unawaited(AudioService.speak(targetLabel));
       }
@@ -524,6 +536,8 @@ class BubblePopFlameGame extends FlameGame {
       }
     } else {
       FandoghiCoach.judge('اوه! این حباب هدف نبود؛ فندقی می‌گوید با دقت‌تر نگاه کن 👀');
+      unawaited(AudioService.bubble());
+      unawaited(AudioService.wrong());
       combo = 0;
       lives--;
       HapticFeedback.heavyImpact();
@@ -535,6 +549,7 @@ class BubblePopFlameGame extends FlameGame {
   void _onBubbleMiss(bool wasTarget) {
     if (!wasTarget) return;
     FandoghiCoach.judge('حباب هدف فرار کرد! دفعه بعد زودتر بترکانش 🫧');
+    unawaited(AudioService.wrong());
     GameData.recordAnswer(correct: false);
     combo = 0;
     lives--;

@@ -49,8 +49,10 @@ class _StoryQuizModalState extends State<StoryQuizModal> {
       _answered = true;
       if (idx == _currentQuestion.correctIndex) {
         _score++;
+        AudioService.correct();
         AudioService.speak('آفرین! پاسخت کاملاً درست بود');
       } else {
+        AudioService.wrong();
         AudioService.speak('اشکالی نداره! پاسخ درست رو یاد گرفتیم');
       }
     });
@@ -58,6 +60,7 @@ class _StoryQuizModalState extends State<StoryQuizModal> {
 
   void _nextQuestion() {
     HapticFeedback.mediumImpact();
+    AudioService.tap();
     if (_currentIndex < widget.story.quizQuestions.length - 1) {
       setState(() {
         _currentIndex++;
@@ -67,6 +70,7 @@ class _StoryQuizModalState extends State<StoryQuizModal> {
     } else {
       // اتمام مسابقه
       setState(() => _finished = true);
+      AudioService.win();
       GameData.addStars(5);
       GameData.addCoins(25);
       FandoghiCoach.reward(

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
+import '../../core/audio_service.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/game_data.dart';
 import '../../core/learning_content/children_stories_data.dart';
@@ -30,6 +31,8 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
   @override
   void initState() {
     super.initState();
+    // فندقی فقط در بخش بازی/یادگیری حضور دارد.
+    FandoghiCoach.disablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         FandoghiCoach.say(
@@ -66,6 +69,7 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
 
   void _openStory(ChildrenStory story) {
     HapticFeedback.lightImpact();
+    AudioService.select();
     Navigator.of(context)
         .push(
           MaterialPageRoute(
@@ -520,6 +524,7 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
           GestureDetector(
             onTap: () {
               HapticFeedback.selectionClick();
+              AudioService.tap();
               setState(() => _onlyFavorites = !_onlyFavorites);
             },
             child: AnimatedContainer(
@@ -581,6 +586,7 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
           return GestureDetector(
             onTap: () {
               HapticFeedback.selectionClick();
+              AudioService.tap();
               setState(() => _selectedCategory = cat.type);
             },
             child: AnimatedContainer(
@@ -730,7 +736,9 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
                             child: GestureDetector(
                               onTap: () {
                                 HapticFeedback.lightImpact();
+                                final wasFav = isFav;
                                 GameData.toggleStoryFavorite(story.id);
+                                if (!wasFav) AudioService.coin();
                                 setState(() {});
                               },
                               child: Container(
@@ -875,7 +883,7 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
 
   Widget _buildSwitchToGamesFab() {
     return GestureDetector(
-      onTap: () => Navigator.of(context).pushReplacementNamed('/home'),
+      onTap: () => Navigator.of(context).pushReplacementNamed('/gateway'),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         decoration: BoxDecoration(
@@ -896,7 +904,7 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
             const Icon(Icons.home_rounded, color: Colors.white, size: 24),
             const SizedBox(width: 10),
             Text(
-              'بازگشت به خانه و بازی‌ها 🎮',
+              'بازگشت به جزیره 🏝️',
               style: AppFonts.vazirmatn(
                 fontSize: 15,
                 fontWeight: FontWeight.w900,

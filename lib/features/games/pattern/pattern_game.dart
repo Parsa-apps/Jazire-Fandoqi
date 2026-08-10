@@ -123,6 +123,11 @@ class _PatternGameState extends State<PatternGame> {
         if (widget.stageId != null) {
           GameData.completeStage(widget.stageId!, stageNumber: widget.stageNumber);
         }
+        if (_correct >= 4) {
+          unawaited(AudioService.win());
+        } else {
+          unawaited(AudioService.lose());
+        }
         FandoghiCoach.reward('تو یک کارآگاه الگو هستی! 🕵️');
       } else {
         setState(() {

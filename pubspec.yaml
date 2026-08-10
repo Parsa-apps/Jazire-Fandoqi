@@ -75,6 +75,7 @@ flutter:
     - assets/learn_world.png
     - assets/play_world.png
     - assets/explore_world.png
+    - assets/gateway/
     - assets/illustrations/memory_cards.webp
     - assets/illustrations/fruits_cards.webp
     - assets/illustrations/animals_cards.webp
@@ -92,6 +93,9 @@ flutter:
     - assets/audio/stories/
     - assets/lullabies/
     - assets/audio/lullabies/
+    - assets/audio/sfx/
+    - assets/audio/letters/
+    - assets/audio/numbers/
 
   # فاز ۷ (تکمیل): فونت محلی آفلاین — fallback واقعی برای GoogleFonts
   fonts:

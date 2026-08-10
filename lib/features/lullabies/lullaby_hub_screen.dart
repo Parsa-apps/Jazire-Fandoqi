@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
+import '../../core/audio_service.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/learning_content/lullabies_data.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
@@ -23,6 +24,8 @@ class _LullabyHubScreenState extends State<LullabyHubScreen> {
   @override
   void initState() {
     super.initState();
+    // فندقی فقط در بخش بازی/یادگیری حضور دارد.
+    FandoghiCoach.disablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         FandoghiCoach.say(
@@ -36,6 +39,7 @@ class _LullabyHubScreenState extends State<LullabyHubScreen> {
 
   void _openLullaby(Lullaby lullaby) {
     HapticFeedback.lightImpact();
+    AudioService.sleepChime();
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => LullabyPlayerScreen(lullaby: lullaby)),
     );
@@ -287,7 +291,7 @@ class _LullabyHubScreenState extends State<LullabyHubScreen> {
 
   Widget _buildBackFab() {
     return GestureDetector(
-      onTap: () => Navigator.of(context).pushReplacementNamed('/home'),
+      onTap: () => Navigator.of(context).pushReplacementNamed('/gateway'),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         decoration: BoxDecoration(
@@ -301,7 +305,7 @@ class _LullabyHubScreenState extends State<LullabyHubScreen> {
           children: [
             const Icon(Icons.home_rounded, color: Colors.white, size: 24),
             const SizedBox(width: 10),
-            Text('بازگشت به خانه 🏠', style: AppFonts.vazirmatn(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white)),
+            Text('بازگشت به جزیره 🏝️', style: AppFonts.vazirmatn(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white)),
           ],
         ),
       ),

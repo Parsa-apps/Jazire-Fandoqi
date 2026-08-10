@@ -87,6 +87,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
     FandoghiCoach.cancelSmartHint();
 
     HapticFeedback.lightImpact();
+    AudioService.tap();
     setState(() {
       _answerLocked = true;
       _selectedOption = optionIndex;
@@ -164,6 +165,11 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
         widget.stageId!,
         stageNumber: widget.stageNumber,
       );
+    }
+    if (completed) {
+      unawaited(AudioService.win());
+    } else {
+      unawaited(AudioService.lose());
     }
     FandoghiCoach.reward(
       completed

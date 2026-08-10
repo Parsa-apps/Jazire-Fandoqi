@@ -6,6 +6,7 @@ import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import 'package:amoozesh_fandoghi/core/ai_system.dart';
 import 'package:amoozesh_fandoghi/core/cartoons/aparat_service.dart';
 import 'package:amoozesh_fandoghi/core/cartoons/cartoon_data.dart';
+import 'package:amoozesh_fandoghi/core/audio_service.dart';
 import 'package:amoozesh_fandoghi/core/fandoghi_coach.dart';
 import 'package:amoozesh_fandoghi/core/game_data.dart';
 import 'package:amoozesh_fandoghi/features/cartoons/cartoon_player_screen.dart';
@@ -35,6 +36,8 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
   @override
   void initState() {
     super.initState();
+    // فندقی فقط در بخش بازی/یادگیری حضور دارد؛ در سینما کارتون نمایش داده نمی‌شود.
+    FandoghiCoach.disablePersistentPresence();
     _suggestedCartoonId = AI.suggestCartoon();
 
     // 🖼️ پیش‌بارگیری پوستر کارتون‌ها (قاب واقعی شخصیت‌ها) در پس‌زمینه
@@ -88,6 +91,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
 
   void _openCartoon(Cartoon cartoon, {int episodeIndex = 0}) {
     HapticFeedback.lightImpact();
+    AudioService.select();
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => CartoonPlayerScreen(
@@ -100,7 +104,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
 
   void _goToGames() {
     HapticFeedback.mediumImpact();
-    Navigator.of(context).pushReplacementNamed('/home');
+    Navigator.of(context).pushReplacementNamed('/gateway');
   }
 
   void _openStickerAlbum() {
@@ -620,7 +624,10 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                   children: List.generate(featured.length, (i) {
                     final isSel = i == (_featuredIndex % featured.length);
                     return GestureDetector(
-                      onTap: () => setState(() => _featuredIndex = i),
+                            onTap: () {
+                              AudioService.tap();
+                              setState(() => _featuredIndex = i);
+                            },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -685,6 +692,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
           GestureDetector(
             onTap: () {
               HapticFeedback.selectionClick();
+              AudioService.tap();
               setState(() => _onlyFavorites = !_onlyFavorites);
             },
             child: AnimatedContainer(
@@ -739,6 +747,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
           return GestureDetector(
             onTap: () {
               HapticFeedback.selectionClick();
+              AudioService.tap();
               setState(() {
                 _selectedCategory = cat.type;
               });
@@ -875,7 +884,9 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                               child: GestureDetector(
                                 onTap: () {
                                   HapticFeedback.lightImpact();
+                                  final wasFav = isFav;
                                   GameData.toggleCartoonFavorite(cartoon.id);
+                                  if (!wasFav) AudioService.coin();
                                   setState(() {});
                                 },
                                 child: Container(
