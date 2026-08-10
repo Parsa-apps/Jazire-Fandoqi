@@ -1,3 +1,15 @@
+# 🛠️ هات‌فیکس بیلد (v7) — سبز شدن CI پس از ۸ خطای کامپایل
+
+ران CI روی `Build APK (Release)` با ۸ خطای Dart شکسته بود؛ همه رفع شد:
+- `FandoghiMood` در `app_gateway_screen` و `lullaby_player_screen` در اسکوپ نبود → ایمپورت مستقیم `core/fandoghi_models.dart` (فایل coach آن را re-export نمی‌کند؛ بقیهٔ فایل‌ها از طریق `fandoghi_v2.dart` آن را می‌گیرند).
+- `StarField()` → کلاس واقعی `StarFieldBackground` در دو فایل.
+- `ParticleCelebration(count: ...)` → `(trigger: true, particleCount: ...)` در story_reader و story_quiz_modal؛ حالا آغازِ با trigger:true در مونت اول هم انفجار ذرات می‌دهد (رفع باگ پنهان جشن در دیالوگ‌ها/آکادمی).
+- `memory_match_game`: متغیر `bonus` به بیرون از closure ستState منتقل شد.
+- بررسی پیشگیرانه: سورس Poolakey 2.2.0 با امضاهای `MainActivity.kt` مطابقت دارد؛ `getState()` ،`connect` ،`purchaseProduct` ،`consumeProduct` و `getPurchasedProducts` صحیح‌اند؛ jitpack و buildConfig سر جای خود.
+- نتیجه: ران 31401102862 سبز با هر ۱۴ مرحله و آپلود APK (~۲۵۶MB) و AAB (~۲۵۷MB). ✅
+
+---
+
 # 🛠️ هات‌فیکس بیلد ۶.۰.۰+۱۱ — سبز شدن دوباره CI
 
 - **فیکس نیتیو:** فعال‌سازی `BuildConfig` در AGP 8 و تغییر `MainActivity` به `FlutterFragmentActivity` برای رجیستری پرداخت بازار (Poolakey).
