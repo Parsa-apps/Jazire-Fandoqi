@@ -10,6 +10,7 @@ import '../../app/app_fonts.dart';
 import '../../core/audio_service.dart';
 import '../../core/story_audio_service.dart';
 import '../../core/fandoghi_coach.dart';
+import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';
 import '../../core/learning_content/children_stories_data.dart';
 import '../../core/logger_service.dart';
