@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../core/fandoghi_models.dart';
+import '../../../core/fandoghi_models.dart';
 
 import '../../../app/app_colors.dart';
 import '../../../app/design_tokens.dart';
