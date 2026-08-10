@@ -154,7 +154,7 @@ class _HomeState extends ConsumerState<HomeScreen> {
         ),
       ),
     ).animate(target: selected ? 1 : 0)
-        .scaleXY(begin: 0.95, end: 1.0, duration: 200.ms);
+        .scale(begin: 0.95, end: 1.0, duration: 200.ms);
   }
 
   Widget _navItemCenter() {
