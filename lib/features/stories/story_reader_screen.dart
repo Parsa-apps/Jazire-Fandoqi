@@ -12,6 +12,7 @@ import '../../core/story_audio_service.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/game_data.dart';
 import '../../core/learning_content/children_stories_data.dart';
+import '../../core/logger_service.dart';
 import '../../shared/widgets/child_touch_target.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
 import '../../shared/widgets/particle_celebration.dart';
@@ -1018,26 +1019,27 @@ class _ReadingTextHighlight extends StatelessWidget {
             }
           },
           child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 350),
-          transitionBuilder: (child, animation) => ScaleTransition(
-            scale: animation,
-            child: FadeTransition(opacity: animation, child: child),
-          ),
-          child: isHighlighted
-              ? _GlowingWord(
-                  key: ValueKey('glow_$index'),
-                  word: word,
-                )
-              : Text(
-                  word,
-                  key: ValueKey('normal_$index'),
-                  style: AppFonts.vazirmatn(
-                    color: Colors.white,
-                    fontSize: 17 * GameData.textScale,
-                    fontWeight: FontWeight.w700,
-                    height: 1.9,
+            duration: const Duration(milliseconds: 350),
+            transitionBuilder: (child, animation) => ScaleTransition(
+              scale: animation,
+              child: FadeTransition(opacity: animation, child: child),
+            ),
+            child: isHighlighted
+                ? _GlowingWord(
+                    key: ValueKey('glow_$index'),
+                    word: word,
+                  )
+                : Text(
+                    word,
+                    key: ValueKey('normal_$index'),
+                    style: AppFonts.vazirmatn(
+                      color: Colors.white,
+                      fontSize: 17 * GameData.textScale,
+                      fontWeight: FontWeight.w700,
+                      height: 1.9,
+                    ),
                   ),
-                ),
+          ),
         );
       }),
     );

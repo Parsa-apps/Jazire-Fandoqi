@@ -28,6 +28,7 @@ class AppFonts {
     FontWeight? fontWeight,
     double? letterSpacing,
     double? height,
+    List<Shadow>? shadows,
   }) {
     try {
       return GoogleFonts.vazirmatn(
@@ -37,6 +38,7 @@ class AppFonts {
         fontWeight: fontWeight,
         letterSpacing: letterSpacing,
         height: height,
+        shadows: shadows,
       );
     } catch (_) {
       return (textStyle ?? const TextStyle()).copyWith(
@@ -46,6 +48,7 @@ class AppFonts {
         fontWeight: fontWeight,
         letterSpacing: letterSpacing,
         height: height,
+        shadows: shadows,
       );
     }
   }

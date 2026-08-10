@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../app/app_colors.dart';
@@ -122,15 +123,8 @@ class _IslandState extends State<LearningIsland>
                         child: LinearProgressIndicator(
                           value: (GameData.currentIsland + 1) / ((GameData.maxStageCount ~/ 3) + 1),
                           backgroundColor: Colors.white.withOpacity(0.15),
-                          valueColor: AlwaysStoppedAnimation(
-                            LinearGradient(
-                              colors: [
-                                const Color(0xFFFFA726),
-                                const Color(0xFFF06292),
-                                const Color(0xFFBA68C8),
-                              ],
-                            ).createShader(const Rect.fromLTWH(0, 0, 100, 10)),
-                          ),
+                          // یک رنگ از گرادیان اصلی — valueColor فقط Color می‌پذیرد، نه Shader
+                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFBA68C8)),
                           borderRadius: BorderRadius.circular(10),
                           minHeight: 8,
                         ),
