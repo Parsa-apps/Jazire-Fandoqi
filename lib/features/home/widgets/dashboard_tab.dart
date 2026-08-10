@@ -1,1106 +1,104 @@
-import 'dart:math';
 import 'dart:io';
+import 'dart:math';
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../app/app_colors.dart';
-import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import '../../../app/app_fonts.dart';
 import '../../../core/ai_system.dart';
+import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
+import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
+import '../../../core/monetization.dart';
 import '../../../presentation/providers/game_state_provider.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
-import '../../../shared/widgets/glass_card.dart';
-import 'premium_card.dart';
-import '../../../shared/widgets/star_field.dart';
-import '../../../core/monetization.dart';
-import '../../shop/full_version_paywall.dart';
 import '../../profile/profile_editor.dart';
+import '../../shop/full_version_paywall.dart';
 
-/// ═══════════════════════════════════════════════
-/// 📊 DASHBOARD TAB — Main Content
-/// Parallax hero, daily missions, game categories
-/// ═══════════════════════════════════════════════
+/// ═══════════════════════════════════════════════════════════════
+/// 🏝️ DASHBOARD TAB — دنیای بازی و یادگیری جزیره فندقی
+/// با تم سه‌بعدی لوکس، اقیانوس کریستالی، سکوهای شناور و انیمیشن‌های زنده
+/// ═══════════════════════════════════════════════════════════════
 class DashboardTab extends ConsumerStatefulWidget {
   const DashboardTab({super.key});
+
   @override
   ConsumerState<DashboardTab> createState() => _DashboardState();
 }
 
-class _DashboardState extends ConsumerState<DashboardTab> {
-  final ScrollController _scrollCtrl = ScrollController();
-  double _scrollOffset = 0;
+class _DashboardState extends ConsumerState<DashboardTab>
+    with TickerProviderStateMixin {
+  late final AnimationController _floatCtrl;
+  _GameCategory _selectedCategory = _GameCategory.all;
 
   @override
   void initState() {
     super.initState();
-    _scrollCtrl.addListener(_onScroll);
     FandoghiCoach.enablePersistentPresence();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) FandoghiCoach.welcome();
-    });
-  }
 
-  void _onScroll() {
-    if (mounted) setState(() => _scrollOffset = _scrollCtrl.offset);
+    _floatCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat(reverse: true);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        FandoghiCoach.welcome();
+      }
+    });
   }
 
   @override
   void dispose() {
-    _scrollCtrl.removeListener(_onScroll);
-    _scrollCtrl.dispose();
+    _floatCtrl.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // فاز ۳: واکنش به وضعیت از طریق Riverpod
-    ref.watch(gameStateProvider);
-    // فاز ۱۴: داشبورد هوشمند بر اساس سن
-    // ۳-۴: ساده (بدون مأموریت روزانه، دسته‌بندی ساده)
-    // ۵-۶: استاندارد (همه بخش‌ها)
-    // ۷-۸: چالش‌محور (مأموریت‌ها جلوتر + نکته تشویقی)
-    final simple = _ageMode == _AgeMode.simple;
-    final challenge = _ageMode == _AgeMode.challenge;
-    final slivers = <Widget>[
-      // Hero App Bar with parallax
-      _buildHeroAppBar(),
+  static const _freeGames = {
+    'الفبا',
+    'اعداد',
+    'رنگ‌ها',
+    'ستاره‌گیری',
+    'حباب‌ترکان',
+    'نقاشی',
+  };
 
-      // Quick stats
-      SliverToBoxAdapter(child: _buildQuickStats()),
-    ];
-
-    // مأموریت‌ها فقط یک‌بار نمایش داده می‌شوند:
-    //  - چالش (۷-۸ سال): بالای لیست (جلوتر)
-    //  - استاندارد (۵-۶ سال): بعد از دسته‌بندی‌ها
-    if (challenge) {
-      slivers.add(SliverToBoxAdapter(child: _buildDailyMissions()));
-    }
-
-    // Quick games
-    slivers.add(SliverToBoxAdapter(child: _buildQuickGames()));
-
-    // Game categories — در حالت ساده فقط دسته‌بندی‌های اصلی
-    slivers.add(SliverToBoxAdapter(child: _buildCategories(simple: simple)));
-
-    if (simple) {
-      // حالت ساده (۳-۴ سال): بدون مأموریت و بدون نکته
-    } else if (challenge) {
-      slivers.add(SliverToBoxAdapter(child: _buildFandoghiTip()));
-    } else {
-      slivers.add(SliverToBoxAdapter(child: _buildDailyMissions()));
-      slivers.add(SliverToBoxAdapter(child: _buildFandoghiTip()));
-    }
-
-    // فاز ۵۰/۶۲: یادآوری استراحت برای همه سن‌ها (حتی حالت ساده)
-    if (AI.needsBreak() && !GameData.isDailyLimitReached) {
-      slivers.add(SliverToBoxAdapter(child: _buildBreakReminder()));
-    }
-
-    // Bottom padding
-    slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 120)));
-
-    return CustomScrollView(
-      controller: _scrollCtrl,
-      physics: const BouncingScrollPhysics(),
-      slivers: slivers,
-    );
-  }
-
-  /// فاز ۱۴: حالت سنی داشبورد.
-  _AgeMode get _ageMode {
-    final age = GameData.childAge;
-    if (age <= 4) return _AgeMode.simple;
-    if (age <= 6) return _AgeMode.standard;
-    return _AgeMode.challenge;
-  }
-
-  // ─── HERO APP BAR ─────────────────────────────
-  Widget _buildHeroAppBar() {
-    return SliverAppBar(
-      expandedHeight: 260,
-      floating: false,
-      pinned: true,
-      stretch: true,
-      backgroundColor: AppColors.primary,
-      leading: const SizedBox.shrink(),
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Gradient background with parallax
-            Transform.translate(
-              offset: Offset(0, -_scrollOffset * 0.3),
-              child: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0xFF4834D4),
-                      Color(0xFF6C5CE7),
-                      Color(0xFFA29BFE),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            
-            // Floating decorative circles
-            ..._buildDecorativeCircles(),
-            
-            // Stars overlay
-            const StarFieldBackground(starCount: 25),
-            
-            // Content
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Top bar
-                    Row(
-                      children: [
-                        _buildHeroProfileAvatar(),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('سلام ${GameData.childName.isNotEmpty ? GameData.childName : 'دوست کوچولو'}! 👋',
-                                maxLines: 1, overflow: TextOverflow.ellipsis,
-                                style: AppFonts.vazirmatn(textStyle: const TextStyle(shadows: [Shadow(color: Color(0x66000000), blurRadius: 8, offset: Offset(0, 2))]), color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
-                              ).animate().fadeIn(delay: 120.ms).slideX(begin: .12),
-                              const SizedBox(height: 3),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(color: Colors.white.withOpacity(.16), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white24)),
-                                child: Text('لول ${GameData.level} • ${GameData.getLevelName()}', style: TextStyle(color: Colors.white.withOpacity(.92), fontSize: 13, fontWeight: FontWeight.w700)),
-                              ),
-                            ],
-                          ),
-                        ),
-                        _glassIconButton(Icons.edit_rounded, () => showProfileEditor(context)),
-                        const SizedBox(width: 8),
-                        // Cinema Hub Button
-                        _glassIconButton(
-                          Icons.movie_rounded,
-                          () => Navigator.pushNamed(context, '/cartoons'),
-                        ),
-                        const SizedBox(width: 8),
-                        // Stories Hub Button
-                        _glassIconButton(
-                          Icons.menu_book_rounded,
-                          () => Navigator.pushNamed(context, '/stories'),
-                        ),
-                        const SizedBox(width: 8),
-                        // Lullaby Hub Button
-                        _glassIconButton(
-                          Icons.bedtime_rounded,
-                          () => Navigator.pushNamed(context, '/lullabies'),
-                        ),
-                        const SizedBox(width: 8),
-                        // Settings button
-                        _glassIconButton(
-                          Icons.settings_rounded,
-                          () => _parentGate(context),
-                        ),
-                      ],
-                    ),
-                    
-                    const SizedBox(height: 20),
-                    
-                    // Stats row
-                    Row(
-                      children: [
-                        _heroStat(Icons.star_rounded, '${GameData.stars}', 'ستاره',
-                            Colors.amber),
-                        const SizedBox(width: 12),
-                        _heroStat(Icons.monetization_on_rounded, '${GameData.coins}', 'سکه',
-                            Colors.orange),
-                        const SizedBox(width: 12),
-                        _heroStat(Icons.local_fire_department_rounded, '${GameData.streak}', 'روز پیاپی',
-                            Colors.redAccent),
-                        const Spacer(),
-                        // Fandoghi mini
-                        const FandoghiV2(
-                          size: 45,
-                          animate: true,
-                          mood: FandoghiMood.wink,
-                        ),
-                      ],
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    // Level progress bar
-                    _buildLevelProgress(),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeroProfileAvatar() {
-    final hasPhoto = GameData.profilePhotoPath.isNotEmpty && File(GameData.profilePhotoPath).existsSync();
-    final hasAsset = GameData.avatar.startsWith('assets/');
-    final image = hasPhoto
-        ? Image.file(File(GameData.profilePhotoPath), fit: BoxFit.cover)
-        : hasAsset ? Image.asset(GameData.avatar, fit: BoxFit.cover)
-        : Center(child: Text(GameData.avatar, style: const TextStyle(fontSize: 36)));
-    return Container(
-      width: 68, height: 68, padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(shape: BoxShape.circle, gradient: const SweepGradient(colors: [Color(0xFFFFE58A), Color(0xFFFF8E53), Color(0xFFA29BFE), Color(0xFFFFE58A)]), boxShadow: [BoxShadow(color: const Color(0xFFFFD166).withOpacity(.65), blurRadius: 20, spreadRadius: 3), BoxShadow(color: Colors.black.withOpacity(.22), blurRadius: 8, offset: const Offset(0, 4))]),
-      child: ClipOval(child: DecoratedBox(decoration: const BoxDecoration(color: Color(0xFF6C5CE7)), child: image)),
-    ).animate(onPlay: (c) => c.repeat(reverse: true)).shimmer(duration: 2300.ms, color: Colors.white54).scale(begin: const Offset(.96, .96), end: const Offset(1.04, 1.04), duration: 2300.ms, curve: Curves.easeInOut);
-  }
-
-  List<Widget> _buildDecorativeCircles() {
-    return [
-      Positioned(
-        top: -30 + _scrollOffset * 0.1,
-        right: -40,
-        child: Container(
-          width: 180,
-          height: 180,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white.withOpacity(0.06),
-          ),
-        ),
-      ),
-      Positioned(
-        top: 60 - _scrollOffset * 0.05,
-        left: -60,
-        child: Container(
-          width: 140,
-          height: 140,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white.withOpacity(0.04),
-          ),
-        ),
-      ),
-      Positioned(
-        bottom: 20 + _scrollOffset * 0.08,
-        right: 60,
-        child: Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white.withOpacity(0.05),
-          ),
-        ),
-      ),
-    ];
-  }
-
-  Widget _heroStat(IconData icon, String value, String label, Color color) {
-    return GlassCard(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      borderRadius: 18,
-      opacity: 0.15,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 6),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 16,
-                ),
-              ),
-              Text(
-                label,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontSize: 10,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLevelProgress() {
-    final progress = (GameData.coins % 100) / 100;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'پیشرفت لول ${GameData.level + 1}',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
-                fontSize: 12,
-              ),
-            ),
-            Text(
-              '${GameData.coins % 100}/100',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        Container(
-          height: 8,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: FractionallySizedBox(
-            alignment: Alignment.centerRight,
-            widthFactor: progress,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFFD700), Color(0xFFFF8E53)],
-                ),
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.amber.withOpacity(0.5),
-                    blurRadius: 8,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _glassIconButton(IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withOpacity(0.2)),
-        ),
-        child: Icon(icon, color: Colors.white, size: 22),
-      ),
-    );
-  }
-
-  // ─── QUICK STATS ──────────────────────────────
-  Widget _buildQuickStats() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      child: Row(
-        children: [
-          Expanded(
-            child: PremiumCard(
-              padding: const EdgeInsets.all(18),
-              onTap: () {
-                HapticFeedback.lightImpact();
-                FandoghiCoach.say('آفرین! تا الان ${GameData.totalCorrect} جواب درست دادی! ادامه بده قهرمان 🌰🌟', mood: FandoghiMood.excited);
-              },
-              child: _statContent(
-                icon: Icons.check_circle_rounded,
-                value: '${GameData.totalCorrect}',
-                label: 'جواب درست',
-                color: AppColors.success,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: PremiumCard(
-              padding: const EdgeInsets.all(18),
-              onTap: () {
-                HapticFeedback.lightImpact();
-                FandoghiCoach.say('نرخ موفقیت تو ${(GameData.successRate * 100).toStringAsFixed(0)}% است! فوق‌العاده‌ای! 🔥', mood: FandoghiMood.happy);
-              },
-              child: _statContent(
-                icon: Icons.trending_up_rounded,
-                value: '${(GameData.successRate * 100).toStringAsFixed(0)}%',
-                label: 'نرخ موفقیت',
-                color: AppColors.info,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: PremiumCard(
-              padding: const EdgeInsets.all(18),
-              onTap: () {
-                HapticFeedback.lightImpact();
-                FandoghiCoach.say('تا الان ${GameData.achievements.length} مدال افتخار گرفتی! 🏅', mood: FandoghiMood.excited);
-              },
-              child: _statContent(
-                icon: Icons.emoji_events_rounded,
-                value: '${GameData.achievements.length}',
-                label: 'مدال',
-                color: AppColors.warning,
-              ),
-            ),
-          ),
-        ],
-      ),
-    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.3);
-  }
-
-  Widget _statContent({
-    required IconData icon,
-    required String value,
-    required String label,
-    required Color color,
-  }) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 30),
-        const SizedBox(height: 10),
-        Text(
-          value,
-          style: AppFonts.exo2(
-            fontSize: 26,
-            fontWeight: FontWeight.w900,
-            color: color,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _statCard({
-    required IconData icon,
-    required String value,
-    required String label,
-    required Color color,
-    required Gradient gradient,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: gradient,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.25),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: Colors.white, size: 28),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: AppFonts.exo2(
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.white.withOpacity(0.85),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─── DAILY MISSIONS ───────────────────────────
-  Widget _buildDailyMissions() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-      child: GradientGlassCard(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            AppColors.primary.withOpacity(0.03),
-          ],
-        ),
-        borderRadius: 28,
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(
-                    Icons.rocket_launch_rounded,
-                    color: AppColors.primary,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'ماموریت‌های امروز',
-                  style: AppFonts.vazirmatn(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 18,
-                  ),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${GameData.dailyMissions}/4',
-                    style: const TextStyle(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _missionTile('۵ سوال حل کن', 'questions', 5, Icons.quiz_rounded),
-            _missionTile('الفبا تمرین کن', 'alphabet', 1, Icons.abc_rounded),
-            _missionTile('یک نقاشی بکش', 'drawing', 1, Icons.brush_rounded),
-            _missionTile('رنگ‌ها رو یاد بگیر', 'colors', 1, Icons.palette_rounded),
-          ],
-        ),
-      ),
-    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.3);
-  }
-
-  Widget _missionTile(String title, String id, int target, IconData icon) {
-    final value = GameData.missionValue(id);
-    final done = GameData.isMissionDone(id);
-    final progress = (value / target).clamp(0.0, 1.0).toDouble();
-    
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: done
-                  ? AppColors.success.withOpacity(0.15)
-                  : AppColors.surfaceDim,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              done ? Icons.check_circle_rounded : icon,
-              color: done ? AppColors.success : AppColors.textSecondary,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    decoration: done ? TextDecoration.lineThrough : null,
-                    color: done ? AppColors.textLight : AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                // Progress bar
-                Container(
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceDim,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: FractionallySizedBox(
-                    alignment: Alignment.centerRight,
-                    widthFactor: progress,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: done ? AppColors.success : AppColors.primary,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (!done)
-            Text(
-              '$value/$target',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
-                fontSize: 13,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  static const _freeGames = {'الفبا', 'اعداد', 'رنگ‌ها', 'ستاره‌گیری', 'حباب‌ترکان'};
-
-  Future<void> _openGame(String game) async {
-    // A generous starter set lets families assess the app before the parent-only paywall.
-    if (!_freeGames.contains(game) && !await Monetization.hasFullVersion()) {
-      if (mounted) await showFullVersionPaywall(context, featureName: game);
+  Future<void> _openGame(String route, String gameName) async {
+    HapticFeedback.heavyImpact();
+    AudioService.select();
+    if (!_freeGames.contains(gameName) && !await Monetization.hasFullVersion()) {
+      if (mounted) await showFullVersionPaywall(context, featureName: gameName);
       return;
     }
-    if (mounted) Navigator.pushNamed(context, '/game/$game');
+    if (mounted) {
+      Navigator.pushNamed(context, route).then((_) {
+        if (mounted) setState(() {});
+      });
+    }
   }
 
-  // ─── QUICK GAMES ──────────────────────────────
-  Widget _buildQuickGames() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'بازی‌های سریع',
-            style: AppFonts.vazirmatn(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 14),
-          SizedBox(
-            height: 110,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              children: [
-                _quickGameBtn('ستاره‌گیری', '⭐', const Color(0xFFFF5252)),
-                _quickGameBtn('حباب‌ترکان', '🫧', const Color(0xFF00CEC9)),
-                _quickGameBtn('حافظه', '🧠', const Color(0xFFE17055)),
-                _quickGameBtn('الفبا', '🔤', const Color(0xFF6C5CE7)),
-                _quickGameBtn('اعداد', '🔢', const Color(0xFFFF8E53)),
-                _quickGameBtn('رنگ‌ها', '🎨', const Color(0xFFFA709A)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.3);
+  String _timeGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour >= 5 && hour < 12) return 'صبح بخیر ☀️';
+    if (hour >= 12 && hour < 17) return 'روز بخیر 🌤️';
+    if (hour >= 17 && hour < 21) return 'عصر بخیر 🌇';
+    return 'شب بخیر 🌙';
   }
 
-  Widget _quickGameBtn(String name, String emoji, Color color) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        _openGame(name);
-      },
-      child: Container(
-        width: 90,
-        margin: const EdgeInsets.only(left: 12),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: color.withOpacity(0.2)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Center(
-                child: Text(emoji, style: const TextStyle(fontSize: 26)),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              name,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ).animate().scale(
-            delay: Duration(
-              milliseconds: 100 *
-                  [
-                    'ستاره‌گیری',
-                    'حباب‌ترکان',
-                    'حافظه',
-                    'الفبا',
-                    'اعداد',
-                    'رنگ‌ها',
-                  ].indexOf(name).clamp(0, 5).toInt(),
-            ),
-            duration: 400.ms,
-            curve: Curves.elasticOut,
-          ),
-    );
+  String _normalizeDigits(String input) {
+    const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    const englishDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    String result = input;
+    for (int i = 0; i < persianDigits.length; i++) {
+      result = result.replaceAll(persianDigits[i], englishDigits[i]);
+    }
+    return result;
   }
 
-  // ─── CATEGORIES ───────────────────────────────
-  Widget _buildCategories({bool simple = false}) {
-    final children = <Widget>[
-      Text(
-        simple ? 'بازی‌های من' : 'دسته‌بندی بازی‌ها',
-        style: AppFonts.vazirmatn(
-          fontSize: 20,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-      const SizedBox(height: 14),
-      _categoryCard(
-        title: 'یادگیری پایه',
-        subtitle: 'الفبا • اعداد • رنگ‌ها • اشکال',
-        icon: Icons.school_rounded,
-        gradient: AppGradients.purple,
-        games: ['الفبا', 'اعداد', 'رنگ‌ها', 'اشکال'],
-      ),
-      const SizedBox(height: 12),
-      if (!simple) ...[
-        _categoryCard(
-          title: 'بازی‌های فکری',
-          subtitle: 'حافظه • الگو • مسابقه • ترتیب',
-          icon: Icons.psychology_rounded,
-          gradient: AppGradients.ocean,
-          games: ['حافظه', 'الگو', 'مسابقه', 'ترتیب'],
-        ),
-        const SizedBox(height: 12),
-      ],
-      if (simple) ...[
-        _categoryCard(
-          title: 'بازی‌های من',
-          subtitle: 'نقاشی • ستاره‌گیری • حباب',
-          icon: Icons.favorite_rounded,
-          gradient: AppGradients.candy,
-          games: ['نقاشی', 'ستاره‌گیری', 'حباب‌ترکان'],
-        ),
-        const SizedBox(height: 12),
-      ],
-      _categoryCard(
-        title: 'دنیای اطراف',
-        subtitle: 'حیوانات • بدن • شغل‌ها • فضا',
-        icon: Icons.public_rounded,
-        gradient: AppGradients.forest,
-        games: ['حیوانات', 'بدن', 'شغل‌ها', 'فضا'],
-      ),
-      if (!simple) ...[
-        const SizedBox(height: 12),
-        _categoryCard(
-          title: 'خلاقیت',
-          subtitle: 'نقاشی • داستان • موسیقی',
-          icon: Icons.palette_rounded,
-          gradient: AppGradients.candy,
-          games: ['نقاشی', 'داستان', 'سازها'],
-        ),
-      ],
-    ];
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: children,
-      ),
-    ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.3);
-  }
-
-  Widget _categoryCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Gradient gradient,
-    required List<String> games,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: gradient,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: gradient.colors.first.withOpacity(0.2),
-            blurRadius: 15,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap: () {
-            HapticFeedback.lightImpact();
-            if (games.isNotEmpty) {
-              _openGame(games.first);
-            }
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(icon, color: Colors.white, size: 24),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: AppFonts.vazirmatn(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 18,
-                            ),
-                          ),
-                          Text(
-                            subtitle,
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      Icons.arrow_back_ios_rounded,
-                      color: Colors.white.withOpacity(0.7),
-                      size: 18,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: games
-                      .map(
-                        (g) => GestureDetector(
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            _openGame(g);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              g,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ─── FANDOGHI TIP ─────────────────────────────
-  /// فاز ۵۰/۶۲: کارت استراحت چشم (قانون 20-20-20) — برای همه سن‌ها.
-  Widget _buildBreakReminder() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-      child: GradientGlassCard(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
-        ),
-        borderRadius: 30,
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            const Text('😴', style: TextStyle(fontSize: 46)),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'وقت یک استراحت کوچک است!',
-                    style: AppFonts.vazirmatn(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 16,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'قانون ۲۰-۲۰-۲۰: بیا ۲۰ ثانیه به جای دور نگاه کنیم؛ چشم‌ها خسته نشوند 🌈',
-                    style: TextStyle(fontSize: 13, height: 1.5),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFandoghiTip() {
-    // فاز ۴۶: پیشنهاد ۳ بازی هوشمند بر اساس مهارت ضعیف
-    final suggestions = AI.suggestGames();
-    final coachText = GameData.totalCorrect == 0
-        ? 'من از اول تا آخر کنارت هستم؛ هر وقت آماده‌ای، یکی از بازی‌ها را انتخاب کن!'
-        : 'فندقی پیشنهاد می‌کند امروز این بازی‌ها را امتحان کنی: '
-            '${suggestions.map((g) => '«$g»').join('، ')} 🎯';
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-      child: GradientGlassCard(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFFFF8E1), Color(0xFFFFECB3)],
-        ),
-        borderRadius: 30,
-        padding: const EdgeInsets.fromLTRB(16, 12, 20, 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            FandoghiV2(
-              size: 104,
-              animate: true,
-              mood: GameData.successRate > 0.8
-                  ? FandoghiMood.excited
-                  : FandoghiMood.happy,
-              onTap: () => FandoghiCoach.say(
-                'من فندقی‌ام؛ راهنما، مربی و داور بازی‌های تو! روی هر بازی بزن تا با هم شروع کنیم 🌰',
-                mood: FandoghiMood.excited,
-                duration: const Duration(seconds: 4),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'فندقی، مربی تو 🌰',
-                    style: AppFonts.vazirmatn(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 17,
-                      color: AppColors.fandoghiDark,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    coachText,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textPrimary,
-                      height: 1.55,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'برای راهنمایی روی من بزن!',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    ).animate().fadeIn(delay: 1000.ms).slideY(begin: 0.3);
-  }
-
-/// تبدیل اعداد فارسی به انگلیسی برای مقایسه صحیح
-String _normalizeDigits(String input) {
-  const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-  const englishDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-  String result = input;
-  for (int i = 0; i < persianDigits.length; i++) {
-    result = result.replaceAll(persianDigits[i], englishDigits[i]);
-  }
-  return result;
-}
-
-  // ─── PARENT GATE ──────────────────────────────
   Future<void> _parentGate(BuildContext context) async {
     final n1 = Random().nextInt(10) + 1;
     final n2 = Random().nextInt(10) + 1;
@@ -1112,19 +110,21 @@ String _normalizeDigits(String input) {
       barrierDismissible: false,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           title: const Text('🔒 ورود والدین'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'این سؤال برای ورود بزرگ‌ترهاست.',
+                'این بخش برای بزرگ‌ترهاست. لطفاً پاسخ دهید:',
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
               Text(
                 '$n1 + $n2 = ?',
-                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -1153,7 +153,7 @@ String _normalizeDigits(String input) {
                 if (int.tryParse(normalized) == n1 + n2) {
                   Navigator.pop(dialogContext, true);
                 } else {
-                  setDialogState(() => errorText = 'جواب درست نیست. دوباره امتحان کنید.');
+                  setDialogState(() => errorText = 'جواب نادرست است.');
                 }
               },
               child: const Text('تایید'),
@@ -1167,7 +167,995 @@ String _normalizeDigits(String input) {
       await Navigator.pushNamed(context, '/parent');
     }
   }
+
+  List<_GameTile> get _allGames => [
+        _GameTile(
+          title: 'الفبا',
+          gameName: 'الفبا',
+          route: '/game/الفبا',
+          image: 'assets/illustrations/alphabet_world.webp',
+          emoji: '🔤',
+          glow: const Color(0xFF6C5CE7),
+          category: _GameCategory.base,
+          subtitle: 'یادگیری حروف فارسی',
+        ),
+        _GameTile(
+          title: 'اعداد',
+          gameName: 'اعداد',
+          route: '/game/اعداد',
+          image: 'assets/premium/numbers_premium.png',
+          emoji: '🔢',
+          glow: const Color(0xFFFF8E53),
+          category: _GameCategory.base,
+          subtitle: 'شمارش و ریاضی',
+        ),
+        _GameTile(
+          title: 'رنگ‌ها',
+          gameName: 'رنگ‌ها',
+          route: '/game/رنگ‌ها',
+          image: 'assets/illustrations/colors_cards.webp',
+          emoji: '🎨',
+          glow: const Color(0xFFFA709A),
+          category: _GameCategory.base,
+          subtitle: 'ترکیب و آزمایش رنگ',
+        ),
+        _GameTile(
+          title: 'شکل‌ها',
+          gameName: 'اشکال',
+          route: '/game/اشکال',
+          image: 'assets/illustrations/shapes_cards.webp',
+          emoji: '🔷',
+          glow: const Color(0xFF00CEC9),
+          category: _GameCategory.base,
+          subtitle: 'شناخت اشکال هندسی',
+        ),
+        _GameTile(
+          title: 'حافظه',
+          gameName: 'حافظه',
+          route: '/memory_match',
+          image: 'assets/illustrations/memory_cards.webp',
+          emoji: '🧠',
+          glow: const Color(0xFFE17055),
+          category: _GameCategory.brain,
+          subtitle: 'تقویت هوش و حافظه',
+        ),
+        _GameTile(
+          title: 'حباب‌ترکان',
+          gameName: 'حباب‌ترکان',
+          route: '/bubble_pop',
+          emoji: '🫧',
+          glow: const Color(0xFF00B894),
+          category: _GameCategory.fun,
+          subtitle: 'ترکاندن حباب‌های شاد',
+        ),
+        _GameTile(
+          title: 'ستاره‌گیری',
+          gameName: 'ستاره‌گیری',
+          route: '/star_catch',
+          image: 'assets/premium/star_catch_icon.png',
+          emoji: '⭐',
+          glow: const Color(0xFFFF5252),
+          category: _GameCategory.fun,
+          subtitle: 'شکار ستاره‌های درخشان',
+        ),
+        _GameTile(
+          title: 'دفتر نقاشی',
+          gameName: 'نقاشی',
+          route: '/game/نقاشی',
+          image: 'assets/illustrations/drawing_stickers.webp',
+          emoji: '🖌️',
+          glow: const Color(0xFFBA68C8),
+          category: _GameCategory.fun,
+          subtitle: 'رنگ‌آمیزی و نقاشی آزاد',
+        ),
+        _GameTile(
+          title: 'حیوانات',
+          gameName: 'حیوانات',
+          route: '/game/حیوانات',
+          image: 'assets/illustrations/animals_cards.webp',
+          emoji: '🦁',
+          glow: const Color(0xFF43A047),
+          category: _GameCategory.world,
+          subtitle: 'آشنایی با دنیای حیوانات',
+        ),
+        _GameTile(
+          title: 'شغل‌ها',
+          gameName: 'شغل‌ها',
+          route: '/game/شغل‌ها',
+          image: 'assets/illustrations/jobs_cards.webp',
+          emoji: '👨‍🚒',
+          glow: const Color(0xFF1E88E5),
+          category: _GameCategory.world,
+          subtitle: 'شناخت شغل‌های آینده',
+        ),
+        _GameTile(
+          title: 'بدن من',
+          gameName: 'بدن',
+          route: '/body_parts',
+          image: 'assets/illustrations/body_cards.webp',
+          emoji: '🫀',
+          glow: const Color(0xFFE91E63),
+          category: _GameCategory.world,
+          subtitle: 'شناخت اعضای بدن',
+        ),
+        _GameTile(
+          title: 'میوه‌ها',
+          gameName: 'میوه',
+          route: '/game/میوه',
+          image: 'assets/illustrations/fruits_cards.webp',
+          emoji: '🍎',
+          glow: const Color(0xFFFF9800),
+          category: _GameCategory.world,
+          subtitle: 'خوراکی‌ها و ویتامین‌ها',
+        ),
+        _GameTile(
+          title: 'پازل',
+          gameName: 'پازل',
+          route: '/puzzle',
+          emoji: '🧩',
+          glow: const Color(0xFF3F51B5),
+          category: _GameCategory.brain,
+          subtitle: 'چیدن قطعات جورچین',
+        ),
+        _GameTile(
+          title: 'مسابقه سرعت',
+          gameName: 'مسابقه',
+          route: '/math_race',
+          emoji: '🏁',
+          glow: const Color(0xFFFF6F00),
+          category: _GameCategory.brain,
+          subtitle: 'مسابقه هوش و سرعت',
+        ),
+        _GameTile(
+          title: 'صداها',
+          gameName: 'صدا',
+          route: '/sound_match',
+          emoji: '🎵',
+          glow: const Color(0xFF00BCD4),
+          category: _GameCategory.brain,
+          subtitle: 'تشخیص صداهای محیطی',
+        ),
+        _GameTile(
+          title: 'الگوها',
+          gameName: 'الگو',
+          route: '/pattern',
+          image: 'assets/premium/patterns_premium.png',
+          emoji: '🔮',
+          glow: const Color(0xFF9C27B0),
+          category: _GameCategory.brain,
+          subtitle: 'کشف نظم و توالی',
+        ),
+      ];
+
+  List<_GameTile> get _filteredGames {
+    if (_selectedCategory == _GameCategory.all) return _allGames;
+    return _allGames
+        .where((game) => game.category == _selectedCategory)
+        .toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.watch(gameStateProvider);
+    final name =
+        GameData.childName.isNotEmpty ? GameData.childName : 'دوست کوچولو';
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          // ── پس‌زمینه جزیره جادویی یادگیری با شناوری ملایم ──
+          Positioned.fill(
+            child: AnimatedBuilder(
+              animation: _floatCtrl,
+              builder: (context, child) {
+                final dy = sin(_floatCtrl.value * pi) * 6;
+                return Transform.translate(
+                  offset: Offset(0, dy),
+                  child: Transform.scale(
+                    scale: 1.04 + sin(_floatCtrl.value * pi) * 0.01,
+                    child: child,
+                  ),
+                );
+              },
+              child: Image.asset(
+                'assets/gateway/learn_island_bg.png',
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+              ),
+            ),
+          ),
+
+          // لایه هاله نرم برای شفافیت و خوانایی بی‌نقص
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.white.withOpacity(0.35),
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.15),
+                  ],
+                  stops: const [0.0, 0.45, 1.0],
+                ),
+              ),
+            ),
+          ),
+
+          // ── محتوای دنیای بازی‌ها ──
+          SafeArea(
+            child: Column(
+              children: [
+                _buildTopBar(name),
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(14, 4, 14, 24),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 580),
+                            child: Column(
+                              children: [
+                                _buildHeading(),
+                                const SizedBox(height: 8),
+                                _buildFandoghiCoachCard(),
+                                const SizedBox(height: 12),
+                                _buildCategoryPills(),
+                                const SizedBox(height: 14),
+                                _buildPlatformsGrid(constraints),
+                                const SizedBox(height: 16),
+                                _buildDailyMotivationCard(),
+                                if (AI.needsBreak() &&
+                                    !GameData.isDailyLimitReached) ...[
+                                  const SizedBox(height: 12),
+                                  _buildBreakReminder(),
+                                ],
+                                const SizedBox(height: 20),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── نوار بالا ──────────────────────────────────────
+  Widget _buildTopBar(String name) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 2),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.85),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: Colors.white, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                _iconPill(
+                  Icons.arrow_back_rounded,
+                  () {
+                    HapticFeedback.lightImpact();
+                    AudioService.tap();
+                    Navigator.maybePop(context);
+                  },
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => showProfileEditor(context),
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFF6C5CE7),
+                        width: 2.2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF6C5CE7).withOpacity(0.2),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: GameData.profilePhotoPath.isNotEmpty &&
+                              File(GameData.profilePhotoPath).existsSync()
+                          ? Image.file(
+                              File(GameData.profilePhotoPath),
+                              fit: BoxFit.cover,
+                              width: 44,
+                              height: 44,
+                            )
+                          : GameData.avatar.startsWith('assets/')
+                              ? Image.asset(
+                                  GameData.avatar,
+                                  fit: BoxFit.cover,
+                                  width: 44,
+                                  height: 44,
+                                )
+                              : Center(
+                                  child: Text(
+                                    GameData.avatar,
+                                    style: const TextStyle(fontSize: 22),
+                                  ),
+                                ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${_timeGreeting()} $name! 👋',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppFonts.vazirmatn(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF1F3A5F),
+                        ),
+                      ),
+                      Text(
+                        'لول ${GameData.level} • ${GameData.getLevelName()}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: const Color(0xFF1F3A5F).withOpacity(0.75),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                _balanceBadge('⭐', '${GameData.stars}'),
+                const SizedBox(width: 5),
+                _balanceBadge('💰', '${GameData.coins}'),
+                const SizedBox(width: 5),
+                _iconPill(
+                  Icons.lock_outline_rounded,
+                  () => _parentGate(context),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _balanceBadge(String emoji, String count) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.6), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 12)),
+          const SizedBox(width: 3),
+          Text(
+            count,
+            style: const TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF1F3A5F),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _iconPill(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(13),
+          border: Border.all(color: Colors.white, width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Icon(icon, color: const Color(0xFF1F3A5F), size: 20),
+      ),
+    );
+  }
+
+  // ─── تیتر ───────────────────────────────────────────
+  Widget _buildHeading() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
+      child: Column(
+        children: [
+          Text(
+            '🚀 دنیای بازی و یادگیری',
+            textAlign: TextAlign.center,
+            style: AppFonts.vazirmatn(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              color: const Color(0xFF1F3A5F),
+              shadows: [
+                Shadow(
+                  color: Colors.white.withOpacity(0.9),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+          )
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .moveY(begin: 0, end: -3, duration: 2200.ms, curve: Curves.easeInOut),
+          const SizedBox(height: 2),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.85),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white, width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              'یک بازی انتخاب کن و با فندقی ماجراجویی کن!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF1F3A5F).withOpacity(0.85),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── کارت مشاور و مربی فندقی ───────────────────────
+  Widget _buildFandoghiCoachCard() {
+    final suggestions = AI.suggestGames();
+    final suggestionText = suggestions.isNotEmpty
+        ? 'بیا امروز بازی «${suggestions.first}» رو امتحان کنیم! 🎯'
+        : 'هر بازی رو دوست داری انتخاب کن تا با هم شروع کنیم! 🌟';
+
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        AudioService.tap();
+        FandoghiCoach.say(
+          'من کنارت هستم! هر بازی رو انتخاب کنی با هم امتیازشو جمع می‌کنیم 🌰✨',
+          mood: FandoghiMood.excited,
+          duration: const Duration(seconds: 4),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6C5CE7).withOpacity(0.15),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const FandoghiV2(
+              size: 46,
+              animate: true,
+              mood: FandoghiMood.wink,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'نکته فندقی 🌰',
+                    style: AppFonts.vazirmatn(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.fandoghiDark,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    suggestionText,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1F3A5F),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.touch_app_rounded,
+              size: 18,
+              color: Color(0xFF6C5CE7),
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2);
+  }
+
+  // ─── دسته‌بندی‌ها (Filter Pills) ───────────────────
+  Widget _buildCategoryPills() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        children: _GameCategory.values.map((cat) {
+          final isSelected = _selectedCategory == cat;
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                AudioService.tap();
+                setState(() => _selectedCategory = cat);
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? const Color(0xFF6C5CE7)
+                      : Colors.white.withOpacity(0.88),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isSelected
+                        ? const Color(0xFF5A4BD8)
+                        : Colors.white,
+                    width: 1.8,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: isSelected
+                          ? const Color(0xFF6C5CE7).withOpacity(0.35)
+                          : Colors.black.withOpacity(0.04),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(cat.emoji, style: const TextStyle(fontSize: 13)),
+                    const SizedBox(width: 5),
+                    Text(
+                      cat.title,
+                      style: AppFonts.vazirmatn(
+                        fontSize: 11.5,
+                        fontWeight:
+                            isSelected ? FontWeight.w900 : FontWeight.w700,
+                        color: isSelected
+                            ? Colors.white
+                            : const Color(0xFF1F3A5F),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  // ─── گرید سکوهای شناور سه‌بعدی بازی‌ها ─────────────
+  Widget _buildPlatformsGrid(BoxConstraints constraints) {
+    final maxWidth = constraints.maxWidth > 0 ? constraints.maxWidth : 360.0;
+    final gap = 12.0;
+    final tileSize = ((maxWidth - gap * 2) / 3).clamp(84.0, 125.0);
+
+    final games = _filteredGames;
+    final rows = <Widget>[];
+
+    for (var i = 0; i < games.length; i += 3) {
+      final rowGames = games.skip(i).take(3).toList();
+      rows.add(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (var j = 0; j < rowGames.length; j++) ...[
+              if (j > 0) SizedBox(width: gap),
+              _GameFloatingPlatform(
+                tile: rowGames[j],
+                size: tileSize,
+                index: i + j,
+                onTap: () => _openGame(rowGames[j].route, rowGames[j].gameName),
+              ),
+            ],
+          ],
+        ),
+      );
+      if (i + 3 < games.length) {
+        rows.add(SizedBox(height: gap + 6));
+      }
+    }
+
+    return Column(children: rows);
+  }
+
+  // ─── کارت انگیزش روزانه و ستاره‌ها ─────────────────
+  Widget _buildDailyMotivationCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _miniStatItem('🔥', '${GameData.streak} روز', 'پشتکار'),
+          Container(width: 1, height: 32, color: Colors.grey.withOpacity(0.2)),
+          _miniStatItem('⭐', '${GameData.totalCorrect}', 'پاسخ درست'),
+          Container(width: 1, height: 32, color: Colors.grey.withOpacity(0.2)),
+          _miniStatItem('🏅', '${GameData.achievements.length}', 'مدال افتخار'),
+        ],
+      ),
+    ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.3);
+  }
+
+  Widget _miniStatItem(String emoji, String value, String title) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 16)),
+            const SizedBox(width: 4),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF1F3A5F),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 2),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 10.5,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF1F3A5F).withOpacity(0.7),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ─── یادآوری استراحت چشم (قانون 20-20-20) ───────────
+  Widget _buildBreakReminder() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 6),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE3F2FD).withOpacity(0.92),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: const Row(
+        children: [
+          Text('😴', style: TextStyle(fontSize: 32)),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'وقت یک استراحت کوتاه است؛ ۲۰ ثانیه به منظره دور نگاه کن تا چشم‌های قشنگت خسته نشن! 🌈',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1565C0),
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-/// فاز ۱۴: حالت‌های داشبورد هوشمند بر اساس سن کودک.
-enum _AgeMode { simple, standard, challenge }
+// ═══════════════════════════════════════════════════════════
+// دسته‌بندی‌ها
+// ═══════════════════════════════════════════════════════════
+enum _GameCategory {
+  all('همه', '🌟'),
+  base('آموزش پایه', '🔤'),
+  brain('بازی فکری', '🧠'),
+  fun('سرگرمی و هنر', '🎨'),
+  world('دنیای اطراف', '🌍');
+
+  final String title;
+  final String emoji;
+  const _GameCategory(this.title, this.emoji);
+}
+
+// ═══════════════════════════════════════════════════════════
+// مدل کاشی بازی
+// ═══════════════════════════════════════════════════════════
+class _GameTile {
+  final String title;
+  final String gameName;
+  final String route;
+  final String? image;
+  final String emoji;
+  final Color glow;
+  final _GameCategory category;
+  final String subtitle;
+
+  const _GameTile({
+    required this.title,
+    required this.gameName,
+    required this.route,
+    this.image,
+    required this.emoji,
+    required this.glow,
+    required this.category,
+    required this.subtitle,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// سکوی شناور سه‌بعدی بازی (هم‌تم با جزیره)
+// ═══════════════════════════════════════════════════════════
+class _GameFloatingPlatform extends StatefulWidget {
+  final _GameTile tile;
+  final double size;
+  final int index;
+  final VoidCallback onTap;
+
+  const _GameFloatingPlatform({
+    required this.tile,
+    required this.size,
+    required this.index,
+    required this.onTap,
+  });
+
+  @override
+  State<_GameFloatingPlatform> createState() => _GameFloatingPlatformState();
+}
+
+class _GameFloatingPlatformState extends State<_GameFloatingPlatform>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _floatCtrl;
+  bool _pressed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _floatCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2800),
+    );
+    Future.delayed(Duration(milliseconds: widget.index * 120), () {
+      if (mounted) _floatCtrl.repeat(reverse: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _floatCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = widget.size;
+    final imageBox = size * 0.84;
+    final tile = widget.tile;
+
+    return AnimatedBuilder(
+      animation: _floatCtrl,
+      builder: (context, child) {
+        final wave = sin(_floatCtrl.value * pi * 2 + widget.index * 0.8);
+        final dy = wave * 6;
+        final tilt = wave * 0.04;
+        return Transform(
+          alignment: Alignment.center,
+          transform: Matrix4.identity()
+            ..setEntry(3, 2, 0.0018)
+            ..rotateZ(tilt * 0.22)
+            ..translate(0.0, dy, 0.0),
+          child: child,
+        );
+      },
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTap: widget.onTap,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // مکعب تصویر سه‌بعدی با هاله رنگی درخشان
+            AnimatedScale(
+              scale: _pressed ? 0.9 : 1.0,
+              duration: const Duration(milliseconds: 120),
+              curve: Curves.easeOut,
+              child: Container(
+                width: imageBox,
+                height: imageBox,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(imageBox * 0.24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: tile.glow.withOpacity(0.55),
+                      blurRadius: 16,
+                      offset: const Offset(0, 7),
+                    ),
+                    BoxShadow(
+                      color: Colors.white.withOpacity(0.85),
+                      blurRadius: 4,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                  border: Border.all(color: Colors.white, width: 2.8),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      tile.glow.withOpacity(0.88),
+                      tile.glow,
+                    ],
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(imageBox * 0.24 - 2.8),
+                  child: tile.image != null
+                      ? Image.asset(
+                          tile.image!,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                        )
+                      : Center(
+                          child: Text(
+                            tile.emoji,
+                            style: TextStyle(fontSize: imageBox * 0.44),
+                          ),
+                        ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 5),
+            // برچسب نام بازی
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.95),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: tile.glow.withOpacity(0.35),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+                border: Border.all(
+                  color: tile.glow.withOpacity(0.45),
+                  width: 1.6,
+                ),
+              ),
+              child: Text(
+                tile.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppFonts.vazirmatn(
+                  fontSize: size < 95 ? 10.5 : 12,
+                  fontWeight: FontWeight.w900,
+                  color: const Color(0xFF1F3A5F),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    )
+        .animate()
+        .fadeIn(
+          delay: Duration(milliseconds: 150 + widget.index * 50),
+          duration: 400.ms,
+        )
+        .slideY(
+          begin: -0.7,
+          end: 0,
+          curve: Curves.elasticOut,
+          duration: 900.ms,
+          delay: Duration(milliseconds: 100 + widget.index * 50),
+        )
+        .scale(
+          begin: const Offset(0.4, 0.4),
+          end: const Offset(1, 1),
+          curve: Curves.elasticOut,
+          duration: 900.ms,
+          delay: Duration(milliseconds: 100 + widget.index * 50),
+        );
+  }
+}

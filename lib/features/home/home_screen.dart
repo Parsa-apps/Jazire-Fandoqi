@@ -79,12 +79,14 @@ class _HomeState extends ConsumerState<HomeScreen> {
   Widget _buildBottomNav() {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: Colors.white.withOpacity(0.94),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border.all(color: Colors.white, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
           ),
         ],
       ),
@@ -95,7 +97,7 @@ class _HomeState extends ConsumerState<HomeScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _navItem(0, Icons.home_rounded, 'خانه'),
+              _navItem(0, Icons.sports_esports_rounded, 'بازی‌ها'),
               _navItem(1, Icons.explore_rounded, 'جزیره'),
               _navItemCenter(),
               _navItem(3, Icons.storefront_rounded, 'فروشگاه'),
