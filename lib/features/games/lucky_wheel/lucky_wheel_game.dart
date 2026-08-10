@@ -5,11 +5,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app/app_colors.dart';
+import '../../../app/design_tokens.dart';
+import '../../../app/app_fonts.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
+import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
 import '../../../shared/widgets/child_touch_target.dart';
+import '../../../shared/widgets/fandoghi_premium.dart';
 import '../../../shared/widgets/premium_button.dart';
+import '../../../shared/widgets/particle_celebration.dart';
 
 /// ────────────────────────────────────────────────────────────
 /// 🎡 فاز ۵۶: چرخ شانس کودکانه
@@ -112,93 +117,118 @@ class _LuckyWheelGameState extends State<LuckyWheelGame>
     return Scaffold(
       body: DecoratedBox(
         decoration: const BoxDecoration(gradient: AppGradients.nightSky),
-        child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: Row(
-                  children: [
-                    ChildTouchTarget(
-                      onTap: () => Navigator.pop(context),
-                      child: const Icon(Icons.arrow_back_rounded,
-                          color: Colors.white, size: 28),
-                    ),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'چرخ شانس 🎡',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 36),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              // چرخ
-              Expanded(
-                child: Center(
-                  child: AnimatedBuilder(
-                    animation: _rotation,
-                    builder: (context, child) {
-                      return Transform.rotate(
-                        angle: _rotation.value * 2 * pi * 3,
-                        child: child,
-                      );
-                    },
-                    child: _buildWheel(),
-                  ),
-                ),
-              ),
-              // نتیجه
-              if (_result != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.amber, width: 2),
-                    ),
+        child: Stack(
+          children: [
+            SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(_result!.$1, style: const TextStyle(fontSize: 34)),
-                        const SizedBox(width: 10),
-                        Text(
-                          '${_result!.$2}! +${_result!.$3} ⭐ +${_result!.$4} 🪙',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
+                        ChildTouchTarget(
+                          onTap: () => Navigator.pop(context),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(AppRadii.md), border: Border.all(color: Colors.white30)),
+                            child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
                           ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text('چرخ شانس 🎡 — همیشه برنده!', textAlign: TextAlign.center, style: AppFonts.vazirmatn(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900))),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadii.pill), boxShadow: AppShadows.soft),
+                          child: Row(children: [const Text('🎁', style: TextStyle(fontSize: 14)), const SizedBox(width: 4), Text(GameData.luckyWheelSpunToday ? 'فردا' : '۱/روز', style: AppFonts.vazirmatn(fontSize: 11, fontWeight: FontWeight.w900, color: const Color(0xFF6C5CE7)))]),
                         ),
                       ],
                     ),
                   ),
-                ),
-              const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
-                child: PremiumButton(
-                  text: GameData.luckyWheelSpunToday
-                      ? 'فردا دوباره بیا 🌙'
-                      : (_spinning ? 'در حال چرخش...' : 'بچرخان! 🎡'),
-                  icon: Icons.casino_rounded,
-                  onPressed: (GameData.luckyWheelSpunToday || _spinning)
-                      ? () {}
-                      : _spin,
+                  const SizedBox(height: 8),
+                  const FandoghiPremium(size: 52, mood: FandoghiMood.excited, showParticles: false),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.10), borderRadius: BorderRadius.circular(AppRadii.pill), border: Border.all(color: Colors.white24)),
+                    child: Text(' ضد قمار — هر چرخش یه جایزه تزئینی قشنگ 🎀 ', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: Center(
+                      child: AnimatedBuilder(
+                        animation: _rotation,
+                        builder: (context, child) {
+                          return Transform.rotate(
+                            angle: _rotation.value * 2 * pi * 3,
+                            child: child,
+                          );
+                        },
+                        child: _buildWheel(),
+                      ),
+                    ),
+                  ),
+                  if (_result != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(AppRadii.xl),
+                          border: Border.all(color: const Color(0xFFFFD700), width: 2),
+                          boxShadow: AppShadows.colored(const Color(0xFFFFD700), opacity: 0.3),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(color: const Color(0xFFFFD700).withOpacity(0.15), shape: BoxShape.circle),
+                              child: Text(_result!.$1, style: const TextStyle(fontSize: 28)),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('${_result!.$2}! 🎉', style: AppFonts.vazirmatn(fontSize: 15, fontWeight: FontWeight.w900, color: const Color(0xFF2D3436))),
+                                  Text('+${_result!.$3} ⭐  +${_result!.$4} 🪙  — به کیف پولت اضافه شد', style: TextStyle(fontSize: 11, color: Colors.black54, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.celebration_rounded, color: Color(0xFFFFD700), size: 20),
+                          ],
+                        ),
+                      ).animate().scale(duration: 500.ms, curve: Curves.elasticOut).shimmer(duration: 800.ms, color: Colors.white.withOpacity(0.5)),
+                    ),
+                  const SizedBox(height: 14),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          width: double.infinity,
+                          child: PremiumButton(
+                            text: GameData.luckyWheelSpunToday ? 'فردا دوباره بیا 🌙' : (_spinning ? 'در حال چرخش...' : 'بچرخان! 🎡'),
+                            icon: Icons.casino_rounded,
+                            onPressed: (GameData.luckyWheelSpunToday || _spinning) ? () {} : _spin,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text('هر روز فقط یک بار — همیشه جایزه، بدون باخت 💛', style: TextStyle(color: Colors.white60, fontSize: 11)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // جشن ذرات وقتی نتیجه آمد
+            if (_result != null)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: ParticleCelebration(trigger: _result != null, particleCount: 40),
                 ),
               ),
-            ],
-          ),
+          ],
         ),
       ),
     );
