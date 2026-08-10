@@ -130,7 +130,8 @@ class StoryAudioService {
   static Stream<PlayerState> get playerStateStream => _player.playerStateStream;
 
   /// دریافت موقعیت فعلی پلیر (برای هماهنگی هایلایت با صدا)
-  static Future<Duration> getCurrentPosition() async => _player.getCurrentPosition();
+  /// just_audio 0.9.40 uses sync getter `position`, not `getCurrentPosition()`.
+  static Future<Duration> getCurrentPosition() async => _player.position;
 
   static void dispose() {
     _player.dispose();
