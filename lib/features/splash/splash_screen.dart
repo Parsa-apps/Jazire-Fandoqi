@@ -3,9 +3,11 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../app/app_colors.dart';
+import '../../app/design_tokens.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';
-import '../../shared/widgets/fandoghi_v2.dart';
+import '../../shared/widgets/fandoghi_premium.dart';
 import '../../shared/widgets/star_field.dart';
 
 /// ═══════════════════════════════════════════════
@@ -110,17 +112,17 @@ class _SplashState extends State<SplashScreen>
                   
                   const SizedBox(height: 20),
                   
-                  // Fandoghi character
+                  // Fandoghi character — Premium V4
                   ScaleTransition(
                     scale: CurvedAnimation(
                       parent: _scaleCtrl,
                       curve: Curves.elasticOut,
                     ),
-                    child: const FandoghiV2(
+                    child: FandoghiPremium(
                       size: 132,
-                      animate: true,
                       mood: FandoghiMood.excited,
-                      message: 'سلام! من فندقی هستم؛ راهنمای کوچولوی تو 🌰',
+                      showParticles: true,
+                      message: '${SeasonalTokens.greeting} من فندقی‌ام؛ راهنمای کوچولوی تو 🌰',
                     ),
                   ),
                   
