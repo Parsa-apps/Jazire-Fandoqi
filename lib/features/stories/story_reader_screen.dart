@@ -336,7 +336,8 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
 
               if (_celebrating)
                 const Positioned.fill(
-                  child: ParticleCelebration(count: 60),
+                  child:
+                      ParticleCelebration(trigger: true, particleCount: 60),
                 ),
             ],
           ),

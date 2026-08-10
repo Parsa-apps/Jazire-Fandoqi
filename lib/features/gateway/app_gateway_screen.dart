@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import 'package:amoozesh_fandoghi/core/audio_service.dart';
 import 'package:amoozesh_fandoghi/core/fandoghi_coach.dart';
+import 'package:amoozesh_fandoghi/core/fandoghi_models.dart';
 import 'package:amoozesh_fandoghi/core/game_data.dart';
 import 'package:amoozesh_fandoghi/features/about/about_screen.dart';
 import 'package:amoozesh_fandoghi/features/profile/profile_screen.dart';

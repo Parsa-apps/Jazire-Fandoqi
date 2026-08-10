@@ -6,6 +6,7 @@ import 'package:just_audio/just_audio.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
 import '../../core/fandoghi_coach.dart';
+import '../../core/fandoghi_models.dart';
 import '../../core/learning_content/lullabies_data.dart';
 import '../../shared/widgets/star_field.dart';
 
