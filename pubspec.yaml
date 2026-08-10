@@ -41,6 +41,9 @@ dependencies:
   video_player: 2.9.1
   http: 1.2.2
   
+  # 🔐 Crypto (premium #2: AES-GCM encrypted .parsa backup)
+  cryptography: 2.7.0
+  
   # 🛠️ Debugging & Logging
   talker: 4.0.0
   
