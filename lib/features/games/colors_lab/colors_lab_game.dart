@@ -4,12 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app/app_colors.dart';
+import '../../../app/design_tokens.dart';
+import '../../../app/app_fonts.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
+import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
 import '../../../shared/widgets/child_touch_target.dart';
+import '../../../shared/widgets/fandoghi_premium.dart';
 import '../../../shared/widgets/premium_button.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 /// ────────────────────────────────────────────────────────────
 /// 🧪 فاز ۲۳: آزمایشگاه رنگ فندقی — ترکیب رنگ‌ها
@@ -161,30 +166,29 @@ class _ColorsLabGameState extends State<ColorsLabGame> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
           child: Row(
             children: [
               ChildTouchTarget(
                 onTap: () => Navigator.pop(context),
-                child: const Icon(Icons.arrow_back_rounded,
-                    color: Colors.white, size: 28),
-              ),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'آزمایشگاه رنگ 🧪',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                  ),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(AppRadii.md), border: Border.all(color: Colors.white30)),
+                  child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
                 ),
               ),
-              const SizedBox(width: 36),
+              const SizedBox(width: 8),
+              Expanded(child: Text('آزمایشگاه رنگ 🧪 — دور ${_round + 1}/${_mixes.length}', textAlign: TextAlign.center, style: AppFonts.vazirmatn(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900))),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadii.pill), boxShadow: AppShadows.soft),
+                child: Text('$_correct/6', style: AppFonts.vazirmatn(fontSize: 12, fontWeight: FontWeight.w900, color: const Color(0xFF6C5CE7))),
+              ),
             ],
           ),
         ),
+        const SizedBox(height: 8),
+        const FandoghiPremium(size: 48, mood: FandoghiMood.happy, showParticles: false),
         const SizedBox(height: 24),
         // دو لوله رنگ
         Row(
@@ -320,47 +324,34 @@ class _ColorsLabGameState extends State<ColorsLabGame> {
   }
 
   Widget _buildResult() {
+    final stars = _correct == _mixes.length ? 3 : _correct >= 4 ? 2 : _correct >= 2 ? 1 : 0;
+    final isWin = _correct >= 4;
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text('🎨', style: TextStyle(fontSize: 80)),
-          const SizedBox(height: 16),
-          const Text(
-            'دانشمند رنگ‌ها!',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 26,
-              fontWeight: FontWeight.w900,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FandoghiPremium(size: 96, mood: isWin ? FandoghiMood.celebrating : FandoghiMood.shy, showParticles: isWin).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
+            const SizedBox(height: 12),
+            Text('دانشمند رنگ‌ها! 🧪✨', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900)).animate().fadeIn(delay: 200.ms),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(3, (i) => Padding(padding: const EdgeInsets.symmetric(horizontal: 3), child: Icon(i < stars ? Icons.star_rounded : Icons.star_border_rounded, size: 32, color: i < stars ? const Color(0xFFFFD700) : Colors.white24).animate(delay: (i * 100).ms).scale(begin: const Offset(0, 0), end: const Offset(1, 1), duration: 400.ms, curve: Curves.elasticOut))),
             ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            '$_correct درست از ${_mixes.length}',
-            style: const TextStyle(color: Colors.white70, fontSize: 17),
-          ),
-          const SizedBox(height: 26),
-          PremiumButton(
-            text: 'بازی دوباره 🔄',
-            icon: Icons.replay_rounded,
-            onPressed: () => setState(() {
-              _round = 0;
-              _roundOptions = _buildOptions();
-              _score = 0;
-              _correct = 0;
-              _locked = false;
-              _finished = false;
-              _selected = null;
-            }),
-          ),
-          const SizedBox(height: 12),
-          PremiumButton(
-            text: 'برگشت 🏠',
-            icon: Icons.home_rounded,
-            color: const Color(0xFF5C6BC0),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(color: Colors.white.withOpacity(0.10), borderRadius: BorderRadius.circular(AppRadii.lg), border: Border.all(color: Colors.white24)),
+              child: Column(children: [Text('$_correct درست از ${_mixes.length} — قاطی کردن بلدی!', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)), Text('امتیاز: $_score', style: TextStyle(color: Colors.white70, fontSize: 13))]),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(width: double.infinity, child: PremiumButton(text: 'بازی دوباره 🔄', icon: Icons.replay_rounded, onPressed: () { HapticFeedback.mediumImpact(); setState(() { _round = 0; _roundOptions = _buildOptions(); _score = 0; _correct = 0; _locked = false; _finished = false; _selected = null; }); })),
+            const SizedBox(height: 10),
+            SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.home_rounded, size: 18, color: Colors.white), label: Text('برگشت به خانه', style: AppFonts.vazirmatn(color: Colors.white)), style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), side: const BorderSide(color: Colors.white54), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg))))),
+          ],
+        ),
       ),
     );
   }

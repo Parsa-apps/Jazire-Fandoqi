@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
+import 'design_tokens.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 
 /// =======================================================
@@ -89,14 +90,14 @@ class AppTheme {
         iconTheme: IconThemeData(color: foreground, size: 24),
       ),
 
-      // Elevated Button Premium
+      // Elevated Button Premium — با Design Tokens
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
           minimumSize: const Size(56, 56),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(AppRadii.lg),
           ),
           textStyle: AppFonts.vazirmatn(
             fontSize: 18 * textScale,
@@ -105,12 +106,12 @@ class AppTheme {
         ),
       ),
 
-      // Card Premium
+      // Card Premium — Design Tokens
       // ⚠️ CardThemeData فقط از Flutter 3.27+ وجود دارد؛ پروژه روی 3.24.3 است.
       cardTheme: CardTheme(
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(AppRadii.xl),
         ),
         color: surface,
         shadowColor: Colors.black.withOpacity(0.08),
@@ -127,20 +128,20 @@ class AppTheme {
         unselectedLabelStyle: AppFonts.vazirmatn(fontWeight: FontWeight.w600, fontSize: 11 * textScale),
       ),
 
-      // Chip Premium
+      // Chip Premium — Design Tokens
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppRadii.md),
         ),
         labelStyle: AppFonts.vazirmatn(fontWeight: FontWeight.w600, fontSize: 14 * textScale),
       ),
 
-      // Input Premium
+      // Input Premium — Design Tokens
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: isDark ? Colors.white.withOpacity(0.06) : surface,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
           borderSide: BorderSide.none,
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),

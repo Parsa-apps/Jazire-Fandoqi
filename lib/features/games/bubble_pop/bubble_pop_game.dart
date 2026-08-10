@@ -5,11 +5,14 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../app/app_colors.dart';
+import '../../../app/design_tokens.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
+import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
+import '../../../shared/widgets/fandoghi_premium.dart';
 
 /// 🫧 BUBBLE POP — Flame Engine with Flutter GestureDetector
 class BubblePopGame extends StatefulWidget {
@@ -112,92 +115,91 @@ class _BubblePopState extends State<BubblePopGame>
 
   Widget _buildTargetDisplay() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(22),
+        color: Colors.black.withOpacity(0.55),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        boxShadow: AppShadows.medium,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('🎯', style: const TextStyle(fontSize: 22)),
-          const SizedBox(width: 8),
-          Text(
-            'حباب ${_game.targetLabel} را بترکان!',
-            style: AppFonts.balooBhaijaan2(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-            ),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), shape: BoxShape.circle),
+            child: const Text('🎯', style: TextStyle(fontSize: 16)),
           ),
-          const SizedBox(width: 8),
-          Text(
-            _game.targetEmoji,
-            style: const TextStyle(fontSize: 28, height: 1),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('حباب ${_game.targetLabel} را بترکان!', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
+              Text('هر ۳۰ امتیاز یا ${(_game.mode == BubbleMode.letters ? 2 : 2)} ترکاندن = هدف جدید', style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w600)),
+            ],
+          ),
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: AppShadows.soft),
+            child: Text(_game.targetEmoji, style: const TextStyle(fontSize: 26, height: 1)),
           ),
         ],
       ),
-    );
+    ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack);
   }
 
   Widget _buildStartScreen() {
-    return Stack(
-      children: [
-        Container(
-          color: Colors.black.withOpacity(0.6),
-          child: Center(
+    return Container(
+      color: Colors.black.withOpacity(0.65),
+      child: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('🫧', style: TextStyle(fontSize: 80)),
-                const SizedBox(height: 20),
-                Text(
-                  'حباب‌ترکان',
-                  style: AppFonts.balooBhaijaan2(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                  ),
+                const FandoghiPremium(size: 90, mood: FandoghiMood.excited, showParticles: true).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
+                const SizedBox(height: 16),
+                Text('حباب‌ترکان 🫧', style: AppFonts.vazirmatn(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white)).animate().fadeIn(delay: 200.ms),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.10), borderRadius: BorderRadius.circular(AppRadii.pill), border: Border.all(color: Colors.white24)),
+                  child: Text('ترکیدن زنجیره‌ای + تلفظ فندقی 🎤', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  'حباب‌های درست رو بترکون!\nحواست به حباب‌های اشتباه باشه!',
-                  textAlign: TextAlign.center,
-                  style: AppFonts.balooBhaijaan2(
-                    fontSize: 16,
-                    color: Colors.white.withOpacity(0.9),
-                    fontWeight: FontWeight.w700,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 40),
-                _startButton(
-                  'حروف الفبا 🔤',
-                  () => _game.startGame(BubbleMode.letters),
-                ),
-                const SizedBox(height: 12),
-                _startButton(
-                  'اعداد 🔢',
-                  () => _game.startGame(BubbleMode.numbers),
-                ),
-                const SizedBox(height: 12),
-                _startButton(
-                  'رنگ‌ها 🎨',
-                  () => _game.startGame(BubbleMode.colors),
+                Text('حباب‌های درست رو بترکون!\nحواست به حباب‌های اشتباه باشه — زنجیره‌ای می‌ترکن!', textAlign: TextAlign.center, style: AppFonts.vazirmatn(fontSize: 15, color: Colors.white.withOpacity(0.85), fontWeight: FontWeight.w600, height: 1.6)).animate().fadeIn(delay: 400.ms),
+                const SizedBox(height: 28),
+                _startButton('حروف الفبا 🔤', () => _game.startGame(BubbleMode.letters)),
+                const SizedBox(height: 10),
+                _startButton('اعداد 🔢', () => _game.startGame(BubbleMode.numbers)),
+                const SizedBox(height: 10),
+                _startButton('رنگ‌ها 🎨', () => _game.startGame(BubbleMode.colors)),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _miniBadge('⭐', 'امتیاز'),
+                    const SizedBox(width: 8),
+                    _miniBadge('🔥', 'کمبو'),
+                    const SizedBox(width: 8),
+                    _miniBadge('🫧', 'زنجیره'),
+                  ],
                 ),
               ],
             ),
           ),
         ),
-        Positioned(
-          top: MediaQuery.of(context).padding.top + 16,
-          left: 16,
-          child: _glassBtn(
-            Icons.arrow_back_rounded,
-            () => Navigator.pop(context),
-          ),
-        ),
-      ],
+      ),
+    );
+  }
+
+  Widget _miniBadge(String emoji, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(AppRadii.pill), border: Border.all(color: Colors.white24)),
+      child: Row(children: [Text(emoji, style: const TextStyle(fontSize: 12)), const SizedBox(width: 4), Text(label, style: AppFonts.vazirmatn(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white))]),
     );
   }
 
@@ -217,44 +219,75 @@ class _BubblePopState extends State<BubblePopGame>
   }
 
   Widget _buildGameOver() {
+    final isWin = _game.score >= 100;
+    final stars = _game.score >= 150 ? 3 : _game.score >= 80 ? 2 : _game.score >= 40 ? 1 : 0;
     return Container(
       color: Colors.black.withOpacity(0.7),
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(_game.score >= 100 ? '🏆' : '🎉', style: const TextStyle(fontSize: 80)),
-            const SizedBox(height: 20),
-            Text(_game.score >= 100 ? 'قهرمان!' : 'آفرین!',
-              style: AppFonts.balooBhaijaan2(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white)),
-            const SizedBox(height: 12),
-            Text('امتیاز: ${_game.score}',
-              style: AppFonts.balooBhaijaan2(fontSize: 24, color: Colors.amber, fontWeight: FontWeight.w900)),
-            Text('بهترین کمبو: ${_game.bestCombo}x',
-              style: AppFonts.balooBhaijaan2(fontSize: 17, color: Colors.orange, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 30),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              FandoghiPremium(size: 100, mood: isWin ? FandoghiMood.celebrating : FandoghiMood.happy, showParticles: isWin).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
+              const SizedBox(height: 16),
+              Text(isWin ? 'قهرمان حباب‌ها! 🏆' : 'آفرین! 🎉', style: AppFonts.vazirmatn(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white)).animate().fadeIn(delay: 200.ms),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(3, (i) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: Icon(i < stars ? Icons.star_rounded : Icons.star_border_rounded, size: 32, color: i < stars ? const Color(0xFFFFD700) : Colors.white24)
+                      .animate(delay: (i * 120).ms).scale(begin: const Offset(0, 0), end: const Offset(1, 1), duration: 400.ms, curve: Curves.elasticOut),
+                )),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.10), borderRadius: BorderRadius.circular(AppRadii.lg), border: Border.all(color: Colors.white24)),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: const Color(0xFFFFD700).withOpacity(0.2), borderRadius: BorderRadius.circular(AppRadii.pill)), child: Row(children: [const Icon(Icons.star_rounded, color: Color(0xFFFFD700), size: 16), const SizedBox(width: 4), Text('${_game.score}', style: AppFonts.vazirmatn(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white))])),
+                        const SizedBox(width: 8),
+                        Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(AppRadii.pill)), child: Row(children: [const Icon(Icons.local_fire_department_rounded, color: Colors.orange, size: 16), const SizedBox(width: 4), Text('${_game.bestCombo}x کمبو', style: AppFonts.vazirmatn(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white))])),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text('زنجیره‌ای ترکید! 🫧✨', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg))),
                   onPressed: () {
+                    HapticFeedback.mediumImpact();
                     if (canStartPlay(context)) {
                       _game.startGame(_game.mode);
                       setState(() {});
                     }
                   },
-                  child: Text('دوباره 🔄', style: AppFonts.balooBhaijaan2(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
+                  icon: const Icon(Icons.replay_rounded, size: 20),
+                  label: Text('دوباره بترکان 🔄', style: AppFonts.vazirmatn(fontSize: 16, fontWeight: FontWeight.w900)),
                 ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.white.withOpacity(0.2), padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white54), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg))),
                   onPressed: () => Navigator.pop(context),
-                  child: Text('برگرد 🏠', style: AppFonts.balooBhaijaan2(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
+                  icon: const Icon(Icons.home_rounded, size: 18),
+                  label: Text('برگشت به خانه', style: AppFonts.vazirmatn(fontSize: 15, fontWeight: FontWeight.w700)),
                 ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );

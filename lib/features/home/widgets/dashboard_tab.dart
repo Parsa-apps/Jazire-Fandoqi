@@ -16,6 +16,8 @@ import '../../../core/game_data.dart';
 import '../../../core/monetization.dart';
 import '../../../presentation/providers/game_state_provider.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
+import '../../../shared/widgets/premium_daily_missions.dart';
+import '../../../shared/widgets/premium_streak_calendar.dart';
 import '../../profile/profile_editor.dart';
 import '../../shop/full_version_paywall.dart';
 
@@ -407,6 +409,37 @@ class _DashboardState extends ConsumerState<DashboardTab>
                                 const SizedBox(height: 14),
                                 _buildPlatformsGrid(constraints),
                                 const SizedBox(height: 16),
+                                // 🔥 پریمیوم استریک تقویم شمسی + قلب یخی (پیشنهاد ۳۳)
+                                PremiumStreakCalendar(
+                                  onHeartIceTap: () {
+                                    if (GameData.streak == 0) {
+                                      if (GameData.coins >= 50) {
+                                        GameData.addCoins(-50);
+                                        // قلب یخی یک روز streak را نجات می‌دهد
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('🧊 قلب یخی فعال شد! فردا جای خالی را پر می‌کند — ۵۰ سکه کم شد')),
+                                        );
+                                        setState(() {});
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('برای قلب یخی به ۵۰ سکه نیاز داری 💰')),
+                                        );
+                                      }
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('🔥 استریک ${GameData.streak} روزه‌ات عالیه! ادامه بده تا صندوق طلایی!')),
+                                      );
+                                    }
+                                  },
+                                  onCalendarTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('📅 تقویم کامل شمسی به زودی — فعلاً ۷ روز آخر را اینجا می‌بینی!')),
+                                    );
+                                  },
+                                ),
+                                const SizedBox(height: 12),
+                                const PremiumDailyMissions(),
+                                const SizedBox(height: 12),
                                 _buildDailyMotivationCard(),
                                 if (AI.needsBreak() &&
                                     !GameData.isDailyLimitReached) ...[

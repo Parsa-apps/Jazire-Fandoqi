@@ -3,13 +3,17 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../app/app_colors.dart';
+import '../../../app/design_tokens.dart';
+import '../../../app/app_fonts.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
+import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
-import '../../../shared/widgets/child_touch_target.dart';
+import '../../../shared/widgets/fandoghi_premium.dart';
 import '../../../shared/widgets/premium_button.dart';
 
 /// ────────────────────────────────────────────────────────────
@@ -215,37 +219,79 @@ class _MathRaceGameState extends State<MathRaceGame> {
           ),
         ),
         const SizedBox(height: 10),
-        // پیست مسابقه (دور ۷: عرض کامل + بدون کلیپ — قبلاً Stack عرض صفر می‌گرفت)
+        // 🏁 پیست پریمیوم — شطرنجی + سایه + ذرات سرعت (بهبود پریمیوم)
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: SizedBox(
-            height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Container(
+            height: 56,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(AppRadii.lg),
+              border: Border.all(color: Colors.white.withOpacity(0.15)),
+            ),
             child: Stack(
               clipBehavior: Clip.none,
               children: [
+                // ریل
                 Positioned(
                   left: 0,
                   right: 0,
-                  top: 18,
+                  top: 22,
                   child: Container(
-                    height: 8,
+                    height: 10,
                     decoration: BoxDecoration(
-                      color: Colors.white24,
-                      borderRadius: BorderRadius.circular(6),
+                      gradient: LinearGradient(colors: [Colors.white.withOpacity(0.25), Colors.white.withOpacity(0.15)]),
+                      borderRadius: BorderRadius.circular(AppRadii.pill),
+                      border: Border.all(color: Colors.white.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      children: List.generate(20, (i) => Expanded(child: Container(margin: const EdgeInsets.symmetric(horizontal: 1), height: 4, decoration: BoxDecoration(color: i % 2 == 0 ? Colors.white.withOpacity(0.5) : Colors.transparent, borderRadius: BorderRadius.circular(2))))),
                     ),
                   ),
                 ),
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 400),
-                  curve: Curves.easeOutBack,
-                  left: (MediaQuery.of(context).size.width - 48) * _progress / 100,
-                  top: 0,
-                  child: const Text('🏎️', style: TextStyle(fontSize: 32)),
-                ),
+                // پرچم شطرنجی
                 Positioned(
-                  right: 0,
+                  right: -4,
                   top: 0,
-                  child: const Text('🏁', style: TextStyle(fontSize: 32)),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4)),
+                        child: Row(
+                          children: List.generate(4, (i) => Container(width: 6, height: 6, color: i % 2 == 0 ? Colors.black : Colors.white)),
+                        ),
+                      ),
+                      const Text('🏁', style: TextStyle(fontSize: 24)),
+                    ],
+                  ),
+                ),
+                // ماشین با ذرات
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeOutCubic,
+                  left: (MediaQuery.of(context).size.width - 72) * _progress / 100,
+                  top: 0,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      if (_progress > 0 && _progress < 100)
+                        Positioned(
+                          left: -10,
+                          top: 12,
+                          child: Row(
+                            children: List.generate(3, (i) => Container(width: 4, height: 4, margin: const EdgeInsets.only(right: 2), decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.6 - i * 0.15)))
+                                .animate(onPlay: (c) => c.repeat(reverse: true))
+                                .scale(begin: const Offset(0.5, 0.5), end: const Offset(1.2, 1.2), duration: (400 + i * 100).ms)
+                                .fade(begin: 0.3, end: 0.8, duration: (400 + i * 100).ms)),
+                          ),
+                        ),
+                      Text('🏎️', style: TextStyle(fontSize: 30, shadows: [Shadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 8)]))
+                          .animate(target: _progress > 0 ? 1 : 0)
+                          .shake(hz: 6, curve: Curves.easeInOut, duration: 300.ms),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -309,39 +355,69 @@ class _MathRaceGameState extends State<MathRaceGame> {
   }
 
   Widget _buildResult() {
+    final isWin = _correct >= 7;
+    final stars = _correct == _questionCount ? 3 : _correct >= 8 ? 2 : isWin ? 1 : 0;
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(_correct >= 7 ? '🏆' : '🚗', style: const TextStyle(fontSize: 80)),
-          const SizedBox(height: 16),
-          const Text(
-            'مسابقه تمام شد!',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 26,
-              fontWeight: FontWeight.w900,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FandoghiPremium(
+              size: 100,
+              mood: isWin ? FandoghiMood.celebrating : FandoghiMood.shy,
+              showParticles: isWin,
+              message: isWin ? 'چه راننده سریعی! 🏆' : 'تلاش خوبی بود! 💪',
+            ).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
+            const SizedBox(height: 16),
+            Text('مسابقه تمام شد! 🏁', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900)).animate().fadeIn(delay: 200.ms),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(3, (i) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Icon(i < stars ? Icons.star_rounded : Icons.star_border_rounded, size: 36, color: i < stars ? const Color(0xFFFFD700) : Colors.white24)
+                    .animate(delay: (i * 120).ms).scale(begin: const Offset(0, 0), end: const Offset(1, 1), duration: 400.ms, curve: Curves.elasticOut),
+              )),
             ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            '$_correct جواب درست از $_questionCount',
-            style: const TextStyle(color: Colors.white70, fontSize: 18),
-          ),
-          const SizedBox(height: 26),
-          PremiumButton(
-            text: 'مسابقه دوباره 🔄',
-            icon: Icons.replay_rounded,
-            onPressed: _restart,
-          ),
-          const SizedBox(height: 12),
-          PremiumButton(
-            text: 'برگشت 🏠',
-            icon: Icons.home_rounded,
-            color: const Color(0xFF5C6BC0),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(color: Colors.white.withOpacity(0.10), borderRadius: BorderRadius.circular(AppRadii.lg), border: Border.all(color: Colors.white24)),
+              child: Column(
+                children: [
+                  Text('$_correct درست از $_questionCount سوال', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFFFD700).withOpacity(0.2), borderRadius: BorderRadius.circular(AppRadii.pill)), child: Row(children: [const Text('🪙', style: TextStyle(fontSize: 14)), const SizedBox(width: 4), Text('+${_correct * 2}', style: AppFonts.vazirmatn(fontSize: 13, fontWeight: FontWeight.w900, color: const Color(0xFFFFD700)))])),
+                      const SizedBox(width: 8),
+                      Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.2), borderRadius: BorderRadius.circular(AppRadii.pill)), child: Row(children: [const Icon(Icons.star_rounded, size: 14, color: Colors.white), const SizedBox(width: 4), Text('+${_correct ~/ 2}', style: AppFonts.vazirmatn(fontSize: 13, fontWeight: FontWeight.w900, color: Colors.white))])),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: PremiumButton(text: 'مسابقه دوباره 🔄', icon: Icons.replay_rounded, onPressed: () { HapticFeedback.mediumImpact(); _restart(); }),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.home_rounded, size: 18, color: Colors.white),
+                label: Text('برگشت به خانه', style: AppFonts.vazirmatn(color: Colors.white, fontWeight: FontWeight.w700)),
+                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), side: const BorderSide(color: Colors.white54), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg))),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text('🏎️ هر جواب درست = ۱۰٪ پیشرفت + ذرات سرعت!', style: TextStyle(color: Colors.white38, fontSize: 11)),
+          ],
+        ),
       ),
     );
   }

@@ -6,12 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app/app_colors.dart';
+import '../../../app/design_tokens.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
+import '../../../shared/widgets/handwriting_score_overlay.dart';
 
 /// A local-first Persian alphabet academy: see, hear/read, trace, receive
 /// feedback, and repeat. The trace check is intentionally transparent and
@@ -594,13 +596,38 @@ class _TraceScreenState extends State<_TraceScreen> {
               bottom: 0,
               child: _traceBottomBar(),
             ),
-            // پیام امتیاز
+            // پیام امتیاز پریمیوم — overlay ستاره‌دار ML-like (پیشنهاد ۲۱)
             if (_lastResult != null)
-              Positioned(
-                top: 70,
-                left: 0,
-                right: 0,
-                child: Center(child: _resultBadge(_lastResult!)),
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withOpacity(0.35),
+                  alignment: Alignment.center,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                    child: HandwritingScoreOverlay(
+                      score: _lastResult!.score,
+                      letter: _lesson.letter,
+                      passed: _lastResult!.passed,
+                      onRetry: () => setState(() {
+                        _strokes.clear();
+                        _lastResult = null;
+                      }),
+                      onNext: () {
+                        if (_lastResult!.passed) {
+                          // حرف بعدی
+                          final next = (_lessonIndex + 1) % widget.lessons.length;
+                          setState(() {
+                            _lessonIndex = next;
+                            _strokes.clear();
+                            _lastResult = null;
+                          });
+                        } else {
+                          setState(() => _lastResult = null);
+                        }
+                      },
+                    ),
+                  ),
+                ),
               ),
             // پیش‌نمایش کوچک حرف
             Positioned(

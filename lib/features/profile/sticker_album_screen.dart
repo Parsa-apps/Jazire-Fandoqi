@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../app/app_colors.dart';
+import '../../../app/design_tokens.dart';
 import '../../../app/app_fonts.dart';
 import '../../../core/game_data.dart';
+import '../../../core/fandoghi_models.dart';
 import '../../../shared/widgets/child_touch_target.dart';
+import '../../../shared/widgets/fandoghi_premium.dart';
 
 /// ────────────────────────────────────────────────────────────
 /// 🎀 فاز ۵۹ + بخش کارتون‌ها: آلبوم جامع استیکرهای کودک
@@ -128,25 +131,37 @@ class _StickerAlbumScreenState extends State<StickerAlbumScreen> {
                 ),
               ),
 
-              const SizedBox(height: 12),
-
-              // Total Badge
+              const SizedBox(height: 8),
+              const FandoghiPremium(size: 56, mood: FandoghiMood.happy, showParticles: false),
+              const SizedBox(height: 8),
+              // Total Badge پریمیوم
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white24),
+                  gradient: totalOwnedCount == _allStickers.length
+                      ? const LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFFF8E53)])
+                      : null,
+                  color: totalOwnedCount == _allStickers.length ? null : Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
+                  border: Border.all(color: totalOwnedCount == _allStickers.length ? const Color(0xFFFFD700) : Colors.white24, width: totalOwnedCount == _allStickers.length ? 2 : 1),
+                  boxShadow: totalOwnedCount == _allStickers.length ? AppShadows.colored(const Color(0xFFFFD700)) : null,
                 ),
-                child: Text(
-                  '$totalOwnedCount از ${_allStickers.length} استیکر باز شده 🎁',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(totalOwnedCount == _allStickers.length ? '🏆' : '🎀', style: const TextStyle(fontSize: 16)),
+                    const SizedBox(width: 6),
+                    Text(
+                      '$totalOwnedCount از ${_allStickers.length} استیکر — ${(totalOwnedCount / _allStickers.length * 100).round()}٪',
+                      style: AppFonts.vazirmatn(
+                        color: totalOwnedCount == _allStickers.length ? Colors.white : Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
+              ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
 
               const SizedBox(height: 14),
 

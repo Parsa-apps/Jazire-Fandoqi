@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../app/app_colors.dart';
+import '../../../app/design_tokens.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
+import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
-import '../../../shared/widgets/fandoghi_v2.dart';
+import '../../../shared/widgets/fandoghi_premium.dart';
 import '../../../shared/widgets/illustration_tile.dart';
 import '../../../shared/widgets/particle_celebration.dart';
 
@@ -594,25 +596,33 @@ class _MemoryState extends State<MemoryMatchGame>
   Widget _buildStartScreen() {
     return Expanded(
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('🧠', style: TextStyle(fontSize: 80)),
-            const SizedBox(height: 20),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+            const FandoghiPremium(size: 88, mood: FandoghiMood.happy, showParticles: false).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
+            const SizedBox(height: 12),
             Text(
-              'بازی حافظه',
+              'بازی حافظه 🧠',
               style: AppFonts.vazirmatn(
-                fontSize: 36,
+                fontSize: 32,
                 fontWeight: FontWeight.w900,
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(color: Colors.white.withOpacity(0.10), borderRadius: BorderRadius.circular(AppRadii.pill), border: Border.all(color: Colors.white24)),
+              child: Text('۳ تم ایرانی — ۵ سطح — چرخش ۳بعدی ✨', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+            ),
+            const SizedBox(height: 10),
             Text(
               'کارت‌ها رو برگردون و جفت‌ها رو پیدا کن!',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 17,
+                fontSize: 15,
                 color: Colors.white.withOpacity(0.8),
                 height: 1.6,
               ),
@@ -651,7 +661,8 @@ class _MemoryState extends State<MemoryMatchGame>
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _themeButton(String title, String emoji, String theme) {

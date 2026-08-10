@@ -4,14 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app/app_colors.dart';
+import '../../../app/design_tokens.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../../core/ai_system.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
+import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
 import '../../../core/learning_content/learning_topics.dart';
 import '../../../core/play_limit.dart';
-import '../../../shared/widgets/fandoghi_v2.dart';
+import '../../../shared/widgets/fandoghi_premium.dart';
 import '../../../shared/widgets/illustration_tile.dart';
 
 /// A small, reusable quiz engine for all learning-map topics.
@@ -459,78 +461,109 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
     );
   }
 
+  // ✨ کوییز پریمیوم — بی‌نهایت هوشمند (پیشنهاد ۳۰)
   Widget _buildResult() {
     final passed = _correctAnswers >= (_questions.length * 0.6).ceil();
+    final stars = _correctAnswers == _questions.length ? 3 : _correctAnswers >= (_questions.length * 0.8).ceil() ? 2 : passed ? 1 : 0;
+    final weakSkill = AI.weakSkill();
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const FandoghiV2(
-              size: 100,
-              animate: true,
-              mood: FandoghiMood.excited,
-            ),
-            const SizedBox(height: 18),
+            FandoghiPremium(
+              size: 110,
+              mood: passed ? FandoghiMood.celebrating : FandoghiMood.shy,
+              showParticles: passed,
+              message: passed ? 'آفرین قهرمان! 🌟' : 'تلاش خوبی بود عزیزم 💪',
+            ).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
+            const SizedBox(height: 16),
             Text(
               passed ? 'عالی بود! 🏆' : 'تلاش خیلی خوبی بود! 💪',
               textAlign: TextAlign.center,
-              style: AppFonts.vazirmatn(
-                color: Colors.white,
-                fontSize: 29,
-                fontWeight: FontWeight.w900,
-              ),
+              style: AppFonts.vazirmatn(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900),
             ),
-            const SizedBox(height: 12),
-            Text(
-              '$_correctAnswers از ${_questions.length} پاسخ درست\nامتیاز نهایی: $_score',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 18,
-                height: 1.7,
-              ),
-            ),
-            const SizedBox(height: 28),
-            if (widget.stageId != null && passed)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Text(
-                  'مرحله باز شد! ⭐',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 8),
+            // ستاره‌ها
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(3, (i) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Icon(i < stars ? Icons.star_rounded : Icons.star_border_rounded, size: 36, color: i < stars ? const Color(0xFFFFD700) : Colors.white24)
+                    .animate(delay: (i * 120).ms).scale(begin: const Offset(0, 0), end: const Offset(1, 1), duration: 400.ms, curve: Curves.elasticOut),
+              )),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(color: Colors.white.withOpacity(0.10), borderRadius: BorderRadius.circular(AppRadii.lg), border: Border.all(color: Colors.white24)),
+              child: Text('$_correctAnswers از ${_questions.length} درست  •  امتیاز $_score', textAlign: TextAlign.center, style: AppFonts.vazirmatn(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+            ),
+            const SizedBox(height: 12),
+            if (widget.stageId != null && passed)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(color: const Color(0xFF00B894).withOpacity(0.2), borderRadius: BorderRadius.circular(AppRadii.pill), border: Border.all(color: const Color(0xFF00B894).withOpacity(0.4))),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.lock_open_rounded, color: Colors.white, size: 16), const SizedBox(width: 6), Text('مرحله باز شد! ⭐', style: AppFonts.vazirmatn(color: Colors.white, fontWeight: FontWeight.w800))]),
+              ),
+            const SizedBox(height: 16),
+            // پیشنهاد هوشمند
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(AppRadii.xl), border: Border.all(color: Colors.white.withOpacity(0.15))),
+              child: Row(
+                children: [
+                  Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.15), borderRadius: BorderRadius.circular(AppRadii.md)), child: const Text('🤖', style: TextStyle(fontSize: 18))),
+                  const SizedBox(width: 10),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('پیشنهاد هوشمند فندقی', style: AppFonts.vazirmatn(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.white)), const SizedBox(height: 2), Text('مهارت «$weakSkill» را بیشتر تمرین کنیم؟ کوییز بعدی از همین مهارت می‌سازد!', style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.5))])),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            // دکمه‌های پریمیوم — بی‌نهایت
+            Column(
               children: [
-                ElevatedButton(
-                  onPressed: _restart,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      HapticFeedback.mediumImpact();
+                      // کوییز هوشمند بعدی — بی‌نهایت
+                      final nextQuestions = _generateSmartQuestions();
+                      setState(() {
+                        _questions
+                          ..clear()
+                          ..addAll(nextQuestions);
+                        _questionIndex = 0;
+                        _score = 0;
+                        _correctAnswers = 0;
+                        _consecutiveWrong = 0;
+                        _selectedOption = null;
+                        _answerLocked = false;
+                        _finished = false;
+                        _roundToken++;
+                      });
+                      FandoghiCoach.say('بریم کوییز هوشمند بعدی! این بار از مهارت «${AI.weakSkill()}» سوال می‌پرسم 🤖', mood: FandoghiMood.excited, duration: const Duration(seconds: 3));
+                      Future.delayed(const Duration(milliseconds: 400), () { if (mounted) _armNextHint(); });
+                    },
+                    icon: const Icon(Icons.auto_awesome_rounded, size: 20),
+                    label: Text('کوییز هوشمند بعدی 🤖', style: AppFonts.vazirmatn(fontWeight: FontWeight.w900, fontSize: 15)),
+                    style: FilledButton.styleFrom(backgroundColor: const Color(0xFF00B894), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg))),
                   ),
-                  child: const Text('دوباره بازی کن 🔄'),
                 ),
-                const SizedBox(width: 12),
-                OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.white54),
-                  ),
-                  child: const Text('برگشت'),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(child: OutlinedButton.icon(onPressed: _restart, icon: const Icon(Icons.refresh_rounded, size: 18), label: Text('همین کوییز', style: AppFonts.vazirmatn(fontWeight: FontWeight.w700)), style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white54), padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg))))),
+                    const SizedBox(width: 10),
+                    Expanded(child: FilledButton.icon(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.home_rounded, size: 18), label: Text('برگشت', style: AppFonts.vazirmatn(fontWeight: FontWeight.w800)), style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.primary, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg))))),
+                  ],
                 ),
               ],
             ),
+            const SizedBox(height: 8),
+            Text('💡 کوییز بی‌نهایت — هر بار ۵ سوال جدید از ضعیف‌ترین مهارت', style: TextStyle(color: Colors.white38, fontSize: 11)),
           ],
         ),
       ),

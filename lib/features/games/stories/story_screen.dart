@@ -4,12 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app/app_colors.dart';
+import '../../../app/design_tokens.dart';
+import '../../../app/app_fonts.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
+import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
 import '../../../core/learning_content/stories.dart';
 import '../../../shared/widgets/child_touch_target.dart';
-import '../../../shared/widgets/fandoghi_v2.dart';
+import '../../../shared/widgets/fandoghi_premium.dart';
 import '../../../shared/widgets/premium_button.dart';
 
 /// ────────────────────────────────────────────────────────────
@@ -115,8 +118,25 @@ class _StoryScreenState extends State<StoryScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              // Narrator
-              FandoghiV2(size: 84, mood: FandoghiMood.happy),
+              // Narrator پریمیوم
+              FandoghiPremium(size: 84, mood: FandoghiMood.happy, showParticles: false),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.10), borderRadius: BorderRadius.circular(AppRadii.pill), border: Border.all(color: Colors.white24)),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.auto_stories_rounded, color: Colors.white, size: 14),
+                    const SizedBox(width: 6),
+                    Text('انتخاب ${_choicesMade + 1} • شاخه‌ای', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                    const SizedBox(width: 8),
+                    Container(width: 6, height: 6, decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF00B894))),
+                    const SizedBox(width: 6),
+                    Text(_finished ? 'پایان' : 'ادامه دارد', style: TextStyle(color: Colors.white70, fontSize: 10)),
+                  ],
+                ),
+              ),
               const SizedBox(height: 12),
               // Story text
               Expanded(

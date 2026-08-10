@@ -3,12 +3,17 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../app/app_colors.dart';
+import '../../../app/design_tokens.dart';
+import '../../../app/app_fonts.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
+import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
 import '../../../shared/widgets/child_touch_target.dart';
+import '../../../shared/widgets/fandoghi_premium.dart';
 import '../../../shared/widgets/premium_button.dart';
 
 /// ────────────────────────────────────────────────────────────
@@ -265,33 +270,34 @@ class _PuzzleGameState extends State<PuzzleGame> {
 
   Widget _buildResult() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text('🧩✨', style: TextStyle(fontSize: 80)),
-          const SizedBox(height: 16),
-          const Text(
-            'پازل کامل شد!',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 26,
-              fontWeight: FontWeight.w900,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const FandoghiPremium(size: 96, mood: FandoghiMood.celebrating, showParticles: true).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
+            const SizedBox(height: 12),
+            Text('پازل کامل شد! 🧩✨', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900)).animate().fadeIn(delay: 200.ms),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(3, (i) => Padding(padding: const EdgeInsets.symmetric(horizontal: 3), child: const Icon(Icons.star_rounded, size: 32, color: Color(0xFFFFD700)).animate(delay: (i * 100).ms).scale(begin: const Offset(0, 0), end: const Offset(1, 1), duration: 400.ms, curve: Curves.elasticOut))),
             ),
-          ),
-          const SizedBox(height: 24),
-          PremiumButton(
-            text: 'پازل جدید 🎲',
-            icon: Icons.casino_rounded,
-            onPressed: () => setState(_newPuzzle),
-          ),
-          const SizedBox(height: 12),
-          PremiumButton(
-            text: 'برگشت 🏠',
-            icon: Icons.home_rounded,
-            color: const Color(0xFF5C6BC0),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(color: Colors.white.withOpacity(0.10), borderRadius: BorderRadius.circular(AppRadii.lg), border: Border.all(color: Colors.white24)),
+              child: Column(children: [Text('همه تکه‌ها سر جاشه — آهنربا کمکت کرد 🧲', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)), Text('جایزه: +12 سکه • +2 ستاره', style: TextStyle(color: Colors.white70, fontSize: 12))]),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(width: double.infinity, child: PremiumButton(text: 'پازل جدید 🎲', icon: Icons.casino_rounded, onPressed: () { HapticFeedback.mediumImpact(); setState(_newPuzzle); })),
+            const SizedBox(height: 10),
+            SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.home_rounded, size: 18, color: Colors.white), label: Text('برگشت به خانه', style: AppFonts.vazirmatn(color: Colors.white)), style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), side: const BorderSide(color: Colors.white54), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg))))),
+          ],
+        ),
+      ),
+    );
+  }
       ),
     );
   }
