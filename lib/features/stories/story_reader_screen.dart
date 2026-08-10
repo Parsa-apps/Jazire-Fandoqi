@@ -95,7 +95,7 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
     );
 
     if (playedPreRecorded) {
-      // استفاده از position stream برای هماهنگی خط به خط با صدا
+      // استفاده از getCurrentPosition برای هماهنگی خط به خط با صدا
       final duration = await StoryAudioService.durationStream.first;
       if (duration.inMilliseconds > 0) {
         _readingWordTimer?.cancel();
