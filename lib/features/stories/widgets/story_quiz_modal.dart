@@ -113,7 +113,7 @@ class _StoryQuizModalState extends State<StoryQuizModal> {
             if (_finished)
               const Positioned.fill(
                 child: IgnorePointer(
-                  child: ParticleCelebration(count: 50),
+                  child: ParticleCelebration(trigger: true, particleCount: 50),
                 ),
               ),
           ],

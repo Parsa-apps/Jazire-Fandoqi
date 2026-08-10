@@ -45,6 +45,11 @@ class _ParticleState extends State<ParticleCelebration>
           setState(() => _particles.clear());
         }
       });
+    // اگر ویجت از همان ابتدا با trigger:true سوار شود (مثل دیالوگ جشن)،
+    // انفجار ذرات باید بلافاصله رخ دهد؛ didUpdateWidget برای مونت اول صدا زده نمی‌شود.
+    if (widget.trigger) {
+      _burst();
+    }
   }
 
   @override

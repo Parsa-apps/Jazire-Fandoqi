@@ -233,6 +233,7 @@ class _MemoryState extends State<MemoryMatchGame>
     final firstIndex = _firstFlipped!;
     var isMatch = false;
     var won = false;
+    var bonus = 0;
 
     setState(() {
       _cards[index].isFlipped = true;
@@ -243,7 +244,7 @@ class _MemoryState extends State<MemoryMatchGame>
 
       if (isMatch) {
         _combo++;
-        final bonus = _combo > 2 ? _combo * 5 : 0;
+        bonus = _combo > 2 ? _combo * 5 : 0;
         _score += 10 + bonus;
         _matches++;
         _cards[firstIndex].isMatched = true;
