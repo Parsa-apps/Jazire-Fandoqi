@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app/app_colors.dart';
-import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import '../../../app/design_tokens.dart';
+import '../../../app/app_fonts.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
+import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
+import '../../../shared/widgets/child_touch_target.dart';
+import '../../../shared/widgets/fandoghi_premium.dart';
 import '../../../shared/widgets/illustration_tile.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 /// An offline creative studio with brush, eraser, undo/redo and generated
 /// sticker stamps. Everything is local and the canvas never leaves the device.
@@ -188,21 +193,35 @@ class _DrawingGameState extends State<DrawingGame> {
     return Scaffold(
       backgroundColor: const Color(0xFF101124),
       appBar: AppBar(
-        title: Text(
-          'کارگاه نقاشی 🎨',
-          style: AppFonts.vazirmatn(fontWeight: FontWeight.w800),
+        backgroundColor: const Color(0xFF101124),
+        surfaceTintColor: Colors.transparent,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const FandoghiPremium(size: 36, mood: FandoghiMood.happy, showParticles: false),
+            const SizedBox(width: 8),
+            Text('کارگاه نقاشی 🎨', style: AppFonts.vazirmatn(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.white)),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.2), borderRadius: BorderRadius.circular(AppRadii.pill), border: Border.all(color: AppColors.primary.withOpacity(0.3))),
+              child: Text('${_strokes.length + _stickers.length} اثر', style: AppFonts.vazirmatn(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white)),
+            ),
+          ],
         ),
+        centerTitle: true,
         leading: IconButton(
           tooltip: 'برگشت',
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(AppRadii.md)), child: const Icon(Icons.arrow_back_rounded, size: 20, color: Colors.white)),
         ),
         actions: [
           IconButton(
             tooltip: 'پاک کردن همه',
             onPressed: _clear,
-            icon: const Icon(Icons.delete_outline_rounded),
+            icon: Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: Colors.red.withOpacity(0.15), borderRadius: BorderRadius.circular(AppRadii.md)), child: const Icon(Icons.delete_outline_rounded, size: 20, color: Colors.redAccent)),
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
