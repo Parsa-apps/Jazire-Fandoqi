@@ -298,7 +298,4 @@ class _PuzzleGameState extends State<PuzzleGame> {
       ),
     );
   }
-      ),
-    );
-  }
 }
