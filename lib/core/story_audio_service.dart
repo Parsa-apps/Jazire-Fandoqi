@@ -80,14 +80,15 @@ class StoryAudioService {
   }
 
   /// پخش ساده بدون انتظار (برای UI که می‌خواهد کنترل کند)
-  static Future<bool> playPreRecordedOnly(String storyId, int pageNumber) async {
+  /// مقدار برگشتی: طول زمان فایل (Duration) یا null در صورت نبود فایل
+  static Future<Duration?> playPreRecordedOnly(String storyId, int pageNumber) async {
     final assetPath = assetPathFor(storyId, pageNumber);
     final exists = await hasPreRecordedAudio(storyId, pageNumber);
-    if (!exists) return false;
+    if (!exists) return null;
     try {
       await _player.stop();
       AudioService.stopSpeaking();
-      await _player.setAsset(assetPath);
+      final loadedDuration = await _player.setAsset(assetPath);
       _currentAsset = assetPath;
       _isPlayingPreRecorded = true;
       unawaited(_player.play().then((_) {}));
@@ -96,11 +97,11 @@ class StoryAudioService {
           _isPlayingPreRecorded = false;
         }
       });
-      return true;
+      return loadedDuration ?? _player.duration;
     } catch (e) {
       LoggerService.e('playPreRecordedOnly failed', e);
       _isPlayingPreRecorded = false;
-      return false;
+      return null;
     }
   }
 
@@ -128,10 +129,9 @@ class StoryAudioService {
   static Stream<Duration> get positionStream => _player.positionStream;
   static Stream<Duration?> get durationStream => _player.durationStream;
   static Stream<PlayerState> get playerStateStream => _player.playerStateStream;
-
-  /// دریافت موقعیت فعلی پلیر (برای هماهنگی هایلایت با صدا)
-  /// just_audio 0.9.40 uses sync getter `position`, not `getCurrentPosition()`.
-  static Future<Duration> getCurrentPosition() async => _player.position;
+  static Duration get position => _player.position;
+  static Duration? get duration => _player.duration;
+  static bool get isPlaying => _player.playing;
 
   static void dispose() {
     _player.dispose();
