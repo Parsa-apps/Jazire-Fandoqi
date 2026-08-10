@@ -263,6 +263,14 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
     final name = launch.gameName.toLowerCase();
     // فاز ۵۴: مدال «کاوشگر بازی‌ها» — هر بازی انجام‌شده یک‌بار ثبت می‌شود
     GameData.recordGamePlayed(launch.gameName);
+    // پیشنهاد پریمیوم ۴۶: ضد اعتیاد — بعد از ۵ بار پشت سر هم یک بازی،
+    // فندقی پیشنهاد تنوع می‌دهد.
+    final varietySuggest = GameData.recordGameOpened(launch.gameName);
+    if (varietySuggest != null) {
+      FandoghiCoach.instruction(
+        '۵ بار پشت سر هم «$varietySuggest» را بازی کردی! بریم یه دنیای دیگه رو هم ببینیم؟ 🌍',
+      );
+    }
     if (name.contains('الفبا') || name.contains('alphabet')) {
       return AlphabetAcademyGame(
         stageId: launch.stageId,

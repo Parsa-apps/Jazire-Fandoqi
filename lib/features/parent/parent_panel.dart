@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../app/app_colors.dart';
 import '../../app/design_tokens.dart';
 import 'package:amoozesh_fandoghi/app/app_fonts.dart';
 import '../../core/ai_system.dart';
+import '../../core/app_legal.dart';
 import '../../core/game_data.dart';
 import '../../shared/widgets/skill_radar_chart.dart';
 import '../../data/datasources/crash_report_store.dart';
@@ -281,11 +283,50 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
                   onPressed: _showDebugLogs,
                 ),
               ),
+              // پیشنهاد پریمیوم ۳: ارسال اختیاری گزارش سلامت به پشتیبانی
+              const SizedBox(width: 10),
+              Expanded(
+                child: PremiumButton(
+                  text: 'ارسال به پشتیبانی',
+                  color: const Color(0xFF0088CC),
+                  onPressed: () => _sendLogsToSupport(),
+                ),
+              ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  /// پیشنهاد پریمیوم ۳: والد می‌تواند لاگ سلامت را با یک تپ به تلگرام
+  /// پشتیبانی بفرستد — همیشه اختیاری و کاملاً بدون اطلاعات شخصی.
+  Future<void> _sendLogsToSupport() async {
+    final logs = await CrashReportStore.getLogs();
+    if (!mounted) return;
+    if (logs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('هیچ خطایی ثبت نشده؛ نیازی به ارسال نیست 🎉')),
+      );
+      return;
+    }
+    final summary = logs
+        .take(10)
+        .map((l) => '${l['source'] ?? 'runtime'}: ${l['message'] ?? ''}')
+        .join('\n');
+    final text = '📱 گزارش سلامت کودک ایران\n'
+        'نسخه: 6.1.0 پریمیوم\n'
+        '---\n$summary\n'
+        '(${logs.length} خطا)';
+    final uri = Uri.parse(
+      'https://t.me/share/url?url=${Uri.encodeComponent('کودک ایران')}&text=${Uri.encodeComponent(text)}',
+    );
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تلگرام نصب نیست؛ آیدی: ${AppLegal.telegramHandle}')),
+      );
+    }
   }
 
   Future<void> _showDebugLogs() async {

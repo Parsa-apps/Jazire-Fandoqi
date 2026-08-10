@@ -868,6 +868,31 @@ class GameData {
     unawaited(save());
   }
 
+  // ── پیشنهاد پریمیوم ۴۶: ضد اعتیاد هوشمند ──────────────────
+  // اگر کودک ۵ بار پشت سر هم یک بازی را باز کند، فندقی پیشنهاد
+  // «بریم یه دنیای دیگه؟» می‌دهد تا تنوع ایجاد شود.
+  static String? _lastGameOpened;
+  static int _sameGameStreak = 0;
+
+  /// هر بار که بازی‌ای باز می‌شود صدا زده شود. اگر ۵ بار پشت سر هم
+  /// همان بازی باشد، نام همان بازی برمی‌گردد تا پیام تنوع نشان داده شود.
+  static String? recordGameOpened(String gameName) {
+    final name = gameName.trim();
+    if (name.isEmpty) return null;
+    if (_lastGameOpened == name) {
+      _sameGameStreak++;
+    } else {
+      _lastGameOpened = name;
+      _sameGameStreak = 1;
+    }
+    if (_sameGameStreak >= 5) {
+      // رسیدن به آستانه — شمارنده ریست می‌شود تا پیام تکراری نشود
+      _sameGameStreak = 0;
+      return name;
+    }
+    return null;
+  }
+
   /// Refreshes day/week boundaries while the app remains open across
   /// midnight. Previously the rollover only happened during app startup, so a
   /// child could carry yesterday's limit and missions into the next day.
