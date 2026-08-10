@@ -146,10 +146,8 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
       // برای TTS: تایمر خط به خط (تقسیم متن به خطوط و پیش بردن تدریجی)
       final lines = _splitIntoLines(pageText);
       if (lines.isNotEmpty) {
-        final lineInterval = const Duration(milliseconds: 1800).clamp(
-          Duration(milliseconds: 1200),
-          Duration(milliseconds: 3000),
-        );
+        // Duration.clamp وجود ندارد؛ مقدار را با int clamp محاسبه می‌کنیم
+        final lineInterval = Duration(milliseconds: 1800.clamp(1200, 3000));
         _readingWordTimer?.cancel();
         int lineIdx = 0;
         _readingWordTimer = Timer.periodic(lineInterval, (_) {
