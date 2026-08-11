@@ -42,13 +42,21 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 250));
 
-    expect(find.text('بازی و یادگیری'), findsOneWidget);
-    expect(find.text('سینما کارتون'), findsOneWidget);
-    expect(find.text('قصه‌خانه'), findsOneWidget);
+    final cartoon = find.text('سینما کارتون');
+    final stories = find.text('قصه‌خانه');
+    final learning = find.text('بازی و یادگیری');
+
+    expect(cartoon, findsOneWidget);
+    expect(stories, findsOneWidget);
+    expect(learning, findsOneWidget);
     expect(find.text('لالایی‌های شب'), findsOneWidget);
     expect(find.text('پروفایل من'), findsOneWidget);
     expect(find.text('درباره ما'), findsOneWidget);
     expect(find.textContaining('کتابخانه یادگیری'), findsOneWidget);
+
+    // اولویت بصری منوی اصلی باید دقیقاً کارتون ← قصه ← بازی و یادگیری باشد.
+    expect(tester.getTopLeft(cartoon).dy, lessThan(tester.getTopLeft(stories).dy));
+    expect(tester.getTopLeft(stories).dy, lessThan(tester.getTopLeft(learning).dy));
   });
 
   testWidgets('cartoon hub screen renders cartoon sections and categories', (tester) async {
