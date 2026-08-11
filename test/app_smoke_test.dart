@@ -31,7 +31,7 @@ void main() {
     expect(find.text('دسته‌بندی بازی‌ها'), findsOneWidget);
   });
 
-  testWidgets('gateway island renders six section tiles', (tester) async {
+  testWidgets('gateway renders prioritized primary and secondary actions', (tester) async {
     GameData.resetForTesting();
     GameData.onboardingSeen = true;
 
@@ -55,8 +55,42 @@ void main() {
     expect(find.textContaining('کتابخانه یادگیری'), findsOneWidget);
 
     // اولویت بصری منوی اصلی باید دقیقاً کارتون ← قصه ← بازی و یادگیری باشد.
-    expect(tester.getTopLeft(cartoon).dy, lessThan(tester.getTopLeft(stories).dy));
-    expect(tester.getTopLeft(stories).dy, lessThan(tester.getTopLeft(learning).dy));
+    expect(
+      tester.getTopLeft(cartoon).dy,
+      lessThan(tester.getTopLeft(stories).dy),
+    );
+    expect(
+      tester.getTopLeft(stories).dy,
+      lessThan(tester.getTopLeft(learning).dy),
+    );
+
+    final cartoonSize = tester.getSize(
+      find.byKey(const Key('gateway.cartoon')),
+    );
+    final storySize = tester.getSize(
+      find.byKey(const Key('gateway.stories')),
+    );
+    final learningSize = tester.getSize(
+      find.byKey(const Key('gateway.learning')),
+    );
+    expect(cartoonSize.height, greaterThan(storySize.height));
+    expect(storySize.height, greaterThan(learningSize.height));
+  });
+
+  testWidgets('gateway stays overflow-free on a narrow phone', (tester) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: AppGatewayScreen(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('cartoon hub screen renders cartoon sections and categories', (tester) async {

@@ -189,6 +189,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
                             _buildHeading(),
                             const SizedBox(height: 14),
                             _PrioritySectionCard(
+                              key: const Key('gateway.cartoon'),
                               semanticsLabel: 'بازکردن سینمای کارتون',
                               title: 'سینما کارتون',
                               subtitle: 'کارتون‌های محبوب، امن و تماشایی',
@@ -208,6 +209,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
                                 .slideY(begin: 0.10, curve: Curves.easeOutCubic),
                             const SizedBox(height: 12),
                             _PrioritySectionCard(
+                              key: const Key('gateway.stories'),
                               semanticsLabel: 'بازکردن قصه‌خانه',
                               title: 'قصه‌خانه',
                               subtitle: 'داستان‌های تصویری و صوتی با جایزه',
@@ -226,6 +228,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
                                 .slideY(begin: 0.10, curve: Curves.easeOutCubic),
                             const SizedBox(height: 12),
                             _PrioritySectionCard(
+                              key: const Key('gateway.learning'),
                               semanticsLabel: 'بازکردن بازی و یادگیری',
                               title: 'بازی و یادگیری',
                               subtitle: 'بازی‌های مهارتی، مرحله‌ها و آموزش',
@@ -593,6 +596,7 @@ class _PrioritySectionCard extends StatefulWidget {
   final VoidCallback onTap;
 
   const _PrioritySectionCard({
+    super.key,
     required this.semanticsLabel,
     required this.title,
     required this.subtitle,
