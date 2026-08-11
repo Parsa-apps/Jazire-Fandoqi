@@ -99,12 +99,11 @@ class _AcademyGameState extends State<AcademyGame> {
       ..shuffle(Random());
   }
 
-  void _speakCurrent() {
-    unawaited(AudioService.tap());
+  void _speakCurrent({bool fromTap = false}) {
+    if (fromTap) HapticFeedback.lightImpact();
 
-    // آکادمی اعداد فایل صوتی آفلاین اختصاصی دارد. استفاده از TTS در اینجا
-    // باعث می‌شد روی گوشی‌هایی که موتور فارسی ندارند، دکمهٔ بلندگو کاملاً
-    // بی‌صدا باشد. شناسه‌های این موضوع به‌شکل n1 تا n20 هستند.
+    // اعداد، رنگ‌ها و شکل‌ها فایل صوتی آفلاین اختصاصی دارند تا دکمهٔ بلندگو
+    // حتی روی گوشی‌های بدون موتور فارسی TTS هم همیشه کار کند.
     if (_topic.id == 'numbers') {
       final number = int.tryParse(_currentCard.id.substring(1));
       if (number != null) {
@@ -113,8 +112,13 @@ class _AcademyGameState extends State<AcademyGame> {
       }
     }
 
-    // موضوع‌های بدون صدای ضبط‌شده همچنان از TTS دستگاه استفاده می‌کنند.
-    unawaited(AudioService.speak(_currentCard.sound));
+    unawaited(
+      AudioService.speakLearningCard(
+        topicId: _topic.id,
+        cardId: _currentCard.id,
+        fallbackText: _currentCard.sound,
+      ),
+    );
   }
 
   void _answer(int optionIndex, List<LearningCard> options) {
@@ -150,7 +154,7 @@ class _AcademyGameState extends State<AcademyGame> {
       }
       unawaited(AudioService.playCorrect());
     } else {
-      FandoghiCoach.incorrect(options[optionIndex].name);
+      FandoghiCoach.incorrect(_currentCard.name);
       unawaited(AudioService.playWrong());
     }
 
@@ -275,17 +279,66 @@ class _AcademyGameState extends State<AcademyGame> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (_listenMode)
-                ChildTouchTarget(
-                  onTap: _speakCurrent,
-                  child: Container(
-                    width: 110,
-                    height: 110,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.12),
-                      shape: BoxShape.circle,
+                Semantics(
+                  button: true,
+                  label: 'نام گزینه را دوباره بشنو',
+                  child: ChildTouchTarget(
+                    onTap: () => _speakCurrent(fromTap: true),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 118,
+                          height: 118,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.white.withOpacity(0.22),
+                                Colors.white.withOpacity(0.10),
+                              ],
+                            ),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.35),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withOpacity(0.30),
+                                blurRadius: 24,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.volume_up_rounded,
+                            color: Colors.white,
+                            size: 66,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.10),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text(
+                            'برای شنیدن دوباره بزن',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    child: const Icon(Icons.volume_up_rounded,
-                        color: Colors.white, size: 64),
                   ),
                 )
               else ...[
@@ -340,7 +393,7 @@ class _AcademyGameState extends State<AcademyGame> {
                 Text(card.emoji, style: const TextStyle(fontSize: 26)),
                 const SizedBox(width: 12),
                 Text(
-                  _listenMode ? card.emoji + ' ' + card.name : card.name,
+                  card.name,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,

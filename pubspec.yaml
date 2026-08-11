@@ -99,6 +99,8 @@ flutter:
     - assets/audio/sfx/
     - assets/audio/letters/
     - assets/audio/numbers/
+    - assets/audio/learning/colors/
+    - assets/audio/learning/shapes/
 
   # فاز ۷ (تکمیل): فونت محلی آفلاین — fallback واقعی برای GoogleFonts
   fonts:

@@ -26,6 +26,7 @@ class AudioService {
   static const String _sfxPath = 'assets/audio/sfx/';
   static const String _lettersPath = 'assets/audio/letters/';
   static const String _numbersPath = 'assets/audio/numbers/';
+  static const String _learningPath = 'assets/audio/learning/';
 
   // استخر افکت برای پخش همزمان چند صدا
   static const int _poolSize = 5;
@@ -181,6 +182,44 @@ class AudioService {
     if (idx == null) return;
     final fileName = 'n${idx.toString().padLeft(2, '0')}.mp3';
     await _playFromPool('$_numbersPath$fileName');
+  }
+
+  // ─────────────────────── واژه‌های آموزشی آفلاین ───────────────────────
+
+  /// مسیر فایل ضبط‌شدهٔ کارت‌های رنگ و شکل را برمی‌گرداند.
+  /// این دو بازی نباید به نصب‌بودن موتور فارسی TTS روی گوشی وابسته باشند.
+  static String? learningVoiceAsset({
+    required String topicId,
+    required String cardId,
+  }) {
+    final match = RegExp(r'^[a-zA-Z](\d+)$').firstMatch(cardId);
+    final index = int.tryParse(match?.group(1) ?? '');
+    if (index == null) return null;
+    final padded = index.toString().padLeft(2, '0');
+
+    return switch (topicId) {
+      'colors' when index >= 1 && index <= 12 =>
+        '${_learningPath}colors/c$padded.wav',
+      'shapes' when index >= 1 && index <= 10 =>
+        '${_learningPath}shapes/s$padded.wav',
+      _ => null,
+    };
+  }
+
+  /// نام کارت را می‌خواند؛ برای رنگ‌ها و شکل‌ها همیشه از صدای بسته‌بندی‌شده
+  /// داخل اپ استفاده می‌کند و برای موضوع‌های دیگر به TTS فارسی برمی‌گردد.
+  static Future<void> speakLearningCard({
+    required String topicId,
+    required String cardId,
+    required String fallbackText,
+  }) async {
+    if (!GameData.soundEnabled) return;
+    final asset = learningVoiceAsset(topicId: topicId, cardId: cardId);
+    if (asset != null) {
+      await _playFromPool(asset);
+      return;
+    }
+    await speak(fallbackText);
   }
 
   // ─────────────────────────── موسیقی پس‌زمینه ───────────────────────────
