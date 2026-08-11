@@ -18,6 +18,9 @@ import '../../../presentation/providers/game_state_provider.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
 import '../../../shared/widgets/premium_daily_missions.dart';
 import '../../../shared/widgets/premium_streak_calendar.dart';
+import '../../../shared/widgets/premium/glass_card.dart';
+import '../../../shared/widgets/premium/particle_celebration.dart';
+import '../../../shared/widgets/premium/responsive_grid.dart';
 import '../../profile/profile_editor.dart';
 import '../../shop/full_version_paywall.dart';
 
@@ -36,6 +39,7 @@ class _DashboardState extends ConsumerState<DashboardTab>
     with TickerProviderStateMixin {
   late final AnimationController _floatCtrl;
   _GameCategory _selectedCategory = _GameCategory.all;
+  bool _showCelebration = false;
 
   @override
   void initState() {
@@ -78,7 +82,13 @@ class _DashboardState extends ConsumerState<DashboardTab>
     }
     if (mounted) {
       Navigator.pushNamed(context, route).then((_) {
-        if (mounted) setState(() {});
+        if (mounted) {
+          // جشن برد!
+          setState(() => _showCelebration = true);
+          Future.delayed(const Duration(seconds: 3), () {
+            if (mounted) setState(() => _showCelebration = false);
+          });
+        }
       });
     }
   }
@@ -343,8 +353,11 @@ class _DashboardState extends ConsumerState<DashboardTab>
         GameData.childName.isNotEmpty ? GameData.childName : 'دوست کوچولو';
 
     return Scaffold(
-      body: Stack(
-        children: [
+      body: ConfettiOverlay(
+        isActive: _showCelebration,
+        onComplete: () => setState(() => _showCelebration = false),
+        child: Stack(
+          children: [
           // ── پس‌زمینه جزیره جادویی یادگیری با شناوری ملایم ──
           Positioned.fill(
             child: AnimatedBuilder(
@@ -467,6 +480,7 @@ class _DashboardState extends ConsumerState<DashboardTab>
             ),
           ),
         ],
+        ),
       ),
     );
   }
