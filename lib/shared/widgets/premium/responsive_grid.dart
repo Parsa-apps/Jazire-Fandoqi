@@ -357,8 +357,12 @@ class Breakpoint {
     T? desktop,
   }) {
     final width = MediaQuery.of(context).size.width;
-    if (width >= desktop!) return desktop;
-    if (width >= tablet!) return tablet;
+
+    // `tablet` and `desktop` are the values to return, not breakpoints.
+    // Referencing the class constants also keeps this helper type-safe for
+    // any value type, not only numeric values.
+    if (width >= Breakpoint.desktop && desktop != null) return desktop;
+    if (width >= Breakpoint.tablet && tablet != null) return tablet;
     return mobile;
   }
 }
