@@ -11,6 +11,7 @@ import '../../app/design_tokens.dart';
 import '../../app/app_fonts.dart';
 import '../../shared/widgets/fandoghi_premium.dart';
 import '../../core/game_data.dart';
+import '../../core/growth/smart_conversion.dart';
 import '../../core/monetization.dart';
 
 String _normalizeDigits(String input) {
@@ -251,7 +252,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                               const SizedBox(height: 8),
                               Text('دسترسی همیشگی به همه محتوا', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900)),
                               const SizedBox(height: 4),
-                              Text('یک‌بار بخر، همیشه داشته باش — حتی آفلاین', style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 11, height: 1.4)),
+                              Text(SmartConversion.familyPackCopy(widget.featureName), style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 11, height: 1.5)),
                             ],
                           ),
                         ),

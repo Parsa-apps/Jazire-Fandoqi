@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/growth/growth.dart';
 import '../../core/monetization.dart';
 import 'full_version_paywall.dart';
 
@@ -25,6 +26,22 @@ class _GameAccessGateState extends State<GameAccessGate> {
 
   @override
   Widget build(BuildContext context) {
+    final blockedRoute = '/game/${widget.gameName}';
+    if (ParentControls.isRouteBlocked(blockedRoute) || ParentControls.isBedtimeNow) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('فعلاً استراحت')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Text(
+              ParentControls.blockReason(blockedRoute),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, height: 1.6),
+            ),
+          ),
+        ),
+      );
+    }
     if (_allowed == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     if (_allowed!) return widget.child;
     return Scaffold(

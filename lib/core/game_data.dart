@@ -1136,6 +1136,84 @@ class GameData {
     unawaited(save());
   }
 
+  // ==================== SIBLING / GROWTH EXPORT ====================
+  static const List<String> _childProgressKeys = <String>[
+    'stars', 'c', 'l', 's', 'tc', 'tw', 'av', 'childName', 'profilePhotoPath',
+    'childAge', 'dm', 'missionDay', 'mp', 'ss', 'wpm', 'tps', 'ach', 'st',
+    'ownedItems', 'hs', 'mrhs', 'qhs', 'lld', 'lscd', 'aiBuddy', 'currentStage',
+    'currentIsland', 'cs', 'pbt', 'op', 'stories', 'sfav', 'lastStoryId',
+    'lastStoryPage', 'cfav', 'cw', 'cws', 'appRated', 'idc', 'pg', 'skills',
+  ];
+
+  /// پیشرفت کودک بدون تنظیمات والد (پین، محدودیت، تم).
+  static Map<String, Object?> exportChildProgress() {
+    final all = _buildSnapshot();
+    final out = <String, Object?>{};
+    for (final key in _childProgressKeys) {
+      if (all.containsKey(key)) out[key] = all[key];
+    }
+    return out;
+  }
+
+  static void importChildProgress(Map<String, Object?> child) {
+    final merged = _buildSnapshot()..addAll(child);
+    _applySnapshot(merged);
+    _notify();
+    unawaited(save());
+  }
+
+  /// پروفایل خواهر/برادر تازه: پیشرفت صفر، تنظیمات والد سر جایش.
+  static void resetChildProgressKeepingParent() {
+    stars = 0;
+    coins = 0;
+    level = 1;
+    streak = 0;
+    totalCorrect = 0;
+    totalWrong = 0;
+    dailyMissions = 0;
+    sessionSeconds = 0;
+    weeklyPlayMinutes = 0;
+    todayPlaySeconds = 0;
+    highScore = 0;
+    mathRaceHighScore = 0;
+    quizHighScore = 0;
+    avatar = '🧒';
+    childName = '';
+    profilePhotoPath = '';
+    childAge = 5;
+    achievements = <String>[];
+    stickers = <String>[];
+    ownedItems = <String>[];
+    missionProgress = <String, int>{
+      'questions': 0,
+      'alphabet': 0,
+      'drawing': 0,
+      'colors': 0,
+      'math': 0,
+      'memory': 0,
+    };
+    for (final key in skills.keys.toList()) {
+      skills[key] = 0;
+    }
+    currentStage = 1;
+    currentIsland = 0;
+    completedStages = <String, bool>{};
+    prizeBoxTokens = 0;
+    openedPrizes = <String>[];
+    islandDecorations = <String, String>{};
+    completedStories = <String>[];
+    storyFavorites = <String>[];
+    lastStoryPageStoryId = '';
+    lastStoryPageIndex = 0;
+    cartoonFavorites = <String>[];
+    watchedCartoons = <String>[];
+    cartoonWatchSeconds = 0;
+    playedGames = <String>[];
+    _playedGamesSet.clear();
+    _notify();
+    unawaited(save());
+  }
+
   // ==================== PARENT CONTROL ====================
   static const String _parentPinDomain = 'fandoghi-parent-pin-v1';
 

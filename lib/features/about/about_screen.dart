@@ -150,9 +150,37 @@ class AboutScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.auto_awesome_rounded, color: AppColors.primary),
+                  title: Text(
+                    'تازه‌های نسخه ۶.۲',
+                    style: AppFonts.vazirmatn(fontWeight: FontWeight.w800),
+                  ),
+                  subtitle: const Text('مهارت زندگی، گزارش هفتگی، پروفایل خواهر/برادر و…'),
+                  trailing: const Icon(Icons.chevron_left_rounded),
+                  onTap: () => Navigator.pushNamed(context, '/whats-new'),
+                ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                ListTile(
+                  leading: const Icon(Icons.menu_book_rounded, color: AppColors.primary),
+                  title: Text(
+                    'راهنمای والدین',
+                    style: AppFonts.vazirmatn(fontWeight: FontWeight.w800),
+                  ),
+                  subtitle: const Text('۸ نکته برای رشد بهتر کودک'),
+                  trailing: const Icon(Icons.chevron_left_rounded),
+                  onTap: () => Navigator.pushNamed(context, '/parent-booklet'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
           const Center(
             child: Text(
-              'جزیره فندقی • نسخه ۶.۱.۰ پریمیوم\nساخته‌شده با دقت برای کودکان ایران',
+              'جزیره فندقی • نسخه ۶.۲.۰ پریمیوم\nساخته‌شده با دقت برای کودکان ایران',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.textSecondary,

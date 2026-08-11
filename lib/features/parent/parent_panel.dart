@@ -18,6 +18,9 @@ import '../../shared/widgets/theme_selector_widget.dart';
 import '../../shared/widgets/parsa_gold_aura.dart';
 import '../../shared/widgets/premium_button.dart';
 import '../../core/parental_health_radar.dart';
+import '../../core/growth/growth.dart';
+import '../growth/widgets/screen_time_chart.dart';
+import '../growth/widgets/sibling_switcher.dart';
 
 /// =======================================================
 /// 👨‍👩‍👧 PREMIUM ADVANCED PARENT CONTROL SYSTEM
@@ -254,6 +257,22 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
 
           // ==================== HEALTH RADAR ====================
           _buildHealthRadarCard(),
+
+          const SizedBox(height: 24),
+
+          const ScreenTimeChart(),
+
+          const SizedBox(height: 24),
+
+          _buildGrowthControlsCard(),
+
+          const SizedBox(height: 24),
+
+          const SiblingSwitcher(),
+
+          const SizedBox(height: 24),
+
+          _buildParentToolsCard(),
 
           const SizedBox(height: 24),
 
@@ -929,6 +948,238 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
             Text(
               recommendation,
               style: const TextStyle(fontSize: 13, height: 1.6),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ==================== کنترل‌های رشد ۶.۲ ====================
+  /// ساعت خواب، فیلتر محتوا، حالت‌های دسترس‌پذیری و هدف یادگیری.
+  Widget _buildGrowthControlsCard() {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.nightlight_round, color: AppColors.primary),
+                const SizedBox(width: 10),
+                Text(
+                  'کنترل‌های رشد و آرامش',
+                  style: AppFonts.vazirmatn(fontSize: 16, fontWeight: FontWeight.w800),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text('ساعت خواب', style: AppFonts.vazirmatn(fontSize: 15, fontWeight: FontWeight.w700)),
+              subtitle: Text(
+                'از ${PersianDigits.toFa(GrowthStore.bedtimeHour)} شب تا ${PersianDigits.toFa(GrowthStore.wakeHour)} صبح فقط لالایی باز است',
+              ),
+              value: GrowthStore.bedtimeEnabled,
+              onChanged: (v) => setState(() => GrowthStore.setBedtime(enabled: v)),
+            ),
+            if (GrowthStore.bedtimeEnabled) ...[
+              Text('ساعت شروع خواب: ${PersianDigits.toFa(GrowthStore.bedtimeHour)}', style: const TextStyle(fontSize: 12)),
+              Slider(
+                min: 18,
+                max: 23,
+                divisions: 5,
+                value: GrowthStore.bedtimeHour.toDouble(),
+                label: '${GrowthStore.bedtimeHour}',
+                onChanged: (v) => setState(() => GrowthStore.setBedtime(enabled: true, hour: v.round())),
+              ),
+              Text('ساعت بیداری: ${PersianDigits.toFa(GrowthStore.wakeHour)}', style: const TextStyle(fontSize: 12)),
+              Slider(
+                min: 5,
+                max: 10,
+                divisions: 5,
+                value: GrowthStore.wakeHour.toDouble(),
+                label: '${GrowthStore.wakeHour}',
+                onChanged: (v) => setState(() => GrowthStore.setBedtime(enabled: true, wake: v.round())),
+              ),
+            ],
+            const Divider(height: 20),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text('سکوت شب', style: AppFonts.vazirmatn(fontSize: 15, fontWeight: FontWeight.w700)),
+              subtitle: const Text('در ساعت خواب صداها خودکار قطع می‌شوند'),
+              value: GrowthStore.quietHoursEnabled,
+              onChanged: (v) => setState(() => GrowthStore.setQuietHours(v)),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text('کارتون', style: AppFonts.vazirmatn(fontSize: 15, fontWeight: FontWeight.w700)),
+              subtitle: const Text('نمایش سینما کارتون'),
+              value: GrowthStore.cartoonsAllowed,
+              onChanged: (v) => setState(() => GrowthStore.setContentFilter(cartoons: v)),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text('قصه‌خانه', style: AppFonts.vazirmatn(fontSize: 15, fontWeight: FontWeight.w700)),
+              subtitle: const Text('نمایش داستان‌ها'),
+              value: GrowthStore.storiesAllowed,
+              onChanged: (v) => setState(() => GrowthStore.setContentFilter(stories: v)),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text('فروشگاه', style: AppFonts.vazirmatn(fontSize: 15, fontWeight: FontWeight.w700)),
+              subtitle: const Text('نمایش فروشگاه و خرید'),
+              value: GrowthStore.shopAllowed,
+              onChanged: (v) => setState(() => GrowthStore.setContentFilter(shop: v)),
+            ),
+            const Divider(height: 20),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text('حالت تمرکز', style: AppFonts.vazirmatn(fontSize: 15, fontWeight: FontWeight.w700)),
+              subtitle: const Text('فقط یادگیری؛ فروشگاه و چیپ‌های پر زرق‌وبرق خاموش'),
+              value: GrowthStore.focusMode,
+              onChanged: (v) => setState(() => GrowthStore.setFocusMode(v)),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text('کاهش حرکت', style: AppFonts.vazirmatn(fontSize: 15, fontWeight: FontWeight.w700)),
+              subtitle: const Text('انیمیشن‌ها خاموش می‌شوند (مناسب حساسیت حرکتی)'),
+              value: GrowthStore.reduceMotion,
+              onChanged: (v) => setState(() => GrowthStore.setReduceMotion(v)),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text('حالت کوررنگی', style: AppFonts.vazirmatn(fontSize: 15, fontWeight: FontWeight.w700)),
+              subtitle: const Text('پالت رنگی سازگار با کودکان کوررنگ'),
+              value: GrowthStore.colorBlindMode,
+              onChanged: (v) => setState(() => GrowthStore.setColorBlindMode(v)),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text('صرفه‌جویی داده', style: AppFonts.vazirmatn(fontSize: 15, fontWeight: FontWeight.w700)),
+              subtitle: const Text('کاهش کیفیت کارتون آنلاین'),
+              value: GrowthStore.dataSaver,
+              onChanged: (v) => setState(() => GrowthStore.setDataSaver(v)),
+            ),
+            const Divider(height: 20),
+            Text(
+              'هدف یادگیری هفته: ${PersianDigits.minutes(GrowthStore.weeklyGoalMinutes)}',
+              style: AppFonts.vazirmatn(fontSize: 14, fontWeight: FontWeight.w700),
+            ),
+            Slider(
+              min: 10,
+              max: 180,
+              divisions: 17,
+              value: GrowthStore.weeklyGoalMinutes.toDouble(),
+              label: '${GrowthStore.weeklyGoalMinutes}',
+              onChanged: (v) => setState(() => GrowthStore.setWeeklyGoal(minutes: v.round())),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ==================== ابزار والدین ۶.۲ ====================
+  /// گزارش هفتگی، کتابچه، صندوق یادگیری و معرفی به دیگران.
+  Widget _buildParentToolsCard() {
+    final chestReady = WeeklyEngine.canClaimLearningChest;
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.construction_rounded, color: AppColors.warning),
+                const SizedBox(width: 10),
+                Text(
+                  'ابزار والدین',
+                  style: AppFonts.vazirmatn(fontSize: 16, fontWeight: FontWeight.w800),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.insights_rounded, color: AppColors.primary),
+              title: const Text('گزارش هفتگی'),
+              subtitle: const Text('زمان یادگیری و سرگرمی، قابل کپی'),
+              trailing: const Icon(Icons.chevron_left_rounded),
+              onTap: () => Navigator.pushNamed(context, '/weekly-report'),
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.menu_book_rounded, color: AppColors.primary),
+              title: const Text('کتابچه کوتاه والدین'),
+              subtitle: const Text('۸ نکته رشد بدون هزینه'),
+              trailing: const Icon(Icons.chevron_left_rounded),
+              onTap: () => Navigator.pushNamed(context, '/parent-booklet'),
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.auto_awesome_rounded, color: AppColors.primary),
+              title: const Text('تازه‌های نسخه'),
+              trailing: const Icon(Icons.chevron_left_rounded),
+              onTap: () => Navigator.pushNamed(context, '/whats-new'),
+            ),
+            const Divider(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: chestReady
+                        ? () {
+                            final ok = WeeklyEngine.claimLearningChest();
+                            setState(() {});
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  ok ? 'صندوق یادگیری باز شد! +۱۵ سکه 🎁' : 'هنوز ۱۵ دقیقه یادگیری این هفته کامل نشده.',
+                                ),
+                              ),
+                            );
+                          }
+                        : null,
+                    icon: const Icon(Icons.card_giftcard_rounded),
+                    label: Text(chestReady ? 'باز کردن صندوق یادگیری' : 'صندوق یادگیری (۱۵ دقیقه)'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final claimed = SmartConversion.claimReferralCoins();
+                      await Clipboard.setData(
+                        ClipboardData(text: SmartConversion.shareAppText()),
+                      );
+                      if (!mounted) return;
+                      setState(() {});
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            claimed
+                                ? 'متن معرفی کپی شد و ۲۰ سکه هدیه گرفتید 🎉'
+                                : 'متن معرفی کپی شد (هدیه یک‌بار است)',
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.share_rounded),
+                    label: Text(
+                      GrowthStore.referralClaimed ? 'کپی متن معرفی اپ' : 'معرفی به دوستان + ۲۰ سکه',
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
