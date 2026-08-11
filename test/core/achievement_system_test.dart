@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:amoozesh_fandoghi/core/achievement_system.dart';
-import 'package:amoozesh_fandoghi/core/game_data.dart';
+import 'package:jazireh_fandoghi/core/achievement_system.dart';
+import 'package:jazireh_fandoghi/core/game_data.dart';
 
 void main() {
   setUp(() {

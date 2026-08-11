@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:amoozesh_fandoghi/app/app_colors.dart';
-import 'package:amoozesh_fandoghi/app/app_fonts.dart';
-import 'package:amoozesh_fandoghi/core/cartoons/cartoon_data.dart';
-import 'package:amoozesh_fandoghi/core/fandoghi_coach.dart';
-import 'package:amoozesh_fandoghi/core/game_data.dart';
-import 'package:amoozesh_fandoghi/shared/widgets/fandoghi_v2.dart';
+import 'package:jazireh_fandoghi/app/app_colors.dart';
+import 'package:jazireh_fandoghi/app/app_fonts.dart';
+import 'package:jazireh_fandoghi/core/cartoons/cartoon_data.dart';
+import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
+import 'package:jazireh_fandoghi/core/game_data.dart';
+import 'package:jazireh_fandoghi/shared/widgets/fandoghi_v2.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// 🧠 CARTOON TRIVIA DIALOG — معما و هوش فندقی بعد از کارتون

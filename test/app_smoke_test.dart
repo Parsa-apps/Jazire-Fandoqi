@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'package:amoozesh_fandoghi/core/app_legal.dart';
-import 'package:amoozesh_fandoghi/core/game_data.dart';
-import 'package:amoozesh_fandoghi/features/about/about_screen.dart';
-import 'package:amoozesh_fandoghi/features/cartoons/cartoon_hub_screen.dart';
-import 'package:amoozesh_fandoghi/features/gateway/app_gateway_screen.dart';
-import 'package:amoozesh_fandoghi/features/home/home_screen.dart';
+import 'package:jazireh_fandoghi/core/app_legal.dart';
+import 'package:jazireh_fandoghi/core/game_data.dart';
+import 'package:jazireh_fandoghi/features/about/about_screen.dart';
+import 'package:jazireh_fandoghi/features/cartoons/cartoon_hub_screen.dart';
+import 'package:jazireh_fandoghi/features/gateway/app_gateway_screen.dart';
+import 'package:jazireh_fandoghi/features/home/home_screen.dart';
 
 void main() {
   setUp(() {

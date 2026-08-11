@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../app/app_colors.dart';
-import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import '../../core/fandoghi_coach.dart';
 import 'draggable_fandoghi.dart';
 import 'fandoghi_bunny.dart';

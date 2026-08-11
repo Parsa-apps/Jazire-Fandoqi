@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 
 /// ────────────────────────────────────────────────────────────
 /// 🌍 فاز ۷۹: رشته‌های چندزبانه پنهان (آماده‌سازی نسخه بین‌المللی
-/// «Kids of Persia»). فعلاً فقط فارسی فعال است؛ انگلیسی مخفی
+/// «Jazireh Fandoghi»). فعلاً فقط فارسی فعال است؛ انگلیسی مخفی
 /// نگه داشته شده تا بعداً بدون بازنویسی UI فعال شود.
 /// ────────────────────────────────────────────────────────────
 class AppStrings {
   AppStrings._();
 
   static const Map<String, String> _fa = <String, String>{
-    'appTitle': 'آموزش فندقی',
+    'appTitle': 'جزیره فندقی',
     'appTagline': 'یادگیری شاد برای کودکان ایران',
     'home': 'خانه',
     'island': 'جزیره',
@@ -24,7 +24,7 @@ class AppStrings {
   };
 
   static const Map<String, String> _en = <String, String>{
-    'appTitle': 'Kids of Persia',
+    'appTitle': 'Jazireh Fandoghi',
     'appTagline': 'Joyful learning for Persian children',
     'home': 'Home',
     'island': 'Island',

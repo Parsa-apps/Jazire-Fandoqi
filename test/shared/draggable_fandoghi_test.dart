@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:amoozesh_fandoghi/shared/widgets/draggable_fandoghi.dart';
+import 'package:jazireh_fandoghi/shared/widgets/draggable_fandoghi.dart';
 
 void main() {
   test('mascot position keeps the whole frame on-screen', () {

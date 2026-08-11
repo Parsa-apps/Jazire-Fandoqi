@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 // ═══════════════════════════════════════════════
-// 🎨 KUDAKE IRAN — Professional Color System
+// 🎨 JAZIREH FANDOGHI — Professional Color System
 // ═══════════════════════════════════════════════
 
 class AppColors {

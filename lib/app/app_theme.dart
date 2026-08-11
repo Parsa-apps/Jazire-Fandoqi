@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
 import 'design_tokens.dart';
-import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import 'package:jazireh_fandoghi/app/app_fonts.dart';
 
 /// =======================================================
-/// 🎨 PREMIUM MATERIAL 3 THEME — کودک ایران
+/// 🎨 PREMIUM MATERIAL 3 THEME — جزیره فندقی
 /// طراحی مدرن، نرم و حرفه‌ای برای کودکان
 /// =======================================================
 

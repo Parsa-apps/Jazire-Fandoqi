@@ -2,7 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import '../../app/app_colors.dart';
 import '../../core/audio_service.dart';
 import '../../core/game_data.dart';
@@ -174,7 +174,7 @@ class _IslandState extends State<LearningIsland>
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'کُدَک ایران — جزیره یادگیری',
+                            'جزیره فندقی — جزیره یادگیری',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.8),
                               fontSize: 12,

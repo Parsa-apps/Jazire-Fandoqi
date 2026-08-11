@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:amoozesh_fandoghi/shared/widgets/child_touch_target.dart';
+import 'package:jazireh_fandoghi/shared/widgets/child_touch_target.dart';
 
 void main() {
   testWidgets('ChildTouchTarget has a minimum 64px tap area', (tester) async {

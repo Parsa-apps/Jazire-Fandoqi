@@ -4,7 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'app/theme_controller.dart';
@@ -55,7 +55,7 @@ import 'features/splash/splash_screen.dart';
 import 'features/shop/game_access_gate.dart';
 import 'shared/widgets/fandoghi_coach.dart';
 
-/// آموزش فندقی - Kudake Iran
+/// جزیره فندقی - Jazireh Fandoghi
 /// آفلاین، فارسی و طراحی‌شده برای یادگیری امن کودکان.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -98,19 +98,19 @@ Future<void> main() async {
 
   runApp(
     const ProviderScope(
-      child: AmoozeshFandoghiApp(),
+      child: JazirehFandoghiApp(),
     ),
   );
 }
 
-class AmoozeshFandoghiApp extends StatefulWidget {
-  const AmoozeshFandoghiApp({super.key});
+class JazirehFandoghiApp extends StatefulWidget {
+  const JazirehFandoghiApp({super.key});
 
   @override
-  State<AmoozeshFandoghiApp> createState() => _AmoozeshFandoghiAppState();
+  State<JazirehFandoghiApp> createState() => _JazirehFandoghiAppState();
 }
 
-class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
+class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
     with WidgetsBindingObserver {
   final ThemeController _themeController = ThemeController();
 
@@ -141,7 +141,7 @@ class _AmoozeshFandoghiAppState extends State<AmoozeshFandoghiApp>
       listenable: _themeController,
       builder: (context, _) {
         return MaterialApp(
-          title: 'آموزش فندقی',
+          title: 'جزیره فندقی',
           debugShowCheckedModeBanner: false,
           locale: const Locale('fa'),
           supportedLocales: const [Locale('fa')],

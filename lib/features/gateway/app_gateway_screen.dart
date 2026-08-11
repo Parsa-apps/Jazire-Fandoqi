@@ -4,16 +4,16 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:amoozesh_fandoghi/app/app_colors.dart';
-import 'package:amoozesh_fandoghi/app/app_fonts.dart';
-import 'package:amoozesh_fandoghi/app/design_tokens.dart';
-import 'package:amoozesh_fandoghi/core/audio_service.dart';
-import 'package:amoozesh_fandoghi/core/fandoghi_coach.dart';
-import 'package:amoozesh_fandoghi/core/fandoghi_models.dart';
-import 'package:amoozesh_fandoghi/core/game_data.dart';
-import 'package:amoozesh_fandoghi/features/about/about_screen.dart';
-import 'package:amoozesh_fandoghi/features/profile/profile_screen.dart';
-import 'package:amoozesh_fandoghi/features/profile/sticker_album_screen.dart';
+import 'package:jazireh_fandoghi/app/app_colors.dart';
+import 'package:jazireh_fandoghi/app/app_fonts.dart';
+import 'package:jazireh_fandoghi/app/design_tokens.dart';
+import 'package:jazireh_fandoghi/core/audio_service.dart';
+import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
+import 'package:jazireh_fandoghi/core/fandoghi_models.dart';
+import 'package:jazireh_fandoghi/core/game_data.dart';
+import 'package:jazireh_fandoghi/features/about/about_screen.dart';
+import 'package:jazireh_fandoghi/features/profile/profile_screen.dart';
+import 'package:jazireh_fandoghi/features/profile/sticker_album_screen.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// 🏝️ APP GATEWAY — جزیره جادویی فندقی (طراحی فوق حرفه‌ای سه‌بعدی)

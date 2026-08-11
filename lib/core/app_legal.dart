@@ -4,7 +4,7 @@
 class AppLegal {
   AppLegal._();
 
-  static const String productName = 'آموزش فندقی';
+  static const String productName = 'جزیره فندقی';
   static const String developerName = 'فرشاد پارسا';
   static const String supportEmail = 'farshadparsa2019@gmail.com';
   static const String telegramHandle = '@Parsaappsadmin';

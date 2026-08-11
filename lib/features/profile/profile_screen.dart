@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/app_colors.dart';
-import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import '../../core/game_data.dart';
 import '../../presentation/providers/game_state_provider.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
