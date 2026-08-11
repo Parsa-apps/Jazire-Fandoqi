@@ -14,7 +14,9 @@ import '../../core/game_data.dart';
 import '../../shared/widgets/skill_radar_chart.dart';
 import '../../data/datasources/crash_report_store.dart';
 import '../../presentation/providers/game_state_provider.dart';
-import '../../shared/widgets/premium_button.dart';
+import '../../shared/widgets/theme_selector_widget.dart';
+import '../../shared/widgets/parsa_gold_aura.dart';
+import '../../core/parental_health_radar.dart';
 
 /// =======================================================
 /// 👨‍👩‍👧 PREMIUM ADVANCED PARENT CONTROL SYSTEM
@@ -218,6 +220,16 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
         children: [
           // ==================== STATS ====================
           _buildStatsCard(),
+
+          const SizedBox(height: 24),
+
+          // ==================== THEME SELECTOR ====================
+          _buildThemeSelectorCard(),
+
+          const SizedBox(height: 24),
+
+          // ==================== HEALTH RADAR ====================
+          _buildHealthRadarCard(),
 
           const SizedBox(height: 24),
 
@@ -807,6 +819,66 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
               child: const Text('حذف پین', style: TextStyle(color: Colors.red)),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildThemeSelectorCard() {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: const Padding(
+        padding: EdgeInsets.all(20),
+        child: ThemeSelectorWidget(),
+      ),
+    );
+  }
+
+  Widget _buildHealthRadarCard() {
+    final healthScore = ParentalHealthRadar.getHealthScore();
+    final recommendation = ParentalHealthRadar.getHealthRecommendation();
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.health_and_safety_rounded, color: AppColors.success),
+                const SizedBox(width: 10),
+                Text(
+                  'رادار سلامت و بهداشت استفاده',
+                  style: AppFonts.vazirmatn(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'امتیاز: $healthScore٪',
+                    style: AppFonts.vazirmatn(
+                      color: AppColors.success,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              recommendation,
+              style: const TextStyle(fontSize: 13, height: 1.6),
+            ),
+          ],
+        ),
       ),
     );
   }

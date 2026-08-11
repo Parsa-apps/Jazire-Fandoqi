@@ -5,8 +5,8 @@ import 'design_tokens.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
 
 /// =======================================================
-/// 🎨 PREMIUM MATERIAL 3 THEME — جزیره فندقی
-/// طراحی مدرن، نرم و حرفه‌ای برای کودکان
+/// 🎨 PREMIUM MATERIAL 3 THEME ENGINE — جزیره فندقی
+/// پشتیبانی از ۶ تم اختصاصی و پویا برای کودکان و والدین
 /// =======================================================
 
 enum DayCycle { morning, noon, night }
@@ -19,11 +19,10 @@ class AppTheme {
     return DayCycle.night;
   }
 
-  static TextTheme _textTheme(Brightness brightness, {double scaleFactor = 1.0}) {
-    final foreground = brightness == Brightness.dark
-        ? Colors.white
-        : AppColors.textPrimary;
-    
+  static TextTheme _textTheme(Brightness brightness, {double scaleFactor = 1.0, Color? textColor}) {
+    final foreground = textColor ??
+        (brightness == Brightness.dark ? Colors.white : AppColors.textPrimary);
+
     final baseTextTheme = AppFonts.vazirmatnTextTheme(
       brightness == Brightness.dark
           ? ThemeData.dark().textTheme
@@ -44,6 +43,81 @@ class AppTheme {
     );
   }
 
+  /// دریافت تم بر اساس تم انتخابی فعال (royal_gold, island, ocean, candy, galaxy, seasonal)
+  static ThemeData getThemeForMode(
+    String modeId,
+    DayCycle cycle,
+    Brightness systemBrightness, {
+    double textScale = 1.0,
+  }) {
+    switch (modeId) {
+      case 'royal_gold':
+        return _buildCustomTheme(
+          brightness: Brightness.dark,
+          primary: AppColors.royalGoldSecondary,
+          secondary: AppColors.royalGoldAccent,
+          surface: AppColors.royalGoldSurface,
+          background: AppColors.royalGoldBackground,
+          cardColor: AppColors.royalGoldCard,
+          textColor: Colors.white,
+          textScale: textScale,
+        );
+
+      case 'island':
+        return _buildCustomTheme(
+          brightness: Brightness.light,
+          primary: AppColors.islandPrimary,
+          secondary: AppColors.islandAccent,
+          surface: AppColors.islandSurface,
+          background: AppColors.islandBackground,
+          cardColor: Colors.white,
+          textColor: AppColors.textPrimary,
+          textScale: textScale,
+        );
+
+      case 'ocean':
+        return _buildCustomTheme(
+          brightness: Brightness.light,
+          primary: AppColors.oceanPrimary,
+          secondary: AppColors.oceanSecondary,
+          surface: AppColors.oceanSurface,
+          background: AppColors.oceanBackground,
+          cardColor: Colors.white,
+          textColor: AppColors.textPrimary,
+          textScale: textScale,
+        );
+
+      case 'candy':
+        return _buildCustomTheme(
+          brightness: Brightness.light,
+          primary: AppColors.candyPrimary,
+          secondary: AppColors.candyAccent,
+          surface: AppColors.candySurface,
+          background: AppColors.candyBackground,
+          cardColor: Colors.white,
+          textColor: AppColors.textPrimary,
+          textScale: textScale,
+        );
+
+      case 'galaxy':
+        return _buildCustomTheme(
+          brightness: Brightness.dark,
+          primary: AppColors.galaxyPrimary,
+          secondary: AppColors.galaxyAccent,
+          surface: AppColors.galaxySurface,
+          background: AppColors.galaxyBackground,
+          cardColor: AppColors.galaxySurface,
+          textColor: Colors.white,
+          textScale: textScale,
+        );
+
+      case 'seasonal':
+      default:
+        final isDark = cycle == DayCycle.night || systemBrightness == Brightness.dark;
+        return _buildTheme(isDark ? Brightness.dark : Brightness.light, textScale: textScale);
+    }
+  }
+
   static ThemeData getTheme(DayCycle cycle, Brightness systemBrightness, {double textScale = 1.0}) {
     final isDark = cycle == DayCycle.night || systemBrightness == Brightness.dark;
     return _buildTheme(isDark ? Brightness.dark : Brightness.light, textScale: textScale);
@@ -54,26 +128,46 @@ class AppTheme {
 
   static ThemeData _buildTheme(Brightness brightness, {double textScale = 1.0}) {
     final isDark = brightness == Brightness.dark;
-    final surface = isDark ? const Color(0xFF17182B) : AppColors.surface;
-    final background = isDark ? const Color(0xFF101124) : AppColors.background;
-    final foreground = isDark ? Colors.white : AppColors.textPrimary;
+    return _buildCustomTheme(
+      brightness: brightness,
+      primary: AppColors.primary,
+      secondary: AppColors.accent,
+      surface: isDark ? const Color(0xFF17182B) : AppColors.surface,
+      background: isDark ? const Color(0xFF101124) : AppColors.background,
+      cardColor: isDark ? const Color(0xFF1D1F38) : AppColors.surface,
+      textColor: isDark ? Colors.white : AppColors.textPrimary,
+      textScale: textScale,
+    );
+  }
+
+  static ThemeData _buildCustomTheme({
+    required Brightness brightness,
+    required Color primary,
+    required Color secondary,
+    required Color surface,
+    required Color background,
+    required Color cardColor,
+    required Color textColor,
+    double textScale = 1.0,
+  }) {
+    final isDark = brightness == Brightness.dark;
 
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
+        seedColor: primary,
         brightness: brightness,
-        primary: AppColors.primary,
-        secondary: AppColors.accent,
+        primary: primary,
+        secondary: secondary,
         surface: surface,
-        surfaceContainerHighest: isDark 
-            ? const Color(0xFF25263A) 
+        surfaceContainerHighest: isDark
+            ? Colors.white.withOpacity(0.08)
             : const Color(0xFFF8F4FF),
       ),
       scaffoldBackgroundColor: background,
-      textTheme: _textTheme(brightness, scaleFactor: textScale),
-      
+      textTheme: _textTheme(brightness, scaleFactor: textScale, textColor: textColor),
+
       // AppBar Premium
       appBarTheme: AppBarTheme(
         centerTitle: true,
@@ -84,16 +178,20 @@ class AppTheme {
         titleTextStyle: AppFonts.vazirmatn(
           fontSize: 22 * textScale,
           fontWeight: FontWeight.w900,
-          color: foreground,
+          color: textColor,
           letterSpacing: -0.3,
         ),
-        iconTheme: IconThemeData(color: foreground, size: 24),
+        iconTheme: IconThemeData(color: textColor, size: 24),
       ),
 
       // Elevated Button Premium — با Design Tokens
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           elevation: 0,
+          backgroundColor: primary,
+          foregroundColor: isDark && primary == AppColors.royalGoldSecondary
+              ? Colors.black
+              : Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
           minimumSize: const Size(56, 56),
           shape: RoundedRectangleBorder(
@@ -107,28 +205,27 @@ class AppTheme {
       ),
 
       // Card Premium — Design Tokens
-      // ⚠️ CardThemeData فقط از Flutter 3.27+ وجود دارد؛ پروژه روی 3.24.3 است.
       cardTheme: CardTheme(
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.xl),
         ),
-        color: surface,
-        shadowColor: Colors.black.withOpacity(0.08),
+        color: cardColor,
+        shadowColor: isDark ? Colors.black45 : Colors.black.withOpacity(0.08),
       ),
 
       // Bottom Navigation Premium
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         type: BottomNavigationBarType.fixed,
-        backgroundColor: surface,
-        selectedItemColor: AppColors.primary,
+        backgroundColor: cardColor,
+        selectedItemColor: primary,
         unselectedItemColor: isDark ? Colors.white54 : AppColors.textLight,
         elevation: 0,
         selectedLabelStyle: AppFonts.vazirmatn(fontWeight: FontWeight.w700, fontSize: 12 * textScale),
         unselectedLabelStyle: AppFonts.vazirmatn(fontWeight: FontWeight.w600, fontSize: 11 * textScale),
       ),
 
-      // Chip Premium — Design Tokens
+      // Chip Premium
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.md),
@@ -136,10 +233,10 @@ class AppTheme {
         labelStyle: AppFonts.vazirmatn(fontWeight: FontWeight.w600, fontSize: 14 * textScale),
       ),
 
-      // Input Premium — Design Tokens
+      // Input Premium
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark ? Colors.white.withOpacity(0.06) : surface,
+        fillColor: isDark ? Colors.white.withOpacity(0.08) : surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.lg),
           borderSide: BorderSide.none,

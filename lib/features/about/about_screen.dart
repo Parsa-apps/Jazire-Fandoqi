@@ -8,6 +8,8 @@ import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import '../../core/app_legal.dart';
 import '../../core/billing_service.dart';
 import '../../core/store_rating_service.dart';
+import '../../shared/widgets/parsa_gold_aura.dart';
+import '../../shared/widgets/theme_selector_widget.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
 
 /// Publisher, support and privacy information for parents and store review.
@@ -36,6 +38,8 @@ class AboutScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
         children: [
           _buildPublisherCard(),
+          const SizedBox(height: 16),
+          const ThemeSelectorWidget(),
           const SizedBox(height: 16),
           _buildSection(
             icon: Icons.email_outlined,
@@ -163,57 +167,7 @@ class AboutScreen extends StatelessWidget {
   }
 
   Widget _buildPublisherCard() {
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        gradient: AppGradients.primary,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.25),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          const FandoghiV2(
-            size: 72,
-            animate: true,
-            mood: FandoghiMood.happy,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'PARSA APPS • سازنده و ناشر',
-                  style: TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  AppLegal.developerName,
-                  style: AppFonts.vazirmatn(
-                    color: Colors.white,
-                    fontSize: 23,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'گروه برنامه‌نویسی پارسا اپس',
-                  style: TextStyle(color: Colors.white70),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ).animate(onPlay: (controller) => controller.repeat(reverse: true))
-      .shimmer(duration: 2600.ms, color: const Color(0x55FFD166))
-      .scale(begin: const Offset(.99, .99), end: const Offset(1.01, 1.01), duration: 2600.ms);
+    return const ParsaGoldAuraCard();
   }
 
   Widget _buildSection({
