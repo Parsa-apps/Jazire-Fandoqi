@@ -1,4 +1,6 @@
+import 'dart:math' show cos, pi, sin;
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
