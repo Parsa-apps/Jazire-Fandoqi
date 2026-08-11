@@ -1,3 +1,59 @@
+# 🎨 نسخه ۷.۰.۰ — ویژگی‌های UI/UX پریمیوم
+
+## ✨ ویژگی‌های جدید اضافه شده
+
+### سیستم ذرات جشن (Particle Celebration)
+- `ParticleCelebration`: انفجار ذرات رنگی با ۶ رنگ مختلف
+- `ConfettiOverlay`: پوشش جشن برای کل صفحه
+- `StarBurst`: انفجار ستاره‌ای برای امتیاز بالا
+- جشن خودکار بعد از برد بازی در داشبورد
+
+### کارت‌های شیشه‌ای (Glass Cards)
+- `GlassCard`: کارت با افکت بلور و حاشیه نورانی
+- `GlowingButton`: دکمه با افکت درخشش نئون
+- `ProgressRing`: حلقه پیشرفت متحرک
+- `WaveDecoration`: تزئینات موج‌دار متحرک
+- `NeonText`: متن با افکت نئون
+
+### کارت‌های سه‌بعدی
+- `GameCard3D`: کارت بازی با افکت کج‌شدن ماوس/لمس
+- `SuccessOverlay`: پوشش موفقیت با انیمیشن
+- `HorizontalGameScroller`: اسکرولر افقی بازی‌ها
+
+### چیدمان واکنش‌گرا
+- `ResponsiveGrid`: گرید واکنش‌گرا (۲-۴ ستون)
+- `ResponsiveColumn/Row`: ستون/ردیف واکنش‌گرا
+- `StaggeredGrid`: گرید موزاییکی
+- `Breakpoint`: کمک‌کننده نقاط شکست
+
+### کامپوننت‌های پیشرفته
+- `AdvancedParentGate`: دروازه والدین با سوال ریاضی
+- `RewardChest`: صندوق جایزه متحرک
+- `SkillRadarChart`: نمودار راداری مهارت‌ها
+- `AnimatedListItem`: آیتم لیست با انیمیشن
+
+### سیستم طراحی پریمیوم
+- `PremiumSpacing`: فاصله‌های استاندارد
+- `PremiumSizing`: سایزهای استاندارد
+- `PremiumColors`: پالت رنگ کامل
+- `PremiumShadows`: سایه‌های پریمیوم
+- `BackgroundGradients`: گرادیان‌های پس‌زمینه
+- `ColorPalette`: پالت‌های رنگ موضوعی
+
+### فایل‌های جدید
+```
+lib/shared/widgets/premium/
+├── particle_celebration.dart   # سیستم جشن
+├── glass_card.dart            # کارت‌های شیشه‌ای
+├── premium_animations.dart    # انیمیشن‌ها
+├── responsive_grid.dart       # چیدمان واکنش‌گرا
+├── premium_components.dart     # کامپوننت‌ها
+├── premium_exports.dart       # صادرات
+└── docs/UI_UX_PREMIUM_FEATURES.md  # راهنما
+```
+
+---
+
 # 🔁 بازاجرای واقعی PR80 — نسخه ۶.۱.۰+۱۲
 
 - Splash و مسیر `/onboarding` اصلاح شدند؛ onboarding پریمیوم دیگر صفحه‌ای orphan نیست.
