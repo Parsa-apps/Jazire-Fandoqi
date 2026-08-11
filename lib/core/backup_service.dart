@@ -11,28 +11,33 @@ import 'game_data.dart';
 /// بکاپ رمزگذاری‌شده AES-GCM با فرمت .parsa + بازیابی
 /// والد با یک تپ Export/Import — کاملاً آفلاین، بدون سرور
 ///
-/// امنیت: AES-256-GCM (تأیید صحت + محرمانگی) + nonce تصادفی هر بار.
-/// کلید از امضای ثابت اپ مشتق می‌شود؛ فایل برای افراد غیرمجاز
-/// غیرقابل خواندن است.
+/// امنیت: AES-256-GCM + nonce تصادفی. کلید v3 از PIN والدین مشتق می‌شود.
 /// ────────────────────────────────────────────────────────────
 class BackupService {
   static const String _fileName = 'kudake_backup.parsa';
   static const MethodChannel _fileChannel = MethodChannel('kudake_iran/backup');
 
-  /// کلید ۳۲ بایتی AES-256 — ثابت برای بازیابی در همهٔ دستگاه‌ها
-  /// (از هش SHA-256 نام اپ ساخته شده؛ در کد نهایی می‌ماند چون
-  /// رمزگشایی باید در هر دستگاهی بدون PIN والد ممکن باشد).
-  static final List<int> _appKey = utf8.encode('kudake-iran-fandoghi-2025-backup-secret');
+  /// Legacy v2 key — only used to decrypt backups written before PIN-derived v3.
+  static final List<int> _legacyAppKey =
+      utf8.encode('kudake-iran-fandoghi-2025-backup-secret');
 
   static AesGcm get _algorithm => AesGcm.with256bits();
 
-  static Future<SecretKey> _buildKey() async {
-    final hash = await Sha256().hash(_appKey);
+  static Future<SecretKey> _buildLegacyKey() async {
+    final hash = await Sha256().hash(_legacyAppKey);
     return SecretKey(hash.bytes);
   }
 
-  /// خروجی بکاپ رمزنگاری‌شدهٔ AES-GCM (فرمت v2)
-  static Future<String> exportBackup() async {
+  static Future<SecretKey> _buildPinKey(String pin) async {
+    final hash = await Sha256().hash(utf8.encode('kudake-backup-v3:$pin'));
+    return SecretKey(hash.bytes);
+  }
+
+  /// خروجی بکاپ رمزنگاری‌شدهٔ AES-GCM (فرمت v3 وابسته به PIN والدین)
+  static Future<String> exportBackup({required String pin}) async {
+    if (!GameData.verifyParentPin(pin)) {
+      throw StateError('parent pin required for backup export');
+    }
     // The last write may still be queued after a game reward. Flush it before
     // reading Hive so the exported file contains the newest progress.
     await GameData.save();
@@ -42,7 +47,7 @@ class BackupService {
     final jsonStr = jsonEncode(effective);
     final clearText = utf8.encode(jsonStr);
 
-    final secretKey = await _buildKey();
+    final secretKey = await _buildPinKey(pin);
     final nonce = _algorithm.newNonce();
     final secretBox = await _algorithm.encrypt(
       clearText,
@@ -51,7 +56,7 @@ class BackupService {
     );
 
     final payload = jsonEncode({
-      'v': 2,
+      'v': 3,
       'iv': base64Encode(secretBox.nonce),
       'mac': base64Encode(secretBox.mac.bytes),
       'data': base64Encode(secretBox.cipherText),
@@ -78,44 +83,37 @@ class BackupService {
     };
   }
 
-  /// بازیابی از فایل .parsa — از فرمت v2 (AES-GCM) و v1 (قدیمی) پشتیبانی می‌کند
-  static Future<bool> importBackup(String filePath) async {
+  /// بازیابی از فایل .parsa — v3 با PIN؛ v2 قدیمی فقط برای سازگاری
+  static Future<bool> importBackup(String filePath, {required String pin}) async {
     try {
+      if (!GameData.verifyParentPin(pin)) return false;
       final file = File(filePath);
       if (!await file.exists()) return false;
       final content = await file.readAsString();
+      if (content.length > 2 * 1024 * 1024) return false;
       final map = jsonDecode(content) as Map<String, dynamic>;
       final version = map['v'] as int? ?? 1;
 
-      String jsonStr;
-      if (version == 2) {
-        final iv = base64Decode(map['iv'] as String);
-        final mac = base64Decode(map['mac'] as String);
-        final cipher = base64Decode(map['data'] as String);
-        final secretKey = await _buildKey();
-        final secretBox = SecretBox(
-          cipher,
-          nonce: iv,
-          mac: Mac(mac),
-        );
-        final clear = await _algorithm.decrypt(secretBox, secretKey: secretKey);
-        jsonStr = utf8.decode(clear);
+      final String jsonStr;
+      if (version == 3) {
+        jsonStr = await _decryptPayload(map, await _buildPinKey(pin));
+      } else if (version == 2) {
+        jsonStr = await _decryptPayload(map, await _buildLegacyKey());
       } else {
-        // فرمت v1 (قدیمی): Base64 معکوس + checksum
-        final dataReversed = map['data'] as String;
-        final checksum = map['checksum'] as String;
-        final b64 = dataReversed.split('').reversed.join();
-        final decoded = utf8.decode(base64Decode(b64));
-        if (_checksum(decoded) != checksum) return false;
-        jsonStr = decoded;
+        return false;
       }
 
       final snapshot = jsonDecode(jsonStr) as Map<String, dynamic>;
+      final keepPinHash = GameData.parentPinHash;
       // Let any reward write already queued by the current session finish
       // before the imported snapshot becomes the source of truth.
       await GameData.save();
       await HivePlayerStore.writeSnapshot(snapshot);
       await GameData.reload();
+      if (keepPinHash.isNotEmpty && GameData.parentPinHash != keepPinHash) {
+        GameData.parentPinHash = keepPinHash;
+        await GameData.save();
+      }
       HapticFeedback.heavyImpact();
       return true;
     } catch (_) {
@@ -123,24 +121,31 @@ class BackupService {
     }
   }
 
-  /// checksum ساده برای فرمت قدیمی v1 (سازگاری به عقب)
-  static String _checksum(String input) {
-    var sum = 0;
-    for (var i = 0; i < input.length; i++) {
-      sum = (sum + input.codeUnitAt(i) * (i + 1)) % 100000;
-    }
-    return sum.toString();
+  static Future<String> _decryptPayload(
+    Map<String, dynamic> map,
+    SecretKey secretKey,
+  ) async {
+    final iv = base64Decode(map['iv'] as String);
+    final mac = base64Decode(map['mac'] as String);
+    final cipher = base64Decode(map['data'] as String);
+    final secretBox = SecretBox(
+      cipher,
+      nonce: iv,
+      mac: Mac(mac),
+    );
+    final clear = await _algorithm.decrypt(secretBox, secretKey: secretKey);
+    return utf8.decode(clear);
   }
 
   /// Opens the native document picker and imports a selected `.parsa` file.
   /// Android copies the content URI to a private temporary file first, so the
   /// crypto layer stays platform-independent and never needs broad storage
   /// permissions.
-  static Future<bool> pickAndImportBackup() async {
+  static Future<bool> pickAndImportBackup({required String pin}) async {
     try {
       final path = await _fileChannel.invokeMethod<String>('pickBackupFile');
       if (path == null || path.trim().isEmpty) return false;
-      return importBackup(path);
+      return importBackup(path, pin: pin);
     } on MissingPluginException {
       return false;
     } on PlatformException {
