@@ -106,6 +106,9 @@ class GameData {
   /// فاز ۷: مقیاس فونت قابل تنظیم توسط والدین (0.85 تا 1.4)
   static double textScale = 1.0;
 
+  /// تم پویا و فعال برنامه
+  static String activeTheme = 'royal_gold';
+
   /// فاز ۱۶: ترجیح دست کودک (چپ‌دست / راست‌دست)
   static bool isLeftHanded = false;
 
@@ -210,6 +213,7 @@ class GameData {
       goldenChestOpened = prefs.getBool('gc') ?? false;
       soundEnabled = prefs.getBool('sn') ?? true;
       textScale = (prefs.getDouble('tsc') ?? 1.0).clamp(0.85, 1.4).toDouble();
+      activeTheme = prefs.getString('activeTheme') ?? 'royal_gold';
       isLeftHanded = prefs.getBool('lh') ?? false;
       lastWeekReset = prefs.getString('lwr') ?? '';
       highScore = _readInt('hs', 0);
@@ -399,6 +403,7 @@ class GameData {
     isLeftHanded = asBool('lh', false);
     final tsc = d['tsc'];
     if (tsc is num) textScale = tsc.toDouble().clamp(0.85, 1.4).toDouble();
+    activeTheme = asString('activeTheme', 'royal_gold');
     lastWeekReset = asString('lwr', '');
     highScore = asInt('hs', 0).clamp(0, _maxStoredCounter);
     mathRaceHighScore = asInt('mrhs', 0).clamp(0, _maxStoredCounter);
@@ -477,6 +482,7 @@ class GameData {
         'gc': goldenChestOpened,
         'sn': soundEnabled,
         'tsc': textScale,
+        'activeTheme': activeTheme,
         'lh': isLeftHanded,
         'lwr': lastWeekReset,
         'hs': highScore,
@@ -620,6 +626,7 @@ class GameData {
     await prefs.setBool('gc', goldenChestOpened);
     await prefs.setBool('sn', soundEnabled);
     await prefs.setDouble('tsc', textScale);
+    await prefs.setString('activeTheme', activeTheme);
     await prefs.setBool('lh', isLeftHanded);
     await prefs.setInt('wpm', weeklyPlayMinutes);
     await prefs.setInt('tps', todayPlaySeconds);
@@ -1096,6 +1103,14 @@ class GameData {
   /// فاز ۷: تنظیم مقیاس فونت توسط والدین.
   static void setTextScale(double value) {
     textScale = value.clamp(0.85, 1.4).toDouble();
+    _notify();
+    unawaited(save());
+  }
+
+  /// تنظیم و ذخیره‌سازی تم پویای برنامه.
+  static void setActiveTheme(String themeId) {
+    if (themeId.isEmpty) return;
+    activeTheme = themeId;
     _notify();
     unawaited(save());
   }

@@ -4,12 +4,58 @@ import 'package:flutter/material.dart';
 // 🎨 JAZIREH FANDOGHI — Professional Color System
 // ═══════════════════════════════════════════════
 
+enum AppThemeMode {
+  royalGold,
+  fandoghiIsland,
+  oceanBreeze,
+  candyPastel,
+  galaxyNight,
+  seasonalAuto,
+}
+
 class AppColors {
   // Primary palette
   static const primary = Color(0xFF6C5CE7);
   static const primaryLight = Color(0xFFA29BFE);
   static const primaryDark = Color(0xFF4834D4);
   
+  // Royal Gold Palette (تم سلطنتی طلایی فندقی)
+  static const royalGoldPrimary = Color(0xFF3023AE);
+  static const royalGoldSecondary = Color(0xFFFFD700);
+  static const royalGoldAccent = Color(0xFFFFB300);
+  static const royalGoldBackground = Color(0xFF130F26);
+  static const royalGoldSurface = Color(0xFF1E173E);
+  static const royalGoldCard = Color(0xFF281E52);
+  static const royalGoldGlow = Color(0xFFFFD700);
+
+  // Fandoghi Island Palette (تم جزیره زمردی)
+  static const islandPrimary = Color(0xFF00B894);
+  static const islandSecondary = Color(0xFF00CEC9);
+  static const islandAccent = Color(0xFFFDCB6E);
+  static const islandBackground = Color(0xFFF0FDF8);
+  static const islandSurface = Color(0xFFFFFFFF);
+
+  // Ocean Breeze Palette (تم اقیانوس آرام)
+  static const oceanPrimary = Color(0xFF0984E3);
+  static const oceanSecondary = Color(0xFF74B9FF);
+  static const oceanAccent = Color(0xFF00CEC9);
+  static const oceanBackground = Color(0xFFF0F8FF);
+  static const oceanSurface = Color(0xFFFFFFFF);
+
+  // Candy Pastel Palette (تم آب‌نباتی)
+  static const candyPrimary = Color(0xFFE84393);
+  static const candySecondary = Color(0xFFFD79A8);
+  static const candyAccent = Color(0xFFFDCB6E);
+  static const candyBackground = Color(0xFFFFF5F8);
+  static const candySurface = Color(0xFFFFFFFF);
+
+  // Galaxy Night Palette (تم کهکشان ستاره‌ای)
+  static const galaxyPrimary = Color(0xFF6C5CE7);
+  static const galaxySecondary = Color(0xFFA29BFE);
+  static const galaxyAccent = Color(0xFF00CEC9);
+  static const galaxyBackground = Color(0xFF0F0C29);
+  static const galaxySurface = Color(0xFF1B1838);
+
   // Accent colors
   static const accent = Color(0xFF00CEC9);
   static const accentLight = Color(0xFF81ECEC);
@@ -59,6 +105,19 @@ class AppColors {
 }
 
 class AppGradients {
+  // Royal Gold Gradient
+  static const royalGold = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF3023AE), Color(0xFF5325A6), Color(0xFF8B008B)],
+  );
+
+  static const goldShimmer = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFFFFD700), Color(0xFFFFA000), Color(0xFFFFE57F)],
+  );
+
   // Hero gradients
   static const primary = LinearGradient(
     begin: Alignment.topLeft,

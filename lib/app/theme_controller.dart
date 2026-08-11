@@ -7,18 +7,17 @@ import '../core/game_data.dart';
 import 'app_theme.dart';
 
 /// ────────────────────────────────────────────────────────────
-/// 🌗 فاز ۷: کنترل‌کننده تم داینامیک
+/// 🌗 کنترل‌کننده تم داینامیک و چندگانه
 ///
-/// - تم بر اساس چرخه روز (صبح/ظهر/شب) + حالت سیستم + مقیاس فونت والدین
-/// - هر ۱۵ دقیقه چرخه روز دوباره محاسبه می‌شود و هنگام بازگشت اپ
-///   از پس‌زمینه هم به‌روزرسانی می‌شود
-/// - به `GameData.changes` گوش می‌دهد تا تغییر «اندازه متن» والدین
-///   بلافاصله در کل اپ اعمال شود (فیکس بازبینی دور ۶)
+/// - تم بر اساس انتخاب کاربر (سلطنتی طلایی، جزیره، اقیانوس، آب‌نباتی، کهکشان، فصلی)
+/// - چرخه روز (صبح/ظهر/شب) + حالت سیستم + مقیاس فونت والدین
+/// - گوش دادن به `GameData.changes` جهت تغییر آنی تم در کل برنامه
 /// ────────────────────────────────────────────────────────────
 class ThemeController extends ChangeNotifier {
   Timer? _timer;
   DayCycle _cycle = AppTheme.currentCycle;
   double _lastTextScale = GameData.textScale;
+  String _lastActiveTheme = GameData.activeTheme;
 
   ThemeController() {
     // به‌روزرسانی دوره‌ای چرخه روز (مثلاً وقتی ساعت ۱۲ ظهر می‌شود)
@@ -30,7 +29,6 @@ class ThemeController extends ChangeNotifier {
       }
     });
 
-    // دور ۶: تغییر فونت/تم از GameData باید بلافاصله منعکس شود
     GameData.changes.addListener(_onGameDataChanged);
   }
 
@@ -40,6 +38,10 @@ class ThemeController extends ChangeNotifier {
       _lastTextScale = GameData.textScale;
       changed = true;
     }
+    if (GameData.activeTheme != _lastActiveTheme) {
+      _lastActiveTheme = GameData.activeTheme;
+      changed = true;
+    }
     if (changed) notifyListeners();
   }
 
@@ -47,22 +49,37 @@ class ThemeController extends ChangeNotifier {
 
   double get textScale => GameData.textScale;
 
-  /// هنگام برگشتن اپ به foreground، چرخه روز و فونت را تازه می‌کنیم.
+  String get activeTheme => GameData.activeTheme;
+
+  /// هنگام برگشتن اپ به foreground، چرخه روز، تم و فونت را تازه می‌کنیم.
   void refresh() {
-    final next = AppTheme.currentCycle;
-    if (next != _cycle || GameData.textScale != _lastTextScale) {
-      _cycle = next;
+    final nextCycle = AppTheme.currentCycle;
+    if (nextCycle != _cycle ||
+        GameData.textScale != _lastTextScale ||
+        GameData.activeTheme != _lastActiveTheme) {
+      _cycle = nextCycle;
       _lastTextScale = GameData.textScale;
+      _lastActiveTheme = GameData.activeTheme;
       notifyListeners();
     }
   }
 
-  ThemeData themeFor(Brightness systemBrightness) =>
-      AppTheme.getTheme(_cycle, systemBrightness, textScale: textScale);
+  ThemeData themeFor(Brightness systemBrightness) => AppTheme.getThemeForMode(
+        GameData.activeTheme,
+        _cycle,
+        systemBrightness,
+        textScale: textScale,
+      );
 
   void setTextScale(double value) {
     GameData.setTextScale(value);
     _lastTextScale = GameData.textScale;
+    notifyListeners();
+  }
+
+  void setActiveTheme(String themeId) {
+    GameData.setActiveTheme(themeId);
+    _lastActiveTheme = GameData.activeTheme;
     notifyListeners();
   }
 
