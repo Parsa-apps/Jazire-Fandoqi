@@ -31,13 +31,15 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
   late int _timeLimit;
   bool _isUnlocked = false;
   Timer? _lockTimer; // فاز ۶۱: قفل خودکار بعد از ۲ دقیقه
+  int _failedPinAttempts = 0;
+  DateTime? _pinLockedUntil;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _timeLimit = GameData.timeLimitMinutes;
-    _isUnlocked = !GameData.hasParentPin();
+    _isUnlocked = false;
     _armLockTimer();
   }
 
@@ -69,105 +71,126 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
     super.dispose();
   }
 
-  // ==================== PIN ENTRY ====================
-  Future<void> _showPinDialog() async {
+  bool get _isPinCoolingDown {
+    final until = _pinLockedUntil;
+    return until != null && DateTime.now().isBefore(until);
+  }
+
+  Future<String?> _askPin({
+    required String title,
+    required String subtitle,
+  }) async {
     final controller = TextEditingController();
-    final result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('🔒 ورود والدین'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('لطفاً پین ۴ رقمی خود را وارد کنید'),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              maxLength: 4,
-              obscureText: true,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 24, letterSpacing: 8),
-              decoration: InputDecoration(
-                hintText: '••••',
-                counterText: '',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+    try {
+      final result = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Text(title),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(subtitle),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                maxLength: 4,
+                obscureText: true,
+                textAlign: TextAlign.center,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                style: const TextStyle(fontSize: 24, letterSpacing: 8),
+                decoration: InputDecoration(
+                  hintText: '••••',
+                  counterText: '',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
               ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('انصراف'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (RegExp(r'^\d{4}$').hasMatch(controller.text)) {
+                  Navigator.pop(ctx, controller.text);
+                }
+              },
+              child: const Text('تایید'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('انصراف'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (controller.text.length == 4) {
-                Navigator.pop(ctx, true);
-              }
-            },
-            child: const Text('تایید'),
-          ),
-        ],
-      ),
-    );
-
-    if (result == true && controller.text.length == 4) {
-      if (GameData.verifyParentPin(controller.text)) {
-        setState(() => _isUnlocked = true);
-        _armLockTimer(); // فاز ۶۱: قفل خودکار از لحظه ورود
-        HapticFeedback.lightImpact();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('پین اشتباه است')),
-        );
-      }
+      );
+      return result;
+    } finally {
+      controller.dispose();
     }
-    controller.dispose();
+  }
+
+  // ==================== PIN ENTRY ====================
+  Future<void> _showPinDialog() async {
+    if (_isPinCoolingDown) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('لطفاً کمی صبر کنید و دوباره تلاش کنید')),
+      );
+      return;
+    }
+    if (!GameData.hasParentPin()) {
+      await _setupPin();
+      return;
+    }
+    final pin = await _askPin(
+      title: '🔒 ورود والدین',
+      subtitle: 'لطفاً پین ۴ رقمی خود را وارد کنید',
+    );
+    if (pin == null || !mounted) return;
+    if (GameData.verifyParentPin(pin)) {
+      setState(() {
+        _failedPinAttempts = 0;
+        _pinLockedUntil = null;
+        _isUnlocked = true;
+      });
+      _armLockTimer();
+      HapticFeedback.lightImpact();
+      return;
+    }
+    _failedPinAttempts += 1;
+    if (_failedPinAttempts >= 5) {
+      _failedPinAttempts = 0;
+      _pinLockedUntil = DateTime.now().add(const Duration(seconds: 30));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('پین چند بار اشتباه بود؛ ۳۰ ثانیه صبر کنید')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('پین اشتباه است')),
+      );
+    }
   }
 
   Future<void> _setupPin() async {
-    final controller = TextEditingController();
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('تنظیم پین والدین'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          maxLength: 4,
-          obscureText: true,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 24, letterSpacing: 8),
-          decoration: const InputDecoration(
-            hintText: '۴ رقم',
-            counterText: '',
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('انصراف')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, controller.text),
-            child: const Text('ذخیره'),
-          ),
-        ],
-      ),
+    final result = await _askPin(
+      title: 'تنظیم پین والدین',
+      subtitle: 'یک پین ۴ رقمی انتخاب کنید. این پین بعد از بستن اپ هم می‌ماند.',
     );
-
-    if (result != null && result.length == 4) {
-      GameData.setParentPin(result);
-      setState(() => _isUnlocked = true);
-      _armLockTimer(); // فاز ۶۱
+    if (result == null || !mounted) return;
+    if (!GameData.setParentPin(result)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('پین با موفقیت ذخیره شد')),
+        const SnackBar(content: Text('پین باید دقیقاً ۴ رقم باشد')),
       );
+      return;
     }
+    setState(() => _isUnlocked = true);
+    _armLockTimer();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('پین با موفقیت ذخیره شد')),
+    );
   }
 
   // ==================== UI ====================
@@ -316,12 +339,14 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
       );
       return;
     }
-    final summary = logs
-        .take(10)
-        .map((l) => '${l['source'] ?? 'runtime'}: ${l['message'] ?? ''}')
-        .join('\n');
-    final text = '📱 گزارش سلامت جزیره فندقی\n'
-        'نسخه: 6.1.0 پریمیوم\n'
+    final summary = logs.take(10).map((l) {
+      final source = (l['source'] ?? 'runtime').toString();
+      final raw = (l['message'] ?? '').toString().replaceAll(RegExp(r'\s+'), ' ');
+      final safe = raw.length > 80 ? raw.substring(0, 80) : raw;
+      return '$source: $safe';
+    }).join('\n');
+    final text = 'گزارش سلامت جزیره فندقی\n'
+        'نسخه: 6.1.0\n'
         '---\n$summary\n'
         '(${logs.length} خطا)';
     final uri = Uri.parse(
@@ -711,7 +736,7 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
           ),
           const SizedBox(height: 8),
           const Text(
-            'یک فایل رمزگذاری‌شدهٔ .parsa بسازید یا بکاپ قبلی را برگردانید. فایل فقط روی دستگاه شما رمزگشایی می‌شود.',
+            'یک فایل رمزگذاری‌شدهٔ .parsa بسازید یا بکاپ قبلی را برگردانید. رمز فایل همان پین والدین است.',
             style: TextStyle(color: Colors.grey, fontSize: 13, height: 1.6),
           ),
           const SizedBox(height: 14),
@@ -741,9 +766,34 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
     );
   }
 
+  Future<String?> _confirmBackupPin() async {
+    if (!GameData.hasParentPin()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('اول یک پین والدین تنظیم کنید')),
+      );
+      return null;
+    }
+    final pin = await _askPin(
+      title: 'تأیید پین بکاپ',
+      subtitle: 'برای رمزگذاری/رمزگشایی فایل بکاپ پین را دوباره وارد کنید',
+    );
+    if (pin == null) return null;
+    if (!GameData.verifyParentPin(pin)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('پین اشتباه است')),
+        );
+      }
+      return null;
+    }
+    return pin;
+  }
+
   Future<void> _exportBackup() async {
+    final pin = await _confirmBackupPin();
+    if (pin == null || !mounted) return;
     try {
-      final path = await BackupService.exportBackup();
+      final path = await BackupService.exportBackup(pin: pin);
       if (!mounted) return;
       await Clipboard.setData(ClipboardData(text: path));
       ScaffoldMessenger.of(context).showSnackBar(
@@ -758,7 +808,9 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
   }
 
   Future<void> _importBackup() async {
-    final restored = await BackupService.pickAndImportBackup();
+    final pin = await _confirmBackupPin();
+    if (pin == null || !mounted) return;
+    final restored = await BackupService.pickAndImportBackup(pin: pin);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

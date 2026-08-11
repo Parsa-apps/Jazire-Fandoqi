@@ -8,7 +8,7 @@ class UpdateSettings {
 
   void setSound(bool enabled) => GameData.setSoundEnabled(enabled);
 
-  void setParentPin(String pin) => GameData.setParentPin(pin);
+  bool setParentPin(String pin) => GameData.setParentPin(pin);
 
   void removeParentPin() => GameData.removeParentPin();
 

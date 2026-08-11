@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
+import 'package:cryptography/dart.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -96,7 +98,8 @@ class GameData {
 
   // Settings
   static int timeLimitMinutes = 60;
-  static String parentPin = '';
+  /// SHA-256 digest of the 4-digit parent PIN. The raw PIN is never persisted.
+  static String parentPinHash = '';
   static bool treasureOpened = false;
   static bool goldenChestOpened = false;
   static bool soundEnabled = true;
@@ -206,6 +209,7 @@ class GameData {
       // Older builds stored every shop item in `st`. Keep those purchases.
       if (ownedItems.isEmpty) ownedItems = List<String>.from(stickers);
       timeLimitMinutes = _readInt('tl', 60, min: 15, max: 24 * 60);
+      parentPinHash = _readString('parentPinHash', '', maxLength: 64);
       treasureOpened = prefs.getBool('tr') ?? false;
       goldenChestOpened = prefs.getBool('gc') ?? false;
       soundEnabled = prefs.getBool('sn') ?? true;
@@ -393,6 +397,8 @@ class GameData {
     ownedItems = asList('ownedItems');
     if (ownedItems.isEmpty) ownedItems = List<String>.from(stickers);
     timeLimitMinutes = asInt('tl', 60).clamp(15, 24 * 60);
+    parentPinHash = asString('parentPinHash', '');
+    if (parentPinHash.length > 64) parentPinHash = parentPinHash.substring(0, 64);
     treasureOpened = asBool('tr', false);
     goldenChestOpened = asBool('gc', false);
     soundEnabled = asBool('sn', true);
@@ -473,6 +479,7 @@ class GameData {
         'st': stickers,
         'ownedItems': ownedItems,
         'tl': timeLimitMinutes,
+        'parentPinHash': parentPinHash,
         'tr': treasureOpened,
         'gc': goldenChestOpened,
         'sn': soundEnabled,
@@ -616,6 +623,7 @@ class GameData {
     await prefs.setStringList('st', List<String>.from(stickers));
     await prefs.setStringList('ownedItems', List<String>.from(ownedItems));
     await prefs.setInt('tl', timeLimitMinutes);
+    await prefs.setString('parentPinHash', parentPinHash);
     await prefs.setBool('tr', treasureOpened);
     await prefs.setBool('gc', goldenChestOpened);
     await prefs.setBool('sn', soundEnabled);
@@ -1114,18 +1122,34 @@ class GameData {
   }
 
   // ==================== PARENT CONTROL ====================
-  static bool hasParentPin() => parentPin.isNotEmpty;
+  static const String _parentPinDomain = 'fandoghi-parent-pin-v1';
 
-  static bool verifyParentPin(String pin) => pin == parentPin;
+  static bool _isValidPin(String pin) => RegExp(r'^\d{4}$').hasMatch(pin);
 
-  static void setParentPin(String pin) {
-    parentPin = pin;
+  static String hashParentPin(String pin) {
+    final digest = const DartSha256().hashSync(
+      utf8.encode('$_parentPinDomain:$pin'),
+    );
+    return base64Encode(digest.bytes);
+  }
+
+  static bool hasParentPin() => parentPinHash.isNotEmpty;
+
+  static bool verifyParentPin(String pin) {
+    if (parentPinHash.isEmpty || !_isValidPin(pin)) return false;
+    return hashParentPin(pin) == parentPinHash;
+  }
+
+  static bool setParentPin(String pin) {
+    if (!_isValidPin(pin)) return false;
+    parentPinHash = hashParentPin(pin);
     _notify();
     unawaited(save());
+    return true;
   }
 
   static void removeParentPin() {
-    parentPin = '';
+    parentPinHash = '';
     _notify();
     unawaited(save());
   }
@@ -1257,6 +1281,7 @@ class GameData {
       'lullaby': 0,
     };
     timeLimitMinutes = 60;
+    parentPinHash = '';
     treasureOpened = false;
     goldenChestOpened = false;
     soundEnabled = true;

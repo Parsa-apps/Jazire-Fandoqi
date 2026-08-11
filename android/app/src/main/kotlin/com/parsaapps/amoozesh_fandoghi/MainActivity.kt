@@ -27,6 +27,7 @@ import java.util.UUID
 class MainActivity : FlutterFragmentActivity() {
     private val channelName = "kudake_iran/billing"
     private val backupChannelName = "kudake_iran/backup"
+    private val fullVersionProductId = "full_version"
     private var paymentConnection: Connection? = null
     private var purchaseInProgress = false
     private var pendingBackupResult: MethodChannel.Result? = null
@@ -116,7 +117,11 @@ class MainActivity : FlutterFragmentActivity() {
         val callback: ir.cafebazaar.poolakey.callback.PurchaseCallback.() -> Unit = {
             purchaseSucceed { info ->
                 purchaseInProgress = false
-                result.success(success(info.purchaseToken, info.orderId, "پرداخت تأیید شد"))
+                if (info.productId != productId) {
+                    result.success(failure("شناسه محصول با رسید استور هم‌خوان نیست"))
+                } else {
+                    result.success(success(info.purchaseToken, info.orderId, "پرداخت تأیید شد"))
+                }
             }
             purchaseCanceled {
                 purchaseInProgress = false
@@ -166,9 +171,9 @@ class MainActivity : FlutterFragmentActivity() {
 
     private fun queryCallback(result: MethodChannel.Result): PurchaseQueryCallback.() -> Unit = {
         querySucceed { purchases ->
-            val active = purchases.firstOrNull()
-            if (active == null) result.success(failure("اشتراک فعالی یافت نشد"))
-            else result.success(success(active.purchaseToken, active.orderId, "اشتراک بازیابی شد"))
+            val active = purchases.firstOrNull { it.productId == fullVersionProductId }
+            if (active == null) result.success(failure("خرید نسخه کامل یافت نشد"))
+            else result.success(success(active.purchaseToken, active.orderId, "خرید بازیابی شد"))
         }
         queryFailed { result.success(failure("بازیابی خرید از استور انجام نشد")) }
     }
