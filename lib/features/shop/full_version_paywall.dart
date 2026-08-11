@@ -3,16 +3,14 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import '../../core/fandoghi_models.dart';
 
 import '../../app/app_colors.dart';
-import '../../app/design_tokens.dart';
 import '../../app/app_fonts.dart';
-import '../../shared/widgets/fandoghi_premium.dart';
-import '../../core/game_data.dart';
+import '../../app/design_tokens.dart';
+import '../../core/fandoghi_models.dart';
 import '../../core/growth/smart_conversion.dart';
 import '../../core/monetization.dart';
+import '../../shared/widgets/fandoghi_premium.dart';
 
 String _normalizeDigits(String input) {
   const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
@@ -50,40 +48,6 @@ class _FullVersionSheetPremium extends StatefulWidget {
 
 class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
   bool _loading = false;
-
-  // 🧪 [DEV-UNLOCK-BLOCK] وضعیت سکشن «کد تخفیف» — موقت؛ قبل از انتشار
-  // کافه‌بازار کل این بلوک و _buildDiscountCodeSection حذف می‌شود.
-  final TextEditingController _codeController = TextEditingController();
-  final FocusNode _codeFocus = FocusNode();
-  bool _codeExpanded = false;
-  bool _codeLoading = false;
-  String? _codeError;
-
-  @override
-  void dispose() {
-    _codeController.dispose();
-    _codeFocus.dispose();
-    super.dispose();
-  }
-
-  Future<void> _applyCode() async {
-    HapticFeedback.lightImpact();
-    _codeFocus.unfocus();
-    setState(() {
-      _codeLoading = true;
-      _codeError = null;
-    });
-    final ok = await Monetization.activateWithCode(_codeController.text);
-    if (!mounted) return;
-    setState(() => _codeLoading = false);
-    if (ok) {
-      HapticFeedback.heavyImpact();
-      Navigator.pop(context, true);
-    } else {
-      HapticFeedback.mediumImpact();
-      setState(() => _codeError = 'این کد معتبر نیست؛ دوباره امتحان کن.');
-    }
-  }
 
   Future<bool> _parentGate() async {
     final random = Random();
@@ -333,9 +297,6 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  // 🧪 [DEV-UNLOCK-BLOCK] سکشن کد تخفیف — موقت؛ حذف قبل از انتشار کافه‌بازار
-                  _buildDiscountCodeSection(),
-                  const SizedBox(height: 4),
                   Text('با خرید، قوانین کافه‌بازار و حریم خصوصی آفلاین اپ را می‌پذیری.', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: Colors.black38, height: 1.4)),
                 ],
               ),
@@ -344,116 +305,6 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
         ),
       );
 
-  // 🧪 [DEV-UNLOCK-BLOCK] کارت بازشونده‌ی «کد تخفیف» — موقت برای تست سازنده؛
-  // قبل از انتشار نهایی در کافه‌بازار کل این متد و فراخوان آن حذف می‌شود.
-  Widget _buildDiscountCodeSection() {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF9E6),
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-        border: Border.all(color: const Color(0xFFFFD54F).withOpacity(0.45)),
-      ),
-      child: Column(
-        children: [
-          InkWell(
-            borderRadius: BorderRadius.circular(AppRadii.lg),
-            onTap: () {
-              HapticFeedback.lightImpact();
-              setState(() {
-                _codeExpanded = !_codeExpanded;
-                _codeError = null;
-              });
-              if (_codeExpanded) _codeFocus.requestFocus();
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-              child: Row(
-                children: [
-                  const Text('🎫', style: TextStyle(fontSize: 18)),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'کد تخفیف داری؟ اینجا وارد کن',
-                      style: AppFonts.vazirmatn(fontSize: 13, fontWeight: FontWeight.w800, color: const Color(0xFF7A5C00)),
-                    ),
-                  ),
-                  AnimatedRotation(
-                    turns: _codeExpanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 250),
-                    child: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF7A5C00)),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (_codeExpanded)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-              child: Column(
-                children: [
-                  Directionality(
-                    textDirection: TextDirection.ltr,
-                    child: TextField(
-                      controller: _codeController,
-                      focusNode: _codeFocus,
-                      textAlign: TextAlign.center,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      textCapitalization: TextCapitalization.characters,
-                      style: AppFonts.exo2(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 2, color: const Color(0xFF2D3436)),
-                      decoration: InputDecoration(
-                        hintText: 'FANDOGHI-XXXX',
-                        hintStyle: AppFonts.exo2(color: Colors.black26, letterSpacing: 2),
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.md), borderSide: BorderSide(color: const Color(0xFFFFD54F).withOpacity(0.5))),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.md), borderSide: BorderSide(color: const Color(0xFFFFD54F).withOpacity(0.5))),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.md), borderSide: const BorderSide(color: Color(0xFFFFB300), width: 2)),
-                      ),
-                      onSubmitted: (_) => _codeLoading ? null : _applyCode(),
-                    ),
-                  ),
-                  if (_codeError != null) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline_rounded, size: 14, color: Colors.red),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(_codeError!, style: AppFonts.vazirmatn(fontSize: 12, color: Colors.red.shade700, fontWeight: FontWeight.w700)),
-                        ),
-                      ],
-                    ),
-                  ],
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: _codeLoading ? null : _applyCode,
-                      icon: _codeLoading
-                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.check_circle_outline_rounded, size: 18, color: Colors.white),
-                      label: Text(
-                        _codeLoading ? 'در حال بررسی...' : 'اعمال کد',
-                        style: AppFonts.vazirmatn(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14),
-                      ),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFB300),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.md)),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
 }
 
 class _PremiumBenefit extends StatelessWidget {

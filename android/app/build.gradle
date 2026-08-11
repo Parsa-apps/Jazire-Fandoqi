@@ -10,6 +10,11 @@ plugins {
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file("key.properties")
 def hasReleaseSigning = keystorePropertiesFile.exists()
+def verificationSigningRequested = providers.gradleProperty("allowVerificationSigning")
+    .getOrElse("false")
+    .toBoolean()
+def allowVerificationSigning = verificationSigningRequested ||
+    System.getenv("GITHUB_ACTIONS") == "true"
 if (hasReleaseSigning) {
     keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
 }
@@ -72,12 +77,28 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            // If key.properties exists → use real release keystore (for Bazaar/Play).
-            // If not → fallback to debug keystore so the APK is still signed and
-            // installable on device for testing. This prevents:
-            // "The parser did not find any certificates in the installation package."
-            signingConfig = hasReleaseSigning ? signingConfigs.release : signingConfigs.debug
+            // Store releases must use key.properties. Debug signing is restricted to
+            // GitHub Actions or an explicit non-publishable verification build.
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.release
+            } else if (allowVerificationSigning) {
+                signingConfig = signingConfigs.debug
+            } else {
+                signingConfig = null
+            }
         }
+    }
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+    def releaseRequested = taskGraph.allTasks.any { task ->
+        task.path == ":app:assembleRelease" || task.path == ":app:bundleRelease"
+    }
+    if (releaseRequested && !hasReleaseSigning && !allowVerificationSigning) {
+        throw new GradleException(
+            "Release signing is not configured. Add android/key.properties, " +
+            "or explicitly enable allowVerificationSigning for a non-publishable CI artifact."
+        )
     }
 }
 

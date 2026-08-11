@@ -1,18 +1,18 @@
-# 🔧 فنی پریمیوم — ۱۷ پیشنهاد باقی‌مانده (اجرای خودکار)
+# 🔧 فنی پریمیوم — وضعیت اجرا و موارد محیطی
 
-> این سند فنی برای تکمیل 50 پیشنهاد ویژه است — هر مورد با Definition of Done
+> موارد امنیتی قابل اجرا در مخزن تکمیل شده‌اند. تنظیم keystore و کلید RSA وظیفهٔ محیط انتشار است؛ تغییر workflow نیز به مجوز `workflows` مالک نیاز دارد.
 
-### 1 Flutter 3.27 + Impeller
-- ارتقا به 3.27، حذف `image_cropper_platform_interface` پین، فعال‌سازی `CardThemeData`
+### 1 Flutter 3.27 + Impeller — در انتظار ارتقای هماهنگ CI
+- پروژه فعلاً روی Flutter 3.24.3 و پین سازگار `image_cropper_platform_interface` می‌ماند. ارتقا باید هم‌زمان با workflow انجام شود تا CI نشکند.
 
 ### 3 CrashReport پیشرفته
 - `CrashReportStore` + `LoggerService` + کارت والد «گزارش خطاهای دستگاه» — پیاده شد
 
-### 4 CI/CD فول‌اتومات
-- `build.sh` 7 مرحله‌ای + `.github/workflows/build-apk.yml` (نیاز به مجوز workflows مالک)
+### 4 CI/CD فول‌اتومات — بخش مخزن تکمیل، workflow در انتظار مجوز
+- `build.sh` هفت‌مرحله‌ای و ممیزی امنیت آماده است؛ افزودن gateهای analyze/test/privacy به workflow به مجوز `workflows` مالک نیاز دارد.
 
-### 6 Riverpod CodeGen + Freezed
-- `gameStateProvider` + `freezed` برای `PlayerProfile` — type-safe
+### 6 Riverpod CodeGen + Freezed — اختیاری
+- `gameStateProvider` و `PlayerProfile` اکنون type-safe هستند؛ افزودن CodeGen/Freezed بدون نیاز رفتاری، هزینهٔ build_runner و فایل‌های تولیدی را بالا می‌برد و به ارتقای مستقل موکول شده است.
 
 ### 7 Lazy + AVIF
 - `AssetManager` LRU 24 + `FandoghiImage` fade-in — AVIF بعد از 3.27
@@ -32,8 +32,8 @@
 ### 14 تبلت + چپ‌دست
 - `AppBreakpoints` + `isLeftHanded` در ParentPanel — پیاده شد
 
-### 16 Skeleton
-- `ProfessionalSkeleton` شیمر — در حال ارتقا به پریمیوم
+### 16 Skeleton — تکمیل شد
+- `ProfessionalSkeleton` با شیمر، Design Tokens و سه حالت card/circle/text.
 
 ### 17 Accessibility AAA
 - `Semantics` + Slider 0.85-1.4 + کنتراست 4.5:1 — پیاده شد
@@ -44,4 +44,4 @@
 ### 49 Backup
 - `BackupService` .parsa — پیاده شد
 
-> همه این‌ها با کد موجود پوشش داده شده یا با یک ارتقای کوچک نسخه Flutter کامل می‌شود.
+> باقی‌ماندهٔ واقعی کدنویسی این دور رفع شد؛ موارد فوق که به ابزار/مجوز مالک وابسته‌اند باید در یک ارتقای هماهنگ جداگانه انجام شوند.

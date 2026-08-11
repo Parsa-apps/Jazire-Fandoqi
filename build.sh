@@ -71,11 +71,15 @@ fi
 log 'مرحله ۷/۷: ساخت خروجی'
 if [[ "$BUILD_MODE" == "release" ]]; then
   if [[ ! -f android/key.properties ]]; then
-    log '⚠️  فایل android/key.properties پیدا نشد.'
-    log '   APK ریلیز با کلید دیباگ امضا می‌شود تا قابل نصب باشد (برای تست).'
-    log '   برای انتشار در کافه‌بازار/گوگل‌پلی باید keystore اصلی بسازی:'
-    log '   keytool -genkey -v -keystore android/release.keystore -alias fandoghi -keyalg RSA -keysize 4096 -validity 10000'
-    log '   سپس فایل android/key.properties را بساز (نمونه در BUILD_INSTRUCTIONS.md).'
+    if [[ "${ALLOW_VERIFICATION_SIGNING:-0}" == "1" ]]; then
+      log '⚠️  خروجی تأیید CI با کلید debug ساخته می‌شود و قابل انتشار نیست.'
+      export ORG_GRADLE_PROJECT_allowVerificationSigning=true
+    else
+      fail 'فایل android/key.properties پیدا نشد؛ ساخت خروجی release متوقف شد.'
+      log 'برای انتشار، keystore اصلی و android/key.properties را طبق BUILD_INSTRUCTIONS.md تنظیم کن.'
+      log 'فقط برای آرتیفکت غیرقابل‌انتشار CI: ALLOW_VERIFICATION_SIGNING=1'
+      exit 1
+    fi
   else
     ok 'فایل امضای انتشار پیدا شد → استفاده از کلید اصلی'
   fi
