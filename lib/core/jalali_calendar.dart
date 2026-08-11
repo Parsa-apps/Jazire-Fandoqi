@@ -22,6 +22,19 @@ class JalaliDate {
 
   const JalaliDate(this.year, this.month, this.day);
 
+  /// نام روز هفته شمسی از روی تاریخ میلادی (۱=دوشنبه … ۷=یکشنبه).
+  static const List<String> weekdayNamesFa = <String>[
+    'دوشنبه',
+    'سه‌شنبه',
+    'چهارشنبه',
+    'پنجشنبه',
+    'جمعه',
+    'شنبه',
+    'یکشنبه',
+  ];
+
+  static String weekdayName(DateTime date) => weekdayNamesFa[date.weekday - 1];
+
   /// نام فارسی ماه.
   String get monthName {
     const names = <String>[

@@ -6,6 +6,7 @@ import '../../app/app_colors.dart';
 import '../../core/audio_service.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/game_data.dart';
+import '../../core/growth/growth.dart';
 import '../../presentation/providers/game_state_provider.dart';
 import '../../shared/widgets/fandoghi_welcome.dart';
 import '../island/island_screen.dart';
@@ -100,7 +101,13 @@ class _HomeState extends ConsumerState<HomeScreen> {
               _navItem(0, Icons.sports_esports_rounded, 'بازی‌ها'),
               _navItem(1, Icons.explore_rounded, 'جزیره'),
               _navItemCenter(),
-              _navItem(3, Icons.storefront_rounded, 'فروشگاه'),
+              _navItem(
+                3,
+                ParentControls.shopVisible
+                    ? Icons.storefront_rounded
+                    : Icons.self_improvement_rounded,
+                ParentControls.shopVisible ? 'فروشگاه' : 'تمرکز',
+              ),
               _navItem(4, Icons.person_rounded, 'پروفایل'),
             ],
           ),
@@ -118,6 +125,10 @@ class _HomeState extends ConsumerState<HomeScreen> {
       onTap: () {
         HapticFeedback.lightImpact();
         AudioService.tap();
+        if (index == 3 && !ParentControls.shopVisible) {
+          FandoghiCoach.instruction('حالت تمرکز روشن است؛ فروشگاه بعداً باز می‌شود 🎯');
+          return;
+        }
         setState(() => _currentTab = index);
       },
       child: AnimatedContainer(

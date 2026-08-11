@@ -13,7 +13,10 @@ import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
+import '../../../core/growth/growth.dart';
 import '../../../core/monetization.dart';
+import '../../growth/widgets/growth_home_strip.dart';
+import '../../growth/widgets/session_recap_sheet.dart';
 import '../../../presentation/providers/game_state_provider.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
 import '../../../shared/widgets/premium_daily_missions.dart';
@@ -71,20 +74,32 @@ class _DashboardState extends ConsumerState<DashboardTab>
     'ستاره‌گیری',
     'حباب‌ترکان',
     'نقاشی',
+    'مهارت زندگی',
   };
 
   Future<void> _openGame(String route, String gameName) async {
     HapticFeedback.heavyImpact();
     AudioService.select();
+    if (ParentControls.isRouteBlocked(route) || ParentControls.isBedtimeNow) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ParentControls.blockReason(route))),
+      );
+      return;
+    }
     if (!_freeGames.contains(gameName) && !await Monetization.hasFullVersion()) {
-      if (mounted) await showFullVersionPaywall(context, featureName: gameName);
+      SmartConversion.noteLockedTap();
+      if (mounted) {
+        await showFullVersionPaywall(context, featureName: gameName);
+      }
       return;
     }
     if (mounted) {
+      ActivityTracker.recordOpen(route: route, title: gameName);
       Navigator.pushNamed(context, route).then((_) {
         if (mounted) {
-          // جشن برد!
           setState(() => _showCelebration = true);
+          showSessionRecap(context);
           Future.delayed(const Duration(seconds: 3), () {
             if (mounted) setState(() => _showCelebration = false);
           });
@@ -337,6 +352,15 @@ class _DashboardState extends ConsumerState<DashboardTab>
           category: _GameCategory.brain,
           subtitle: 'کشف نظم و توالی',
         ),
+        const _GameTile(
+          title: 'مهارت زندگی',
+          gameName: 'مهارت زندگی',
+          route: '/life-skills',
+          emoji: '🧭',
+          glow: Color(0xFF00897B),
+          category: _GameCategory.world,
+          subtitle: 'خیابان، بهداشت و ایران',
+        ),
       ];
 
   List<_GameTile> get _filteredGames {
@@ -418,9 +442,17 @@ class _DashboardState extends ConsumerState<DashboardTab>
                                 const SizedBox(height: 8),
                                 _buildFandoghiCoachCard(),
                                 const SizedBox(height: 12),
+                                const GrowthHomeStrip(),
+                                const SizedBox(height: 16),
+                                _sectionTitle('دسته‌بندی بازی‌ها'),
+                                const SizedBox(height: 8),
                                 _buildCategoryPills(),
                                 const SizedBox(height: 14),
                                 _buildPlatformsGrid(constraints),
+                                const SizedBox(height: 20),
+                                _sectionTitle('بازی‌های سریع'),
+                                const SizedBox(height: 8),
+                                _buildQuickGamesRow(),
                                 const SizedBox(height: 16),
                                 // 🔥 پریمیوم استریک تقویم شمسی + قلب یخی (پیشنهاد ۳۳)
                                 PremiumStreakCalendar(
@@ -450,6 +482,8 @@ class _DashboardState extends ConsumerState<DashboardTab>
                                   },
                                 ),
                                 const SizedBox(height: 12),
+                                _sectionTitle('ماموریت‌های امروز'),
+                                const SizedBox(height: 8),
                                 PremiumDailyMissions(
                                   onClaimChest: () {
                                     if (GameData.claimDailyMissionChest()) {
@@ -590,9 +624,9 @@ class _DashboardState extends ConsumerState<DashboardTab>
                     ],
                   ),
                 ),
-                _balanceBadge('⭐', '${GameData.stars}'),
+                _balanceBadge('⭐', PersianDigits.toFa(GameData.stars)),
                 const SizedBox(width: 5),
-                _balanceBadge('💰', '${GameData.coins}'),
+                _balanceBadge('💰', PersianDigits.toFa(GameData.coins)),
                 const SizedBox(width: 5),
                 _iconPill(
                   Icons.lock_outline_rounded,
@@ -863,6 +897,52 @@ class _DashboardState extends ConsumerState<DashboardTab>
   }
 
   // ─── گرید سکوهای شناور سه‌بعدی بازی‌ها ─────────────
+  /// عنوان بخش‌های داشبورد — یک سبک واحد برای همه سرتیترها.
+  Widget _sectionTitle(String text) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: Text(
+          text,
+          style: AppFonts.vazirmatn(
+            fontSize: 15,
+            fontWeight: FontWeight.w900,
+            color: const Color(0xFF1F3A5F),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// ردیف افقی بازی‌های رایگان برای شروع فوری بدون پرداخت.
+  Widget _buildQuickGamesRow() {
+    final quickTiles = _allGames
+        .where((tile) => _freeGames.contains(tile.gameName))
+        .take(6)
+        .toList();
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        itemCount: quickTiles.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final tile = quickTiles[i];
+          return ActionChip(
+            avatar: Text(tile.emoji, style: const TextStyle(fontSize: 16)),
+            label: Text(
+              tile.gameName,
+              style: AppFonts.vazirmatn(fontSize: 12, fontWeight: FontWeight.w800),
+            ),
+            onPressed: () => _openGame(tile.route, tile.gameName),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildPlatformsGrid(BoxConstraints constraints) {
     final maxWidth = constraints.maxWidth > 0 ? constraints.maxWidth : 360.0;
     final gap = 12.0;

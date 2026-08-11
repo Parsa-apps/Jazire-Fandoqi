@@ -59,6 +59,13 @@ class _LearningLibraryScreenState extends State<LearningLibraryScreen> {
       route: '/sel',
       color: Color(0xFFFF6B6B),
     ),
+    _LibraryEntry(
+      title: 'مهارت زندگی',
+      subtitle: 'ترافیک، بهداشت، پول تومان و ایران',
+      emoji: '🧭',
+      route: '/life-skills',
+      color: Color(0xFF00897B),
+    ),
   ];
 
   @override

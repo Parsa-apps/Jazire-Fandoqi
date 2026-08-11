@@ -6,6 +6,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 import 'game_data.dart';
+import 'growth/parent_controls.dart';
 import 'logger_service.dart';
 
 /// ────────────────────────────────────────────────────────────
@@ -73,7 +74,7 @@ class AudioService {
 
   /// پخش یک افکت از استخر (بدون قطع صدای قبلی).
   static Future<void> _playFromPool(String assetPath) async {
-    if (!GameData.soundEnabled) return;
+    if (!GameData.soundEnabled || ParentControls.shouldMuteSound) return;
     try {
       final player = _sfxPool[_poolIndex];
       _poolIndex = (_poolIndex + 1) % _poolSize;
@@ -245,7 +246,10 @@ class AudioService {
   /// TTS بی‌صدا رد می‌شود.
   static Future<void> speak(String text) async {
     final clean = text.trim();
-    if (clean.isEmpty || !GameData.soundEnabled || !_ttsAvailable) return;
+    if (clean.isEmpty ||
+        !GameData.soundEnabled ||
+        ParentControls.shouldMuteSound ||
+        !_ttsAvailable) return;
 
     // پاکسازی اموجی‌ها برای گفتار روان‌تر
     final spoken = clean.replaceAll(RegExp(r'[\p{Extended_Pictographic}]', unicode: true), ' ').trim();

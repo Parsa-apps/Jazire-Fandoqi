@@ -9,6 +9,8 @@ import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import 'package:jazireh_fandoghi/core/audio_service.dart';
 import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
 import 'package:jazireh_fandoghi/core/game_data.dart';
+import 'package:jazireh_fandoghi/core/growth/growth.dart';
+import 'package:jazireh_fandoghi/core/jalali_calendar.dart';
 import 'package:jazireh_fandoghi/features/about/about_screen.dart';
 import 'package:jazireh_fandoghi/features/profile/profile_screen.dart';
 import 'package:jazireh_fandoghi/features/profile/sticker_album_screen.dart';
@@ -30,6 +32,13 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
   void initState() {
     super.initState();
     _resetCoach();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // فقط وقتی ذخیره‌سازی واقعاً بارگذاری شده (در تست‌های ایزوله load نمی‌شود).
+      if (GrowthStore.isLoaded && GrowthStore.shouldShowWhatsNew) {
+        Navigator.of(context).pushNamed('/whats-new');
+      }
+    });
     _backgroundController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 7),
@@ -48,16 +57,24 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
   }
 
   String _timeGreeting() {
+    final weekday = JalaliDate.weekdayName(DateTime.now());
     final hour = DateTime.now().hour;
-    if (hour >= 5 && hour < 12) return 'صبح بخیر ☀️';
-    if (hour >= 12 && hour < 17) return 'روز بخیر 🌤️';
-    if (hour >= 17 && hour < 21) return 'عصر بخیر 🌇';
-    return 'شب بخیر 🌙';
+    if (hour >= 5 && hour < 12) return '$weekday بخیر ☀️';
+    if (hour >= 12 && hour < 17) return '$weekday به‌خیر 🌤️';
+    if (hour >= 17 && hour < 21) return 'عصر $weekday بخیر 🌇';
+    return 'شب $weekday بخیر 🌙';
   }
 
   void _openSection(String route) {
     HapticFeedback.mediumImpact();
     AudioService.select();
+    if (ParentControls.isRouteBlocked(route)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ParentControls.blockReason(route))),
+      );
+      return;
+    }
+    ActivityTracker.recordOpen(route: route, title: route);
     Navigator.of(context).pushNamed(route).then((_) {
       _resetCoach();
       if (mounted) setState(() {});
@@ -306,6 +323,36 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
                             )
                                 .animate()
                                 .fadeIn(delay: 340.ms, duration: 450.ms),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _QuickLink(
+                                    emoji: '🧭',
+                                    label: 'مهارت زندگی',
+                                    onTap: () => _openSection('/life-skills'),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _QuickLink(
+                                    emoji: '📜',
+                                    label: 'گواهی‌ها',
+                                    onTap: () => _openSection('/certificates'),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _QuickLink(
+                                    emoji: '📝',
+                                    label: 'واژه‌نامه',
+                                    onTap: () => _openSection('/vocabulary'),
+                                  ),
+                                ),
+                              ],
+                            )
+                                .animate()
+                                .fadeIn(delay: 400.ms, duration: 450.ms),
                           ],
                         ),
                       ),
@@ -396,9 +443,27 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
                     ],
                   ),
                 ),
-                _BalanceBadge(emoji: '⭐', count: '${GameData.stars}'),
+                _BalanceBadge(emoji: '⭐', count: PersianDigits.toFa(GameData.stars)),
                 const SizedBox(width: 5),
-                _BalanceBadge(emoji: '💰', count: '${GameData.coins}'),
+                _BalanceBadge(emoji: '💰', count: PersianDigits.toFa(GameData.coins)),
+                const SizedBox(width: 6),
+                Semantics(
+                  button: true,
+                  label: 'جستجو در جزیره',
+                  child: Material(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () => _openSection('/search'),
+                      child: const SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: Icon(Icons.search_rounded, color: Color(0xFF183B5B), size: 20),
+                      ),
+                    ),
+                  ),
+                ),
                 const SizedBox(width: 6),
                 Semantics(
                   button: true,

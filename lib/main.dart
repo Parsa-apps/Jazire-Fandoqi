@@ -12,6 +12,7 @@ import 'core/audio_service.dart';
 import 'core/fandoghi_coach.dart';
 import 'core/game_data.dart';
 import 'core/game_launch.dart';
+import 'core/growth/growth.dart';
 import 'core/logger_service.dart';
 import 'features/about/about_screen.dart';
 import 'features/about/privacy_policy_screen.dart';
@@ -53,6 +54,15 @@ import 'features/gateway/learning_library_screen.dart';
 import 'features/parent/parent_panel.dart';
 import 'features/splash/splash_screen.dart';
 import 'features/shop/game_access_gate.dart';
+import 'features/growth/catalog_search_screen.dart';
+import 'features/growth/certificates_screen.dart';
+import 'features/growth/growth_app_shell.dart';
+import 'features/growth/life_skills_game.dart';
+import 'features/growth/life_skills_hub_screen.dart';
+import 'features/growth/parent_booklet_screen.dart';
+import 'features/growth/vocabulary_screen.dart';
+import 'features/growth/weekly_report_screen.dart';
+import 'features/growth/whats_new_screen.dart';
 import 'shared/widgets/fandoghi_coach.dart';
 
 /// جزیره فندقی - Jazireh Fandoghi
@@ -89,11 +99,17 @@ Future<void> main() async {
     await GameData.load();
     // فاز ۴۳: فندقی اسم کودک را به یاد می‌آورد
     FandoghiCoach.rememberChild(GameData.childName);
+    try {
+      await GrowthStore.load();
+    } catch (_) {
+      GrowthStore.useMemoryFallback();
+    }
   } catch (error, stackTrace) {
     // Storage failures should degrade to a playable session, not a crash or a
     // blank screen. The next launch can retry persistence automatically.
     LoggerService.e('Game data storage unavailable', error, stackTrace);
     GameData.useMemoryFallback();
+    GrowthStore.useMemoryFallback();
   }
 
   runApp(
@@ -153,9 +169,11 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
           theme: _themeController.themeFor(Brightness.light),
           darkTheme: _themeController.themeFor(Brightness.dark),
           themeMode: ThemeMode.system,
-          builder: (context, child) => FandoghiCoachOverlay(
-            child: _PlayTimeTracker(
-              child: child ?? const SizedBox.shrink(),
+          builder: (context, child) => GrowthAppShell(
+            child: FandoghiCoachOverlay(
+              child: _PlayTimeTracker(
+                child: child ?? const SizedBox.shrink(),
+              ),
             ),
           ),
           initialRoute: '/',
@@ -204,6 +222,13 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
         '/parent': (context) => const ParentPanel(),
         '/about': (context) => const AboutScreen(),
         '/privacy': (context) => const PrivacyPolicyScreen(),
+        '/life-skills': (context) => const LifeSkillsHubScreen(),
+        '/search': (context) => const CatalogSearchScreen(),
+        '/weekly-report': (context) => const WeeklyReportScreen(),
+        '/certificates': (context) => const CertificatesScreen(),
+        '/vocabulary': (context) => const VocabularyScreen(),
+        '/whats-new': (context) => const WhatsNewScreen(),
+        '/parent-booklet': (context) => const ParentBookletScreen(),
       },
       onGenerateRoute: (settings) {
         final name = settings.name ?? '';
@@ -251,6 +276,16 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
           );
         }
         // 🌙 لالایی‌ها (/lullaby/<id>)
+        if (name.startsWith('/life-skills/')) {
+          final topicId = name.substring('/life-skills/'.length);
+          final topic = LifeSkillsData.byId(topicId);
+          if (topic != null) {
+            return MaterialPageRoute(
+              settings: settings,
+              builder: (_) => LifeSkillsGame(topic: topic),
+            );
+          }
+        }
         if (name.startsWith('/lullaby/')) {
           final lullabyId = name.substring('/lullaby/'.length);
           final lullaby = LullabiesData.byId(lullabyId);
@@ -289,6 +324,10 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
   Widget _gameFor(GameLaunch launch) {
     final name = launch.gameName.toLowerCase();
     // فاز ۵۴: مدال «کاوشگر بازی‌ها» — هر بازی انجام‌شده یک‌بار ثبت می‌شود
+    ActivityTracker.recordOpen(
+      route: '/game/${launch.gameName}',
+      title: launch.gameName,
+    );
     GameData.recordGamePlayed(launch.gameName);
     // پیشنهاد پریمیوم ۴۶: ضد اعتیاد — بعد از ۵ بار پشت سر هم یک بازی،
     // فندقی پیشنهاد تنوع می‌دهد.
@@ -475,12 +514,14 @@ class _PlayTimeTrackerState extends State<_PlayTimeTracker>
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (_foreground && GameData.onboardingSeen && !GameData.isDailyLimitReached) {
         GameData.addPlayTime();
+        ActivityTracker.tickSecond();
       }
     });
     // فاز ۶۷: ذخیره خودکار هر ۱۰ ثانیه — بازیابی پس از کرش
     _autosaveTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       if (_foreground && GameData.isLoaded) {
         unawaited(GameData.save());
+        unawaited(GrowthStore.save());
       }
     });
   }
