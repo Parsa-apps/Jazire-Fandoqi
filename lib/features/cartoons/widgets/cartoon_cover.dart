@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:amoozesh_fandoghi/core/cartoons/aparat_service.dart';
-import 'package:amoozesh_fandoghi/shared/widgets/professional_skeleton.dart';
+import 'package:jazireh_fandoghi/core/cartoons/aparat_service.dart';
+import 'package:jazireh_fandoghi/shared/widgets/professional_skeleton.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// 🖼️ CARTOON COVER IMAGE — نمایش «عکس واقعی» شخصیت‌های کارتون

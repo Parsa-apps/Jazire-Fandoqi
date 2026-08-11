@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:amoozesh_fandoghi/core/fandoghi_coach.dart';
-import 'package:amoozesh_fandoghi/core/game_data.dart';
-import 'package:amoozesh_fandoghi/features/games/puzzle/puzzle_game.dart';
+import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
+import 'package:jazireh_fandoghi/core/game_data.dart';
+import 'package:jazireh_fandoghi/features/games/puzzle/puzzle_game.dart';
 
 void main() {
   setUp(GameData.resetForTesting);

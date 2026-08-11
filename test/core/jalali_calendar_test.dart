@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:amoozesh_fandoghi/core/jalali_calendar.dart';
+import 'package:jazireh_fandoghi/core/jalali_calendar.dart';
 
 void main() {
   test('Borkowski/Jalaali conversion matches reference dates', () {

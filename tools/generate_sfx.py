@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Offline SFX generator for Kudake Iran (Fandoghi).
+Offline SFX generator for Jazireh Fandoghi.
 Produces royalty-free 16-bit 44.1kHz mono WAV files under assets/audio/sfx.
 
 All sounds are synthesized procedurally (no third-party assets).

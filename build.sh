@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 🚀 KUDAKE IRAN — Professional Multi-Stage Build Script (فاز ۹)
+# 🚀 JAZIREH FANDOGHI — Professional Multi-Stage Build Script (فاز ۹)
 # چک ۷ مرحله‌ای با توقف شفاف: analyze → test → coverage → build → size → icon
 set -Eeuo pipefail
 
@@ -12,7 +12,7 @@ ok()   { printf '✅ %s\n' "$1"; }
 fail() { printf '❌ %s\n' "$1"; FAILED=1; }
 
 printf '===========================================================\n'
-printf '🐰 کودک ایران — سیستم بیلد حرفه‌ای (حالت: %s)\n' "$BUILD_MODE"
+printf '🐰 جزیره فندقی — سیستم بیلد حرفه‌ای (حالت: %s)\n' "$BUILD_MODE"
 printf '===========================================================\n'
 
 # ── ۱. محیط Flutter ─────────────────────────────────────────────

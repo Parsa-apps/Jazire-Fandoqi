@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../app/app_colors.dart';
 import '../../app/design_tokens.dart';
-import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import '../../core/ai_system.dart';
 import '../../core/app_legal.dart';
 import '../../core/backup_service.dart';
@@ -320,12 +320,12 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
         .take(10)
         .map((l) => '${l['source'] ?? 'runtime'}: ${l['message'] ?? ''}')
         .join('\n');
-    final text = '📱 گزارش سلامت کودک ایران\n'
+    final text = '📱 گزارش سلامت جزیره فندقی\n'
         'نسخه: 6.1.0 پریمیوم\n'
         '---\n$summary\n'
         '(${logs.length} خطا)';
     final uri = Uri.parse(
-      'https://t.me/share/url?url=${Uri.encodeComponent('کودک ایران')}&text=${Uri.encodeComponent(text)}',
+      'https://t.me/share/url?url=${Uri.encodeComponent('جزیره فندقی')}&text=${Uri.encodeComponent(text)}',
     );
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!opened && mounted) {

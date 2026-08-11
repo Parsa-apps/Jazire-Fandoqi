@@ -1,8 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:amoozesh_fandoghi/core/billing_service.dart';
-import 'package:amoozesh_fandoghi/core/monetization.dart';
+import 'package:jazireh_fandoghi/core/billing_service.dart';
+import 'package:jazireh_fandoghi/core/monetization.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

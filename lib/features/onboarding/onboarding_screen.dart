@@ -4,7 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../app/app_colors.dart';
 import '../../app/design_tokens.dart';
-import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';

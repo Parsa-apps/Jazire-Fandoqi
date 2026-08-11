@@ -43,7 +43,7 @@ class ProfessionalSplash extends StatelessWidget {
                   .shimmer(duration: 1500.ms, color: Colors.white.withOpacity(0.4)),
               const SizedBox(height: 24),
               const Text(
-                'کُدَک ایران',
+                'جزیره فندقی',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 28,

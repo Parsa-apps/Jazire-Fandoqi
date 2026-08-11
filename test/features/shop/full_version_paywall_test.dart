@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kudake_iran/lib/features/shop/full_version_paywall.dart';
+import 'package:jazireh_fandoghi/features/shop/full_version_paywall.dart';
 
 void main() {
   group('Parent Gate — Digit Normalization', () {

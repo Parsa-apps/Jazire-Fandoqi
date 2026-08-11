@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../../../app/app_colors.dart';
 import '../../../app/design_tokens.dart';
-import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/ai_system.dart';
 import '../../../core/audio_service.dart';

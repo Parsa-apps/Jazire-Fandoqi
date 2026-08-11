@@ -1,4 +1,4 @@
-# کُدَکِ ایران — اپلیکیشن آفلاین آموزشی کودکان
+# جزیره فندقی — اپلیکیشن آفلاین آموزشی کودکان
 
 [![Flutter quality and release build](https://github.com/farshadkurd/kudake_iran/actions/workflows/build-apk.yml/badge.svg)](https://github.com/farshadkurd/kudake_iran/actions/workflows/build-apk.yml)
 

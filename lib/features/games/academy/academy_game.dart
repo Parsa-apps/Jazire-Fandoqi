@@ -100,7 +100,20 @@ class _AcademyGameState extends State<AcademyGame> {
   }
 
   void _speakCurrent() {
-    AudioService.tap();
+    unawaited(AudioService.tap());
+
+    // آکادمی اعداد فایل صوتی آفلاین اختصاصی دارد. استفاده از TTS در اینجا
+    // باعث می‌شد روی گوشی‌هایی که موتور فارسی ندارند، دکمهٔ بلندگو کاملاً
+    // بی‌صدا باشد. شناسه‌های این موضوع به‌شکل n1 تا n20 هستند.
+    if (_topic.id == 'numbers') {
+      final number = int.tryParse(_currentCard.id.substring(1));
+      if (number != null) {
+        unawaited(AudioService.speakNumber(number));
+        return;
+      }
+    }
+
+    // موضوع‌های بدون صدای ضبط‌شده همچنان از TTS دستگاه استفاده می‌کنند.
     unawaited(AudioService.speak(_currentCard.sound));
   }
 

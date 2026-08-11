@@ -5,7 +5,7 @@ import '../../core/premium_animations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/app_colors.dart';
-import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import '../../core/game_data.dart';
 import '../../presentation/providers/game_state_provider.dart';
 import 'painters/coin_rain_painter.dart';
@@ -55,7 +55,7 @@ class _ShopState extends ConsumerState<ShopScreen>
       ShopItem('sticker_unicorn', '🦄', 'تک‌شاخ', 150, 'تک‌شاخ جادویی'),
       ShopItem('sticker_palm', '🌴', 'نخل جزیره', 60, 'نخل سرسبز'),
       ShopItem('sticker_flower', '🌺', 'گل بهاری', 45, 'گل رنگارنگ'),
-      ShopItem('sticker_bunny', '🧒', 'فندقی کوچولو', 120, 'مسکات بامزه آموزش فندقی'),
+      ShopItem('sticker_bunny', '🧒', 'فندقی کوچولو', 120, 'مسکات بامزه جزیره فندقی'),
       ShopItem('sticker_butterfly', '🦋', 'پروانه رنگین', 70, 'پروانه رنگی'),
       ShopItem('sticker_icecream', '🍦', 'بستنی خوشمزه', 55, 'بستنی قیفی'),
       ShopItem('sticker_sun', '🌞', 'خورشید خانم', 65, 'خورشید خندان'),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/app_colors.dart';
-import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import '../../core/app_legal.dart';
 
 /// In-app privacy summary so parents do not need a network connection to read
@@ -30,7 +30,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           ),
           _section(
             'درباره برنامه',
-            'آموزش فندقی یک برنامه آموزشی آفلاین برای کودکان است. بازی‌ها بدون ساخت حساب کاربری و بدون نیاز به اینترنت کار می‌کنند.',
+            'جزیره فندقی یک برنامه آموزشی آفلاین برای کودکان است. بازی‌ها بدون ساخت حساب کاربری و بدون نیاز به اینترنت کار می‌کنند.',
           ),
           _section(
             'اطلاعات ذخیره‌شده',

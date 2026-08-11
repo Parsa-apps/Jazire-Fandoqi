@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:amoozesh_fandoghi/app/app_colors.dart';
-import 'package:amoozesh_fandoghi/app/app_fonts.dart';
-import 'package:amoozesh_fandoghi/core/ai_system.dart';
-import 'package:amoozesh_fandoghi/core/cartoons/aparat_service.dart';
-import 'package:amoozesh_fandoghi/core/cartoons/cartoon_data.dart';
-import 'package:amoozesh_fandoghi/core/audio_service.dart';
-import 'package:amoozesh_fandoghi/core/fandoghi_coach.dart';
-import 'package:amoozesh_fandoghi/core/game_data.dart';
-import 'package:amoozesh_fandoghi/features/cartoons/cartoon_player_screen.dart';
-import 'package:amoozesh_fandoghi/features/cartoons/widgets/cartoon_cover.dart';
-import 'package:amoozesh_fandoghi/features/cartoons/widgets/cartoon_rating_dialog.dart';
-import 'package:amoozesh_fandoghi/features/profile/sticker_album_screen.dart';
-import 'package:amoozesh_fandoghi/shared/widgets/fandoghi_v2.dart';
+import 'package:jazireh_fandoghi/app/app_colors.dart';
+import 'package:jazireh_fandoghi/app/app_fonts.dart';
+import 'package:jazireh_fandoghi/core/ai_system.dart';
+import 'package:jazireh_fandoghi/core/cartoons/aparat_service.dart';
+import 'package:jazireh_fandoghi/core/cartoons/cartoon_data.dart';
+import 'package:jazireh_fandoghi/core/audio_service.dart';
+import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
+import 'package:jazireh_fandoghi/core/game_data.dart';
+import 'package:jazireh_fandoghi/features/cartoons/cartoon_player_screen.dart';
+import 'package:jazireh_fandoghi/features/cartoons/widgets/cartoon_cover.dart';
+import 'package:jazireh_fandoghi/features/cartoons/widgets/cartoon_rating_dialog.dart';
+import 'package:jazireh_fandoghi/features/profile/sticker_album_screen.dart';
+import 'package:jazireh_fandoghi/shared/widgets/fandoghi_v2.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// 🎬 CARTOON HUB SCREEN — کارتون‌کده و سینما کودک فوق پیشرفته

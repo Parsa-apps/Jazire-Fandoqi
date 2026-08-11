@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:amoozesh_fandoghi/core/fandoghi_coach.dart';
-import 'package:amoozesh_fandoghi/features/gateway/learning_library_screen.dart';
+import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
+import 'package:jazireh_fandoghi/features/gateway/learning_library_screen.dart';
 
 void main() {
   tearDown(() {

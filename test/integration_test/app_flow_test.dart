@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
-import 'package:amoozesh_fandoghi/main.dart' as app;
+import 'package:jazireh_fandoghi/main.dart' as app;
 
 /// فاز ۸۳: تست انتگراسیون — سناریوی کامل روی دستگاه/شبیه‌ساز:
 /// شروع → onboarding → خانه → بازی → ذخیره → بستن
@@ -15,6 +15,6 @@ void main() {
     // Splash باید به Onboarding یا Home برود؛ هر دو قابل قبول‌اند.
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
-    expect(find.byType(app.AmoozeshFandoghiApp), findsOneWidget);
+    expect(find.byType(app.JazirehFandoghiApp), findsOneWidget);
   });
 }

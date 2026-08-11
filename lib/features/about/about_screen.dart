@@ -4,7 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/app_colors.dart';
-import 'package:amoozesh_fandoghi/app/app_fonts.dart';
+import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import '../../core/app_legal.dart';
 import '../../core/billing_service.dart';
 import '../../core/store_rating_service.dart';
@@ -92,7 +92,7 @@ class AboutScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   const Text(
-                    'آموزش فندقی بدون حساب کاربری، تبلیغات، ردیابی و ارسال اطلاعات کودک به اینترنت طراحی شده است. لقب اختیاری، سن تقریبی و پیشرفت بازی فقط روی دستگاه ذخیره می‌شوند.',
+                    'جزیره فندقی بدون حساب کاربری، تبلیغات، ردیابی و ارسال اطلاعات کودک به اینترنت طراحی شده است. لقب اختیاری، سن تقریبی و پیشرفت بازی فقط روی دستگاه ذخیره می‌شوند.',
                     style: TextStyle(height: 1.7),
                   ),
                   const SizedBox(height: 10),
@@ -123,7 +123,7 @@ class AboutScreen extends StatelessWidget {
             child: ListTile(
               leading: const Icon(Icons.star_rounded, color: Colors.amber),
               title: Text(
-                'امتیاز به آموزش فندقی',
+                'امتیاز به جزیره فندقی',
                 style: AppFonts.vazirmatn(fontWeight: FontWeight.w800),
               ),
               subtitle: const Text('اگر از اپ راضی هستید، نظر بدهید'),
@@ -148,7 +148,7 @@ class AboutScreen extends StatelessWidget {
           const SizedBox(height: 16),
           const Center(
             child: Text(
-              'آموزش فندقی • نسخه ۶.۱.۰ پریمیوم\nساخته‌شده با دقت برای کودکان ایران',
+              'جزیره فندقی • نسخه ۶.۱.۰ پریمیوم\nساخته‌شده با دقت برای کودکان ایران',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.textSecondary,
@@ -281,7 +281,7 @@ void _showRatingDialog(BuildContext context) {
     context: context,
     builder: (dialogContext) => AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      title: const Text('از آموزش فندقی چقدر راضی هستید؟ ⭐'),
+      title: const Text('از جزیره فندقی چقدر راضی هستید؟ ⭐'),
       content: const Column(
         mainAxisSize: MainAxisSize.min,
         children: [

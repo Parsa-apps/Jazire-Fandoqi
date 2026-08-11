@@ -14,7 +14,7 @@
 ## فایل پیشنهادی: `.github/workflows/build-apk.yml`
 
 ```yaml
-name: Build APK & AAB - کودک دانا v3
+name: Build APK & AAB - جزیره فندقی v3
 
 on:
   push:
@@ -72,13 +72,13 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: kudake_iran_apk
+          name: jazireh_fandoghi_apk
           path: build/app/outputs/flutter-apk/*.apk
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: kudake_iran_aab
+          name: jazireh_fandoghi_aab
           path: build/app/outputs/bundle/release/app-release.aab
 ```
 
