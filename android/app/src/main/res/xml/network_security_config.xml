@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    🛡️ Network security policy.
+
+    The app is 100% offline except for HTTPS calls to Aparat (cartoon
+    streams). This policy makes the "no cleartext traffic" rule explicit and
+    future-proofs older build variants. User-installed CAs are still trusted
+    so corporate proxies / VPN ad-blockers used by many families keep working.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

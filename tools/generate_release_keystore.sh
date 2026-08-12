@@ -31,7 +31,7 @@ if [[ -f "$PROP_PATH" ]]; then
   echo "$PROP_PATH already exists (not overwritten)"
 else
   cat > "$PROP_PATH" <<EOF
-storeFile=release.keystore
+storeFile=../release.keystore
 storePassword=$STORE_PASSWORD
 keyAlias=$KEY_ALIAS
 keyPassword=$KEY_PASSWORD

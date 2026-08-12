@@ -3,6 +3,7 @@ package com.parsaapps.amoozesh_fandoghi
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.net.Uri
+import android.view.WindowManager
 import androidx.activity.result.contract.ActivityResultContracts
 import java.io.File
 import io.flutter.embedding.android.FlutterFragmentActivity
@@ -85,6 +86,51 @@ class MainActivity : FlutterFragmentActivity() {
                             pendingBackupResult = result
                             backupPicker.launch(arrayOf("application/octet-stream", "application/json", "*/*"))
                         }
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+        // 🔐 Anti-tamper / anti-instrumentation bridge (root, Frida, Xposed,
+        // emulator, debugger, APK signature). Consumed by
+        // SecurityHardeningService at startup in release builds.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "kudake_iran/security")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "snapshot" -> result.success(SecurityModule(applicationContext).snapshot())
+                    else -> result.notImplemented()
+                }
+            }
+        // 🔐 Keystore-backed storage for high-value values (premium grant,
+        // parent PIN hash). Consumed by lib/core/security/secure_store.dart.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "kudake_iran/secure_store")
+            .setMethodCallHandler { call, result ->
+                val store = SecureStore(applicationContext)
+                when (call.method) {
+                    "write" -> {
+                        store.write(call.argument("key").orEmpty(), call.argument("value").orEmpty())
+                        result.success(null)
+                    }
+                    "read" -> result.success(store.read(call.argument("key").orEmpty()))
+                    "delete" -> {
+                        store.delete(call.argument("key").orEmpty())
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+        // 🛡️ FLAG_SECURE window protection for parent PIN / paywall / backup
+        // screens: no screenshots, no screen recording, blank recents preview.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "kudake_iran/privacy")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "setSecureWindow" -> {
+                        val secure = call.argument<Boolean>("secure") == true
+                        if (secure) {
+                            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        } else {
+                            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        }
+                        result.success(null)
                     }
                     else -> result.notImplemented()
                 }

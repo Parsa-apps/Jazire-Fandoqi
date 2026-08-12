@@ -19,6 +19,7 @@ import '../../shared/widgets/parsa_gold_aura.dart';
 import '../../shared/widgets/premium_button.dart';
 import '../../core/parental_health_radar.dart';
 import '../../core/growth/growth.dart';
+import '../../core/security/privacy_protection.dart';
 import '../growth/widgets/screen_time_chart.dart';
 import '../growth/widgets/sibling_switcher.dart';
 
@@ -156,7 +157,7 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
       subtitle: 'لطفاً پین ۴ رقمی خود را وارد کنید',
     );
     if (pin == null || !mounted) return;
-    if (GameData.verifyParentPin(pin)) {
+    if (await GameData.verifyParentPin(pin)) {
       setState(() {
         _failedPinAttempts = 0;
         _pinLockedUntil = null;
@@ -186,7 +187,7 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
       subtitle: 'یک پین ۴ رقمی انتخاب کنید. این پین بعد از بستن اپ هم می‌ماند.',
     );
     if (result == null || !mounted) return;
-    if (!GameData.setParentPin(result)) {
+    if (!await GameData.setParentPin(result)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('پین باید دقیقاً ۴ رقم باشد')),
       );
@@ -204,37 +205,42 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
   Widget build(BuildContext context) {
     // فاز ۳: واکنش به وضعیت از طریق Riverpod
     ref.watch(gameStateProvider);
+    // 🛡️ پنل والدین + دیالوگ‌های PIN آن زیر FLAG_SECURE هستند: اسکرین‌شات
+    // و ضبط صفحه در این بخش‌ها خالی ثبت می‌شود.
     if (!_isUnlocked) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('پنل والدین')),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.lock_rounded, size: 80, color: Colors.grey),
-              const SizedBox(height: 24),
-              const Text('این بخش فقط برای والدین است'),
-              const SizedBox(height: 32),
-              PremiumButton(
-                text: 'ورود با پین',
-                onPressed: _showPinDialog,
-                icon: Icons.lock_open_rounded,
-              ),
-              const SizedBox(height: 16),
-              if (!GameData.hasParentPin())
-                TextButton(
-                  onPressed: _setupPin,
-                  child: const Text('تنظیم پین جدید'),
+      return SecureWindowScope(
+        child: Scaffold(
+          appBar: AppBar(title: const Text('پنل والدین')),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.lock_rounded, size: 80, color: Colors.grey),
+                const SizedBox(height: 24),
+                const Text('این بخش فقط برای والدین است'),
+                const SizedBox(height: 32),
+                PremiumButton(
+                  text: 'ورود با پین',
+                  onPressed: _showPinDialog,
+                  icon: Icons.lock_open_rounded,
                 ),
-            ],
+                const SizedBox(height: 16),
+                if (!GameData.hasParentPin())
+                  TextButton(
+                    onPressed: _setupPin,
+                    child: const Text('تنظیم پین جدید'),
+                  ),
+              ],
+            ),
           ),
         ),
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('پنل والدین پیشرفته'),
+    return SecureWindowScope(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('پنل والدین پیشرفته'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout_rounded),
@@ -304,6 +310,7 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
           // ==================== DEBUG LOGS (فاز ۸) ====================
           _buildDebugLogsCard(),
         ],
+        ),
       ),
     );
   }
@@ -810,7 +817,7 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
       subtitle: 'برای رمزگذاری/رمزگشایی فایل بکاپ پین را دوباره وارد کنید',
     );
     if (pin == null) return null;
-    if (!GameData.verifyParentPin(pin)) {
+    if (!await GameData.verifyParentPin(pin)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('پین اشتباه است')),
@@ -884,9 +891,9 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
           const SizedBox(height: 12),
           if (GameData.hasParentPin())
             TextButton(
-              onPressed: () {
-                GameData.removeParentPin();
-                setState(() {});
+              onPressed: () async {
+                await GameData.removeParentPin();
+                if (mounted) setState(() {});
               },
               child: const Text('حذف پین', style: TextStyle(color: Colors.red)),
             ),

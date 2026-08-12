@@ -14,6 +14,7 @@ import 'core/game_data.dart';
 import 'core/game_launch.dart';
 import 'core/growth/growth.dart';
 import 'core/logger_service.dart';
+import 'core/security/security_hardening.dart';
 import 'features/about/about_screen.dart';
 import 'features/about/privacy_policy_screen.dart';
 import 'features/buddy/buddy_chat_screen.dart';
@@ -63,6 +64,7 @@ import 'features/growth/parent_booklet_screen.dart';
 import 'features/growth/vocabulary_screen.dart';
 import 'features/growth/weekly_report_screen.dart';
 import 'features/growth/whats_new_screen.dart';
+import 'features/security/tamper_block_screen.dart';
 import 'shared/widgets/fandoghi_coach.dart';
 
 /// جزیره فندقی - Jazireh Fandoghi
@@ -112,15 +114,27 @@ Future<void> main() async {
     GrowthStore.useMemoryFallback();
   }
 
+  // 🛡️ فاز امنیتی: در release، قبل از ورود به اپ صحت بیلد بررسی می‌شود
+  // (امضا، debuggable، دیباگر، Frida/Xposed، روت). اگر بیلد دستکاری‌شده
+  // باشد، اپ فقط صفحهٔ امنیتی را نشان می‌دهد.
+  var securityBlocked = false;
+  if (kReleaseMode) {
+    final assessment = await SecurityHardeningService.assess();
+    securityBlocked = assessment.tampered;
+  }
+
   runApp(
-    const ProviderScope(
-      child: JazirehFandoghiApp(),
+    ProviderScope(
+      child: JazirehFandoghiApp(securityBlocked: securityBlocked),
     ),
   );
 }
 
 class JazirehFandoghiApp extends StatefulWidget {
-  const JazirehFandoghiApp({super.key});
+  const JazirehFandoghiApp({super.key, this.securityBlocked = false});
+
+  /// اگر release دستکاری‌شده باشد، فقط صفحهٔ مسدود امنیتی نمایش داده می‌شود.
+  final bool securityBlocked;
 
   @override
   State<JazirehFandoghiApp> createState() => _JazirehFandoghiAppState();
@@ -176,9 +190,10 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
               ),
             ),
           ),
-          initialRoute: '/',
+          initialRoute: widget.securityBlocked ? '/security-blocked' : '/',
       routes: {
         '/': (context) => const SplashScreen(),
+        '/security-blocked': (context) => const TamperBlockScreen(),
         '/onboarding': (context) => const OnboardingScreen(),
         '/gateway': (context) => const AppGatewayScreen(),
         '/learning-library': (context) => const LearningLibraryScreen(),

@@ -10,6 +10,7 @@ import '../../app/design_tokens.dart';
 import '../../core/fandoghi_models.dart';
 import '../../core/growth/smart_conversion.dart';
 import '../../core/monetization.dart';
+import '../../core/security/privacy_protection.dart';
 import '../../shared/widgets/fandoghi_premium.dart';
 
 String _normalizeDigits(String input) {
@@ -29,7 +30,9 @@ Future<void> showFullVersionPaywall(BuildContext context, {String? featureName})
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => _FullVersionSheetPremium(featureName: featureName),
+    builder: (_) => SecureWindowScope(
+      child: _FullVersionSheetPremium(featureName: featureName),
+    ),
   );
   if (bought == true && context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(

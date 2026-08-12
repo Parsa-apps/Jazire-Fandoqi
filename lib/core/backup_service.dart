@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
+
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+
 import '../data/datasources/hive_player_store.dart';
 import 'game_data.dart';
 
@@ -22,20 +25,41 @@ class BackupService {
       utf8.encode('kudake-iran-fandoghi-2025-backup-secret');
 
   static AesGcm get _algorithm => AesGcm.with256bits();
+  static final Random _secureRandom = Random.secure();
+
+  /// v4: کلید از PIN والدین با PBKDF2-HMAC-SHA256 و salt تصادفی مشتق می‌شود
+  /// تا brute-force آفلاین فایل بکاپ عملاً غیرممکن شود (برخلاف v3 که از
+  /// SHA-256 خام استفاده می‌کرد و با ۱۰٬۰۰۰ ترکیب ۴ رقمی فوراً قابل
+  /// شکستن بود).
+  static const int _kdfIterations = 150000;
 
   static Future<SecretKey> _buildLegacyKey() async {
     final hash = await Sha256().hash(_legacyAppKey);
     return SecretKey(hash.bytes);
   }
 
+  /// v3 (قدیمی) — فقط برای خواندن بکاپ‌های قبلی.
   static Future<SecretKey> _buildPinKey(String pin) async {
     final hash = await Sha256().hash(utf8.encode('kudake-backup-v3:$pin'));
     return SecretKey(hash.bytes);
   }
 
+  /// v4 — مشتق‌سازی مقاوم کلید از PIN.
+  static Future<SecretKey> _buildPinKeyV4(String pin, List<int> salt) async {
+    final pbkdf2 = Pbkdf2(
+      macAlgorithm: Hmac.sha256(),
+      iterations: _kdfIterations,
+      bits: 256,
+    );
+    return pbkdf2.deriveKeyFromPassword(
+      password: utf8.encode('kudake-backup-v4:$pin'),
+      nonce: salt,
+    );
+  }
+
   /// خروجی بکاپ رمزنگاری‌شدهٔ AES-GCM (فرمت v3 وابسته به PIN والدین)
   static Future<String> exportBackup({required String pin}) async {
-    if (!GameData.verifyParentPin(pin)) {
+    if (!await GameData.verifyParentPin(pin)) {
       throw StateError('parent pin required for backup export');
     }
     // The last write may still be queued after a game reward. Flush it before
@@ -47,7 +71,10 @@ class BackupService {
     final jsonStr = jsonEncode(effective);
     final clearText = utf8.encode(jsonStr);
 
-    final secretKey = await _buildPinKey(pin);
+    // v4: salt تصادفی + PBKDF2 — فایل بکاپ دیگر با دیکشنری PIN شکسته
+    // نمی‌شود و حتی دو بکاپ با یک PIN خروجی کاملاً متفاوت دارند.
+    final salt = List<int>.generate(16, (_) => _secureRandom.nextInt(256));
+    final secretKey = await _buildPinKeyV4(pin, salt);
     final nonce = _algorithm.newNonce();
     final secretBox = await _algorithm.encrypt(
       clearText,
@@ -56,7 +83,8 @@ class BackupService {
     );
 
     final payload = jsonEncode({
-      'v': 3,
+      'v': 4,
+      'salt': base64Encode(salt),
       'iv': base64Encode(secretBox.nonce),
       'mac': base64Encode(secretBox.mac.bytes),
       'data': base64Encode(secretBox.cipherText),
@@ -86,7 +114,7 @@ class BackupService {
   /// بازیابی از فایل .parsa — v3 با PIN؛ v2 قدیمی فقط برای سازگاری
   static Future<bool> importBackup(String filePath, {required String pin}) async {
     try {
-      if (!GameData.verifyParentPin(pin)) return false;
+      if (!await GameData.verifyParentPin(pin)) return false;
       final file = File(filePath);
       if (!await file.exists()) return false;
       final content = await file.readAsString();
@@ -95,7 +123,18 @@ class BackupService {
       final version = map['v'] as int? ?? 1;
 
       final String jsonStr;
-      if (version == 3) {
+      if (version == 4) {
+        final salt = map['salt'] as String?;
+        if (salt == null || salt.isEmpty) return false;
+        final List<int> saltBytes;
+        try {
+          saltBytes = base64Decode(salt);
+        } catch (_) {
+          return false;
+        }
+        if (saltBytes.length < 8 || saltBytes.length > 64) return false;
+        jsonStr = await _decryptPayload(map, await _buildPinKeyV4(pin, saltBytes));
+      } else if (version == 3) {
         jsonStr = await _decryptPayload(map, await _buildPinKey(pin));
       } else if (version == 2) {
         jsonStr = await _decryptPayload(map, await _buildLegacyKey());
@@ -114,6 +153,8 @@ class BackupService {
         GameData.parentPinHash = keepPinHash;
         await GameData.save();
       }
+      // همگام‌سازی کپی امن (Keystore) با وضعیت نهایی پین بعد از import.
+      await GameData.persistPinHashToSecureStore();
       HapticFeedback.heavyImpact();
       return true;
     } catch (_) {
