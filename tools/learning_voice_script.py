@@ -95,7 +95,7 @@ SHAPES = {
 DONE_LETTERS = {f"l{i:02d}" for i in range(1, 33)}
 DONE_NUMBERS = {f"n{i:02d}" for i in range(0, 21)}
 DONE_COLORS = {f"c{i:02d}" for i in range(1, 13)}
-DONE_SHAPES = {f"s{i:02d}" for i in range(1, 6)}
+DONE_SHAPES = {f"s{i:02d}" for i in range(1, 11)}
 
 
 def remaining() -> list[tuple[str, str, str]]:
@@ -117,6 +117,6 @@ def remaining() -> list[tuple[str, str, str]]:
 
 if __name__ == "__main__":
     left = remaining()
-    print(f"{len(left)} clips remaining (colors 8-12, shapes)")
+    print(f"{len(left)} clips remaining (shapes 6-10)")
     for path, key, phrase in left:
         print(f"{key:4}  {path}  {phrase}")
