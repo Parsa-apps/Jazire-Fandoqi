@@ -15,6 +15,8 @@ android/*.keystore
 android/*.jks
 android/.gradle/
 android/**/build/
+# Bazaar RSA public key is not a signing secret; it is kept in
+# android/billing.properties so release builds can validate purchases.
 
 # IDE
 .idea/
@@ -24,4 +26,3 @@ android/**/build/
 # OS
 .DS_Store
 Thumbs.db
-android/billing.properties
