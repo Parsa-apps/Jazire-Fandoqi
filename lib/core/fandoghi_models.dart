@@ -44,15 +44,15 @@ extension FandoghiMoodVisuals on FandoghiMood {
   /// به‌عنوان شبکهٔ اطمینان برای حالت‌های آیندهٔ بدون تصویر باقی مانده
   /// تا رابط کاربری به تصویر پیش‌فرض + ایموجی احساس برگردد.
   String? get portraitAsset => switch (this) {
-        FandoghiMood.happy => 'assets/mascot/fandoghi_baby.png',
-        FandoghiMood.excited => 'assets/mascot/fandoghi_baby_cheer.png',
-        FandoghiMood.celebrating => 'assets/mascot/fandoghi_baby_party.png',
-        FandoghiMood.proud => 'assets/mascot/fandoghi_baby_proud.png',
-        FandoghiMood.thinking => 'assets/mascot/fandoghi_baby_think.png',
-        FandoghiMood.surprised => 'assets/mascot/fandoghi_baby_wow.png',
-        FandoghiMood.wink => 'assets/mascot/fandoghi_baby_wink.png',
-        FandoghiMood.sleeping => 'assets/mascot/fandoghi_baby_sleep.png',
-        FandoghiMood.shy => 'assets/mascot/fandoghi_baby_shy.png',
-        FandoghiMood.sad => 'assets/mascot/fandoghi_baby_sad.png',
+        FandoghiMood.happy => 'assets/mascot/fandoghi_baby.webp',
+        FandoghiMood.excited => 'assets/mascot/fandoghi_baby_cheer.webp',
+        FandoghiMood.celebrating => 'assets/mascot/fandoghi_baby_party.webp',
+        FandoghiMood.proud => 'assets/mascot/fandoghi_baby_proud.webp',
+        FandoghiMood.thinking => 'assets/mascot/fandoghi_baby_think.webp',
+        FandoghiMood.surprised => 'assets/mascot/fandoghi_baby_wow.webp',
+        FandoghiMood.wink => 'assets/mascot/fandoghi_baby_wink.webp',
+        FandoghiMood.sleeping => 'assets/mascot/fandoghi_baby_sleep.webp',
+        FandoghiMood.shy => 'assets/mascot/fandoghi_baby_shy.webp',
+        FandoghiMood.sad => 'assets/mascot/fandoghi_baby_sad.webp',
       };
 }

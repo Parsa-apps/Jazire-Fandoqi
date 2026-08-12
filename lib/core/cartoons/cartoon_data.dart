@@ -212,7 +212,7 @@ class CartoonData {
       categoryLabel: 'خردسالان و نوپا',
       description: 'کارتون جذاب و پرطرفدار کوکوملون درباره پسربچه شیرین و کنجکاوی به نام جی‌جی (JJ)، خواهرش یویو، برادرش تام‌تام و حیوانات مهربانشان است. جی‌جی و خانواده‌اش در هر قسمت ماجراهای روزمره، مهارت‌های زندگی، بهداشت فردی، دوستی و یادگیری الفبا را با داستان‌های شیرین، شاد و آموزنده تجربه می‌کنند.',
       coverEmoji: '🍉',
-      coverAsset: 'assets/cartoons/cocomelon.png',
+      coverAsset: 'assets/cartoons/cocomelon.webp',
       themeColor: Color(0xFFE84393),
       gradient: LinearGradient(
         colors: [Color(0xFFE84393), Color(0xFFFF7675)],
@@ -285,7 +285,7 @@ class CartoonData {
       categoryLabel: 'ماجراجویی و نجات',
       description: 'محبوب‌ترین کارتون نجات در جهان؛ رایدر و توله‌سگ‌های شجاع با ماشین‌ها و بالگردهایشان به کمک دوستان می‌شتابند. دوبله فارسی بسیار شاد.',
       coverEmoji: '🐾',
-      coverAsset: 'assets/cartoons/paw_patrol.png',
+      coverAsset: 'assets/cartoons/paw_patrol.webp',
       themeColor: Color(0xFF0984E3),
       gradient: LinearGradient(
         colors: [Color(0xFF0984E3), Color(0xFF74B9FF)],
@@ -343,7 +343,7 @@ class CartoonData {
       categoryLabel: 'طنز و خنده‌دار',
       description: 'خنده‌دارترین و پرمخاطب‌ترین کارتون دنیا در اعماق اقیانوس بیکینی‌باتم با همبرگرهای خوشمزه و حباب‌بازی!',
       coverEmoji: '🧽',
-      coverAsset: 'assets/cartoons/spongebob.png',
+      coverAsset: 'assets/cartoons/spongebob.webp',
       themeColor: Color(0xFFF1C40F),
       gradient: LinearGradient(
         colors: [Color(0xFFF1C40F), Color(0xFFE67E22)],
@@ -386,7 +386,7 @@ class CartoonData {
       categoryLabel: 'خردسالان و نوپا',
       description: 'انیمیشن آموزشی بسیار ملایم و پرمخاطب برای خردسالان. آموزش رفتارهای مؤدبانه، بازی‌های خانوادگی و کشف طبیعت با دوبله فارسی.',
       coverEmoji: '🐷',
-      coverAsset: 'assets/cartoons/peppa_pig.png',
+      coverAsset: 'assets/cartoons/peppa_pig.webp',
       themeColor: Color(0xFFFA709A),
       gradient: LinearGradient(
         colors: [Color(0xFFFA709A), Color(0xFFFEE140)],
@@ -443,7 +443,7 @@ class CartoonData {
       categoryLabel: 'طنز و خنده‌دار',
       description: 'انیمیشن صامت و فوق‌العاده خنده‌دار و پرمخاطب بره زرنگ مزرعه که همیشه نقشه‌های هوشمندانه برای شاد کردن دوستانش می‌کشد.',
       coverEmoji: '🐑',
-      coverAsset: 'assets/cartoons/shaun_sheep.png',
+      coverAsset: 'assets/cartoons/shaun_sheep.webp',
       themeColor: Color(0xFF6C5CE7),
       gradient: LinearGradient(
         colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
@@ -501,7 +501,7 @@ class CartoonData {
       categoryLabel: 'خردسالان و نوپا',
       description: 'پوکویو پسرک کنجکاو در دنیایی پر از شگفتی با دوستانش بازی و شادی می‌کند؛ یکی از پرمخاطب‌ترین کارتون‌های نوپایان با دوبله فارسی.',
       coverEmoji: '🎈',
-      coverAsset: 'assets/cartoons/pocoyo.png',
+      coverAsset: 'assets/cartoons/pocoyo.webp',
       themeColor: Color(0xFF3498DB),
       gradient: LinearGradient(
         colors: [Color(0xFF3498DB), Color(0xFF2980B9)],
@@ -574,7 +574,7 @@ class CartoonData {
       categoryLabel: 'طنز و خنده‌دار',
       description: 'پرطرفدارترین کارتون کلاسیک دنیا؛ دعوای بامزه و بی‌کلام گربه و موش که نسل‌ها را خندانده است.',
       coverEmoji: '🐭',
-      coverAsset: 'assets/cartoons/tom_jerry.png',
+      coverAsset: 'assets/cartoons/tom_jerry.webp',
       themeColor: Color(0xFFE67E22),
       gradient: LinearGradient(
         colors: [Color(0xFFE67E22), Color(0xFFF39C12)],
@@ -631,7 +631,7 @@ class CartoonData {
       categoryLabel: 'طنز و خنده‌دار',
       description: 'انیمیشن خنده‌دار و پرانرژی مینیون‌ها درباره موجودات زرد و بامزه‌ای مانند باب، کوین و استیو است که با زبان شیرین و شیطنت‌های بی‌پایان خود، اهمیت دوستی، همکاری گروهی و شادی را به نمایش می‌گذارند.',
       coverEmoji: '🍌',
-      coverAsset: 'assets/cartoons/minions.png',
+      coverAsset: 'assets/cartoons/minions.webp',
       themeColor: Color(0xFFFDCB6E),
       gradient: LinearGradient(
         colors: [Color(0xFFFDCB6E), Color(0xFFE1B12C)],
@@ -673,7 +673,7 @@ class CartoonData {
       categoryLabel: 'سینمایی و بلند',
       description: 'انیمیشن جذاب بچه رئیس درباره نوزادی باهوش با کت‌وشلوار و کراوات است که با برادر بزرگترش تیم، یک تیم مخفی و ماجراجویانه تشکیل می‌دهند. این کارتون مفهوم برادری، همکاری خانوادگی و مسئولیت را آموزش می‌دهد.',
       coverEmoji: '👶',
-      coverAsset: 'assets/cartoons/boss_baby.png',
+      coverAsset: 'assets/cartoons/boss_baby.webp',
       themeColor: Color(0xFF0984E3),
       gradient: LinearGradient(
         colors: [Color(0xFF0984E3), Color(0xFF6C5CE7)],
@@ -730,7 +730,7 @@ class CartoonData {
       categoryLabel: 'ماجراجویی و نجات',
       description: 'کارتون پرطرفدار ماشین‌ها درباره ماشین مسابقه‌ای سریع و مهربانی به نام لایتنینگ مک‌کویین و دوست وفادارش مِتِر است. مک‌کویین در جاده‌ها و مسابقات یاد می‌گیرد که دوستی و اخلاق مهم‌تر از پیروزی است.',
       coverEmoji: '🏎️',
-      coverAsset: 'assets/cartoons/cars_mcqueen.png',
+      coverAsset: 'assets/cartoons/cars_mcqueen.webp',
       themeColor: Color(0xFFE74C3C),
       gradient: LinearGradient(
         colors: [Color(0xFFE74C3C), Color(0xFFC0392B)],
@@ -787,7 +787,7 @@ class CartoonData {
       categoryLabel: 'ماجراجویی و نجات',
       description: 'انیمیشن سینمایی و شکوهمند پاندای کونگ‌فوکار درباره پو، پاندای مهربان و شکمویی است که با راهنمایی استاد شیفو و تمرین و پشتکار، به یک پهلوان شجاع و مدافع خوبی‌ها تبدیل می‌شود.',
       coverEmoji: '🐼',
-      coverAsset: 'assets/cartoons/kungfu_panda.png',
+      coverAsset: 'assets/cartoons/kungfu_panda.webp',
       themeColor: Color(0xFFE74C3C),
       gradient: LinearGradient(
         colors: [Color(0xFFE74C3C), Color(0xFFC0392B)],
@@ -844,7 +844,7 @@ class CartoonData {
       categoryLabel: 'ماجراجویی و نجات',
       description: 'کارتون اکشن و ماجراجویانه بن‌تن درباره پسر نوجوانی به نام بن است که با ساعت فضایی جادویی خود (اومنیتریکس) می‌تواند برای دفاع از مردم و زمین به قهرمانان مختلف تبدیل شود.',
       coverEmoji: '👾',
-      coverAsset: 'assets/cartoons/ben10.png',
+      coverAsset: 'assets/cartoons/ben10.webp',
       themeColor: Color(0xFF00CEC9),
       gradient: LinearGradient(
         colors: [Color(0xFF00CEC9), Color(0xFF0984E3)],
@@ -901,7 +901,7 @@ class CartoonData {
       categoryLabel: 'ایرانی و آموزنده',
       description: 'محبوب‌ترین کارتون ایرانی با داستان‌های شیرین، طنز و آموزنده در شهر شکرستان و قصه‌های پر از حکمت و خنده.',
       coverEmoji: '🏰',
-      coverAsset: 'assets/cartoons/shekarestan.png',
+      coverAsset: 'assets/cartoons/shekarestan.webp',
       themeColor: Color(0xFFFF8E53),
       gradient: LinearGradient(
         colors: [Color(0xFFFF8E53), Color(0xFFFF6B6B)],
@@ -959,7 +959,7 @@ class CartoonData {
       categoryLabel: 'ایرانی و آموزنده',
       description: 'محبوب‌ترین انیمیشن ایرانی درباره پوریای ولی و شاگردان وفادارش در زورخانه شهر خوارزم. آموزش جوانمردی، کمک به نیازمندان و ایستادگی در برابر ستم.',
       coverEmoji: '⚔️',
-      coverAsset: 'assets/cartoons/pahlavanan.png',
+      coverAsset: 'assets/cartoons/pahlavanan.webp',
       themeColor: Color(0xFF00B894),
       gradient: LinearGradient(
         colors: [Color(0xFF00B894), Color(0xFF00CEC9)],
@@ -1002,7 +1002,7 @@ class CartoonData {
       categoryLabel: 'سینمایی و بلند',
       description: 'پرمخاطب‌ترین انیمیشن سینمایی ایران درباره پسری که در آغوش دلفین‌های خلیج فارس بزرگ شد و برای نجات دریا با هیولای دریاها مبارزه می‌کند.',
       coverEmoji: '🐬',
-      coverAsset: 'assets/cartoons/dolphin_boy.png',
+      coverAsset: 'assets/cartoons/dolphin_boy.webp',
       themeColor: Color(0xFF00CEC9),
       gradient: LinearGradient(
         colors: [Color(0xFF00CEC9), Color(0xFF0984E3)],
@@ -1060,7 +1060,7 @@ class CartoonData {
       categoryLabel: 'سینمایی و بلند',
       description: 'انیمیشن سینمایی و موزیکال ایرانی لوپتو درباره علی و کارگاه اسباب‌بازی‌های دست‌ساز ایرانی است. علی با خلاقیت، امید و شادی تلاش می‌کند تا با ساخت اسباب‌بازی‌های زیبا، لبخند را به کودکان هدیه کند.',
       coverEmoji: '🧸',
-      coverAsset: 'assets/cartoons/loopeto.png',
+      coverAsset: 'assets/cartoons/loopeto.webp',
       themeColor: Color(0xFFE84393),
       gradient: LinearGradient(
         colors: [Color(0xFFE84393), Color(0xFFFF7675)],
@@ -1102,7 +1102,7 @@ class CartoonData {
       categoryLabel: 'ایرانی و آموزنده',
       description: 'مجموعه انیمیشن‌های کوتاه و طنز ایرانی دیرین دیرین با شخصیت‌های بامزه، نکات مهم محیط‌زیستی، فرهنگ شهروندی، بازیافت و مهربانی با طبیعت را به زبان ساده و خنده‌دار آموزش می‌دهد.',
       coverEmoji: '🌿',
-      coverAsset: 'assets/cartoons/dirin_dirin.png',
+      coverAsset: 'assets/cartoons/dirin_dirin.webp',
       themeColor: Color(0xFF2ECC71),
       gradient: LinearGradient(
         colors: [Color(0xFF2ECC71), Color(0xFF27AE60)],
@@ -1159,7 +1159,7 @@ class CartoonData {
       categoryLabel: 'ایرانی و آموزنده',
       description: 'کارتون شاد و آموزنده ایرانی ببعی و ببعو درباره دو بره کنجکاو و دوست‌داشتنی در مزرعه است که با کمک پدر و مادر خود، مهارت‌های روزمره زندگی، صبوری و همکاری را تمرین می‌کنند.',
       coverEmoji: '🐏',
-      coverAsset: 'assets/cartoons/babi_babo.png',
+      coverAsset: 'assets/cartoons/babi_babo.webp',
       themeColor: Color(0xFF1ABC9C),
       gradient: LinearGradient(
         colors: [Color(0xFF1ABC9C), Color(0xFF16A085)],

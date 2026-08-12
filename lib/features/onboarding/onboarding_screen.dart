@@ -67,12 +67,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
 
   // آواتارهای تصویرسازی‌شده واقعی + ایموجی
   static const List<_AvatarOption> _avatarOptions = [
-    _AvatarOption(emoji: '🦊', image: 'assets/avatars/avatar_0.png', name: 'روباه باهوش'),
-    _AvatarOption(emoji: '🐼', image: 'assets/avatars/avatar_1.png', name: 'پاندای مهربون'),
-    _AvatarOption(emoji: '🐰', image: 'assets/avatars/avatar_2.png', name: 'خرگوش تندرو'),
-    _AvatarOption(emoji: '🐨', image: 'assets/avatars/avatar_3.png', name: 'کوآلای ناز'),
-    _AvatarOption(emoji: '🦁', image: 'assets/avatars/avatar_4.png', name: 'شیر شجاع'),
-    _AvatarOption(emoji: '🐸', image: 'assets/avatars/avatar_5.png', name: 'قورباغه شاد'),
+    _AvatarOption(emoji: '🦊', image: 'assets/avatars/avatar_0.webp', name: 'روباه باهوش'),
+    _AvatarOption(emoji: '🐼', image: 'assets/avatars/avatar_1.webp', name: 'پاندای مهربون'),
+    _AvatarOption(emoji: '🐰', image: 'assets/avatars/avatar_2.webp', name: 'خرگوش تندرو'),
+    _AvatarOption(emoji: '🐨', image: 'assets/avatars/avatar_3.webp', name: 'کوآلای ناز'),
+    _AvatarOption(emoji: '🦁', image: 'assets/avatars/avatar_4.webp', name: 'شیر شجاع'),
+    _AvatarOption(emoji: '🐸', image: 'assets/avatars/avatar_5.webp', name: 'قورباغه شاد'),
     _AvatarOption(emoji: '🐧', image: '', name: 'پنگوئن برفی'),
     _AvatarOption(emoji: '🦉', image: '', name: 'جغد دانا'),
   ];

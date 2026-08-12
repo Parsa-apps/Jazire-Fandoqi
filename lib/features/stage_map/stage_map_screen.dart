@@ -558,7 +558,7 @@ class _StageMapState extends ConsumerState<StageMapScreen>
             ),
             const SizedBox(height: 20),
             Image.asset(
-              'assets/premium/star_catch_icon.png',
+              'assets/premium/star_catch_icon.webp',
               width: 70,
               height: 70,
             ),

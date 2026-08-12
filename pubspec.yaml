@@ -74,10 +74,10 @@ flutter:
   assets:
     - assets/icons/app_icon.png
     - assets/icons/app_icon_foreground.png
-    - assets/hero_kids.png
-    - assets/learn_world.png
-    - assets/play_world.png
-    - assets/explore_world.png
+    - assets/hero_kids.webp
+    - assets/learn_world.webp
+    - assets/play_world.webp
+    - assets/explore_world.webp
     - assets/gateway/
     - assets/illustrations/memory_cards.webp
     - assets/illustrations/fruits_cards.webp

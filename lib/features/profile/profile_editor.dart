@@ -214,7 +214,7 @@ Future<void> showProfileEditor(BuildContext context) async {
                 spacing: 10,
                 runSpacing: 10,
                 children: List.generate(6, (index) {
-                  final asset = 'assets/avatars/avatar_$index.png';
+                  final asset = 'assets/avatars/avatar_$index.webp';
                   final active = selectedAvatar == asset && photo == null;
                   return GestureDetector(
                     onTap: () => setState(() {
