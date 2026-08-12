@@ -8,11 +8,11 @@ class UpdateSettings {
 
   void setSound(bool enabled) => GameData.setSoundEnabled(enabled);
 
-  bool setParentPin(String pin) => GameData.setParentPin(pin);
+  Future<bool> setParentPin(String pin) => GameData.setParentPin(pin);
 
-  void removeParentPin() => GameData.removeParentPin();
+  Future<void> removeParentPin() => GameData.removeParentPin();
 
-  bool verifyPin(String pin) => GameData.verifyParentPin(pin);
+  Future<bool> verifyPin(String pin) => GameData.verifyParentPin(pin);
 
   bool hasPin() => GameData.hasParentPin();
 }

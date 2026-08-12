@@ -2,11 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:cryptography/cryptography.dart';
 import 'package:cryptography/dart.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/datasources/hive_player_store.dart';
+import 'security/secure_store.dart';
 
 /// Single source of truth for the local player profile.
 ///
@@ -169,6 +171,7 @@ class GameData {
       final hiveSnapshot = await HivePlayerStore.readSnapshot();
       if (hiveSnapshot != null) {
         _applySnapshot(hiveSnapshot);
+        await _applySecurePinOverride();
         _isLoaded = true;
         _persistenceAvailable = true;
         final changed = _rolloverDates();
@@ -212,7 +215,7 @@ class GameData {
       // Older builds stored every shop item in `st`. Keep those purchases.
       if (ownedItems.isEmpty) ownedItems = List<String>.from(stickers);
       timeLimitMinutes = _readInt('tl', 60, min: 15, max: 24 * 60);
-      parentPinHash = _readString('parentPinHash', '', maxLength: 64);
+      parentPinHash = _readString('parentPinHash', '', maxLength: 512);
       treasureOpened = prefs.getBool('tr') ?? false;
       goldenChestOpened = prefs.getBool('gc') ?? false;
       soundEnabled = prefs.getBool('sn') ?? true;
@@ -259,6 +262,7 @@ class GameData {
         skills[key] = _readInt('sk_$key', 0, max: _maxStoredCounter);
       }
 
+      await _applySecurePinOverride();
       _isLoaded = true;
       _persistenceAvailable = true;
       final changed = _rolloverDates();
@@ -284,6 +288,21 @@ class GameData {
     _persistenceAvailable = false;
     _loadFuture = Future<void>.value();
     _notify();
+  }
+
+  /// 🔐 کپی Keystore پین والدین مرجع است: اگر کسی فایل Hive یا
+  /// SharedPreferences را دستکاری کرده باشد، مقدار امن از Keystore
+  /// بازیابی می‌شود تا پنل والدین غیرقابل دور زدن بماند.
+  static Future<void> _applySecurePinOverride() async {
+    try {
+      final secure = await SecureStore.read('parent_pin_hash');
+      if (secure != null && secure.isNotEmpty) {
+        parentPinHash = secure;
+        _pinHashSecureCache = secure;
+      }
+    } catch (_) {
+      // Secure storage unavailable → keep the local mirror as-is.
+    }
   }
 
   static int _readInt(
@@ -402,7 +421,7 @@ class GameData {
     if (ownedItems.isEmpty) ownedItems = List<String>.from(stickers);
     timeLimitMinutes = asInt('tl', 60).clamp(15, 24 * 60);
     parentPinHash = asString('parentPinHash', '');
-    if (parentPinHash.length > 64) parentPinHash = parentPinHash.substring(0, 64);
+    if (parentPinHash.length > 512) parentPinHash = parentPinHash.substring(0, 512);
     treasureOpened = asBool('tr', false);
     goldenChestOpened = asBool('gc', false);
     soundEnabled = asBool('sn', true);
@@ -1215,36 +1234,135 @@ class GameData {
   }
 
   // ==================== PARENT CONTROL ====================
+  // 🔐 Hardened PIN storage (v6.3):
+  //  - hash = PBKDF2-HMAC-SHA256 (150k iterations) + salt تصادفی ۱۶ بایتی،
+  //    به‌جای SHA-256 خام قدیمی (که با ۱۰٬۰۰۰ ترکیب ممکن، فوراً
+  //    brute-force می‌شد).
+  //  - کپی معتبر در SecureStore (Android Keystore) نگه داشته می‌شود؛
+  //    دستکاری فایل Hive/SharedPreferences دیگر نمی‌تواند پین را پاک کند.
   static const String _parentPinDomain = 'fandoghi-parent-pin-v1';
+  static const int _pinKdfIterations = 150000;
+  static final Random _secureRandom = Random.secure();
+
+  /// نسخهٔ هش Keystore (SecureStore) — در [load] و [resetForTesting] هم صفر می‌شود.
+  static String? _pinHashSecureCache;
 
   static bool _isValidPin(String pin) => RegExp(r'^\d{4}$').hasMatch(pin);
 
-  static String hashParentPin(String pin) {
+  /// هش مقاوم پین: `pbkdf2:<iterations>:<saltB64>:<hashB64>`.
+  static Future<String> hashParentPin(String pin) async {
+    final salt = List<int>.generate(16, (_) => _secureRandom.nextInt(256));
+    final pbkdf2 = Pbkdf2(
+      macAlgorithm: Hmac.sha256(),
+      iterations: _pinKdfIterations,
+      bits: 256,
+    );
+    final key = await pbkdf2.deriveKeyFromPassword(
+      password: utf8.encode('$_parentPinDomain:$pin'),
+      nonce: salt,
+    );
+    final bytes = await key.extractBytes();
+    return 'pbkdf2:$_pinKdfIterations:${base64Encode(salt)}:${base64Encode(bytes)}';
+  }
+
+  /// فرمت قدیمی (قبل از ۶.۳) — فقط برای تأیید هش‌های ساخته‌شده توسط
+  /// نسخه‌های قدیمی؛ بعد از اولین تأیید موفق، خودکار به PBKDF2 ارتقا می‌یابد.
+  static String _legacyParentPinHash(String pin) {
     final digest = const DartSha256().hashSync(
       utf8.encode('$_parentPinDomain:$pin'),
     );
     return base64Encode(digest.bytes);
   }
 
-  static bool hasParentPin() => parentPinHash.isNotEmpty;
-
-  static bool verifyParentPin(String pin) {
-    if (parentPinHash.isEmpty || !_isValidPin(pin)) return false;
-    return hashParentPin(pin) == parentPinHash;
+  static bool _constantTimeEquals(List<int> a, List<int> b) {
+    if (a.length != b.length) return false;
+    var diff = 0;
+    for (var i = 0; i < a.length; i++) {
+      diff |= a[i] ^ b[i];
+    }
+    return diff == 0;
   }
 
-  static bool setParentPin(String pin) {
+  /// کپی Keystore مرجع است؛ در نبود آن (مهاجرت از نسخهٔ قدیمی) به آینهٔ
+  /// prefs/Hive برمی‌گردیم.
+  static Future<String> _authoritativeParentPinHash() async {
+    if (_pinHashSecureCache != null) return _pinHashSecureCache!;
+    final secure = await SecureStore.read('parent_pin_hash');
+    if (secure != null && secure.isNotEmpty) {
+      _pinHashSecureCache = secure;
+      return secure;
+    }
+    return parentPinHash;
+  }
+
+  static bool hasParentPin() => parentPinHash.isNotEmpty;
+
+  static Future<bool> verifyParentPin(String pin) async {
+    if (parentPinHash.isEmpty || !_isValidPin(pin)) return false;
+    final stored = await _authoritativeParentPinHash();
+    if (stored.isEmpty) return false;
+
+    if (stored.startsWith('pbkdf2:')) {
+      final parts = stored.split(':');
+      if (parts.length != 4) return false;
+      final iterations = int.tryParse(parts[1]) ?? 0;
+      // پارامتر جعلی/ضعیف یا بیش‌ازحد بزرگ (DoS با هش سنگین) را رد کن.
+      if (iterations < 10000 || iterations > 1000000) return false;
+      final List<int> saltBytes;
+      final List<int> expectedBytes;
+      try {
+        saltBytes = base64Decode(parts[2]);
+        expectedBytes = base64Decode(parts[3]);
+      } catch (_) {
+        return false;
+      }
+      if (expectedBytes.length != 32) return false;
+      final pbkdf2 = Pbkdf2(
+        macAlgorithm: Hmac.sha256(),
+        iterations: iterations,
+        bits: expectedBytes.length * 8,
+      );
+      final key = await pbkdf2.deriveKeyFromPassword(
+        password: utf8.encode('$_parentPinDomain:$pin'),
+        nonce: saltBytes,
+      );
+      final actual = await key.extractBytes();
+      return _constantTimeEquals(actual, expectedBytes);
+    }
+
+    // فرمت قدیمی SHA-256: بپذیر و همان‌جا به فرمت سخت‌شده ارتقا بده.
+    final ok = _constantTimeEquals(
+      _legacyParentPinHash(pin).codeUnits,
+      stored.codeUnits,
+    );
+    if (ok) await setParentPin(pin);
+    return ok;
+  }
+
+  static Future<bool> setParentPin(String pin) async {
     if (!_isValidPin(pin)) return false;
-    parentPinHash = hashParentPin(pin);
+    final hash = await hashParentPin(pin);
+    parentPinHash = hash;
+    await SecureStore.write('parent_pin_hash', hash);
+    _pinHashSecureCache = hash;
     _notify();
     unawaited(save());
     return true;
   }
 
-  static void removeParentPin() {
+  static Future<void> removeParentPin() async {
     parentPinHash = '';
+    await SecureStore.delete('parent_pin_hash');
+    _pinHashSecureCache = null;
     _notify();
     unawaited(save());
+  }
+
+  /// بعد از restore بکاپ، وضعیت نهایی پین را در SecureStore همگام می‌کند
+  /// تا کپی Keystore با آینهٔ prefs/Hive یکی بماند.
+  static Future<void> persistPinHashToSecureStore() async {
+    await SecureStore.write('parent_pin_hash', parentPinHash);
+    _pinHashSecureCache = parentPinHash;
   }
 
   // ==================== PARENT REPORT ====================
@@ -1375,6 +1493,7 @@ class GameData {
     };
     timeLimitMinutes = 60;
     parentPinHash = '';
+    _pinHashSecureCache = null;
     treasureOpened = false;
     goldenChestOpened = false;
     soundEnabled = true;

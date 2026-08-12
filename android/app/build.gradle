@@ -29,6 +29,44 @@ if (billingPropertiesFile.exists()) {
 }
 def bazaarRsaPublicKey = billingProperties.getProperty("bazaarRsaPublicKey", "")
 
+// 🛡️ Anti-tamper: embed the SHA-256 digest of the release signing certificate
+// into BuildConfig. At runtime the app compares the installed APK's own
+// signature against this digest and refuses to run when they differ — a
+// repackaged APK is always signed with a different certificate.
+// CI / verification builds (no key.properties) embed an empty digest, which
+// disables the check; they are not publishable artifacts.
+def releaseSigningSha256 = ""
+if (hasReleaseSigning) {
+    try {
+        def storeFile = file(keystoreProperties['storeFile'])
+        if (storeFile.exists()) {
+            def storePass = (keystoreProperties['storePassword'] as String).toCharArray()
+            def alias = keystoreProperties['keyAlias'] as String
+            def fileBytes = storeFile.bytes
+            def cert = null
+            ['PKCS12', 'JKS'].any { storeType ->
+                try {
+                    def ks = java.security.KeyStore.getInstance(storeType)
+                    def bis = new java.io.ByteArrayInputStream(fileBytes)
+                    ks.load(bis, storePass)
+                    cert = ks.getCertificate(alias)
+                    return true
+                } catch (Exception e) {
+                    return false
+                }
+            }
+            if (cert != null) {
+                def md = java.security.MessageDigest.getInstance("SHA-256")
+                releaseSigningSha256 = md.digest(cert.getEncoded())
+                    .collect { String.format("%02x", it) }
+                    .join("")
+            }
+        }
+    } catch (Exception ignored) {
+        releaseSigningSha256 = ""
+    }
+}
+
 android {
     namespace = "com.parsaapps.amoozesh_fandoghi"
     compileSdk = 35
@@ -60,6 +98,7 @@ android {
         // حجم: فقط زبان فارسی/انگلیسی نگه داشته شود (حذف localeهای اضافی google_fonts و ...)
         resConfigs "en", "fa"
         buildConfigField "String", "BAZAAR_RSA_PUBLIC_KEY", "\"${bazaarRsaPublicKey.replace('\\', '\\\\').replace('\"', '\\\"')}\""
+        buildConfigField "String", "EXPECTED_SIGNING_SHA256", "\"${releaseSigningSha256}\""
     }
 
     signingConfigs {
