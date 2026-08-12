@@ -94,7 +94,8 @@ SHAPES = {
 
 DONE_LETTERS = {f"l{i:02d}" for i in range(1, 33)}
 DONE_NUMBERS = {f"n{i:02d}" for i in range(0, 21)}
-DONE_COLORS = {f"c{i:02d}" for i in range(1, 8)}
+DONE_COLORS = {f"c{i:02d}" for i in range(1, 13)}
+DONE_SHAPES = {f"s{i:02d}" for i in range(1, 6)}
 
 
 def remaining() -> list[tuple[str, str, str]]:
@@ -109,12 +110,13 @@ def remaining() -> list[tuple[str, str, str]]:
         if key not in DONE_COLORS:
             rows.append((f"assets/audio/learning/colors/{key}.wav", key, phrase))
     for key, phrase in SHAPES.items():
-        rows.append((f"assets/audio/learning/shapes/{key}.wav", key, phrase))
+        if key not in DONE_SHAPES:
+            rows.append((f"assets/audio/learning/shapes/{key}.wav", key, phrase))
     return rows
 
 
 if __name__ == "__main__":
     left = remaining()
-    print(f"{len(left)} clips remaining (numbers 8-20, colors, shapes)")
+    print(f"{len(left)} clips remaining (colors 8-12, shapes)")
     for path, key, phrase in left:
         print(f"{key:4}  {path}  {phrase}")
