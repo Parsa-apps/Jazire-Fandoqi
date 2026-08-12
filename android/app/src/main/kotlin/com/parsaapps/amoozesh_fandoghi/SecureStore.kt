@@ -106,7 +106,7 @@ class SecureStore(private val context: Context) {
                 Base64.encodeToString(cipher.iv + cipherText, Base64.NO_WRAP)
             } else {
                 val obfuscated = plainText.toByteArray(Charsets.UTF_8)
-                    .map { it xor 0x5A }
+                    .map { (it.toInt() xor 0x5A).toByte() }
                     .toByteArray()
                 Base64.encodeToString(obfuscated, Base64.NO_WRAP)
             }
@@ -127,7 +127,10 @@ class SecureStore(private val context: Context) {
                 cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, iv))
                 String(cipher.doFinal(cipherText), Charsets.UTF_8)
             } else {
-                String(decoded.map { it xor 0x5A }.toByteArray(), Charsets.UTF_8)
+                val deobfuscated = decoded
+                    .map { (it.toInt() xor 0x5A).toByte() }
+                    .toByteArray()
+                String(deobfuscated, Charsets.UTF_8)
             }
         } catch (_: Exception) {
             null

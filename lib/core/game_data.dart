@@ -1258,7 +1258,7 @@ class GameData {
       bits: 256,
     );
     final key = await pbkdf2.deriveKeyFromPassword(
-      password: utf8.encode('$_parentPinDomain:$pin'),
+      password: '$_parentPinDomain:$pin',
       nonce: salt,
     );
     final bytes = await key.extractBytes();
@@ -1323,7 +1323,7 @@ class GameData {
         bits: expectedBytes.length * 8,
       );
       final key = await pbkdf2.deriveKeyFromPassword(
-        password: utf8.encode('$_parentPinDomain:$pin'),
+        password: '$_parentPinDomain:$pin',
         nonce: saltBytes,
       );
       final actual = await key.extractBytes();

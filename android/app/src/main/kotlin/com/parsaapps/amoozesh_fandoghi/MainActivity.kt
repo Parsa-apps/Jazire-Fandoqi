@@ -107,12 +107,15 @@ class MainActivity : FlutterFragmentActivity() {
                 val store = SecureStore(applicationContext)
                 when (call.method) {
                     "write" -> {
-                        store.write(call.argument("key").orEmpty(), call.argument("value").orEmpty())
+                        store.write(
+                            call.argument<String>("key").orEmpty(),
+                            call.argument<String>("value").orEmpty(),
+                        )
                         result.success(null)
                     }
-                    "read" -> result.success(store.read(call.argument("key").orEmpty()))
+                    "read" -> result.success(store.read(call.argument<String>("key").orEmpty()))
                     "delete" -> {
-                        store.delete(call.argument("key").orEmpty())
+                        store.delete(call.argument<String>("key").orEmpty())
                         result.success(null)
                     }
                     else -> result.notImplemented()
