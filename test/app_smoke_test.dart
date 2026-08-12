@@ -42,8 +42,8 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 250));
 
-    final cartoon = find.text('سینما کارتون');
-    final stories = find.text('قصه‌خانه');
+    final cartoon = find.text('کارتون');
+    final stories = find.text('داستان');
     final learning = find.text('بازی و یادگیری');
 
     expect(cartoon, findsOneWidget);

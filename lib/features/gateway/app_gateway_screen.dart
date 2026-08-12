@@ -207,18 +207,21 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
                             const SizedBox(height: 14),
                             _PrioritySectionCard(
                               key: const Key('gateway.cartoon'),
-                              semanticsLabel: 'بازکردن سینمای کارتون',
-                              title: 'سینما کارتون',
-                              subtitle: 'کارتون‌های محبوب، امن و تماشایی',
-                              badge: 'انتخاب اول بچه‌ها',
+                              semanticsLabel: 'بازکردن کارتون',
+                              title: 'کارتون',
+                              subtitle: '',
+                              badge: '',
                               actionLabel: 'شروع تماشا',
-                              image: 'assets/gateway/cartoon_tile.webp',
+                              image: 'assets/cartoons/cocomelon.webp',
                               colors: const [
-                                Color(0xFF7B2FF7),
-                                Color(0xFFFF3D81),
+                                Color(0xFF0077B6),
+                                Color(0xFFFF6B6B),
                               ],
-                              height: 180,
+                              height: 188,
                               featured: true,
+                              showBadge: false,
+                              showSubtitle: false,
+                              titleSize: 36,
                               onTap: () => _openSection('/cartoons'),
                             )
                                 .animate()
@@ -227,17 +230,20 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
                             const SizedBox(height: 12),
                             _PrioritySectionCard(
                               key: const Key('gateway.stories'),
-                              semanticsLabel: 'بازکردن قصه‌خانه',
-                              title: 'قصه‌خانه',
-                              subtitle: 'داستان‌های تصویری و صوتی با جایزه',
-                              badge: 'پیشنهاد فندقی',
-                              actionLabel: 'یک قصه بخونیم',
+                              semanticsLabel: 'بازکردن داستان',
+                              title: 'داستان',
+                              subtitle: '',
+                              badge: '',
+                              actionLabel: 'بخونیم',
                               image: 'assets/gateway/story_tile.webp',
                               colors: const [
-                                Color(0xFF4B3FBA),
-                                Color(0xFF9B51E0),
+                                Color(0xFF0A6B8A),
+                                Color(0xFF48CAE4),
                               ],
-                              height: 142,
+                              height: 148,
+                              showBadge: false,
+                              showSubtitle: false,
+                              titleSize: 32,
                               onTap: () => _openSection('/stories'),
                             )
                                 .animate()
@@ -372,7 +378,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
       child: AnimatedBuilder(
         animation: _backgroundController,
         child: Image.asset(
-          'assets/gateway/island_bg.webp',
+          'assets/gateway/coral_island_bg.webp',
           fit: BoxFit.cover,
           alignment: Alignment.center,
         ),
@@ -603,9 +609,9 @@ class _BackgroundOverlay extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            const Color(0xFFEAFBFF).withOpacity(0.58),
-            const Color(0xFFB9E8F2).withOpacity(0.18),
-            const Color(0xFF064B68).withOpacity(0.22),
+            const Color(0xFFE8FBFF).withOpacity(0.42),
+            const Color(0xFF7FDBDA).withOpacity(0.10),
+            const Color(0xFF023E8A).withOpacity(0.18),
           ],
           stops: const [0, 0.48, 1],
         ),
@@ -658,6 +664,9 @@ class _PrioritySectionCard extends StatefulWidget {
   final List<Color> colors;
   final double height;
   final bool featured;
+  final bool showBadge;
+  final bool showSubtitle;
+  final double? titleSize;
   final VoidCallback onTap;
 
   const _PrioritySectionCard({
@@ -672,6 +681,9 @@ class _PrioritySectionCard extends StatefulWidget {
     required this.height,
     required this.onTap,
     this.featured = false,
+    this.showBadge = true,
+    this.showSubtitle = true,
+    this.titleSize,
   });
 
   @override
@@ -777,35 +789,38 @@ class _PrioritySectionCardState extends State<_PrioritySectionCard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.20),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.32),
+                          if (widget.showBadge && widget.badge.isNotEmpty) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.20),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.32),
+                                ),
+                              ),
+                              child: Text(
+                                widget.badge,
+                                maxLines: 1,
+                                style: AppFonts.vazirmatn(
+                                  fontSize: widget.featured ? 11 : 9.5,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
-                            child: Text(
-                              widget.badge,
-                              maxLines: 1,
-                              style: AppFonts.vazirmatn(
-                                fontSize: widget.featured ? 11 : 9.5,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: widget.featured ? 8 : 5),
+                            SizedBox(height: widget.featured ? 8 : 5),
+                          ],
                           Text(
                             widget.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: AppFonts.vazirmatn(
-                              fontSize: widget.featured ? 25 : 20,
+                              fontSize: widget.titleSize ??
+                                  (widget.featured ? 25 : 20),
                               fontWeight: FontWeight.w900,
                               color: Colors.white,
                               height: 1.1,
@@ -818,17 +833,20 @@ class _PrioritySectionCardState extends State<_PrioritySectionCard> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 3),
-                          Text(
-                            widget.subtitle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppFonts.vazirmatn(
-                              fontSize: widget.featured ? 12 : 10.5,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white.withOpacity(0.90),
+                          if (widget.showSubtitle &&
+                              widget.subtitle.isNotEmpty) ...[
+                            const SizedBox(height: 3),
+                            Text(
+                              widget.subtitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppFonts.vazirmatn(
+                                fontSize: widget.featured ? 12 : 10.5,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white.withOpacity(0.90),
+                              ),
                             ),
-                          ),
+                          ],
                           SizedBox(height: widget.featured ? 11 : 7),
                           Container(
                             padding: EdgeInsets.symmetric(

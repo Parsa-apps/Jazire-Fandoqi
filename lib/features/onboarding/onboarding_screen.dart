@@ -6,9 +6,7 @@ import '../../app/app_colors.dart';
 import '../../app/design_tokens.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import '../../core/fandoghi_coach.dart';
-import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';
-import '../../shared/widgets/fandoghi_premium.dart';
 import '../../shared/widgets/premium_button.dart';
 
 /// =======================================================
@@ -172,7 +170,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
   // ── هدر پریمیوم با دکمه برگشت و نشان مرحله ────────────────
   Widget _buildPremiumHeader() {
     final titles = ['خوش اومدی!', 'آواتارت', 'قهرمانت', 'بذار ببینم!'];
-    final subtitles = ['ماجراجویی با فندقی', 'یکی رو انتخاب کن', 'اسم و سنت', '۳ سوال کوچولو'];
+    final subtitles = ['ماجراجویی در جزیره فندقی', 'یکی رو انتخاب کن', 'اسم و سنت', '۳ سوال کوچولو'];
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: Row(
@@ -283,15 +281,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
-          const SizedBox(height: 16),
-          // فندقی V4 پریمیوم با ذرات
-          const FandoghiPremium(
-            size: 148,
-            mood: FandoghiMood.excited,
-            showParticles: true,
-            message: 'من فندقی‌ام؛ بیا با هم کلی چیز قشنگ یاد بگیریم! 🌰',
-          ).animate().scale(delay: 200.ms, duration: 600.ms, curve: Curves.elasticOut),
           const SizedBox(height: 28),
+          const Text('🌊', style: TextStyle(fontSize: 72))
+              .animate()
+              .scale(delay: 200.ms, duration: 600.ms, curve: Curves.elasticOut),
+          const SizedBox(height: 20),
           Text('سلام قهرمان کوچولو! 👋', textAlign: TextAlign.center, style: AppFonts.vazirmatn(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w900))
               .animate()
               .fadeIn(delay: 400.ms)
@@ -426,7 +420,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
       child: Column(
         children: [
           const SizedBox(height: 12),
-          FandoghiPremium(size: 96, mood: FandoghiMood.happy, showParticles: false).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
+          const Text('⭐', style: TextStyle(fontSize: 56)).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
           const SizedBox(height: 16),
           Text('قهرمانت رو بساز', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900)),
           Text('یه لقب بامزه انتخاب کن', style: const TextStyle(color: Colors.white60, fontSize: 14)),
@@ -539,11 +533,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const FandoghiPremium(size: 130, mood: FandoghiMood.celebrating, showParticles: true).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
+            const Text('🎉', style: TextStyle(fontSize: 72)).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
             const SizedBox(height: 24),
             Text('عالیه! آماده‌ای؟ 🎉', textAlign: TextAlign.center, style: AppFonts.vazirmatn(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900)).animate().fadeIn(delay: 300.ms),
             const SizedBox(height: 12),
-            const Text('حالا می‌تونی با فندقی به دنیای بازی‌ها و یادگیری بری!', textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontSize: 16, height: 1.6)).animate().fadeIn(delay: 500.ms),
+            const Text('حالا می‌تونی به دنیای بازی‌ها و یادگیری بری!', textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontSize: 16, height: 1.6)).animate().fadeIn(delay: 500.ms),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -572,7 +566,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
       child: Column(
         children: [
           const SizedBox(height: 8),
-          FandoghiPremium(size: 88, mood: FandoghiMood.thinking, showParticles: false),
+          const Text('🤔', style: TextStyle(fontSize: 52)),
           const SizedBox(height: 12),
           Text('بذار ببینم چی بلدی! 😄', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
           const SizedBox(height: 4),

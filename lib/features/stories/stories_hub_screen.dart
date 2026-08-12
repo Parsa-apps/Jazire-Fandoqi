@@ -5,9 +5,9 @@ import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
 import '../../core/audio_service.dart';
 import '../../core/fandoghi_coach.dart';
+import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';
 import '../../core/learning_content/children_stories_data.dart';
-import '../../shared/widgets/fandoghi_v2.dart';
 import 'story_reader_screen.dart';
 
 /// ═══════════════════════════════════════════════════════════════
@@ -36,9 +36,9 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         FandoghiCoach.say(
-          'به قصه‌خانه فندقی خوش اومدی! هر داستانی رو دوست داری انتخاب کن تا با هم بخونیم 📚✨',
+          'یه داستان قشنگ انتخاب کن تا با هم بخونیم 📚✨',
           mood: FandoghiMood.excited,
-          duration: const Duration(seconds: 4),
+          duration: const Duration(seconds: 3),
         );
       }
     });
@@ -252,7 +252,7 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
         ),
         child: Row(
           children: [
-            FandoghiV2(size: 64, mood: FandoghiMood.excited),
+            const Text('📖', style: TextStyle(fontSize: 48)),
             const SizedBox(width: 14),
             Expanded(
               child: Column(

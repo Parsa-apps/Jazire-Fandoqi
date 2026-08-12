@@ -8,7 +8,6 @@ import '../../core/fandoghi_coach.dart';
 import '../../core/game_data.dart';
 import '../../core/growth/growth.dart';
 import '../../presentation/providers/game_state_provider.dart';
-import '../../shared/widgets/fandoghi_welcome.dart';
 import '../island/island_screen.dart';
 import '../stage_map/stage_map_screen.dart';
 import '../profile/profile_screen.dart';
@@ -32,18 +31,12 @@ class _HomeState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // فندقی (راهنما/معلم) فقط در بخش بازی و یادگیری حاضر می‌شود.
-    FandoghiCoach.enablePersistentPresence();
     _tabWidgets[0] = const DashboardTab();
-    // نمایش انیمیشن خوش‌آمدگویی فندقی بعد از اولین فریم صفحه اصلی.
-    // فقط یک‌بار در هر اجرای اپ نمایش داده می‌شود.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      FandoghiWelcomeOverlay.start(context);
-      // فاز ۹۸: جشن برای کاربران قدیمی — «تو از اول با فندقی بودی!»
       if (GameData.playedGames.length >= 5 || GameData.streak >= 7) {
         FandoghiCoach.celebrate(
-          'تو از اول با فندقی بودی! ممنون که هم‌سفر ما هستی 🌟',
+          'چه عالی که دوباره برگشتی! ادامه بده قهرمان 🌟',
         );
       }
     });

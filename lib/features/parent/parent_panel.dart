@@ -1016,7 +1016,7 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: Text('کارتون', style: AppFonts.vazirmatn(fontSize: 15, fontWeight: FontWeight.w700)),
-              subtitle: const Text('نمایش سینما کارتون'),
+              subtitle: const Text('نمایش بخش کارتون'),
               value: GrowthStore.cartoonsAllowed,
               onChanged: (v) => setState(() => GrowthStore.setContentFilter(cartoons: v)),
             ),

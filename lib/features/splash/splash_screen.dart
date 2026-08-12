@@ -5,9 +5,7 @@ import 'package:flutter/services.dart';
 import '../../app/app_colors.dart';
 import '../../app/design_tokens.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
-import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';
-import '../../shared/widgets/fandoghi_premium.dart';
 import '../../shared/widgets/star_field.dart';
 
 /// ═══════════════════════════════════════════════
@@ -97,39 +95,57 @@ class _SplashState extends State<SplashScreen>
         ),
         child: Stack(
           children: [
-            // Animated star field
-            const StarFieldBackground(starCount: 80),
-            
-            // Orbiting particles around center
+            Positioned.fill(
+              child: Image.asset(
+                'assets/gateway/coral_island_bg.webp',
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+              ),
+            ),
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      const Color(0xFF023E8A).withOpacity(0.28),
+                      Colors.transparent,
+                      const Color(0xFF023E8A).withOpacity(0.45),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const StarFieldBackground(starCount: 36),
             _buildOrbitingParticles(),
-            
-            // Main content
             Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                  // Glowing ring behind Fandoghi
-                  _buildGlowRing(),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Fandoghi character — Premium V4
                   ScaleTransition(
                     scale: CurvedAnimation(
                       parent: _scaleCtrl,
                       curve: Curves.elasticOut,
                     ),
-                    child: FandoghiPremium(
-                      size: 132,
-                      mood: FandoghiMood.excited,
-                      showParticles: true,
-                      message: '${SeasonalTokens.greeting} من فندقی‌ام؛ راهنمای کوچولوی تو 🌰',
+                    child: _buildGlowRing(),
+                  ),
+                  const SizedBox(height: 12),
+                  FadeTransition(
+                    opacity: _fadeCtrl,
+                    child: Text(
+                      SeasonalTokens.greeting,
+                      textAlign: TextAlign.center,
+                      style: AppFonts.vazirmatn(
+                        fontSize: 18,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
-                  
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 18),
                   
                   // App name with shimmer
                   FadeTransition(
