@@ -10,13 +10,11 @@ coverage/
 
 # Generated Android local configuration
 android/local.properties
-android/key.properties
-android/*.keystore
-android/*.jks
 android/.gradle/
 android/**/build/
-# Bazaar RSA public key is not a signing secret; it is kept in
-# android/billing.properties so release builds can validate purchases.
+# Release signing files are tracked at the owner's request so a
+# Cafe Bazaar APK can be built from this clone. Keep the repository
+# private while these files exist.
 
 # IDE
 .idea/
