@@ -113,6 +113,6 @@ def remaining() -> list[tuple[str, str, str]]:
 
 if __name__ == "__main__":
     left = remaining()
-    print(f"{len(left)} clips remaining (letters 11-32, numbers, colors, shapes)")
+    print(f"{len(left)} clips remaining (numbers 8-20, colors, shapes)")
     for path, key, phrase in left:
         print(f"{key:4}  {path}  {phrase}")
