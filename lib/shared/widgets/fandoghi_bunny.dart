@@ -36,7 +36,7 @@ class FandoghiBunny extends StatelessWidget {
       width: size,
       height: size,
       child: Image.asset(
-        mood.portraitAsset ?? 'assets/mascot/fandoghi_baby.png',
+        mood.portraitAsset ?? 'assets/mascot/fandoghi_baby.webp',
         fit: fit,
         alignment: alignment,
         filterQuality: FilterQuality.high,

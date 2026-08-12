@@ -212,7 +212,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
                               subtitle: 'کارتون‌های محبوب، امن و تماشایی',
                               badge: 'انتخاب اول بچه‌ها',
                               actionLabel: 'شروع تماشا',
-                              image: 'assets/gateway/cartoon_tile.png',
+                              image: 'assets/gateway/cartoon_tile.webp',
                               colors: const [
                                 Color(0xFF7B2FF7),
                                 Color(0xFFFF3D81),
@@ -232,7 +232,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
                               subtitle: 'داستان‌های تصویری و صوتی با جایزه',
                               badge: 'پیشنهاد فندقی',
                               actionLabel: 'یک قصه بخونیم',
-                              image: 'assets/gateway/story_tile.png',
+                              image: 'assets/gateway/story_tile.webp',
                               colors: const [
                                 Color(0xFF4B3FBA),
                                 Color(0xFF9B51E0),
@@ -251,7 +251,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
                               subtitle: 'بازی‌های مهارتی، مرحله‌ها و آموزش',
                               badge: 'یادگیری شاد',
                               actionLabel: 'بزن بریم',
-                              image: 'assets/gateway/learn_tile.png',
+                              image: 'assets/gateway/learn_tile.webp',
                               colors: const [
                                 Color(0xFF0061A8),
                                 Color(0xFF00BFA6),
@@ -271,7 +271,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
                                   child: _CompactSectionCard(
                                     title: 'لالایی‌های شب',
                                     subtitle: 'خواب آروم',
-                                    image: 'assets/gateway/lullaby_tile.png',
+                                    image: 'assets/gateway/lullaby_tile.webp',
                                     accent: const Color(0xFF3949AB),
                                     onTap: () => _openSection('/lullabies'),
                                   ),
@@ -281,7 +281,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
                                   child: _CompactSectionCard(
                                     title: 'پروفایل من',
                                     subtitle: 'مدال‌ها و پیشرفت',
-                                    image: 'assets/gateway/profile_tile.png',
+                                    image: 'assets/gateway/profile_tile.webp',
                                     accent: const Color(0xFF00A884),
                                     onTap: () =>
                                         _openWidget(const ProfileScreen()),
@@ -372,7 +372,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
       child: AnimatedBuilder(
         animation: _backgroundController,
         child: Image.asset(
-          'assets/gateway/island_bg.png',
+          'assets/gateway/island_bg.webp',
           fit: BoxFit.cover,
           alignment: Alignment.center,
         ),

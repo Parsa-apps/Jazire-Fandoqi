@@ -57,6 +57,8 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled true
+        // حجم: فقط زبان فارسی/انگلیسی نگه داشته شود (حذف localeهای اضافی google_fonts و ...)
+        resConfigs "en", "fa"
         buildConfigField "String", "BAZAAR_RSA_PUBLIC_KEY", "\"${bazaarRsaPublicKey.replace('\\', '\\\\').replace('\"', '\\\"')}\""
     }
 
@@ -69,6 +71,19 @@ android {
                 storePassword = keystoreProperties['storePassword']
             }
         }
+    }
+
+    // فاز بهینه‌سازی حجم: حذف منابع استفاده‌نشده و فشرده‌سازی بیشتر
+    packagingOptions {
+        resources {
+            excludes += ["/META-INF/{AL2.0,LGPL2.1}"]
+        }
+    }
+
+    bundle {
+        language { enableSplit = true }
+        density { enableSplit = true }
+        abi { enableSplit = true }
     }
 
     buildTypes {
