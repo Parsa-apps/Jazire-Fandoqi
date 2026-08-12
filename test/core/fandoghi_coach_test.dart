@@ -15,4 +15,9 @@ void main() {
     FandoghiCoach.clear();
     expect(FandoghiCoach.current.value, isNull);
   });
+
+  test('persistent mascot presence stays off so it never blocks taps', () {
+    FandoghiCoach.enablePersistentPresence();
+    expect(FandoghiCoach.persistent.value, isFalse);
+  });
 }

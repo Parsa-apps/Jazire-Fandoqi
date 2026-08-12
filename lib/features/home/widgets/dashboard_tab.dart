@@ -6,24 +6,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../app/app_colors.dart';
 import '../../../app/app_fonts.dart';
 import '../../../core/ai_system.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
-import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
 import '../../../core/growth/growth.dart';
 import '../../../core/monetization.dart';
 import '../../growth/widgets/growth_home_strip.dart';
 import '../../growth/widgets/session_recap_sheet.dart';
 import '../../../presentation/providers/game_state_provider.dart';
-import '../../../shared/widgets/fandoghi_v2.dart';
 import '../../../shared/widgets/premium_daily_missions.dart';
 import '../../../shared/widgets/premium_streak_calendar.dart';
-import '../../../shared/widgets/premium/glass_card.dart';
 import '../../../shared/widgets/premium/particle_celebration.dart';
-import '../../../shared/widgets/premium/responsive_grid.dart';
 import '../../profile/profile_editor.dart';
 import '../../shop/full_version_paywall.dart';
 
@@ -47,8 +42,6 @@ class _DashboardState extends ConsumerState<DashboardTab>
   @override
   void initState() {
     super.initState();
-    FandoghiCoach.enablePersistentPresence();
-
     _floatCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 4),
@@ -439,8 +432,6 @@ class _DashboardState extends ConsumerState<DashboardTab>
                             child: Column(
                               children: [
                                 _buildHeading(),
-                                const SizedBox(height: 8),
-                                _buildFandoghiCoachCard(),
                                 const SizedBox(height: 12),
                                 const GrowthHomeStrip(),
                                 const SizedBox(height: 16),
@@ -736,7 +727,7 @@ class _DashboardState extends ConsumerState<DashboardTab>
               ],
             ),
             child: Text(
-              'یک بازی انتخاب کن و با فندقی ماجراجویی کن!',
+              'یک بازی انتخاب کن و ماجراجویی کن!',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,
@@ -748,84 +739,6 @@ class _DashboardState extends ConsumerState<DashboardTab>
         ],
       ),
     );
-  }
-
-  // ─── کارت مشاور و مربی فندقی ───────────────────────
-  Widget _buildFandoghiCoachCard() {
-    final suggestions = AI.suggestGames();
-    final suggestionText = suggestions.isNotEmpty
-        ? 'بیا امروز بازی «${suggestions.first}» رو امتحان کنیم! 🎯'
-        : 'هر بازی رو دوست داری انتخاب کن تا با هم شروع کنیم! 🌟';
-
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        AudioService.tap();
-        FandoghiCoach.say(
-          'من کنارت هستم! هر بازی رو انتخاب کنی با هم امتیازشو جمع می‌کنیم 🌰✨',
-          mood: FandoghiMood.excited,
-          duration: const Duration(seconds: 4),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white, width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF6C5CE7).withOpacity(0.15),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            const FandoghiV2(
-              size: 46,
-              animate: true,
-              mood: FandoghiMood.wink,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'نکته فندقی 🌰',
-                    style: AppFonts.vazirmatn(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.fandoghiDark,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    suggestionText,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF1F3A5F),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(
-              Icons.touch_app_rounded,
-              size: 18,
-              color: Color(0xFF6C5CE7),
-            ),
-          ],
-        ),
-      ),
-    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2);
   }
 
   // ─── دسته‌بندی‌ها (Filter Pills) ───────────────────

@@ -15,8 +15,7 @@ import 'package:jazireh_fandoghi/features/about/about_screen.dart';
 import 'package:jazireh_fandoghi/features/profile/profile_screen.dart';
 import 'package:jazireh_fandoghi/features/profile/sticker_album_screen.dart';
 
-/// دروازهٔ اصلی جزیره با سلسله‌مراتب روشن:
-/// ۱) کارتون، ۲) قصه، ۳) بازی و یادگیری، سپس امکانات تکمیلی.
+/// دروازهٔ جزیره مرجانی — چیدمان حبابی مطابق طرح انتخاب‌شده.
 class AppGatewayScreen extends StatefulWidget {
   const AppGatewayScreen({super.key});
 
@@ -34,7 +33,6 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
     _resetCoach();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      // فقط وقتی ذخیره‌سازی واقعاً بارگذاری شده (در تست‌های ایزوله load نمی‌شود).
       if (GrowthStore.isLoaded && GrowthStore.shouldShowWhatsNew) {
         Navigator.of(context).pushNamed('/whats-new');
       }
@@ -52,7 +50,6 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
   }
 
   void _resetCoach() {
-    // مربیِ صفحات بازی نباید هنگام برگشت روی منوی اصلی باقی بماند.
     FandoghiCoach.disablePersistentPresence();
   }
 
@@ -92,15 +89,11 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
     });
   }
 
-  void _openStickers() {
-    _openWidget(const StickerAlbumScreen());
-  }
-
   String _normalizeDigits(String input) {
     const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
     const englishDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-    String result = input;
-    for (int i = 0; i < persianDigits.length; i++) {
+    var result = input;
+    for (var i = 0; i < persianDigits.length; i++) {
       result = result.replaceAll(persianDigits[i], englishDigits[i]);
     }
     return result;
@@ -184,12 +177,14 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
   Widget build(BuildContext context) {
     final name =
         GameData.childName.isNotEmpty ? GameData.childName : 'دوست کوچولو';
+    final width = MediaQuery.sizeOf(context).width;
+    final bubble = (width * 0.38).clamp(118.0, 168.0);
+    final learnBubble = (width * 0.36).clamp(110.0, 156.0);
 
     return Scaffold(
       body: Stack(
         children: [
           Positioned.fill(child: _buildBackground()),
-          const Positioned.fill(child: _BackgroundOverlay()),
           SafeArea(
             child: Column(
               children: [
@@ -197,162 +192,119 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(14, 6, 14, 24),
+                    padding: const EdgeInsets.fromLTRB(12, 4, 12, 18),
                     child: Center(
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 600),
+                        constraints: const BoxConstraints(maxWidth: 560),
                         child: Column(
                           children: [
-                            _buildHeading(),
-                            const SizedBox(height: 14),
-                            _PrioritySectionCard(
-                              key: const Key('gateway.cartoon'),
-                              semanticsLabel: 'بازکردن سینمای کارتون',
-                              title: 'سینما کارتون',
-                              subtitle: 'کارتون‌های محبوب، امن و تماشایی',
-                              badge: 'انتخاب اول بچه‌ها',
-                              actionLabel: 'شروع تماشا',
-                              image: 'assets/gateway/cartoon_tile.webp',
-                              colors: const [
-                                Color(0xFF7B2FF7),
-                                Color(0xFFFF3D81),
-                              ],
-                              height: 180,
-                              featured: true,
-                              onTap: () => _openSection('/cartoons'),
+                            _buildSeashellTitle(),
+                            const SizedBox(height: 8),
+                            Directionality(
+                              textDirection: TextDirection.ltr,
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: _BubblePortal(
+                                      key: const Key('gateway.cartoon'),
+                                      semanticsLabel: 'بازکردن کارتون',
+                                      title: 'کارتون',
+                                      actionLabel: 'شروع تماشا',
+                                      image: 'assets/gateway/bubble_cartoon.webp',
+                                      actionColor: const Color(0xFF00A8B5),
+                                      size: bubble,
+                                      titleSize: 22,
+                                      onTap: () => _openSection('/cartoons'),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: _BubblePortal(
+                                      key: const Key('gateway.stories'),
+                                      semanticsLabel: 'بازکردن داستان',
+                                      title: 'داستان',
+                                      actionLabel: 'بخونیم',
+                                      image: 'assets/gateway/bubble_story.webp',
+                                      actionColor: const Color(0xFFC44BD1),
+                                      size: bubble,
+                                      titleSize: 22,
+                                      onTap: () => _openSection('/stories'),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             )
                                 .animate()
-                                .fadeIn(duration: 450.ms)
-                                .slideY(begin: 0.10, curve: Curves.easeOutCubic),
-                            const SizedBox(height: 12),
-                            _PrioritySectionCard(
-                              key: const Key('gateway.stories'),
-                              semanticsLabel: 'بازکردن قصه‌خانه',
-                              title: 'قصه‌خانه',
-                              subtitle: 'داستان‌های تصویری و صوتی با جایزه',
-                              badge: 'پیشنهاد فندقی',
-                              actionLabel: 'یک قصه بخونیم',
-                              image: 'assets/gateway/story_tile.webp',
-                              colors: const [
-                                Color(0xFF4B3FBA),
-                                Color(0xFF9B51E0),
-                              ],
-                              height: 142,
-                              onTap: () => _openSection('/stories'),
-                            )
-                                .animate()
-                                .fadeIn(delay: 90.ms, duration: 450.ms)
-                                .slideY(begin: 0.10, curve: Curves.easeOutCubic),
-                            const SizedBox(height: 12),
-                            _PrioritySectionCard(
+                                .fadeIn(duration: 420.ms)
+                                .slideY(begin: 0.08, curve: Curves.easeOutCubic),
+                            const SizedBox(height: 6),
+                            _BubblePortal(
                               key: const Key('gateway.learning'),
                               semanticsLabel: 'بازکردن بازی و یادگیری',
                               title: 'بازی و یادگیری',
-                              subtitle: 'بازی‌های مهارتی، مرحله‌ها و آموزش',
-                              badge: 'یادگیری شاد',
                               actionLabel: 'بزن بریم',
-                              image: 'assets/gateway/learn_tile.webp',
-                              colors: const [
-                                Color(0xFF0061A8),
-                                Color(0xFF00BFA6),
-                              ],
-                              height: 132,
+                              image: 'assets/gateway/bubble_learn.webp',
+                              actionColor: const Color(0xFF2E9B4A),
+                              size: learnBubble,
+                              titleSize: 18,
                               onTap: () => _openSection('/home'),
                             )
                                 .animate()
-                                .fadeIn(delay: 180.ms, duration: 450.ms)
-                                .slideY(begin: 0.10, curve: Curves.easeOutCubic),
-                            const SizedBox(height: 18),
-                            _buildMoreTitle(),
-                            const SizedBox(height: 10),
+                                .fadeIn(delay: 120.ms, duration: 420.ms)
+                                .slideY(begin: 0.08, curve: Curves.easeOutCubic),
+                            const SizedBox(height: 14),
                             Row(
                               children: [
                                 Expanded(
-                                  child: _CompactSectionCard(
-                                    title: 'لالایی‌های شب',
-                                    subtitle: 'خواب آروم',
-                                    image: 'assets/gateway/lullaby_tile.webp',
-                                    accent: const Color(0xFF3949AB),
-                                    onTap: () => _openSection('/lullabies'),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: _CompactSectionCard(
+                                  child: _SandOvalTile(
+                                    emoji: '⭐',
                                     title: 'پروفایل من',
-                                    subtitle: 'مدال‌ها و پیشرفت',
-                                    image: 'assets/gateway/profile_tile.webp',
-                                    accent: const Color(0xFF00A884),
                                     onTap: () =>
                                         _openWidget(const ProfileScreen()),
                                   ),
                                 ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _SandOvalTile(
+                                    emoji: '🌙',
+                                    title: 'لالایی‌های شب',
+                                    onTap: () => _openSection('/lullabies'),
+                                  ),
+                                ),
                               ],
-                            )
-                                .animate()
-                                .fadeIn(delay: 270.ms, duration: 450.ms),
+                            ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
                             const SizedBox(height: 12),
                             Row(
                               children: [
                                 Expanded(
-                                  child: _QuickLink(
-                                    emoji: '📚',
-                                    label: 'کتابخانه یادگیری',
-                                    onTap: () =>
-                                        _openSection('/learning-library'),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: _QuickLink(
-                                    emoji: '🎀',
-                                    label: 'استیکرهای من',
-                                    onTap: _openStickers,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: _QuickLink(
-                                    emoji: 'ℹ️',
-                                    label: 'درباره ما',
+                                  child: _CoralCircle(
+                                    emoji: '🪸',
+                                    title: 'درباره ما',
                                     onTap: () =>
                                         _openWidget(const AboutScreen()),
                                   ),
                                 ),
-                              ],
-                            )
-                                .animate()
-                                .fadeIn(delay: 340.ms, duration: 450.ms),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
+                                const SizedBox(width: 10),
                                 Expanded(
-                                  child: _QuickLink(
-                                    emoji: '🧭',
-                                    label: 'مهارت زندگی',
-                                    onTap: () => _openSection('/life-skills'),
+                                  child: _CoralCircle(
+                                    emoji: '🐠',
+                                    title: 'استیکرهای من',
+                                    onTap: () =>
+                                        _openWidget(const StickerAlbumScreen()),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 10),
                                 Expanded(
-                                  child: _QuickLink(
-                                    emoji: '📜',
-                                    label: 'گواهی‌ها',
-                                    onTap: () => _openSection('/certificates'),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: _QuickLink(
-                                    emoji: '📝',
-                                    label: 'واژه‌نامه',
-                                    onTap: () => _openSection('/vocabulary'),
+                                  child: _CoralCircle(
+                                    emoji: '📚',
+                                    title: 'کتابخانه یادگیری',
+                                    onTap: () =>
+                                        _openSection('/learning-library'),
                                   ),
                                 ),
                               ],
-                            )
-                                .animate()
-                                .fadeIn(delay: 400.ms, duration: 450.ms),
+                            ).animate().fadeIn(delay: 280.ms, duration: 400.ms),
                           ],
                         ),
                       ),
@@ -372,7 +324,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
       child: AnimatedBuilder(
         animation: _backgroundController,
         child: Image.asset(
-          'assets/gateway/island_bg.webp',
+          'assets/gateway/coral_world_bg.webp',
           fit: BoxFit.cover,
           alignment: Alignment.center,
         ),
@@ -381,7 +333,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
           return Transform.translate(
             offset: Offset(0, progress * 4),
             child: Transform.scale(
-              scale: 1.035 + progress * 0.008,
+              scale: 1.03 + progress * 0.008,
               child: child,
             ),
           );
@@ -392,29 +344,29 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
 
   Widget _buildTopBar(String name) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 4),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(28),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.88),
-              borderRadius: BorderRadius.circular(24),
+              color: const Color(0xFFF7E8C8).withOpacity(0.92),
+              borderRadius: BorderRadius.circular(28),
               border: Border.all(color: Colors.white, width: 1.8),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF17345B).withOpacity(0.10),
-                  blurRadius: 18,
-                  offset: const Offset(0, 7),
+                  color: const Color(0xFF17345B).withOpacity(0.12),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
             child: Row(
               children: [
                 _buildAvatar(),
-                const SizedBox(width: 9),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -425,9 +377,9 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppFonts.vazirmatn(
-                          fontSize: 14,
+                          fontSize: 13.5,
                           fontWeight: FontWeight.w900,
-                          color: const Color(0xFF183B5B),
+                          color: const Color(0xFF5A3A1B),
                         ),
                       ),
                       Text(
@@ -437,54 +389,32 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
                         style: AppFonts.vazirmatn(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF587087),
+                          color: const Color(0xFF8A6A45),
                         ),
                       ),
                     ],
                   ),
                 ),
-                _BalanceBadge(emoji: '⭐', count: PersianDigits.toFa(GameData.stars)),
-                const SizedBox(width: 5),
-                _BalanceBadge(emoji: '💰', count: PersianDigits.toFa(GameData.coins)),
-                const SizedBox(width: 6),
-                Semantics(
-                  button: true,
-                  label: 'جستجو در جزیره',
-                  child: Material(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(14),
-                      onTap: () => _openSection('/search'),
-                      child: const SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: Icon(Icons.search_rounded, color: Color(0xFF183B5B), size: 20),
-                      ),
-                    ),
-                  ),
+                _SandChip(
+                  emoji: '💰',
+                  count: PersianDigits.toFa(GameData.coins),
                 ),
-                const SizedBox(width: 6),
-                Semantics(
-                  button: true,
+                const SizedBox(width: 5),
+                _SandChip(
+                  emoji: '⭐',
+                  count: PersianDigits.toFa(GameData.stars),
+                ),
+                const SizedBox(width: 5),
+                _HeaderIcon(
+                  icon: Icons.search_rounded,
+                  label: 'جستجو در جزیره',
+                  onTap: () => _openSection('/search'),
+                ),
+                const SizedBox(width: 5),
+                _HeaderIcon(
+                  icon: Icons.lock_outline_rounded,
                   label: 'ورود به بخش والدین',
-                  child: Material(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(14),
-                      onTap: () => _parentGate(context),
-                      child: const SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: Icon(
-                          Icons.lock_outline_rounded,
-                          color: Color(0xFF183B5B),
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ),
+                  onTap: () => _parentGate(context),
                 ),
               ],
             ),
@@ -498,18 +428,18 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
     final hasPhoto = GameData.profilePhotoPath.isNotEmpty &&
         File(GameData.profilePhotoPath).existsSync();
     return Container(
-      width: 46,
-      height: 46,
+      width: 44,
+      height: 44,
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF7B2FF7), Color(0xFF00BFA6)],
+          colors: [Color(0xFFFFB347), Color(0xFF00BFA6)],
         ),
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF7B2FF7).withOpacity(0.22),
-            blurRadius: 10,
+            color: const Color(0xFFFFB347).withOpacity(0.28),
+            blurRadius: 8,
           ),
         ],
       ),
@@ -531,103 +461,63 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
     );
   }
 
-  Widget _buildHeading() {
+  Widget _buildSeashellTitle() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 11, 16, 10),
+      margin: const EdgeInsets.symmetric(horizontal: 18),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.82),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white.withOpacity(0.95)),
+        color: const Color(0xFFF8E8C9).withOpacity(0.94),
+        borderRadius: BorderRadius.circular(40),
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF8B5A2B).withOpacity(0.16),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Column(
         children: [
           Text(
-            'امروز کجا بریم؟ ✨',
+            'امروز کجا بریم؟',
             textAlign: TextAlign.center,
             style: AppFonts.vazirmatn(
-              fontSize: 22,
+              fontSize: 24,
               fontWeight: FontWeight.w900,
-              color: const Color(0xFF183B5B),
+              color: const Color(0xFFC2185B),
             ),
           ),
-          const SizedBox(height: 2),
           Text(
             'یک ماجراجویی قشنگ انتخاب کن',
             textAlign: TextAlign.center,
             style: AppFonts.vazirmatn(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF587087),
+              color: const Color(0xFF6D4C2B),
             ),
           ),
         ],
       ),
     ).animate().fadeIn(duration: 350.ms);
   }
-
-  Widget _buildMoreTitle() {
-    return Row(
-      children: [
-        const Expanded(child: Divider(color: Colors.white, thickness: 1.4)),
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 10),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.90),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Text(
-            'بخش‌های بیشتر',
-            style: AppFonts.vazirmatn(
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
-              color: const Color(0xFF183B5B),
-            ),
-          ),
-        ),
-        const Expanded(child: Divider(color: Colors.white, thickness: 1.4)),
-      ],
-    );
-  }
 }
 
-class _BackgroundOverlay extends StatelessWidget {
-  const _BackgroundOverlay();
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            const Color(0xFFEAFBFF).withOpacity(0.58),
-            const Color(0xFFB9E8F2).withOpacity(0.18),
-            const Color(0xFF064B68).withOpacity(0.22),
-          ],
-          stops: const [0, 0.48, 1],
-        ),
-      ),
-    );
-  }
-}
-
-class _BalanceBadge extends StatelessWidget {
+class _SandChip extends StatelessWidget {
   final String emoji;
   final String count;
 
-  const _BalanceBadge({required this.emoji, required this.count});
+  const _SandChip({required this.emoji, required this.count});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBEB),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFFFD95A), width: 1.2),
+        color: const Color(0xFFFFF6E0),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE8C56B), width: 1.2),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -639,7 +529,7 @@ class _BalanceBadge extends StatelessWidget {
             style: AppFonts.vazirmatn(
               fontSize: 11,
               fontWeight: FontWeight.w900,
-              color: const Color(0xFF183B5B),
+              color: const Color(0xFF5A3A1B),
             ),
           ),
         ],
@@ -648,37 +538,66 @@ class _BalanceBadge extends StatelessWidget {
   }
 }
 
-class _PrioritySectionCard extends StatefulWidget {
-  final String semanticsLabel;
-  final String title;
-  final String subtitle;
-  final String badge;
-  final String actionLabel;
-  final String image;
-  final List<Color> colors;
-  final double height;
-  final bool featured;
+class _HeaderIcon extends StatelessWidget {
+  final IconData icon;
+  final String label;
   final VoidCallback onTap;
 
-  const _PrioritySectionCard({
-    super.key,
-    required this.semanticsLabel,
-    required this.title,
-    required this.subtitle,
-    required this.badge,
-    required this.actionLabel,
-    required this.image,
-    required this.colors,
-    required this.height,
+  const _HeaderIcon({
+    required this.icon,
+    required this.label,
     required this.onTap,
-    this.featured = false,
   });
 
   @override
-  State<_PrioritySectionCard> createState() => _PrioritySectionCardState();
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: label,
+      child: Material(
+        color: const Color(0xFFFFF6E0),
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: SizedBox(
+            width: 36,
+            height: 36,
+            child: Icon(icon, color: const Color(0xFF5A3A1B), size: 18),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _PrioritySectionCardState extends State<_PrioritySectionCard> {
+class _BubblePortal extends StatefulWidget {
+  final String semanticsLabel;
+  final String title;
+  final String actionLabel;
+  final String image;
+  final Color actionColor;
+  final double size;
+  final double titleSize;
+  final VoidCallback onTap;
+
+  const _BubblePortal({
+    super.key,
+    required this.semanticsLabel,
+    required this.title,
+    required this.actionLabel,
+    required this.image,
+    required this.actionColor,
+    required this.size,
+    required this.titleSize,
+    required this.onTap,
+  });
+
+  @override
+  State<_BubblePortal> createState() => _BubblePortalState();
+}
+
+class _BubblePortalState extends State<_BubblePortal> {
   bool _pressed = false;
 
   @override
@@ -687,193 +606,79 @@ class _PrioritySectionCardState extends State<_PrioritySectionCard> {
       button: true,
       label: widget.semanticsLabel,
       child: AnimatedScale(
-        scale: _pressed ? 0.985 : 1,
-        duration: const Duration(milliseconds: 130),
-        curve: Curves.easeOut,
+        scale: _pressed ? 0.96 : 1,
+        duration: const Duration(milliseconds: 120),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(30),
+            customBorder: const CircleBorder(),
             onHighlightChanged: (value) => setState(() => _pressed = value),
             onTap: widget.onTap,
-            child: Ink(
-              height: widget.height,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                  colors: widget.colors,
-                ),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: Colors.white, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: widget.colors.first.withOpacity(0.34),
-                    blurRadius: widget.featured ? 24 : 18,
-                    offset: const Offset(0, 9),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: widget.size,
+                  height: widget.size,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 4),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF0277BD).withOpacity(0.28),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
-                  BoxShadow(
-                    color: Colors.white.withOpacity(0.55),
-                    blurRadius: 5,
-                    offset: const Offset(0, -2),
+                  child: ClipOval(
+                    child: Image.asset(widget.image, fit: BoxFit.cover),
                   ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(28),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Positioned(
-                      left: -10,
-                      top: -20,
-                      bottom: -20,
-                      width: widget.featured ? 205 : 170,
-                      child: Image.asset(
-                        widget.image,
-                        fit: BoxFit.cover,
-                        alignment: Alignment.center,
-                      ),
-                    ),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.centerRight,
-                          end: Alignment.centerLeft,
-                          colors: [
-                            widget.colors.first.withOpacity(0.98),
-                            widget.colors.first.withOpacity(0.86),
-                            widget.colors.last.withOpacity(0.22),
-                          ],
-                          stops: const [0, 0.48, 1],
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: Container(
-                        width: 110,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          gradient: RadialGradient(
-                            colors: [
-                              Colors.white.withOpacity(0.20),
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsetsDirectional.fromSTEB(
-                        20,
-                        widget.featured ? 17 : 13,
-                        widget.featured ? 145 : 122,
-                        widget.featured ? 17 : 13,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.20),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.32),
-                              ),
-                            ),
-                            child: Text(
-                              widget.badge,
-                              maxLines: 1,
-                              style: AppFonts.vazirmatn(
-                                fontSize: widget.featured ? 11 : 9.5,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: widget.featured ? 8 : 5),
-                          Text(
-                            widget.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppFonts.vazirmatn(
-                              fontSize: widget.featured ? 25 : 20,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                              height: 1.1,
-                              shadows: const [
-                                Shadow(
-                                  color: Colors.black26,
-                                  blurRadius: 8,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            widget.subtitle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppFonts.vazirmatn(
-                              fontSize: widget.featured ? 12 : 10.5,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white.withOpacity(0.90),
-                            ),
-                          ),
-                          SizedBox(height: widget.featured ? 11 : 7),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: widget.featured ? 13 : 10,
-                              vertical: widget.featured ? 7 : 5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.10),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  widget.featured
-                                      ? Icons.play_arrow_rounded
-                                      : Icons.arrow_back_rounded,
-                                  size: widget.featured ? 19 : 16,
-                                  color: widget.colors.first,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  widget.actionLabel,
-                                  style: AppFonts.vazirmatn(
-                                    fontSize: widget.featured ? 11.5 : 10,
-                                    fontWeight: FontWeight.w900,
-                                    color: widget.colors.first,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
                 ),
-              ),
+                const SizedBox(height: 6),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF6E4B8),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white, width: 1.4),
+                  ),
+                  child: Text(
+                    widget.title,
+                    textAlign: TextAlign.center,
+                    style: AppFonts.vazirmatn(
+                      fontSize: widget.titleSize,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF4A2E12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: widget.actionColor,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: widget.actionColor.withOpacity(0.35),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    widget.actionLabel,
+                    style: AppFonts.vazirmatn(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -882,18 +687,14 @@ class _PrioritySectionCardState extends State<_PrioritySectionCard> {
   }
 }
 
-class _CompactSectionCard extends StatelessWidget {
+class _SandOvalTile extends StatelessWidget {
+  final String emoji;
   final String title;
-  final String subtitle;
-  final String image;
-  final Color accent;
   final VoidCallback onTap;
 
-  const _CompactSectionCard({
+  const _SandOvalTile({
+    required this.emoji,
     required this.title,
-    required this.subtitle,
-    required this.image,
-    required this.accent,
     required this.onTap,
   });
 
@@ -906,71 +707,36 @@ class _CompactSectionCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(40),
           child: Ink(
-            height: 112,
+            height: 58,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.93),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white, width: 1.8),
+              color: const Color(0xFFF3D7A0),
+              borderRadius: BorderRadius.circular(40),
+              border: Border.all(color: Colors.white, width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: accent.withOpacity(0.20),
-                  blurRadius: 15,
-                  offset: const Offset(0, 6),
+                  color: const Color(0xFF8B5A2B).withOpacity(0.18),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(12, 10, 4, 10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppFonts.vazirmatn(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900,
-                            color: const Color(0xFF183B5B),
-                            height: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          subtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppFonts.vazirmatn(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF587087),
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Icon(
-                          Icons.arrow_back_rounded,
-                          color: accent,
-                          size: 17,
-                        ),
-                      ],
+                Text(emoji, style: const TextStyle(fontSize: 22)),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppFonts.vazirmatn(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF4A2E12),
                     ),
-                  ),
-                ),
-                ClipRRect(
-                  borderRadius: const BorderRadiusDirectional.horizontal(
-                    end: Radius.circular(22),
-                  ),
-                  child: Image.asset(
-                    image,
-                    width: 74,
-                    height: double.infinity,
-                    fit: BoxFit.cover,
                   ),
                 ),
               ],
@@ -982,14 +748,14 @@ class _CompactSectionCard extends StatelessWidget {
   }
 }
 
-class _QuickLink extends StatelessWidget {
+class _CoralCircle extends StatelessWidget {
   final String emoji;
-  final String label;
+  final String title;
   final VoidCallback onTap;
 
-  const _QuickLink({
+  const _CoralCircle({
     required this.emoji,
-    required this.label,
+    required this.title,
     required this.onTap,
   });
 
@@ -997,45 +763,56 @@ class _QuickLink extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: label,
+      label: title,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Ink(
-            height: 72,
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.90),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white, width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF183B5B).withOpacity(0.08),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(emoji, style: const TextStyle(fontSize: 21)),
-                const SizedBox(height: 3),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: AppFonts.vazirmatn(
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w900,
-                    color: const Color(0xFF183B5B),
+          customBorder: const CircleBorder(),
+          child: Column(
+            children: [
+              Container(
+                width: 78,
+                height: 78,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFFFF8A80), Color(0xFFE57373)],
                   ),
+                  border: Border.all(color: const Color(0xFFFFCDD2), width: 3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFE57373).withOpacity(0.35),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+                child: Text(emoji, style: const TextStyle(fontSize: 30)),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppFonts.vazirmatn(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  shadows: const [
+                    Shadow(
+                      color: Colors.black45,
+                      blurRadius: 6,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),

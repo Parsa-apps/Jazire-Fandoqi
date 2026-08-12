@@ -26,9 +26,9 @@ class FandoghiWelcomeOverlay extends StatefulWidget {
   /// only runs once per session unless [FandoghiWelcome.reset] is
   /// called.
   static void start(BuildContext context) {
-    if (FandoghiWelcome.shownThisSession) return;
+    // مربی شناور و معرفی شخصیت از کل اپ حذف شده است.
     FandoghiWelcome.markShown();
-    FandoghiWelcome.isPlaying.value = true;
+    FandoghiWelcome.isPlaying.value = false;
   }
 
   @override

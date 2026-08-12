@@ -42,8 +42,8 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 250));
 
-    final cartoon = find.text('سینما کارتون');
-    final stories = find.text('قصه‌خانه');
+    final cartoon = find.text('کارتون');
+    final stories = find.text('داستان');
     final learning = find.text('بازی و یادگیری');
 
     expect(cartoon, findsOneWidget);
@@ -54,27 +54,18 @@ void main() {
     expect(find.text('درباره ما'), findsOneWidget);
     expect(find.textContaining('کتابخانه یادگیری'), findsOneWidget);
 
-    // اولویت بصری منوی اصلی باید دقیقاً کارتون ← قصه ← بازی و یادگیری باشد.
+    // کارتون و داستان روی یک ردیف‌اند؛ بازی و یادگیری زیر آن‌هاست.
     expect(
       tester.getTopLeft(cartoon).dy,
-      lessThan(tester.getTopLeft(stories).dy),
+      closeTo(tester.getTopLeft(stories).dy, 24),
     );
     expect(
-      tester.getTopLeft(stories).dy,
+      tester.getTopLeft(cartoon).dy,
       lessThan(tester.getTopLeft(learning).dy),
     );
-
-    final cartoonSize = tester.getSize(
-      find.byKey(const Key('gateway.cartoon')),
-    );
-    final storySize = tester.getSize(
-      find.byKey(const Key('gateway.stories')),
-    );
-    final learningSize = tester.getSize(
-      find.byKey(const Key('gateway.learning')),
-    );
-    expect(cartoonSize.height, greaterThan(storySize.height));
-    expect(storySize.height, greaterThan(learningSize.height));
+    expect(find.byKey(const Key('gateway.cartoon')), findsOneWidget);
+    expect(find.byKey(const Key('gateway.stories')), findsOneWidget);
+    expect(find.byKey(const Key('gateway.learning')), findsOneWidget);
   });
 
   testWidgets('gateway stays overflow-free on a narrow phone', (tester) async {

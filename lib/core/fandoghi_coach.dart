@@ -75,7 +75,8 @@ class FandoghiCoach {
   }
 
   static void enablePersistentPresence() {
-    persistent.value = true;
+    // شخصیت مربی دیگر روی صفحه نمی‌ماند؛ فقط پیام متنی نمایش داده می‌شود.
+    persistent.value = false;
   }
 
   static void minimize() => minimized.value = true;
