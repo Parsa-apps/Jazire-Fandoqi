@@ -130,7 +130,7 @@ lib/
 
 ## اجرا و بررسی
 
-پیش‌نیاز: Flutter stable نسخه ۳.۲۴ یا جدیدتر و Java 17 برای بیلد Android.
+پیش‌نیاز: Flutter stable نسخه ۳.۲۴.۳ یا جدیدتر و Java 17 برای بیلد Android.
 
 ```bash
 flutter pub get
@@ -162,7 +162,7 @@ flutter build appbundle --release
    تطبیق داده شود.
 4. روی گوشی ضعیف و کوچک، رابط RTL، حالت شب، قطع اینترنت، بازگشت از پس‌زمینه و
    چرخش صفحه تست دستی انجام شود.
-5. پیش از انتشار، signing release واقعی جایگزین signing آزمایشی Android شود.
+5. پیش از انتشار، keystore واقعی در `android/key.properties` و کلید RSA بازار در `android/billing.properties` تنظیم شوند؛ ساخت release بدون امضای واقعی متوقف می‌شود.
 
 ## مستندات مرتبط
 

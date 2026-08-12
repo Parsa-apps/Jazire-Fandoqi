@@ -128,9 +128,20 @@
 **Priority:** P2  
 **Location:** `android/app/build.gradle` + `.github/workflows/build-apk.yml`
 
-**Evidence:** fallback به `signingConfigs.debug`؛ آرتیفکت release واقعاً انتشار نیست.
+**Evidence:** آرتیفکت CI با کلید debug امضا می‌شود و خروجی واقعی استور نیست.
 
-**Minimal fix:** جدا کردن job تأیید از انتشار واقعی. در این دور تغییر معماری CI انجام نشد.
+**Status:** کاهش ریسک انجام شد. release محلی بدون `key.properties` متوقف می‌شود و امضای debug فقط داخل GitHub Actions یا با فلگ صریح QA مجاز است. تغییر نام/تفکیک jobهای workflow به‌دلیل نبود مجوز `workflows` اتصال GitHub این نشست، باقی مانده است.
+
+---
+
+### Finding SEC-009 — کدهای ثابت فعال‌سازی رایگان نسخه کامل
+
+**Priority:** P1
+**Location:** `lib/core/monetization.dart` + `lib/features/shop/full_version_paywall.dart`
+
+**Evidence:** دو کد ثابت داخل سورس حتی در release نسخه کامل را بدون رسید استور فعال می‌کردند.
+
+**Status:** رفع شد. API، کلید ذخیره‌سازی، رابط کد تخفیف و تست‌های مربوط حذف شدند؛ ممیزی `tools/privacy_audit.sh` بازگشت این الگو را رد می‌کند.
 
 ---
 
@@ -161,10 +172,11 @@
 - ~~allowBackup پیش‌فرض~~ — رفع شد
 - ~~کلید بکاپ هاردکد / v1 ضعیف~~ — رفع شد
 - ~~اسکریپت keystore با رمز ثابت~~ — رفع شد
+- ~~فعال‌سازی رایگان با کد ثابت در release~~ — رفع شد
 
 ### Recommended (P2)
 
-- امضای CI با کلید انتشار واقعی
+- تغییر نام/تفکیک آرتیفکت تأییدی CI از خروجی استور (نیازمند مجوز `workflows` مالک)
 - `FLAG_SECURE` روی دیالوگ PIN (نیاز به فلگ نیتیو پنجره)
 
 ### User Isolation Verdict

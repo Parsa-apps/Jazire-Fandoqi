@@ -6,7 +6,7 @@
 
 قبل از شروع، مطمئن شوید این‌ها نصب هستند:
 
-1. **Flutter SDK** (نسخه 3.0+):
+1. **Flutter SDK** (نسخه 3.24.3+):
    - دانلود از [flutter.dev](https://docs.flutter.dev/get-started/install)
    - پس از نصب: `flutter doctor` اجرا کنید تا مطمئن شوید همه چیز درست است
 
@@ -55,10 +55,10 @@ keyPassword=رمز-key
 فایل keystore را در `android/release.keystore` بگذارید. `key.properties` و فایل‌های
 keystore در `.gitignore` قرار دارند.
 
-> **فیکس ارور "The parser did not find any certificates":**
-> نسخه قبلی اگر `key.properties` نبود، APK را بدون امضا می‌ساخت که در اندروید ۱۳+ نصب نمی‌شود.
-> الان اگر `key.properties` نباشد، APK ریلیز با کلید دیباگ امضا می‌شود تا قابل نصب برای تست باشد.
-> این برای تست روی گوشی کافی است، اما برای کافه‌بازار باید حتماً keystore اصلی بسازید.
+> **امنیت امضای انتشار:** ساخت release محلی بدون `key.properties` عمداً متوقف
+> می‌شود تا خروجی امضاشده با کلید debug اشتباهاً به استور ارسال نشود. برای تست
+> روی گوشی از `flutter build apk --debug` استفاده کنید. محیط GitHub Actions فقط
+> برای راستی‌آزمایی کامپایل اجازهٔ امضای debug دارد و خروجی آن قابل انتشار نیست.
 
 ### ۵. ساخت APK
 
@@ -142,9 +142,9 @@ java -version
 flutter build apk --debug
 adb install build/app/outputs/flutter-apk/app-debug.apk
 
-# روش ۲: ریلیز با امضای دیباگ (بعد از فیکس v6.0.0+12):
-flutter build apk --release
-# الان این APK هم با کلید دیباگ امضا می‌شود و نصب می‌شود
+# روش ۲: فقط برای تأیید release-mode و هرگز برای انتشار:
+ALLOW_VERIFICATION_SIGNING=1 BUILD_MODE=release ./build.sh
+# خروجی این حالت با کلید debug امضا می‌شود و باید صرفاً برای QA استفاده شود.
 ```
 **برای انتشار اصلی در کافه‌بازار:**
 ```bash
