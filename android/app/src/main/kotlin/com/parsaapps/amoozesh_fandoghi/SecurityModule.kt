@@ -1,5 +1,6 @@
 package com.parsaapps.amoozesh_fandoghi
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
@@ -45,7 +46,7 @@ class SecurityModule(private val context: Context) {
             // When no expected digest is configured (CI verification builds)
             // the check is not applicable and reports true.
             "signatureMatch" to (expected.isEmpty() || (actual.isNotEmpty() && expected == actual)),
-            "installerPackage" to (context.packageManager.getInstallerPackageName(context.packageName) ?: ""),
+            "installerPackage" to installerPackageName(),
         )
     }
 
@@ -141,23 +142,50 @@ class SecurityModule(private val context: Context) {
         }
     }
 
+    @SuppressLint("NewApi")
+    private fun installerPackageName(): String {
+        return try {
+            val pm = context.packageManager
+            if (Build.VERSION.SDK_INT >= 30) {
+                pm.getInstallSourceInfo(context.packageName).installingPackageName ?: ""
+            } else {
+                @Suppress("DEPRECATION")
+                pm.getInstallerPackageName(context.packageName) ?: ""
+            }
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
     /** SHA-256 (hex, lowercase) of the signing certificate of the installed APK. */
+    @SuppressLint("NewApi")
     private fun signingCertificateSha256(): String {
         return try {
             val pm = context.packageManager
-            val info = pm.getPackageInfo(
-                context.packageName,
-                if (Build.VERSION.SDK_INT >= 28) PackageManager.GET_SIGNING_CERTIFICATES
-                else @Suppress("DEPRECATION") PackageManager.GET_SIGNATURES,
-            )
+            val packageName = context.packageName
+            val info = if (Build.VERSION.SDK_INT >= 33) {
+                pm.getPackageInfo(
+                    packageName,
+                    PackageManager.PackageInfoFlags.of(
+                        PackageManager.GET_SIGNING_CERTIFICATES.toLong(),
+                    ),
+                )
+            } else if (Build.VERSION.SDK_INT >= 28) {
+                @Suppress("DEPRECATION")
+                pm.getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+            } else {
+                @Suppress("DEPRECATION")
+                pm.getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
+            }
             val signerBytes: ByteArray? = if (Build.VERSION.SDK_INT >= 28) {
                 info.signingInfo?.apkContentsSigners?.firstOrNull()?.toByteArray()
             } else {
                 @Suppress("DEPRECATION")
                 info.signatures?.firstOrNull()?.toByteArray()
-            } ?: return ""
+            }
+            if (signerBytes == null) return ""
             val digest = MessageDigest.getInstance("SHA-256").digest(signerBytes)
-            digest.joinToString("") { byte -> String.format("%02x", byte) }
+            digest.joinToString("") { byte -> String.format("%02x", byte.toInt() and 0xff) }
         } catch (_: Exception) {
             ""
         }
