@@ -52,7 +52,7 @@ class BackupService {
       bits: 256,
     );
     return pbkdf2.deriveKeyFromPassword(
-      password: utf8.encode('kudake-backup-v4:$pin'),
+      password: 'kudake-backup-v4:$pin',
       nonce: salt,
     );
   }
