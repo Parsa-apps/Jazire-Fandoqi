@@ -92,7 +92,8 @@ android {
     // a compile check — it was aborting assembleRelease after the Kotlin
     // already compiled. Keep regular compile errors; don't fail the store
     // artifact on advisory lint.
-    lint {
+    // lintOptions is the AGP 8.1 Groovy name; `lint {}` is AGP 8.2+ only.
+    lintOptions {
         checkReleaseBuilds false
         abortOnError false
         disable 'InvalidPackage', 'NewApi'
