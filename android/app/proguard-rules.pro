@@ -2,6 +2,9 @@
 # Preserves beautiful story audio, billing, and game functionality
 
 -keep class com.parsaapps.amoozesh_fandoghi.MainActivity { *; }
+-keep class com.parsaapps.amoozesh_fandoghi.SecureStore { *; }
+-keep class com.parsaapps.amoozesh_fandoghi.SecurityModule { *; }
+-keep class com.parsaapps.amoozesh_fandoghi.BuildConfig { *; }
 -keep class ir.cafebazaar.poolakey.** { *; }
 -keepattributes Signature
 -keepattributes *Annotation*
