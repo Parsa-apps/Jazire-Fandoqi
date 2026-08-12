@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
@@ -12,16 +11,13 @@ import 'logger_service.dart';
 /// ────────────────────────────────────────────────────────────
 /// 🔊 سامانه صوتی آفلاین فندقی
 ///
-/// همهٔ افکت‌های بازی (کلیک، درست، غلط، برد، باخت، سکه، ستاره،
-/// ترکیدن حباب و...) و تلفظ حروف الفبا به‌صورت فایل‌های صوتی
-/// داخل اپ (assets/audio) پخش می‌شوند تا روی هیچ دستگاهی به
-/// موتور TTS وابسته نباشند.
+/// افکت‌های بازی از `assets/audio/sfx` پخش می‌شوند (فایل‌های
+/// سینثسایزشدهٔ نرم و کودک‌پسند). تلفظ حروف، اعداد، رنگ و شکل
+/// هم آفلاین است.
 ///
-/// یک استخر از پخش‌کننده‌ها برای همپوشانی افکت‌ها استفاده می‌شود
-/// (مثلاً ترکیدن پشت سر هم حباب‌ها).
-///
-/// TTS فقط برای محتوای کاملاً پویا (مثل پاسخ‌های هوش مصنوعی
-/// دوست فندقی) باقی مانده و در صورت عدم پشتیبانی، بی‌صدا رد می‌شود.
+/// داستان‌ها و لالایی‌ها از این کلاس رد نمی‌شوند — آن‌ها را
+/// `StoryAudioService` و پخش‌کنندهٔ لالایی جداگانه مدیریت می‌کنند
+/// و سشن صوتی‌شان نباید توسط افکت‌های UI قطع شود.
 /// ────────────────────────────────────────────────────────────
 class AudioService {
   static const String _sfxPath = 'assets/audio/sfx/';
@@ -29,13 +25,73 @@ class AudioService {
   static const String _numbersPath = 'assets/audio/numbers/';
   static const String _learningPath = 'assets/audio/learning/';
 
-  // استخر افکت برای پخش همزمان چند صدا
-  static const int _poolSize = 5;
-  static final List<AudioPlayer> _sfxPool =
-      List.generate(_poolSize, (_) => AudioPlayer());
+  /// فهرست افکت‌های بسته‌بندی‌شده — برای تست و بازتولید.
+  static const List<String> sfxNames = <String>[
+    'tap',
+    'click',
+    'select',
+    'back',
+    'page',
+    'swoosh',
+    'bubble',
+    'coin',
+    'star',
+    'correct',
+    'success',
+    'wrong',
+    'error',
+    'win',
+    'lose',
+    'levelup',
+    'unlock',
+    'tick',
+    'countdown',
+    'go',
+    'sleep',
+  ];
+
+  /// بلندی هر دسته — UI آرام، جشن بلندتر، غلط هرگز بلند/ترسناک.
+  static const Map<String, double> sfxVolumes = <String, double>{
+    'tap': 0.40,
+    'click': 0.36,
+    'tick': 0.26,
+    'back': 0.42,
+    'page': 0.40,
+    'swoosh': 0.46,
+    'select': 0.50,
+    'bubble': 0.56,
+    'coin': 0.66,
+    'star': 0.68,
+    'correct': 0.70,
+    'success': 0.68,
+    'wrong': 0.44,
+    'error': 0.38,
+    'win': 0.78,
+    'lose': 0.44,
+    'levelup': 0.80,
+    'unlock': 0.74,
+    'countdown': 0.52,
+    'go': 0.66,
+    'sleep': 0.48,
+  };
+
+  static const double voiceVolume = 0.88;
+  static const double defaultSfxVolume = 0.55;
+
+  static const int _poolSize = 8;
+  static final List<AudioPlayer> _sfxPool = List<AudioPlayer>.generate(
+    _poolSize,
+    (_) => AudioPlayer(
+      handleInterruptions: false,
+      handleAudioSessionActivation: false,
+    ),
+  );
   static int _poolIndex = 0;
 
-  static final AudioPlayer _bgmPlayer = AudioPlayer();
+  static final AudioPlayer _bgmPlayer = AudioPlayer(
+    handleInterruptions: false,
+    handleAudioSessionActivation: false,
+  );
 
   /// موتور TTS — فقط برای محتوای پویا و به‌عنوان آخرین راه.
   static final FlutterTts _tts = FlutterTts();
@@ -46,20 +102,23 @@ class AudioService {
   static bool _initialized = false;
   static bool _ttsAvailable = false;
 
+  static String? _lastSfxName;
+  static DateTime _lastSfxAt = DateTime.fromMillisecondsSinceEpoch(0);
+  static const Duration _uiDebounce = Duration(milliseconds: 45);
+  static const Set<String> _uiSfx = <String>{'tap', 'click', 'tick'};
+
   static Future<void> init() async {
     if (_initialized) return;
 
-    // صدای همه پخش‌کننده‌ها
-    for (final p in _sfxPool) {
-      p.setVolume(1.0);
+    for (final AudioPlayer player in _sfxPool) {
+      await player.setVolume(defaultSfxVolume);
     }
 
-    // TTS را اختیاری راه‌اندازی کن؛ روی دستگاه‌هایی که ندارند،
-    // خطا را بی‌صدا می‌بلعیم و بدونش ادامه می‌دهیم.
+    // لحن گرم و شمرده — نه صدای بچگانهٔ مصنوعی با pitch بالا.
     try {
       await _tts.setLanguage('fa-IR');
-      await _tts.setPitch(1.35);
-      await _tts.setSpeechRate(0.46);
+      await _tts.setPitch(1.06);
+      await _tts.setSpeechRate(0.40);
       await _tts.setVolume(1.0);
       _ttsAvailable = true;
     } catch (error) {
@@ -70,27 +129,49 @@ class AudioService {
     _initialized = true;
   }
 
-  // ─────────────────────────── افکت‌های آفلاین ───────────────────────────
+  static bool get _muted =>
+      !GameData.soundEnabled || ParentControls.shouldMuteSound;
 
-  /// پخش یک افکت از استخر (بدون قطع صدای قبلی).
-  static Future<void> _playFromPool(String assetPath) async {
-    if (!GameData.soundEnabled || ParentControls.shouldMuteSound) return;
+  static AudioPlayer _acquirePlayer() {
+    for (final AudioPlayer player in _sfxPool) {
+      if (!player.playing) return player;
+    }
+    final AudioPlayer player = _sfxPool[_poolIndex];
+    _poolIndex = (_poolIndex + 1) % _poolSize;
+    return player;
+  }
+
+  static bool _shouldSkipDuplicate(String name) {
+    if (!_uiSfx.contains(name)) return false;
+    if (_lastSfxName != name) return false;
+    return DateTime.now().difference(_lastSfxAt) < _uiDebounce;
+  }
+
+  /// پخش یک افکت از استخر (بدون قطع جشن در حال پخش).
+  static Future<void> _playFromPool(
+    String assetPath, {
+    double volume = defaultSfxVolume,
+  }) async {
+    if (_muted) return;
     try {
-      final player = _sfxPool[_poolIndex];
-      _poolIndex = (_poolIndex + 1) % _poolSize;
+      final AudioPlayer player = _acquirePlayer();
+      await player.setVolume(volume.clamp(0.0, 1.0));
       await player.stop();
       await player.setAsset(assetPath);
-      await player.play();
+      unawaited(player.play());
     } catch (error) {
-      // فایل صوتی ممکن است هنوز تولید نشده باشد؛ بی‌صدا رد شو.
       LoggerService.e('SFX missing: $assetPath', error);
     }
   }
 
-  static Future<void> playSfx(String name) =>
-      _playFromPool('$_sfxPath$name.wav');
+  static Future<void> playSfx(String name) async {
+    if (_shouldSkipDuplicate(name)) return;
+    _lastSfxName = name;
+    _lastSfxAt = DateTime.now();
+    final double volume = sfxVolumes[name] ?? defaultSfxVolume;
+    await _playFromPool('$_sfxPath$name.wav', volume: volume);
+  }
 
-  // ── افکت‌های آماده ──
   static Future<void> tap() => playSfx('tap');
   static Future<void> click() => playSfx('click');
   static Future<void> select() => playSfx('select');
@@ -101,7 +182,9 @@ class AudioService {
   static Future<void> coin() => playSfx('coin');
   static Future<void> star() => playSfx('star');
   static Future<void> correct() => playSfx('correct');
+  static Future<void> success() => playSfx('success');
   static Future<void> wrong() => playSfx('wrong');
+  static Future<void> error() => playSfx('error');
   static Future<void> win() => playSfx('win');
   static Future<void> lose() => playSfx('lose');
   static Future<void> levelUp() => playSfx('levelup');
@@ -120,8 +203,9 @@ class AudioService {
   // ─────────────────────────── حروف الفبا (آفلاین) ───────────────────────────
 
   /// نگاشت حرف فارسی به شماره فایل صوتی (l01..l32).
-  static const Map<String, int> _letterIndex = {
-    'آ': 1, 'ا': 1,
+  static const Map<String, int> letterIndex = {
+    'آ': 1,
+    'ا': 1,
     'ب': 2,
     'پ': 3,
     'ت': 4,
@@ -155,34 +239,33 @@ class AudioService {
     'ی': 32,
   };
 
+  static String? letterAssetFor(String letter) {
+    final int? idx = letterIndex[letter];
+    if (idx == null) return null;
+    return '$_lettersPath${'l${idx.toString().padLeft(2, '0')}'}.mp3';
+  }
+
   /// تلفظ رسای حرف فارسی از فایل آفلاین.
   static Future<void> pronounceLetter(String letter) async {
-    if (!GameData.soundEnabled) return;
-    final idx = _letterIndex[letter];
-    if (idx == null) {
-      // حرف ناشناخته — بی‌صدا
-      return;
-    }
-    final fileName = 'l${idx.toString().padLeft(2, '0')}.mp3';
-    await _playFromPool('$_lettersPath$fileName');
+    if (_muted) return;
+    final String? asset = letterAssetFor(letter);
+    if (asset == null) return;
+    await _playFromPool(asset, volume: voiceVolume);
   }
 
   // ─────────────────────────── اعداد (آفلاین) ───────────────────────────
 
-  static const Map<int, int> _numberIndex = {
-    0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5,
-    6: 6, 7: 7, 8: 8, 9: 9, 10: 10,
-    11: 11, 12: 12, 13: 13, 14: 14, 15: 15,
-    16: 16, 17: 17, 18: 18, 19: 19, 20: 20,
-  };
+  static String? numberAssetFor(int number) {
+    if (number < 0 || number > 20) return null;
+    return '$_numbersPath${'n${number.toString().padLeft(2, '0')}'}.mp3';
+  }
 
   /// تلفظ عدد فارسی از فایل آفلاین (در صورت موجود بودن).
   static Future<void> speakNumber(int number) async {
-    if (!GameData.soundEnabled) return;
-    final idx = _numberIndex[number];
-    if (idx == null) return;
-    final fileName = 'n${idx.toString().padLeft(2, '0')}.mp3';
-    await _playFromPool('$_numbersPath$fileName');
+    if (_muted) return;
+    final String? asset = numberAssetFor(number);
+    if (asset == null) return;
+    await _playFromPool(asset, volume: voiceVolume);
   }
 
   // ─────────────────────── واژه‌های آموزشی آفلاین ───────────────────────
@@ -214,10 +297,10 @@ class AudioService {
     required String cardId,
     required String fallbackText,
   }) async {
-    if (!GameData.soundEnabled) return;
+    if (_muted) return;
     final asset = learningVoiceAsset(topicId: topicId, cardId: cardId);
     if (asset != null) {
-      await _playFromPool(asset);
+      await _playFromPool(asset, volume: voiceVolume);
       return;
     }
     await speak(fallbackText);
@@ -246,13 +329,11 @@ class AudioService {
   /// TTS بی‌صدا رد می‌شود.
   static Future<void> speak(String text) async {
     final clean = text.trim();
-    if (clean.isEmpty ||
-        !GameData.soundEnabled ||
-        ParentControls.shouldMuteSound ||
-        !_ttsAvailable) return;
+    if (clean.isEmpty || _muted || !_ttsAvailable) return;
 
-    // پاکسازی اموجی‌ها برای گفتار روان‌تر
-    final spoken = clean.replaceAll(RegExp(r'[\p{Extended_Pictographic}]', unicode: true), ' ').trim();
+    final spoken = clean
+        .replaceAll(RegExp(r'[\p{Extended_Pictographic}]', unicode: true), ' ')
+        .trim();
     if (spoken.isEmpty) return;
 
     _speechQueue.add(spoken);
@@ -273,7 +354,7 @@ class AudioService {
 
   static Future<void> _drainQueue() async {
     _speaking = true;
-    while (_speechQueue.isNotEmpty && GameData.soundEnabled && _ttsAvailable) {
+    while (_speechQueue.isNotEmpty && !_muted && _ttsAvailable) {
       final text = _speechQueue.removeAt(0);
       try {
         await _tts.speak(text);
@@ -287,30 +368,17 @@ class AudioService {
 
   // ─────────────────────────── سازگاری با نسخه قدیم ───────────────────────────
 
-  static final Random _rng = Random();
-
-  /// تشویق کوتاه بعد از جواب درست (صدای آفلاین).
   static Future<void> playCorrect() => correct();
-
-  /// بازخورد ملایم بعد از جواب نادرست (صدای آفلاین).
   static Future<void> playWrong() => wrong();
-
-  /// جشن برد (صدای آفلاین).
   static Future<void> playWin() => win();
-
-  /// دریافت سکه.
   static Future<void> playCoin() => coin();
 
-  /// ارجاعات قدیمی به playEffect — به استخر هدایت می‌شود.
   static Future<void> playEffect(String assetPath) =>
-      _playFromPool(assetPath);
-
-  static String _randomChoice(List<String> options) =>
-      options[_rng.nextInt(options.length)];
+      _playFromPool(assetPath, volume: defaultSfxVolume);
 
   static void dispose() {
-    for (final p in _sfxPool) {
-      p.dispose();
+    for (final AudioPlayer player in _sfxPool) {
+      player.dispose();
     }
     _bgmPlayer.dispose();
   }
