@@ -70,7 +70,12 @@ if (hasReleaseSigning) {
 android {
     namespace = "com.parsaapps.amoozesh_fandoghi"
     compileSdk = 35
-    ndkVersion = flutter.ndkVersion
+    // CI (ubuntu-latest) runners preinstall a fixed set of NDKs.
+    // flutter.ndkVersion (23.1.7779620 on Flutter 3.24.3) is no longer among
+    // them and its on-demand download was failing the release build; use the
+    // runner's default NDK instead. The app contains no native code — the NDK
+    // is only used by AGP to strip bundled plugin symbols.
+    ndkVersion = "27.3.13750724"
 
     // AGP 8 no longer generates BuildConfig by default; the Bazaar billing
     // bridge reads its RSA public key from BuildConfig, so it must be enabled.

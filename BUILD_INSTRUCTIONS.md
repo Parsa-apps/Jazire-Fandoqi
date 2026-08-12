@@ -46,7 +46,7 @@ flutter pub run flutter_launcher_icons
 آن را وارد Git نکنید. سپس فایل `android/key.properties` محلی را بسازید:
 
 ```properties
-storeFile=release.keystore
+storeFile=../release.keystore
 storePassword=رمز-keystore
 keyAlias=نام-key
 keyPassword=رمز-key
