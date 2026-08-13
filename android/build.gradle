@@ -7,6 +7,79 @@ allprojects {
     }
 }
 
+// ===== TEMP-DIAG: relay build failures to CI annotations =====
+// Positive control: proves this script compiled and ran.
+println "::notice title=diag-ping-root::root-build-gradle-ok"
+
+try {
+    final def diagBuffer = new StringBuilder()
+    gradle.getLogging().addOutputEventListener(
+        { org.gradle.api.logging.OutputEvent event ->
+            try {
+                if (event instanceof org.gradle.api.logging.LoggingOutputEvent) {
+                    String m = event.formattedMessage
+                    if (m != null) {
+                        diagBuffer.append(m)
+                        if (diagBuffer.length() > 24000) {
+                            diagBuffer.delete(0, diagBuffer.length() - 18000)
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {
+                // Diagnostic only.
+            }
+        } as org.gradle.api.logging.OutputEventListener
+    )
+    println "::notice title=diag-ping-root::output-listener-ok"
+
+    gradle.buildFinished { org.gradle.BuildResult result ->
+        try {
+            if (result.failure != null) {
+                StringBuilder chain = new StringBuilder()
+                Throwable t = result.failure
+                int guard = 0
+                while (t != null && guard < 8) {
+                    chain.append("[").append(t.getClass().getSimpleName()).append("] ")
+                    chain.append(t.getMessage() ?: "(no message)")
+                    chain.append("\n")
+                    t = t.getCause()
+                    guard++
+                }
+                StringBuilder out = new StringBuilder(chain.toString())
+                out.append("===== LOG TAIL =====\n")
+                String tail = diagBuffer.toString()
+                if (tail.length() > 10000) {
+                    tail = tail.substring(tail.length() - 10000)
+                }
+                out.append(tail)
+                String encoded = out.toString()
+                    .replace('%', '%25')
+                    .replace('\r', '%0D')
+                    .replace('\n', '%0A')
+                int maxChunk = 3500
+                int idx = 0
+                int part = 1
+                while (true) {
+                    String chunkTitle = part == 1 ? "gradle-failure" : "gradle-failure-" + part
+                    if (encoded.length() - idx <= maxChunk) {
+                        println "::error title=" + chunkTitle + "::" + encoded.substring(idx)
+                        break
+                    }
+                    println "::error title=" + chunkTitle + "::" + encoded.substring(idx, idx + maxChunk)
+                    idx += maxChunk
+                    part++
+                }
+            }
+        } catch (Throwable ignored) {
+            // Diagnostic only.
+        }
+    }
+    println "::notice title=diag-ping-root::build-finished-listener-ok"
+} catch (Throwable ignored) {
+    // Diagnostics must never break the build.
+}
+// ===== END TEMP-DIAG =====
+
 rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
