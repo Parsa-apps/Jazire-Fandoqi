@@ -69,8 +69,13 @@ class SecureStore(private val context: Context) {
     }
 
     private fun save(map: MutableMap<String, String>) {
-        val json = JSONObject(map).toString()
-        val payload = encrypt(json) ?: return
+        // JSONObject(Map) یک raw Java type است و Kotlin به‌صوت سخت‌گیرانه
+        // MutableMap<String, String> را نمی‌پذیرد؛ پس فیلدها را صریح می‌گذاریم.
+        val jsonObject = JSONObject()
+        for ((key, value) in map) {
+            jsonObject.put(key, value)
+        }
+        val payload = encrypt(jsonObject.toString()) ?: return
         cache = map
         context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
             .edit()
