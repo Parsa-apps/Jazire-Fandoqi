@@ -8,8 +8,29 @@ allprojects {
 }
 
 // ===== TEMP-DIAG: relay build failures to CI annotations (safe to remove) =====
+def diagBuffer = new StringBuilder()
 try {
     println "::notice title=diag-ping-root::root-build-gradle-ok"
+} catch (Throwable ignored) {
+}
+try {
+    def listener = {
+        org.gradle.api.logging.OutputEvent event ->
+            try {
+                if (event instanceof org.gradle.api.logging.LoggingOutputEvent) {
+                    def m = event.formattedMessage
+                    if (m != null) {
+                        diagBuffer.append(m)
+                        if (diagBuffer.length() > 24000) {
+                            diagBuffer.delete(0, diagBuffer.length() - 18000)
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {
+            }
+    } as org.gradle.api.logging.OutputEventListener
+    gradle.getLogging().addOutputEventListener(listener)
+    println "::notice title=diag-ping-root::output-listener-ok"
 } catch (Throwable ignored) {
 }
 try {
@@ -27,6 +48,11 @@ try {
                     t = t.getCause()
                     i = i + 1
                 }
+                def tail = diagBuffer.toString()
+                if (tail.length() > 12000) {
+                    tail = tail.substring(tail.length() - 12000)
+                }
+                msg.append("=====LOGTAIL=====\n").append(tail)
                 def enc = msg.toString().replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
                 def idx = 0
                 def part = 1
