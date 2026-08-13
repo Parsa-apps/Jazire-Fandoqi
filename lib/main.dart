@@ -72,13 +72,9 @@ import 'shared/widgets/fandoghi_coach.dart';
 /// آفلاین، فارسی و طراحی‌شده برای یادگیری امن کودکان.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // بنیادهای فنی - فاز ۴، ۶ و ۸
-  await Hive.initFlutter();
-  await Hive.openBox('playerBox');
-  await AudioService.init();
 
-  // فاز ۸: ثبت سراسری خطاهای غیرمنتظره به‌صورت آفلاین
+  // فاز ۸ (+H2): ثبت خطاها *قبل* از هر کار async نصب می‌شود، وگرنه خطای
+  // داخل راه‌اندازی حافظه یا صدا در هیچ لاگی ثبت نمی‌شد.
   FlutterError.onError = (details) {
     LoggerService.reportCrash(
       details.exception,
@@ -98,6 +94,21 @@ Future<void> main() async {
   // اگر فونت کش نشده باشد، AppFonts به fallback می‌رود
   AppFonts.configure();
 
+  // بنیادهای فنی - فاز ۴، ۶ و ۸
+  // فقط چیزهایی که اولین فریم واقعاً به آن‌ها وابسته است اینجا await می‌شوند:
+  // ThemeController در همان build اول `GameData.textScale`/`activeTheme` و
+  // GrowthAppShell مقادیر `GrowthStore` را می‌خواند.
+  await Hive.initFlutter();
+  await Hive.openBox('playerBox');
+
+  // 🛡️ فاز امنیتی (+H2): بررسی صحت بیلد هیچ وابستگی‌ای به وضعیت بازیکن ندارد،
+  // پس همین‌جا شروع می‌شود تا هم‌زمان با خواندن حافظه پیش برود؛ نتیجه‌اش
+  // همچنان *قبل از* runApp انتظار کشیده می‌شود و رفتار عوض نمی‌شود.
+  // بعد از Hive شروع می‌شود چون مسیر لاگ خطایش به CrashReportStore (Hive) می‌رسد.
+  final Future<bool> securityBlockedFuture = kReleaseMode
+      ? SecurityHardeningService.assess().then((a) => a.tampered)
+      : Future<bool>.value(false);
+
   try {
     await GameData.load();
     // فاز ۴۳: فندقی اسم کودک را به یاد می‌آورد
@@ -115,20 +126,24 @@ Future<void> main() async {
     GrowthStore.useMemoryFallback();
   }
 
-  // 🛡️ فاز امنیتی: در release، قبل از ورود به اپ صحت بیلد بررسی می‌شود
-  // (امضا، debuggable، دیباگر، Frida/Xposed، روت). اگر بیلد دستکاری‌شده
-  // باشد، اپ فقط صفحهٔ امنیتی را نشان می‌دهد.
-  var securityBlocked = false;
-  if (kReleaseMode) {
-    final assessment = await SecurityHardeningService.assess();
-    securityBlocked = assessment.tampered;
-  }
+  // اگر بیلد دستکاری‌شده باشد (امضا، debuggable، دیباگر، Frida/Xposed، روت)
+  // اپ فقط صفحهٔ امنیتی را نشان می‌دهد. مثل قبل، مسیر اولیه تا مشخص‌شدن
+  // نتیجه تعیین نمی‌شود؛ فقط انتظار با خواندن حافظه هم‌پوشانی پیدا کرده است.
+  final bool securityBlocked = await securityBlockedFuture;
 
   runApp(
     ProviderScope(
       child: JazirehFandoghiApp(securityBlocked: securityBlocked),
     ),
   );
+
+  // فاز H2: راه‌اندازی صدا (۸ پلیر native + bind شدن به موتور TTS سیستم)
+  // گران‌ترین کار startup بود و هیچ صدایی در اسپلش پخش نمی‌شود؛ پس بعد از
+  // اولین فریم انجام می‌شود. متدهای پخش خودشان منتظر پایان آن می‌مانند،
+  // بنابراین حتی اگر کودک فوراً دکمه‌ای بزند صدا از دست نمی‌رود.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(AudioService.init());
+  });
 }
 
 class JazirehFandoghiApp extends StatefulWidget {
