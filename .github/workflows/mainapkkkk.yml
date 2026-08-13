@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# 🚀 JAZIREH FANDOGHI — Professional Multi-Stage Build Script (فاز ۹)
+# چک ۷ مرحله‌ای با توقف شفاف: analyze → test → coverage → build → size → icon
+set -Eeuo pipefail
+
+BUILD_MODE="${BUILD_MODE:-debug}"
+PROJECT_NAME="amoozesh_fandoghi"
+FAILED=0
+
+log()  { printf '▶ %s\n' "$1"; }
+ok()   { printf '✅ %s\n' "$1"; }
+fail() { printf '❌ %s\n' "$1"; FAILED=1; }
+
+printf '===========================================================\n'
+printf '🐰 جزیره فندقی — سیستم بیلد حرفه‌ای (حالت: %s)\n' "$BUILD_MODE"
+printf '===========================================================\n'
+
+# ── ۱. محیط Flutter ─────────────────────────────────────────────
+log 'مرحله ۱/۷: بررسی محیط Flutter'
+if ! command -v flutter >/dev/null 2>&1; then
+  fail 'خطا: فلاتر نصب نیست. (flutter doctor)'
+  exit 1
+fi
+ok "Flutter: $(flutter --version | head -1)"
+
+# ── ۲. پروژه اندروید ────────────────────────────────────────────
+log 'مرحله ۲/۷: بررسی پروژه اندروید'
+if [[ ! -d android ]]; then
+  log 'ساختار اندروید ساخته می‌شود...'
+  flutter create . --platforms android --project-name "$PROJECT_NAME" --org com.parsaapps
+fi
+ok 'پروژه اندروید موجود است'
+
+# ── ۳. وابستگی‌ها ────────────────────────────────────────────────
+log 'مرحله ۳/۷: دریافت کتابخانه‌ها'
+if ! flutter pub get; then
