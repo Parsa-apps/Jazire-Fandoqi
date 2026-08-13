@@ -35,8 +35,15 @@ class CartoonEpisode {
   final String title;
   final String duration;
   final String description;
+  /// هش ویدیوی تأییدشده در آپارات — **تنها منبع مجاز پخش** (وایت‌لیست C2).
   final String? aparatHash;
+
+  /// ⚠️ فقط برای مستندسازی/جستجوی دستی تیم محتوا نگه داشته شده است.
+  /// از نسخهٔ ۶٫۲ هرگز برای پیدا کردن یا پخش ویدیو استفاده نمی‌شود؛ پخش
+  /// خودکارِ «اولین نتیجهٔ جستجو» یک ریسک ایمنی برای کودک بود و حذف شد.
   final String? searchQuery;
+
+  /// لینک مستقیم اختیاری — پیش از پخش باید از فیلتر دامنه/HTTPS عبور کند.
   final String? streamUrl;
   final String webUrl;
   final String coverEmoji;

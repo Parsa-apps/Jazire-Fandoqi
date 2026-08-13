@@ -186,28 +186,33 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
     });
 
     final ep = _currentEpisode;
-    final query = '${widget.cartoon.title} ${ep.title}';
 
-    // اگر در آینده لینک CDN برای یک قسمت در بانک اطلاعاتی قرار گرفت،
-    // قبل از تماس با API از آن استفاده کن (لینک‌های آپارات موقتی‌اند، پس
-    // این فقط fallback سازگاری است و منبع اصلی همچنان resolver است).
+    // 🛡️ ایمنی کودک (C2): فقط قسمت‌های تأییدشدهٔ کاتالوگ پخش می‌شوند.
+    // اگر لینک CDN ثابتی در بانک اطلاعاتی تعریف شده باشد، باید از دامنه‌های
+    // مجاز آپارات و روی HTTPS باشد؛ در غیر این صورت نادیده گرفته می‌شود.
+    // هیچ جستجوی متنی و هیچ ویدیوی جایگزینی در کار نیست.
     AparatResolved resolved;
-    if (ep.streamUrl?.trim().isNotEmpty == true) {
+    final directUrl = ep.streamUrl?.trim() ?? '';
+    if (directUrl.isNotEmpty && AparatService.isPlayableStreamUrl(directUrl)) {
       resolved = AparatResolved(
-        streams: [VideoStream(url: ep.streamUrl!.trim(), quality: 'auto')],
+        streams: [VideoStream(url: directUrl, quality: 'auto')],
       );
     } else {
-      resolved = await AparatService.resolve(
-        videoHash: ep.aparatHash,
-        searchQuery: ep.searchQuery?.isNotEmpty == true
-            ? ep.searchQuery
-            : query,
-      );
+      resolved = await AparatService.resolve(videoHash: ep.aparatHash);
     }
 
     if (!mounted) return;
 
     final url = _pickUrl(resolved);
+    // آخرین خط دفاعی قبل از تحویل آدرس به پلیر.
+    if (url != null && !AparatService.isPlayableStreamUrl(url)) {
+      setState(() {
+        _videoLoading = false;
+        _videoError = true;
+        _videoErrorMsg = 'این قسمت الان قابل پخش نیست. بعداً دوباره امتحان کن.';
+      });
+      return;
+    }
     if (url == null) {
       setState(() {
         _videoLoading = false;
@@ -1137,7 +1142,6 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
                   height: 52,
                   child: CartoonCoverImage(
                     videoHash: _currentEpisode.aparatHash,
-                    searchQuery: _currentEpisode.searchQuery ?? widget.cartoon.englishTitle,
                     coverAsset: _currentEpisode.coverAsset ?? widget.cartoon.coverAsset,
                     fallbackEmoji: widget.cartoon.coverEmoji,
                     fallbackGradient: widget.cartoon.gradient,
@@ -1378,7 +1382,6 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
                         )
                       : CartoonCoverImage(
                           videoHash: ep.aparatHash,
-                          searchQuery: ep.searchQuery ?? widget.cartoon.englishTitle,
                           coverAsset: ep.coverAsset ?? widget.cartoon.coverAsset,
                           fallbackEmoji: ep.coverEmoji,
                           fallbackGradient: widget.cartoon.gradient,

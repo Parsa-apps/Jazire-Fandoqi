@@ -12,7 +12,6 @@ import 'package:jazireh_fandoghi/shared/widgets/professional_skeleton.dart';
 /// ═══════════════════════════════════════════════════════════════
 class CartoonCoverImage extends StatefulWidget {
   final String? videoHash;
-  final String? searchQuery;
   final String? coverAsset;
   final String fallbackEmoji;
   final Gradient fallbackGradient;
@@ -27,7 +26,6 @@ class CartoonCoverImage extends StatefulWidget {
   const CartoonCoverImage({
     super.key,
     this.videoHash,
-    this.searchQuery,
     this.coverAsset,
     required this.fallbackEmoji,
     required this.fallbackGradient,
@@ -49,10 +47,7 @@ class _CartoonCoverImageState extends State<CartoonCoverImage> {
   void initState() {
     super.initState();
     // اگر قبلاً کش شده (مثلاً ورود دوباره به صفحه)، فوری و بدون چشمک نمایش بده.
-    _url = AparatService.cachedThumbnail(
-      videoHash: widget.videoHash,
-      searchQuery: widget.searchQuery,
-    );
+    _url = AparatService.cachedThumbnail(videoHash: widget.videoHash);
     if (_url == null && _hasSource) _load();
   }
 
@@ -61,28 +56,20 @@ class _CartoonCoverImageState extends State<CartoonCoverImage> {
     super.didUpdateWidget(oldWidget);
     // وقتی کارتون عوض می‌شود (مثلاً اسلایدر «ویژه امروز» یا تغییر قسمت)،
     // باید پوستر جدید بارگیری شود — State در جای خود باقی می‌ماند.
-    if (oldWidget.videoHash != widget.videoHash ||
-        oldWidget.searchQuery != widget.searchQuery) {
+    if (oldWidget.videoHash != widget.videoHash) {
       // مقدار را مستقیم عوض می‌کنیم؛ build بلافاصله بعد از این callback اجرا می‌شود.
-      _url = AparatService.cachedThumbnail(
-        videoHash: widget.videoHash,
-        searchQuery: widget.searchQuery,
-      );
+      _url = AparatService.cachedThumbnail(videoHash: widget.videoHash);
       if (_url == null && _hasSource) _load();
     }
   }
 
-  bool get _hasSource =>
-      (widget.videoHash != null && widget.videoHash!.isNotEmpty) ||
-      (widget.searchQuery != null && widget.searchQuery!.trim().isNotEmpty);
+  /// فقط پوستر ویدیوهای تأییدشدهٔ کاتالوگ واکشی می‌شود (C2).
+  bool get _hasSource => AparatService.isApprovedHash(widget.videoHash);
 
   Future<void> _load() async {
     if (mounted) setState(() => _loading = true);
     try {
-      final url = await AparatService.thumbnailFor(
-        videoHash: widget.videoHash,
-        searchQuery: widget.searchQuery,
-      );
+      final url = await AparatService.thumbnailFor(videoHash: widget.videoHash);
       if (!mounted) return;
       setState(() {
         _url = url;
@@ -147,7 +134,9 @@ class _CartoonCoverImageState extends State<CartoonCoverImage> {
       );
     }
 
-    final url = _url;
+    // پیش از رندر، آدرس پوستر دوباره اعتبارسنجی می‌شود تا فقط تصاویر
+    // دامنه‌های مجاز آپارات روی صفحهٔ کودک نمایش داده شوند.
+    final url = AparatService.isAllowedImageUrl(_url) ? _url : null;
 
     if (url == null) {
       if (_loading) {

@@ -49,12 +49,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
     ];
     AparatService.prefetchCartoonCovers(
       ordered.map(
-        (c) => (
-          hash: c.episodes.isNotEmpty ? c.episodes.first.aparatHash : null,
-          query: c.episodes.isNotEmpty
-              ? (c.episodes.first.searchQuery ?? c.englishTitle)
-              : c.englishTitle,
-        ),
+        (c) => c.episodes.isNotEmpty ? c.episodes.first.aparatHash : null,
       ),
       onProgress: () {
         if (mounted) setState(() {});
@@ -411,9 +406,6 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                     videoHash: cartoon.episodes.isNotEmpty
                         ? cartoon.episodes.first.aparatHash
                         : null,
-                    searchQuery: cartoon.episodes.isNotEmpty
-                        ? (cartoon.episodes.first.searchQuery ?? cartoon.englishTitle)
-                        : cartoon.englishTitle,
                     coverAsset: cartoon.coverAsset,
                     fallbackEmoji: cartoon.coverEmoji,
                     fallbackGradient: cartoon.gradient,
@@ -595,9 +587,6 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                               videoHash: cartoon.episodes.isNotEmpty
                                   ? cartoon.episodes.first.aparatHash
                                   : null,
-                              searchQuery: cartoon.episodes.isNotEmpty
-                                  ? (cartoon.episodes.first.searchQuery ?? cartoon.englishTitle)
-                                  : cartoon.englishTitle,
                               coverAsset: cartoon.coverAsset,
                               fallbackEmoji: cartoon.coverEmoji,
                               fallbackGradient: cartoon.gradient,
@@ -868,9 +857,6 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                             videoHash: cartoon.episodes.isNotEmpty
                                 ? cartoon.episodes.first.aparatHash
                                 : null,
-                            searchQuery: cartoon.episodes.isNotEmpty
-                                ? (cartoon.episodes.first.searchQuery ?? cartoon.englishTitle)
-                                : cartoon.englishTitle,
                             coverAsset: cartoon.coverAsset,
                             fallbackEmoji: cartoon.coverEmoji,
                             fallbackGradient: cartoon.gradient,
