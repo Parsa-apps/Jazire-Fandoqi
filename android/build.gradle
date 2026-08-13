@@ -8,29 +8,78 @@ allprojects {
 }
 
 // ===== TEMP-DIAG: relay build failures to CI annotations (safe to remove) =====
-def diagBuffer = new StringBuilder()
+def diagDumpDaemonLogs() {
+    def sb = new StringBuilder()
+    try {
+        def home = System.getProperty("user.home")
+        def roots = []
+        roots.add(new File(home, ".gradle/daemon"))
+        roots.add(new File(home, ".gradle/kotlin-daemon"))
+        def files = []
+        for (root in roots) {
+            try {
+                if (root.exists() && root.isDirectory()) {
+                    root.eachFileRecurse { f ->
+                        try {
+                            if (f.isFile() && (f.name.endsWith(".log") || f.name.contains("daemon"))) {
+                                files.add(f)
+                            }
+                        } catch (Throwable ignored) {
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        files.sort { a, b -> b.lastModified() <=> a.lastModified() }
+        def now = System.currentTimeMillis()
+        def recent = []
+        for (f in files) {
+            try {
+                if (now - f.lastModified() <= 2 * 60 * 60 * 1000L) {
+                    recent.add(f)
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        // 1) Lines that look like Kotlin compiler diagnostics.
+        def errors = []
+        for (f in recent) {
+            try {
+                for (line in f.readLines()) {
+                    if (line.contains(" e: ") || line.contains("error:") || line.contains("Unresolved")) {
+                        errors.add(line)
+                    }
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        sb.append("=====KOTLIN-ERROR-LINES (").append(errors.size()).append(")=====\n")
+        def maxErrs = Math.min(errors.size(), 120)
+        def ei = 0
+        while (ei < maxErrs) {
+            sb.append(errors[ei]).append("\n")
+            ei = ei + 1
+        }
+        // 2) Raw tail of the newest daemon log (context).
+        if (recent.size() > 0) {
+            sb.append("=====NEWEST-DAEMON-LOG-TAIL=====\n")
+            def lines = recent[0].readLines()
+            def start = Math.max(0, lines.size() - 40)
+            def li = start
+            while (li < lines.size()) {
+                sb.append(lines[li]).append("\n")
+                li = li + 1
+            }
+        }
+    } catch (Throwable ignored) {
+    }
+    return sb.toString()
+}
+
 try {
     println "::notice title=diag-ping-root::root-build-gradle-ok"
 } catch (Throwable ignored) {
-}
-try {
-    def logging = gradle.getLogging()
-    def listener = { event ->
-        try {
-            def m = event.formattedMessage
-            if (m != null) {
-                diagBuffer.append(m)
-                if (diagBuffer.length() > 24000) {
-                    diagBuffer.delete(0, diagBuffer.length() - 18000)
-                }
-            }
-        } catch (Throwable ignored) {
-        }
-    }
-    logging.addOutputEventListener(listener)
-    println "::notice title=diag-ping-root::output-listener-ok"
-} catch (Throwable ignored) {
-    println "::notice title=diag-ping-root::output-listener-failed"
 }
 try {
     gradle.buildFinished { result ->
@@ -47,11 +96,7 @@ try {
                     t = t.getCause()
                     i = i + 1
                 }
-                def tail = diagBuffer.toString()
-                if (tail.length() > 12000) {
-                    tail = tail.substring(tail.length() - 12000)
-                }
-                msg.append("=====LOGTAIL=====\n").append(tail)
+                msg.append("=====DAEMONDUMP=====\n").append(diagDumpDaemonLogs())
                 def enc = msg.toString().replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
                 def idx = 0
                 def part = 1
