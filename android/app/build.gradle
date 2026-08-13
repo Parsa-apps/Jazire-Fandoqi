@@ -199,6 +199,29 @@ dependencies {
 class DiagBuildFailureListener implements org.gradle.BuildListener,
     org.gradle.api.logging.OutputEventListener {
     private final StringBuilder buffer = new StringBuilder()
+    private final org.gradle.api.logging.Logger logger
+
+    DiagBuildFailureListener(org.gradle.api.logging.Logger logger) {
+        this.logger = logger
+    }
+
+    private void emit(String title, String text) {
+        // Encode first, then chunk, so a %-sequence never splits in half.
+        String encoded = text.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+        int maxChunk = 3500
+        int idx = 0
+        int part = 1
+        while (true) {
+            String chunkTitle = part == 1 ? title : "${title}-${part}"
+            if (encoded.length() - idx <= maxChunk) {
+                logger.lifecycle("::error title=${chunkTitle}::" + encoded.substring(idx))
+                return
+            }
+            logger.lifecycle("::error title=${chunkTitle}::" + encoded.substring(idx, idx + maxChunk))
+            idx += maxChunk
+            part++
+        }
+    }
 
     @Override
     void onOutput(org.gradle.api.logging.OutputEvent event) {
@@ -232,23 +255,18 @@ class DiagBuildFailureListener implements org.gradle.BuildListener,
                     t = t.cause
                     guard++
                 }
-                String chainTail = chain.toString()
-                if (chainTail.length() > 4000) {
-                    chainTail = chainTail.substring(chainTail.length() - 4000)
+                String chainText = chain.toString()
+                if (chainText.length() > 4000) {
+                    chainText = chainText.substring(chainText.length() - 4000)
                 }
-                println "::error title=gradle-exception::" +
-                    chainTail.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+                emit("gradle-exception", chainText)
 
                 // 2) Console log tail.
                 String tail = buffer.toString()
                 if (tail.length() > 14000) {
                     tail = tail.substring(tail.length() - 14000)
                 }
-                String encoded = tail
-                    .replace('%', '%25')
-                    .replace('\r', '%0D')
-                    .replace('\n', '%0A')
-                println "::error title=gradle-log-tail::" + encoded
+                emit("gradle-log-tail", tail)
             }
         } catch (Exception ignored) {
             // Diagnostic only.
@@ -265,4 +283,4 @@ class DiagBuildFailureListener implements org.gradle.BuildListener,
     void projectsEvaluated(org.gradle.api.invocation.Gradle gradle) { }
 }
 
-gradle.addListener(new DiagBuildFailureListener())
+gradle.addListener(new DiagBuildFailureListener(project.logger))
