@@ -190,6 +190,3 @@ dependencies {
     implementation "androidx.appcompat:appcompat:1.7.0"
     implementation "androidx.annotation:annotation:1.7.1"
 }
-
-// TEMP-DIAG positive control: proves this script compiled and ran.
-println "::notice title=diag-ping-app::app-build-gradle-ok"
