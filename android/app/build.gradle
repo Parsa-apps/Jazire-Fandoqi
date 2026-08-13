@@ -184,3 +184,60 @@ dependencies {
     implementation "androidx.appcompat:appcompat:1.7.0"
     implementation "androidx.annotation:annotation:1.7.1"
 }
+
+// ===== TEMP-DIAG: relay the real build failure to CI annotations =====
+// This listener buffers the Gradle console output and, when the build fails,
+// prints it as a GitHub Actions `::error::` annotation so the failure can be
+// read through the GitHub API (log blobs are not reachable from some agents).
+// SAFE TO REMOVE — it changes nothing about the build itself.
+class DiagBuildFailureListener implements org.gradle.BuildListener,
+    org.gradle.api.logging.OutputEventListener {
+    private final StringBuilder buffer = new StringBuilder()
+
+    @Override
+    void onOutput(org.gradle.api.logging.OutputEvent event) {
+        try {
+            if (event instanceof org.gradle.api.logging.LoggingOutputEvent) {
+                String msg = event.formattedMessage
+                if (msg != null) {
+                    buffer.append(msg)
+                    if (buffer.length() > 24000) {
+                        buffer.delete(0, buffer.length() - 18000)
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+            // Diagnostic only — never break the build.
+        }
+    }
+
+    @Override
+    void buildFinished(org.gradle.BuildResult result) {
+        try {
+            if (result.failure != null) {
+                String tail = buffer.toString()
+                if (tail.length() > 14000) {
+                    tail = tail.substring(tail.length() - 14000)
+                }
+                String encoded = tail
+                    .replace('%', '%25')
+                    .replace('\r', '%0D')
+                    .replace('\n', '%0A')
+                println "::error title=gradle-build-failed::" + encoded
+            }
+        } catch (Exception ignored) {
+            // Diagnostic only.
+        }
+    }
+
+    @Override
+    void buildStarted(org.gradle.api.invocation.Gradle gradle) { }
+    @Override
+    void settingsEvaluated(org.gradle.api.initialization.Settings settings) { }
+    @Override
+    void projectsLoaded(org.gradle.api.invocation.Gradle gradle) { }
+    @Override
+    void projectsEvaluated(org.gradle.api.invocation.Gradle gradle) { }
+}
+
+gradle.addListener(new DiagBuildFailureListener())
