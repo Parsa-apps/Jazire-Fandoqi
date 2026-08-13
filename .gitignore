@@ -14,8 +14,8 @@ android/.gradle/
 android/**/build/
 
 # 🔐 Release signing material must NEVER be committed.
-# CI restores it from GitHub Secrets (KEYSTORE_B64, KEY_ALIAS,
-# STORE_PASSWORD, KEY_PASSWORD). See KEYSTORE_ROTATION_GUIDE.md.
+# CI restores it from GitHub Secrets (KEYSTORE_B64, KEYSTORE_PASSWORD;
+# alias "fandoghi" is fixed in the workflow). See KEYSTORE_ROTATION_GUIDE.md.
 key.properties
 *.keystore
 *.jks
