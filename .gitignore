@@ -12,9 +12,13 @@ coverage/
 android/local.properties
 android/.gradle/
 android/**/build/
-# Release signing files are tracked at the owner's request so a
-# Cafe Bazaar APK can be built from this clone. Keep the repository
-# private while these files exist.
+
+# 🔐 Release signing material must NEVER be committed.
+# CI restores it from GitHub Secrets (KEYSTORE_B64, KEYSTORE_PASSWORD,
+# KEY_ALIAS, KEY_PASSWORD). See KEYSTORE_ROTATION_GUIDE.md.
+key.properties
+*.keystore
+*.jks
 
 # IDE
 .idea/

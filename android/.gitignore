@@ -1,5 +1,12 @@
 # Android build artifacts (wrapper files ARE committed intentionally so the
 # folder is self-contained and CI never needs `flutter create`)
+
+# 🔐 Signing secrets live in GitHub Secrets, never in git
+key.properties
+release.keystore
+*.keystore
+*.jks
+
 .gradle/
 /captures
 /local.properties
