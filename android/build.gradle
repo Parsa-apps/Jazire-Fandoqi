@@ -14,24 +14,23 @@ try {
 } catch (Throwable ignored) {
 }
 try {
-    def listener = {
-        org.gradle.api.logging.OutputEvent event ->
-            try {
-                if (event instanceof org.gradle.api.logging.LoggingOutputEvent) {
-                    def m = event.formattedMessage
-                    if (m != null) {
-                        diagBuffer.append(m)
-                        if (diagBuffer.length() > 24000) {
-                            diagBuffer.delete(0, diagBuffer.length() - 18000)
-                        }
-                    }
+    def logging = gradle.getLogging()
+    def listener = { event ->
+        try {
+            def m = event.formattedMessage
+            if (m != null) {
+                diagBuffer.append(m)
+                if (diagBuffer.length() > 24000) {
+                    diagBuffer.delete(0, diagBuffer.length() - 18000)
                 }
-            } catch (Throwable ignored) {
             }
-    } as org.gradle.api.logging.OutputEventListener
-    gradle.getLogging().addOutputEventListener(listener)
+        } catch (Throwable ignored) {
+        }
+    }
+    logging.addOutputEventListener(listener)
     println "::notice title=diag-ping-root::output-listener-ok"
 } catch (Throwable ignored) {
+    println "::notice title=diag-ping-root::output-listener-failed"
 }
 try {
     gradle.buildFinished { result ->
