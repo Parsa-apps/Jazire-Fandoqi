@@ -38,11 +38,17 @@ def bazaarRsaPublicKey = billingProperties.getProperty("bazaarRsaPublicKey", "")
 def releaseSigningSha256 = ""
 if (hasReleaseSigning) {
     try {
-        def storeFile = file(keystoreProperties['storeFile'])
-        if (storeFile.exists()) {
+        // storeFile در key.properties ممکن است نسبی باشد؛ مبنای آن پوشهٔ
+        // key.properties (android/) است، نه پوشهٔ پروژه (android/app/).
+        def storeFileValue = keystoreProperties['storeFile'] as String
+        def resolvedStoreFile = new File(storeFileValue)
+        if (!resolvedStoreFile.isAbsolute()) {
+            resolvedStoreFile = new File(keystorePropertiesFile.parentFile, storeFileValue)
+        }
+        if (resolvedStoreFile.exists()) {
             def storePass = (keystoreProperties['storePassword'] as String).toCharArray()
             def alias = keystoreProperties['keyAlias'] as String
-            def fileBytes = storeFile.bytes
+            def fileBytes = resolvedStoreFile.bytes
             def cert = null
             ['PKCS12', 'JKS'].any { storeType ->
                 try {
@@ -58,7 +64,7 @@ if (hasReleaseSigning) {
             if (cert != null) {
                 def md = java.security.MessageDigest.getInstance("SHA-256")
                 releaseSigningSha256 = md.digest(cert.getEncoded())
-                    .collect { String.format("%02x", it) }
+                    .collect { String.format("%02x", it & 0xff) }
                     .join("")
             }
         }
