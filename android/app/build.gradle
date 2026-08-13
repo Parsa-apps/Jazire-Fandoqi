@@ -215,6 +215,25 @@ class DiagBuildFailureListener implements org.gradle.BuildListener,
     void buildFinished(org.gradle.BuildResult result) {
         try {
             if (result.failure != null) {
+                // 1) Exception chain — most specific cause first.
+                StringBuilder chain = new StringBuilder()
+                Throwable t = result.failure
+                int guard = 0
+                while (t != null && guard < 8) {
+                    chain.append("[").append(t.class.simpleName).append("] ")
+                    chain.append(t.message == null ? "(no message)" : t.message)
+                    chain.append("\n")
+                    t = t.cause
+                    guard++
+                }
+                String chainTail = chain.toString()
+                if (chainTail.length() > 4000) {
+                    chainTail = chainTail.substring(chainTail.length() - 4000)
+                }
+                println "::error title=gradle-exception::" +
+                    chainTail.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+
+                // 2) Console log tail.
                 String tail = buffer.toString()
                 if (tail.length() > 14000) {
                     tail = tail.substring(tail.length() - 14000)
@@ -223,7 +242,7 @@ class DiagBuildFailureListener implements org.gradle.BuildListener,
                     .replace('%', '%25')
                     .replace('\r', '%0D')
                     .replace('\n', '%0A')
-                println "::error title=gradle-build-failed::" + encoded
+                println "::error title=gradle-log-tail::" + encoded
             }
         } catch (Exception ignored) {
             // Diagnostic only.
