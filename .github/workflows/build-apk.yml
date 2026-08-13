@@ -3,12 +3,17 @@ name: Build APK & AAB - کودک دانا v3
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, 'arena/**' ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # When KEYSTORE_B64 is present the release is signed with the project's
+      # release key; when absent the build still succeeds (debug-signed,
+      # non-publishable). See android/app/build.gradle + KEYSTORE_ROTATION_GUIDE.md.
+      KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
 
     steps:
       - name: Checkout
@@ -45,8 +50,40 @@ jobs:
       - name: Flutter pub get
         run: flutter pub get
 
+      - name: Configure release signing
+        if: ${{ env.KEYSTORE_B64 != '' }}
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          # Restore the release keystore from the GitHub Secret.
+          printf '%s' "$KEYSTORE_B64" | base64 -d > android/release.keystore
+          chmod 600 android/release.keystore
+          # build.gradle resolves storeFile relative to android/ (rootProject),
+          # so key.properties is written there and points at release.keystore.
+          # PKCS12 uses one password for store-integrity and key encryption, so
+          # storePassword == keyPassword; alias is the fixed release-key identity.
+          {
+            echo "storeFile=release.keystore"
+            echo "storePassword=${KEYSTORE_PASSWORD}"
+            echo "keyAlias=fandoghi"
+            echo "keyPassword=${KEYSTORE_PASSWORD}"
+          } > android/key.properties
+          chmod 600 android/key.properties
+          echo "Release signing configured from GitHub Secrets."
+
       - name: Build APK (Release)
         run: flutter build apk --release
+
+      - name: Verify release signing (APK)
+        if: ${{ env.KEYSTORE_B64 != '' }}
+        run: |
+          set -euo pipefail
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          APS="$(ls "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)"
+          test -n "$APS" || { echo "apksigner not found under $ANDROID_HOME/build-tools"; exit 1; }
+          "$APS" verify --print-certs "$APK"
+          echo "APK verified: signed with the release certificate."
 
       - name: Build AAB (Release)
         run: flutter build appbundle --release
