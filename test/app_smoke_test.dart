@@ -98,10 +98,20 @@ void main() {
     expect(find.text('همه کارتون‌ها'), findsOneWidget);
   });
 
-  testWidgets('about screen exposes the supplied publisher details', (tester) async {
+  testWidgets('about screen mirrors the public Parsa Apps page', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: AboutScreen()));
+    await tester.pump();
+
+    expect(find.text('درباره پارسا اپس'), findsOneWidget);
     expect(find.text(AppLegal.developerName), findsOneWidget);
-    expect(find.text(AppLegal.supportEmail), findsOneWidget);
-    expect(find.text(AppLegal.telegramHandle), findsOneWidget);
+    expect(find.text('🎯 ماموریت ما'), findsOneWidget);
+    expect(find.text('💡 چرا پارسا اپس؟'), findsOneWidget);
+    expect(find.text('🚀 اپلیکیشن‌های در راه انتشار'), findsOneWidget);
+    expect(find.text('باغ الفبا'), findsOneWidget);
+    expect(find.text('نگارخانه فندقی'), findsOneWidget);
+    expect(find.text('📬 ارتباط مستقیم با مدیریت'), findsOneWidget);
+    expect(find.text('تلگرام'), findsOneWidget);
+    expect(find.text('ایمیل'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }
