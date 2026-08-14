@@ -97,6 +97,9 @@ void main() {
   testWidgets('about screen exposes the supplied publisher details', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: AboutScreen()));
     expect(find.text(AppLegal.developerName), findsOneWidget);
+    expect(find.text(AppLegal.websiteName), findsOneWidget);
+    expect(find.text(AppLegal.websiteAddress), findsOneWidget);
+    expect(find.byKey(const ValueKey('parsa_website_link')), findsOneWidget);
     expect(find.text(AppLegal.supportEmail), findsOneWidget);
     expect(find.text(AppLegal.telegramHandle), findsOneWidget);
   });

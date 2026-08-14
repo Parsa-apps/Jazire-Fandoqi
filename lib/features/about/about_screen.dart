@@ -9,6 +9,7 @@ import '../../core/app_legal.dart';
 import '../../core/billing_service.dart';
 import '../../core/store_rating_service.dart';
 import '../../shared/widgets/parsa_gold_aura.dart';
+import '../../shared/widgets/parsa_website_card.dart';
 import '../../shared/widgets/theme_selector_widget.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
 
@@ -25,6 +26,21 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _openWebsite(BuildContext context) async {
+    var opened = false;
+    try {
+      opened = await launchUrl(
+        Uri.parse(AppLegal.websiteUrl),
+        mode: LaunchMode.externalApplication,
+      );
+    } on PlatformException {
+      opened = false;
+    }
+    if (!opened && context.mounted) {
+      await _copy(context, AppLegal.websiteUrl, 'لینک سایت پارسا اپس');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -38,7 +54,21 @@ class AboutScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
         children: [
           _buildPublisherCard(),
-          const SizedBox(height: 16),
+          const SizedBox(height: 22),
+          ParsaWebsiteCard(
+            title: AppLegal.websiteName,
+            address: AppLegal.websiteAddress,
+            onTap: () => _openWebsite(context),
+          )
+              .animate()
+              .fadeIn(duration: 650.ms, curve: Curves.easeOutCubic)
+              .slideY(begin: 0.14, end: 0, duration: 700.ms)
+              .scale(
+                begin: const Offset(0.96, 0.96),
+                end: const Offset(1, 1),
+                duration: 700.ms,
+              ),
+          const SizedBox(height: 22),
           const ThemeSelectorWidget(),
           const SizedBox(height: 16),
           _buildSection(
