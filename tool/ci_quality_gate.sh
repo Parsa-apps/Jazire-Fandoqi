@@ -16,8 +16,10 @@ run_check() {
   set -e
 
   if [[ $status -ne 0 ]]; then
-    local details
-    details="$(tail -n 80 "$log_file" | tail -c 7000)"
+    local diagnostics details
+    diagnostics="$(grep -E '(^|[[:space:]])error •|Error:|FAIL|TestFailure|Some tests failed|EXCEPTION CAUGHT|\[E\]' "$log_file" | tail -n 40 || true)"
+    details="${diagnostics}"$'\n\n--- final output ---\n'"$(tail -n 35 "$log_file")"
+    details="$(printf '%s' "$details" | tail -c 7000)"
     details="${details//'%'/'%25'}"
     details="${details//$'\r'/'%0D'}"
     details="${details//$'\n'/'%0A'}"
