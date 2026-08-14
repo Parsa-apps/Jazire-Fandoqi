@@ -29,11 +29,13 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   // تب خانه (مرکزی) تب پیش‌فرض شروع برنامه است
   int _currentTab = 2;
+  late double _musicVolume;
   final List<Widget?> _tabWidgets = List<Widget?>.filled(5, null);
 
   @override
   void initState() {
     super.initState();
+    _musicVolume = GameData.musicVolume;
     _tabWidgets[2] = IslandMapTab(
       onOpenStageMap: () => _openStageMapScreen(),
       onOpenBackpack: () => _selectTab(1),
@@ -83,6 +85,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             left: 10,
             child: SafeArea(child: _buildSoundToggle()),
           ),
+          if (_currentTab == 2)
+            Positioned(
+              left: 10,
+              bottom: 10,
+              child: SafeArea(
+                top: false,
+                child: _buildMusicVolumeControl(),
+              ),
+            ),
         ],
       ),
       bottomNavigationBar: _buildBottomNav(),
@@ -128,6 +139,161 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  void _previewMusicVolume(double value) {
+    final normalized = value.clamp(0.0, 1.0).toDouble();
+    setState(() => _musicVolume = normalized);
+    AudioService.setBgmVolume(normalized);
+  }
+
+  void _saveMusicVolume(double value) {
+    final normalized = value.clamp(0.0, 1.0).toDouble();
+    GameData.setMusicVolume(normalized);
+    AudioService.setBgmVolume(normalized);
+  }
+
+  void _stepMusicVolume(int step) {
+    final nextStep = ((_musicVolume * 10).round() + step).clamp(0, 10);
+    final next = nextStep / 10.0;
+    if (next == _musicVolume) return;
+    HapticFeedback.selectionClick();
+    AudioService.tap();
+    _previewMusicVolume(next);
+    _saveMusicVolume(next);
+  }
+
+  Widget _buildMusicVolumeControl() {
+    final percent = (_musicVolume * 100).round();
+    final isMuted = percent == 0;
+
+    return Semantics(
+      container: true,
+      label: 'تنظیم صدای موسیقی',
+      value: '$percent درصد',
+      child: Container(
+        key: const Key('music-volume-control'),
+        width: 224,
+        padding: const EdgeInsets.fromLTRB(8, 7, 8, 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.96),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: const Color(0xFF80CBC4).withOpacity(0.9),
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF00695C).withOpacity(0.18),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 7),
+              child: Row(
+                children: [
+                  Icon(
+                    isMuted
+                        ? Icons.music_off_rounded
+                        : Icons.music_note_rounded,
+                    size: 20,
+                    color: isMuted
+                        ? const Color(0xFFE65100)
+                        : const Color(0xFF00897B),
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    'صدای موسیقی',
+                    style: AppFonts.kids(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF37474F),
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '$percent٪',
+                    style: AppFonts.vazirmatn(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF00796B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Row(
+              children: [
+                IconButton(
+                  key: const Key('decrease-music-volume'),
+                  tooltip: 'کاهش صدای موسیقی',
+                  onPressed:
+                      _musicVolume > 0 ? () => _stepMusicVolume(-1) : null,
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 38,
+                    height: 38,
+                  ),
+                  icon: const Icon(Icons.volume_down_rounded, size: 23),
+                  color: const Color(0xFF00897B),
+                  disabledColor: const Color(0xFFB0BEC5),
+                ),
+                Expanded(
+                  child: SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 5,
+                      activeTrackColor: const Color(0xFF26A69A),
+                      inactiveTrackColor: const Color(0xFFB2DFDB),
+                      thumbColor: const Color(0xFFFFB300),
+                      overlayColor:
+                          const Color(0xFFFFB300).withOpacity(0.16),
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 9,
+                      ),
+                      overlayShape: const RoundSliderOverlayShape(
+                        overlayRadius: 17,
+                      ),
+                    ),
+                    child: Slider(
+                      key: const Key('music-volume-slider'),
+                      value: _musicVolume,
+                      min: 0,
+                      max: 1,
+                      divisions: 10,
+                      onChanged: _previewMusicVolume,
+                      onChangeEnd: _saveMusicVolume,
+                      semanticFormatterCallback: (value) =>
+                          '${(value * 100).round()} درصد',
+                    ),
+                  ),
+                ),
+                IconButton(
+                  key: const Key('increase-music-volume'),
+                  tooltip: 'افزایش صدای موسیقی',
+                  onPressed:
+                      _musicVolume < 1 ? () => _stepMusicVolume(1) : null,
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 38,
+                    height: 38,
+                  ),
+                  icon: const Icon(Icons.volume_up_rounded, size: 23),
+                  color: const Color(0xFF00897B),
+                  disabledColor: const Color(0xFFB0BEC5),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -215,14 +381,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
 
-              // ۵. داستان و پروفایل
+              // ۵. پروفایل
               Expanded(
                 child: _navItem(
                   index: 4,
                   emoji: '👤',
                   icon: Icons.person_rounded,
                   iconColor: const Color(0xFF42A5F5),
-                  label: 'داستان',
+                  label: 'پروفایل',
                 ),
               ),
             ],

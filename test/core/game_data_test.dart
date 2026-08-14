@@ -86,6 +86,15 @@ void main() {
     expect(GameData.isMissionDone('memory'), isTrue);
   });
 
+  // ─────────── تنظیم مستقل موسیقی ───────────
+  test('music volume defaults to half and stays in its safe range', () {
+    expect(GameData.musicVolume, GameData.defaultMusicVolume);
+    GameData.setMusicVolume(1.5);
+    expect(GameData.musicVolume, 1.0);
+    GameData.setMusicVolume(-0.5);
+    expect(GameData.musicVolume, 0.0);
+  });
+
   // ─────────── فاز ۷: مقیاس فونت ───────────
   test('textScale clamps to the accessible range', () {
     GameData.setTextScale(2.0);

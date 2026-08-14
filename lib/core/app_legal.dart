@@ -9,5 +9,8 @@ class AppLegal {
   static const String supportEmail = 'farshadparsa2019@gmail.com';
   static const String telegramHandle = '@Parsaappsadmin';
   static const String telegramUrl = 'https://t.me/Parsaappsadmin';
+  static const String websiteName = 'سایت پارسا اپس';
+  static const String websiteAddress = 'parsa-apps.github.io';
+  static const String websiteUrl = 'https://parsa-apps.github.io';
   static const String privacyPolicyFile = 'PRIVACY_POLICY_FA.md';
 }

@@ -4,5 +4,5 @@ android: true
 ios: false
 image_path: "assets/icons/app_icon.png"
 min_sdk_android: 21
-adaptive_icon_background: "#FF9A5C"
+adaptive_icon_background: "#E6F1E8"
 adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"

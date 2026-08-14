@@ -307,10 +307,156 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
 
           const SizedBox(height: 24),
 
+          // ==================== ONLINE CONTENT DISCLOSURE ====================
+          _buildOnlineContentCard(),
+
+          const SizedBox(height: 24),
+
           // ==================== DEBUG LOGS (فاز ۸) ====================
           _buildDebugLogsCard(),
         ],
         ),
+      ),
+    );
+  }
+
+  /// 🛡️ شفاف‌سازی محتوای آنلاین (برای کافه‌بازار — رده سنی خردسال).
+  /// توضیح می‌دهد این اپ بیشترش آفلاین است، فقط بخش کارتون از آپارات پخش می‌شود.
+  Widget _buildOnlineContentCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0F4C75), Color(0xFF3282B8)],
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blueAccent.withOpacity(0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.shield_rounded,
+                    color: Colors.lightBlueAccent, size: 26),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'شفاف‌سازی محتوای آنلاین',
+                  style: AppFonts.vazirmatn(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.greenAccent.withOpacity(0.25),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.greenAccent.withOpacity(0.5)),
+                ),
+                child: const Text(
+                  'ایمن برای کودک',
+                  style: TextStyle(
+                      color: Colors.greenAccent,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const _OnlineRow(
+            icon: Icons.offline_bolt_rounded,
+            color: Colors.greenAccent,
+            title: 'بخش‌های کاملاً آفلاین',
+            body:
+                'آموزش حروف و کلمات، بازی‌های آموزشی، لالایی‌ها، داستان‌های مصور، فلش‌کارت‌ها، رنگ‌ها، اشکال، نقاشی، بانک صوتی، پنل والدین و ذخیره‌سازی پیشرفت — همه بدون نیاز به اینترنت.',
+          ),
+          const SizedBox(height: 10),
+          const _OnlineRow(
+            icon: Icons.wifi_rounded,
+            color: Colors.lightBlueAccent,
+            title: 'تنها بخش نیازمند اینترنت: کارتون‌کده',
+            body:
+                'ویدیوها منحصراً از سرویس ویدیوی ایرانی آپارات (aparat.com) پخش می‌شوند. از فهرست سفید (whitelist) هش‌های از پیش تأییدشده استفاده می‌شود؛ هیچ جستجوی آزاد، هیچ لینک خروجی و هیچ بارگذاری از دامنه‌های دیگر وجود ندارد.',
+          ),
+          const SizedBox(height: 10),
+          const _OnlineRow(
+            icon: Icons.block_rounded,
+            color: Colors.amberAccent,
+            title: 'مواردی که اپ انجام نمی‌دهد',
+            body:
+                'بدون تبلیغ، بدون ردیابی/analytics، بدون جمع‌آوری اطلاعات کودک، بدون ورود به شبکه‌های اجتماعی، بدون لینک خروجی درون بخش کودک، بدون نمایش پیشنهاد ویدیوی بعدی آپارات.',
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    launchUrl(
+                      Uri.parse(AppLegal.telegramUrl),
+                      mode: LaunchMode.externalApplication,
+                    );
+                  },
+                  icon: const Icon(Icons.support_agent_rounded, size: 18),
+                  label: const Text('گزارش محتوای نامناسب'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white54),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    await GameData.setBool(
+                        'cartoon_parent_disclosure_shown', false);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                              'اطلاعیه والدین برای نمایش مجدد در ورود بعدی فعال شد ✅'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.notifications_active_rounded, size: 18),
+                  label: const Text('نمایش مجدد اطلاعیه'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF0F4C75),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1191,6 +1337,59 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
           ],
         ),
       ),
+    );
+  }
+}
+
+class _OnlineRow extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String body;
+  const _OnlineRow({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.body,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: color, size: 18),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: AppFonts.vazirmatn(
+                  color: Colors.white,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                body,
+                style: const TextStyle(
+                    color: Colors.white70, fontSize: 11.5, height: 1.55),
+                textAlign: TextAlign.justify,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

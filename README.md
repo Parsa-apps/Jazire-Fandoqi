@@ -2,7 +2,7 @@
 
 [![Flutter quality and release build](https://github.com/farshadkurd/kudake_iran/actions/workflows/build-apk.yml/badge.svg)](https://github.com/farshadkurd/kudake_iran/actions/workflows/build-apk.yml)
 
-## نسخه ۶.۲.۱+۱
+## نسخه ۶.۲.۰+۱۳
 
 **نسخه ۶.۲.۰ — بسته «رشد خانواده»: مهارت زندگی، چند کودک روی یک گوشی و گزارش شفاف والد**
 

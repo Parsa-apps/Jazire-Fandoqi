@@ -33,13 +33,19 @@ void main() {
     expect(find.text('علوم'), findsOneWidget);
     expect(find.text('بازی‌ها'), findsOneWidget);
     expect(find.text('هنر و خلاقیت'), findsOneWidget);
+    expect(find.text('پروفایل من'), findsOneWidget);
 
     // نوار ناوبری پایینی
     expect(find.text('خانه'), findsOneWidget);
     expect(find.text('دستاوردها'), findsOneWidget);
     expect(find.text('کوله‌پشتی'), findsOneWidget);
     expect(find.text('کارنامه'), findsOneWidget);
-    expect(find.text('داستان'), findsOneWidget);
+    expect(find.text('پروفایل'), findsOneWidget);
+
+    // کنترل مستقل و همیشه‌در‌دسترس موسیقی
+    expect(find.byKey(const Key('music-volume-control')), findsOneWidget);
+    expect(find.byKey(const Key('music-volume-slider')), findsOneWidget);
+    expect(find.text('صدای موسیقی'), findsOneWidget);
 
     // دکمه‌های شناور کناری
     expect(find.text('هدایا'), findsOneWidget);
@@ -94,9 +100,14 @@ void main() {
     expect(find.text('همه کارتون‌ها'), findsOneWidget);
   });
 
-  testWidgets('about screen exposes the supplied publisher details', (tester) async {
+  testWidgets('about screen hides the raw website address and exposes a direct link', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: AboutScreen()));
     expect(find.text(AppLegal.developerName), findsOneWidget);
+    expect(find.text(AppLegal.websiteName), findsOneWidget);
+    expect(find.text(AppLegal.websiteAddress), findsNothing);
+    expect(find.byKey(const ValueKey('parsa_website_address')), findsNothing);
+    expect(find.byKey(const ValueKey('parsa_website_link')), findsOneWidget);
+    expect(find.text('ورود مستقیم به سایت'), findsOneWidget);
     expect(find.text(AppLegal.supportEmail), findsOneWidget);
     expect(find.text(AppLegal.telegramHandle), findsOneWidget);
   });

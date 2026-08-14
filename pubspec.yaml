@@ -1,7 +1,7 @@
 name: jazireh_fandoghi
 description: "جزیره فندقی - اپلیکیشن آموزشی آفلاین کودکان با شخصیت فندقی | سازنده: فرشاد پارسا"
 publish_to: 'none'
-version: 6.2.1+1
+version: 6.2.1+14
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -66,7 +66,7 @@ flutter_launcher_icons:
   ios: false
   image_path: "assets/icons/app_icon.png"
   min_sdk_android: 21
-  adaptive_icon_background: "#FF9A5C"
+  adaptive_icon_background: "#E6F1E8"
   adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"
 
 flutter:
