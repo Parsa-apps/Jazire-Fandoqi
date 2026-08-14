@@ -15,7 +15,7 @@ void main() {
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 
-  testWidgets('home dashboard renders the core child actions', (tester) async {
+  testWidgets('home island screen renders all 6 learning & game hubs and navigation', (tester) async {
     GameData.resetForTesting();
     GameData.onboardingSeen = true;
 
@@ -26,12 +26,27 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 250));
 
-    expect(find.text('ماموریت‌های امروز'), findsOneWidget);
-    expect(find.text('بازی‌های سریع'), findsOneWidget);
-    expect(find.text('دسته‌بندی بازی‌ها'), findsOneWidget);
+    // ۶ هاب اصلی جزیره فندقی
+    expect(find.text('فارسی'), findsOneWidget);
+    expect(find.text('ریاضی'), findsOneWidget);
+    expect(find.text('حروف و صداها'), findsOneWidget);
+    expect(find.text('علوم'), findsOneWidget);
+    expect(find.text('بازی‌ها'), findsOneWidget);
+    expect(find.text('هنر و خلاقیت'), findsOneWidget);
+
+    // نوار ناوبری پایینی
+    expect(find.text('خانه'), findsOneWidget);
+    expect(find.text('دستاوردها'), findsOneWidget);
+    expect(find.text('کوله‌پشتی'), findsOneWidget);
+    expect(find.text('کارنامه'), findsOneWidget);
+    expect(find.text('داستان'), findsOneWidget);
+
+    // دکمه‌های شناور کناری
+    expect(find.text('هدایا'), findsOneWidget);
+    expect(find.text('جزیره'), findsOneWidget);
   });
 
-  testWidgets('gateway renders prioritized primary and secondary actions', (tester) async {
+  testWidgets('gateway opens the island world without overflow', (tester) async {
     GameData.resetForTesting();
     GameData.onboardingSeen = true;
 
@@ -42,30 +57,9 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 250));
 
-    final cartoon = find.text('کارتون');
-    final stories = find.text('داستان');
-    final learning = find.text('بازی و یادگیری');
-
-    expect(cartoon, findsOneWidget);
-    expect(stories, findsOneWidget);
-    expect(learning, findsOneWidget);
-    expect(find.text('لالایی‌های شب'), findsOneWidget);
-    expect(find.text('پروفایل من'), findsOneWidget);
-    expect(find.text('درباره ما'), findsOneWidget);
-    expect(find.textContaining('کتابخانه یادگیری'), findsOneWidget);
-
-    // کارتون و داستان روی یک ردیف‌اند؛ بازی و یادگیری زیر آن‌هاست.
-    expect(
-      tester.getTopLeft(cartoon).dy,
-      closeTo(tester.getTopLeft(stories).dy, 24),
-    );
-    expect(
-      tester.getTopLeft(cartoon).dy,
-      lessThan(tester.getTopLeft(learning).dy),
-    );
-    expect(find.byKey(const Key('gateway.cartoon')), findsOneWidget);
-    expect(find.byKey(const Key('gateway.stories')), findsOneWidget);
-    expect(find.byKey(const Key('gateway.learning')), findsOneWidget);
+    expect(find.text('خانه'), findsOneWidget);
+    expect(find.text('فارسی'), findsOneWidget);
+    expect(find.text('علوم'), findsOneWidget);
   });
 
   testWidgets('gateway stays overflow-free on a narrow phone', (tester) async {
@@ -75,8 +69,10 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      const MaterialApp(
-        home: AppGatewayScreen(),
+      const ProviderScope(
+        child: MaterialApp(
+          home: AppGatewayScreen(),
+        ),
       ),
     );
     await tester.pump(const Duration(milliseconds: 500));
