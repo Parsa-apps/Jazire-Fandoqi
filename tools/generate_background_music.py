@@ -68,23 +68,25 @@ def reverb(buf, amount=.13):
         for i in range(d,len(buf)): buf[i] += original[i-d]*gain
 
 
-def master(buf, target=.68):
-    # gentle high-pass/DC removal and limiter
+def master(buf, target_rms=.11, peak_ceiling=.66):
+    # Gentle DC removal and saturation, then loudness matching. The calmer
+    # sections are intentionally mastered quieter than the games track.
     lp=0.; out=[]
     for x in buf:
-        lp += .0015*(x-lp); out.append(math.tanh((x-lp)*1.15))
+        lp += .0015*(x-lp); out.append(math.tanh((x-lp)*1.10))
+    rms=math.sqrt(sum(x*x for x in out)/max(1,len(out))) or 1
     peak=max(abs(x) for x in out) or 1
-    gain=target/peak
-    # tiny edge fade avoids decoder clicks while preserving continuity
-    edge=int(.04*SR)
+    gain=min(target_rms/rms, peak_ceiling/peak)
+    # Tiny edge fade prevents decoder clicks at the loop boundary.
+    edge=int(.055*SR)
     for i in range(len(out)):
         g=min(1., i/edge, (len(out)-1-i)/edge)
         out[i]*=gain*max(0,g)
     return out
 
 
-def write(name, buf):
-    os.makedirs(OUT,exist_ok=True); data=master(buf)
+def write(name, buf, target_rms):
+    os.makedirs(OUT,exist_ok=True); data=master(buf,target_rms)
     path=os.path.join(OUT,name)
     with wave.open(path,'w') as w:
         w.setparams((1,2,SR,len(data),'NONE','not compressed'))
@@ -106,17 +108,28 @@ def compose(name,bpm,bars,root,progression,scale,style):
         chord=progression[k%len(progression)]
         add_tone(b,k*bar,beat*1.8,root-24+chord[0],.035,'pizz')
         add_tone(b,k*bar+2*beat,beat*1.6,root-24+chord[0],.026,'pizz')
-    # recurring singable pentatonic phrase with variation every four bars
+    # Distinct, singable phrases. Strategic rests keep the score from becoming
+    # tiring and leave acoustic space for Persian narration.
+    phrases={
+        'home':     (0,2,4,None,3,2,1,None),
+        'games':    (0,1,2,4,3,2,1,4),
+        'cartoons': (0,3,2,None,4,3,1,None),
+        'stories':  (0,None,2,None,4,None,1,None),
+        'learning': (0,None,2,3,4,None,2,None),
+    }
+    phrase=phrases[style]
     for k in range(bars):
-        for q in range(8):
-            t=k*bar+q*beat/2
-            if style=='stories' and q%2: continue
-            idx=(q + (k%4)*2 + (1 if k%8>=4 else 0))%len(scale)
+        for q,step in enumerate(phrase):
+            # Every eighth bar takes a short breath before the next phrase.
+            if step is None or (k%8==7 and q>=4): continue
+            swing=(.07*beat if style=='cartoons' and q%2 else 0)
+            t=k*bar+q*beat/2+swing
+            idx=(step + (k%4) + (1 if k%8>=4 else 0))%len(scale)
             midi=root+12+scale[idx]
-            if q in (3,7): midi=root+12+scale[(idx+2)%len(scale)]
             kind={'home':'kalimba','games':'musicbox','cartoons':'pizz','stories':'musicbox','learning':'kalimba'}[style]
-            add_tone(b,t,beat*(.7 if style=='games' else 1.15),midi,.052 if style!='stories' else .043,kind)
-        if k%4==3: add_sparkle(b,(k+1)*bar-.45,root+19,.018)
+            level={'home':.050,'games':.054,'cartoons':.046,'stories':.034,'learning':.043}[style]
+            add_tone(b,t,beat*(.68 if style=='games' else 1.12),midi,level,kind)
+        if k%4==3: add_sparkle(b,(k+1)*bar-.45,root+19,.014 if style=='stories' else .018)
     # light rhythmic identity per section
     if style in ('games','cartoons'):
         for q in range(bars*8):
@@ -134,8 +147,9 @@ def compose(name,bpm,bars,root,progression,scale,style):
     if style=='stories':
         for k in range(0,bars,2):
             add_tone(b,k*bar+bar*.5,bar*.8,root+24+scale[(k//2)%len(scale)],.019,'flute')
-    reverb(b,.11 if style in ('games','cartoons') else .16)
-    write(name,b)
+    reverb(b,.10 if style in ('games','cartoons') else .14)
+    target_rms={'home':.105,'games':.120,'cartoons':.100,'stories':.075,'learning':.095}[style]
+    write(name,b,target_rms)
 
 
 if __name__=='__main__':
