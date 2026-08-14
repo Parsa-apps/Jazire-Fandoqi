@@ -133,6 +133,8 @@ def main():
     ap.add_argument("--scale", type=float, default=1.0,
                     help="render at a fraction of the preset size (fast previews)")
     ap.add_argument("--logo", default=None, help="path to the logo image to use")
+    ap.add_argument("--vo-dir", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "vo"),
+                    help="directory holding the Persian voice-over clips (s1..s6.mp3)")
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2)))
     ap.add_argument("--outdir", default=os.path.join(REPO, "promo"))
     ap.add_argument("--audio", default=None, help="pre-built audio track to mux")
@@ -151,7 +153,7 @@ def main():
     if audio is None:
         audio = os.path.join(REPO, ".tmp_build", "mix.m4a")
         os.makedirs(os.path.dirname(audio), exist_ok=True)
-        build_audio(total, audio, os.path.join(REPO, ".tmp_build", "vo"),
+        build_audio(total, audio, args.vo_dir,
                     os.path.join(REPO, "assets", "audio", "sfx"), args.fps)
 
     for preset in presets:

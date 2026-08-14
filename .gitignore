@@ -29,10 +29,11 @@ key.properties
 .DS_Store
 Thumbs.db
 
-# Generated promo video renders + intermediate build artefacts
-promo/
+# Intermediate promo-video build artefacts (frames, scratch audio mix).
+# The finished renders in promo/ ARE committed — see tools/promo_video/README.md.
 .tmp_build/
 .tmp_preview/
+.venv_promo/
 
 # Python bytecode
 __pycache__/
