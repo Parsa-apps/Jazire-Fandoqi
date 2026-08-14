@@ -232,6 +232,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
         return;
       }
       await controller.setLooping(false);
+      await controller.setVolume(AudioService.canPlayAudio ? 1.0 : 0.0);
       await controller.setPlaybackSpeed(_playbackSpeed.clamp(0.5, 2.0));
       if (_isPlaying) {
         await controller.play();

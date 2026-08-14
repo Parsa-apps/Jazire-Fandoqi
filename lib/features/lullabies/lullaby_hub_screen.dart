@@ -41,7 +41,10 @@ class _LullabyHubScreenState extends State<LullabyHubScreen> {
     HapticFeedback.lightImpact();
     AudioService.sleepChime();
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => LullabyPlayerScreen(lullaby: lullaby)),
+      MaterialPageRoute(
+        settings: RouteSettings(name: '/lullaby/${lullaby.id}'),
+        builder: (_) => LullabyPlayerScreen(lullaby: lullaby),
+      ),
     );
   }
 

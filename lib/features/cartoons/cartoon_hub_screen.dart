@@ -89,6 +89,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
     AudioService.select();
     Navigator.of(context).push(
       MaterialPageRoute(
+        settings: RouteSettings(name: '/cartoon/${cartoon.id}'),
         builder: (_) => CartoonPlayerScreen(
           cartoon: cartoon,
           initialEpisodeIndex: episodeIndex,

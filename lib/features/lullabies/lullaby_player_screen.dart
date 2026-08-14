@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:just_audio/just_audio.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
+import '../../core/audio_service.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';
@@ -38,6 +39,10 @@ class _LullabyPlayerScreenState extends State<LullabyPlayerScreen> {
   }
 
   Future<void> _initAudio() async {
+    if (!AudioService.canPlayAudio) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
     try {
       await _player.setAsset(widget.lullaby.audioAsset);
       GameData.addSkill('lullaby');
@@ -79,7 +84,10 @@ class _LullabyPlayerScreenState extends State<LullabyPlayerScreen> {
     HapticFeedback.lightImpact();
     if (_isPlaying) {
       await _player.pause();
-    } else {
+    } else if (AudioService.canPlayAudio) {
+      if (_player.audioSource == null) {
+        await _player.setAsset(widget.lullaby.audioAsset);
+      }
       await _player.play();
     }
   }

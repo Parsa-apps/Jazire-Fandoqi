@@ -15,7 +15,20 @@ import 'audio_service.dart';
 class StoryAudioService {
   static final AudioPlayer _player = AudioPlayer();
   static bool _isPlayingPreRecorded = false;
+  static bool _isDuckingBackground = false;
   static String? _currentAsset;
+
+  static void _beginDucking() {
+    if (_isDuckingBackground) return;
+    _isDuckingBackground = true;
+    AudioService.beginForegroundAudio();
+  }
+
+  static void _endDucking() {
+    if (!_isDuckingBackground) return;
+    _isDuckingBackground = false;
+    AudioService.endForegroundAudio();
+  }
 
   /// آیا در حال پخش فایل ضبط‌شده هستیم؟
   static bool get isPlayingPreRecorded => _isPlayingPreRecorded;
@@ -50,23 +63,23 @@ class StoryAudioService {
     final assetPath = assetPathFor(storyId, pageNumber);
     final exists = await hasPreRecordedAudio(storyId, pageNumber);
 
-    if (exists) {
+    if (exists && AudioService.canPlayAudio) {
       try {
         await _player.stop();
+        _beginDucking();
         AudioService.stopSpeaking(); // قطع TTS قبلی
         await _player.setAsset(assetPath);
         _currentAsset = assetPath;
         _isPlayingPreRecorded = true;
+        // Future پخش just_audio پس از رسیدن به انتهای فایل کامل می‌شود.
         await _player.play();
-        // منتظر پایان پخش
-        await _player.processingStateStream
-            .firstWhere((s) => s == ProcessingState.completed)
-            .timeout(const Duration(seconds: 120), onTimeout: () => ProcessingState.completed);
         _isPlayingPreRecorded = false;
+        _endDucking();
         return;
       } catch (e) {
         LoggerService.e('StoryAudioService play failed for $assetPath', e);
         _isPlayingPreRecorded = false;
+        _endDucking();
         // fallback به TTS
       }
     }
@@ -84,9 +97,10 @@ class StoryAudioService {
   static Future<Duration?> playPreRecordedOnly(String storyId, int pageNumber) async {
     final assetPath = assetPathFor(storyId, pageNumber);
     final exists = await hasPreRecordedAudio(storyId, pageNumber);
-    if (!exists) return null;
+    if (!exists || !AudioService.canPlayAudio) return null;
     try {
       await _player.stop();
+      _beginDucking();
       AudioService.stopSpeaking();
       final loadedDuration = await _player.setAsset(assetPath);
       _currentAsset = assetPath;
@@ -95,12 +109,14 @@ class StoryAudioService {
       _player.processingStateStream.listen((state) {
         if (state == ProcessingState.completed) {
           _isPlayingPreRecorded = false;
+          _endDucking();
         }
       });
       return loadedDuration ?? _player.duration;
     } catch (e) {
       LoggerService.e('playPreRecordedOnly failed', e);
       _isPlayingPreRecorded = false;
+      _endDucking();
       return null;
     }
   }
@@ -112,18 +128,24 @@ class StoryAudioService {
     AudioService.stopSpeaking();
     _isPlayingPreRecorded = false;
     _currentAsset = null;
+    _endDucking();
   }
 
   static Future<void> pause() async {
     try {
       await _player.pause();
     } catch (_) {}
+    _endDucking();
   }
 
   static Future<void> resume() async {
+    if (!AudioService.canPlayAudio) return;
+    _beginDucking();
     try {
       await _player.play();
-    } catch (_) {}
+    } catch (_) {
+      _endDucking();
+    }
   }
 
   static Stream<Duration> get positionStream => _player.positionStream;
@@ -134,6 +156,7 @@ class StoryAudioService {
   static bool get isPlaying => _player.playing;
 
   static void dispose() {
+    _endDucking();
     _player.dispose();
   }
 }

@@ -73,6 +73,7 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
     Navigator.of(context)
         .push(
           MaterialPageRoute(
+            settings: RouteSettings(name: '/story/${story.id}'),
             builder: (_) => StoryReaderScreen(story: story),
           ),
         )
