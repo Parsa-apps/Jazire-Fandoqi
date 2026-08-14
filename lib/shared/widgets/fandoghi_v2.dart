@@ -1,30 +1,18 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../core/fandoghi_models.dart';
-import 'fandoghi_bunny.dart';
+import 'fandoghi_hazelnut_character.dart';
 
 export '../../core/fandoghi_models.dart';
 
 /// ═══════════════════════════════════════════════
-/// 🧒 Fandoghi V2 — Backwards-compatible wrapper.
-///
-/// The original V2 widget was a CustomPaint hazelnut. We replaced it
-/// with the cute [FandoghiBunny] image everywhere it was used, but
-/// kept the public API ([FandoghiV2]) so every existing call site
-/// (FandoghiV2(size: 80, animate: true, mood: …)) keeps compiling.
+/// 🌰 Fandoghi V2 — ویجت کاراکتر فندق مربی و همراه کودک
 /// ═══════════════════════════════════════════════
 class FandoghiV2 extends StatelessWidget {
   final double size;
-
-  /// Stored under a name that does not shadow flutter_animate's `animate()`
-  /// extension. The public constructor keeps the old `animate:` argument.
   final bool shouldAnimate;
   final String? message;
   final VoidCallback? onTap;
-
-  /// حالت احساسی مسکات. حالت‌هایی که تصویر اختصاصی دارند (شادی، جشن،
-  /// فکر کردن، تعجب) با همان تصویر واقعی نمایش داده می‌شوند.
   final FandoghiMood mood;
 
   const FandoghiV2({
@@ -40,33 +28,10 @@ class FandoghiV2 extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget body = GestureDetector(
       onTap: onTap,
-      child: _BunnyWithFloat(
+      child: FandoghiHazelnutCharacter(
         size: size,
+        mood: mood,
         animate: shouldAnimate,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            FandoghiBunny(size: size, mood: mood),
-            // ایموجی احساس فقط برای حالت‌هایی نشان داده می‌شود که هنوز
-            // تصویر اختصاصی ندارند (خواب‌آلود، خجالتی، ناراحت).
-            if (mood != FandoghiMood.happy && mood.portraitAsset == null)
-              Positioned(
-                right: -size * 0.12,
-                top: -size * 0.12,
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0.6, end: 1.0),
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOutBack,
-                  builder: (context, value, child) =>
-                      Transform.scale(scale: value, child: child),
-                  child: Text(
-                    mood.emoji,
-                    style: TextStyle(fontSize: size * 0.42),
-                  ),
-                ),
-              ),
-          ],
-        ),
       ),
     );
 
@@ -82,7 +47,7 @@ class FandoghiV2 extends StatelessWidget {
     }
 
     return Semantics(
-      label: 'فندقی، مربی و راهنمای کودک',
+      label: 'فندقی، مربی و دوست صمیمی کودک',
       button: onTap != null,
       child: body,
     );
@@ -90,15 +55,16 @@ class FandoghiV2 extends StatelessWidget {
 
   Widget _buildSpeechBubble() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      constraints: const BoxConstraints(maxWidth: 200),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      constraints: const BoxConstraints(maxWidth: 220),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE67E22).withOpacity(0.4), width: 1.5),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
@@ -107,72 +73,12 @@ class FandoghiV2 extends StatelessWidget {
         message!,
         textAlign: TextAlign.center,
         style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          height: 1.5,
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF2C3E50),
+          height: 1.4,
         ),
       ),
-    );
-  }
-}
-
-/// Gentle float animation so the bunny still feels alive even
-/// though it's an image now.
-class _BunnyWithFloat extends StatefulWidget {
-  final double size;
-  final bool animate;
-  final Widget child;
-  const _BunnyWithFloat({
-    required this.size,
-    required this.animate,
-    required this.child,
-  });
-
-  @override
-  State<_BunnyWithFloat> createState() => _BunnyWithFloatState();
-}
-
-class _BunnyWithFloatState extends State<_BunnyWithFloat>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  final _rng = Random();
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: 2200 + _rng.nextInt(600)),
-    );
-    if (widget.animate) _ctrl.repeat(reverse: true);
-  }
-
-  @override
-  void didUpdateWidget(covariant _BunnyWithFloat oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.animate && !oldWidget.animate) {
-      _ctrl.repeat(reverse: true);
-    } else if (!widget.animate && oldWidget.animate) {
-      _ctrl.stop();
-      _ctrl.value = 0;
-    }
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (_, child) {
-        final dy = widget.animate ? sin(_ctrl.value * pi) * 4 : 0.0;
-        return Transform.translate(offset: Offset(0, -dy), child: child);
-      },
-      child: widget.child,
     );
   }
 }

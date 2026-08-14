@@ -16,7 +16,8 @@ import '../../shared/widgets/fandoghi_premium.dart';
 /// gateway action opened them. Keeping the links in one small library makes
 /// every content promise discoverable without adding network dependencies.
 class LearningLibraryScreen extends StatefulWidget {
-  const LearningLibraryScreen({super.key});
+  final bool embedded;
+  const LearningLibraryScreen({super.key, this.embedded = false});
 
   @override
   State<LearningLibraryScreen> createState() => _LearningLibraryScreenState();
@@ -102,34 +103,36 @@ class _LearningLibraryScreenState extends State<LearningLibraryScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-                child: Row(
-                  children: [
-                    ChildTouchTarget(
-                      onTap: () => Navigator.pop(context),
-                      child: const Icon(
-                        Icons.arrow_back_rounded,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        'کتابخانه یادگیری 📚',
-                        textAlign: TextAlign.center,
-                        style: AppFonts.vazirmatn(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+                  child: Row(
+                    children: [
+                      if (!widget.embedded) ...[
+                        ChildTouchTarget(
+                          onTap: () => Navigator.pop(context),
+                          child: const Icon(
+                            Icons.arrow_back_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                      ],
+                      Expanded(
+                        child: Text(
+                          widget.embedded ? 'کوله‌پشتی یادگیری 🎒' : 'کتابخانه یادگیری 📚',
+                          textAlign: TextAlign.center,
+                          style: AppFonts.vazirmatn(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 64),
-                  ],
+                      if (!widget.embedded) const SizedBox(width: 32),
+                    ],
+                  ),
                 ),
-              ),
               const SizedBox(height: 4),
               const FandoghiPremium(
                 size: 64,

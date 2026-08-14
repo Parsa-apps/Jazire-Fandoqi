@@ -2,36 +2,44 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../app/app_colors.dart';
+import '../../app/app_fonts.dart';
 import '../../core/audio_service.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/game_data.dart';
-import '../../core/growth/growth.dart';
 import '../../presentation/providers/game_state_provider.dart';
-import '../island/island_screen.dart';
-import '../stage_map/stage_map_screen.dart';
+import '../gateway/learning_library_screen.dart';
 import '../profile/profile_screen.dart';
-import '../shop/shop_screen.dart';
-import 'widgets/dashboard_tab.dart';
+import '../stage_map/stage_map_screen.dart';
+import 'widgets/achievements_tab.dart';
+import 'widgets/fandoqi_island_tab.dart';
+import 'widgets/report_card_tab.dart';
 
 /// ═══════════════════════════════════════════════
-/// 🏠 HOME SCREEN — Professional Dashboard
-/// Beautiful parallax, glass cards, animated nav
+/// 🏠 HOME SCREEN — صفحه اصلی جزیره فندقی
+/// نوار پایینی لوکس دقیقا مطابق طرح اسکرین‌شات
 /// ═══════════════════════════════════════════════
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
   @override
-  ConsumerState<HomeScreen> createState() => _HomeState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeState extends ConsumerState<HomeScreen> {
-  int _currentTab = 0;
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  // تب خانه (مرکزی) تب پیش‌فرض شروع برنامه است
+  int _currentTab = 2;
   final List<Widget?> _tabWidgets = List<Widget?>.filled(5, null);
 
   @override
   void initState() {
     super.initState();
-    _tabWidgets[0] = const DashboardTab();
+    _tabWidgets[2] = FandoqiIslandTab(
+      onOpenStageMap: () => _openStageMapScreen(),
+      onOpenBackpack: () => setState(() => _currentTab = 1),
+      onOpenAchievements: () => setState(() => _currentTab = 0),
+    );
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (GameData.playedGames.length >= 5 || GameData.streak >= 7) {
@@ -42,9 +50,15 @@ class _HomeState extends ConsumerState<HomeScreen> {
     });
   }
 
+  void _openStageMapScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const StageMapScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // فاز ۳: واکنش به وضعیت بازی از طریق Riverpod به‌جای addListener دستی.
     ref.watch(gameStateProvider);
 
     return Scaffold(
@@ -59,49 +73,85 @@ class _HomeState extends ConsumerState<HomeScreen> {
   Widget _tabFor(int index) {
     final existing = _tabWidgets[index];
     if (existing != null) return existing;
-    final widget = switch (index) {
-      1 => const LearningIsland(embedded: true),
-      2 => const StageMapScreen(embedded: true),
-      3 => const ShopScreen(embedded: true),
+
+    final Widget widget = switch (index) {
+      0 => const AchievementsTab(),
+      1 => const LearningLibraryScreen(embedded: true),
+      2 => FandoqiIslandTab(
+          onOpenStageMap: () => _openStageMapScreen(),
+          onOpenBackpack: () => setState(() => _currentTab = 1),
+          onOpenAchievements: () => setState(() => _currentTab = 0),
+        ),
+      3 => const ReportCardTab(),
       4 => const ProfileScreen(embedded: true),
-      _ => const DashboardTab(),
+      _ => FandoqiIslandTab(
+          onOpenStageMap: () => _openStageMapScreen(),
+        ),
     };
     _tabWidgets[index] = widget;
     return widget;
   }
 
+  // ─── نوار ناوبری پایینی دقیقا مطابق تصویر نمونه ──────────────────
   Widget _buildBottomNav() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.94),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border.all(color: Colors.white, width: 1.5),
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 16,
-            offset: const Offset(0, -4),
+            color: const Color(0xFF0277BD).withOpacity(0.12),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
           ),
         ],
       ),
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              _navItem(0, Icons.sports_esports_rounded, 'بازی‌ها'),
-              _navItem(1, Icons.explore_rounded, 'جزیره'),
-              _navItemCenter(),
+              // ۱. دستاوردها (سمت چپ)
               _navItem(
-                3,
-                ParentControls.shopVisible
-                    ? Icons.storefront_rounded
-                    : Icons.self_improvement_rounded,
-                ParentControls.shopVisible ? 'فروشگاه' : 'تمرکز',
+                index: 0,
+                emoji: '🏆',
+                icon: Icons.emoji_events_rounded,
+                iconColor: const Color(0xFFFFB300),
+                label: 'دستاوردها',
               ),
-              _navItem(4, Icons.person_rounded, 'پروفایل'),
+
+              // ۲. کوله‌پشتی
+              _navItem(
+                index: 1,
+                emoji: '🎒',
+                icon: Icons.backpack_rounded,
+                iconColor: const Color(0xFF1E88E5),
+                label: 'کوله‌پشتی',
+              ),
+
+              // ۳. خانه (دکمه مرکزی شناور و برجسته با دایره آبی و آیکون خانه)
+              _buildCenterHomeNav(),
+
+              // ۴. کارنامه
+              _navItem(
+                index: 3,
+                emoji: '📘',
+                icon: Icons.menu_book_rounded,
+                iconColor: const Color(0xFF00ACC1),
+                label: 'کارنامه',
+              ),
+
+              // ۵. داستان و پروفایل
+              _navItem(
+                index: 4,
+                emoji: '👤',
+                icon: Icons.person_rounded,
+                iconColor: const Color(0xFF42A5F5),
+                label: 'داستان',
+              ),
             ],
           ),
         ),
@@ -109,99 +159,162 @@ class _HomeState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _navItem(int index, IconData icon, String label) {
+  // ─── دکمه مرکزی خانه (برجسته و دایره‌ای) ──────────────────────
+  Widget _buildCenterHomeNav() {
+    final selected = _currentTab == 2;
+
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        AudioService.tap();
+        setState(() => _currentTab = 2);
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // دایره با حاشیه آبی روشن و پس‌زمینه سفید و آیکون کلبه نارنجی
+          Container(
+            width: 58,
+            height: 58,
+            margin: const EdgeInsets.only(bottom: 2),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: selected
+                    ? const Color(0xFF039BE5)
+                    : const Color(0xFF81D4FA).withOpacity(0.8),
+                width: 3.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: (selected ? const Color(0xFF039BE5) : const Color(0xFF0288D1))
+                      .withOpacity(0.28),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Center(
+              child: _buildHomeHouseIcon(selected),
+            ),
+          )
+              .animate(target: selected ? 1 : 0)
+              .scale(begin: const Offset(0.96, 0.96), end: const Offset(1.06, 1.06), duration: 200.ms),
+
+          Text(
+            'خانه',
+            style: AppFonts.vazirmatn(
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              color: selected ? const Color(0xFF0277BD) : const Color(0xFF546E7A),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHomeHouseIcon(bool selected) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFCC80).withOpacity(0.3),
+        shape: BoxShape.circle,
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          const Icon(
+            Icons.home_rounded,
+            size: 32,
+            color: Color(0xFFE65100),
+          ),
+          Positioned(
+            bottom: 6,
+            child: Container(
+              width: 10,
+              height: 10,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFF3E0),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(3)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── آیتم‌های استاندارد نوار پایین ────────────────────────────
+  Widget _navItem({
+    required int index,
+    required String emoji,
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+  }) {
     final selected = _currentTab == index;
-    final inactiveColor = Theme.of(context).brightness == Brightness.dark
-        ? Colors.white54
-        : AppColors.textLight;
+    final activeColor = iconColor;
+    final inactiveColor = const Color(0xFF78909C);
+
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
         AudioService.tap();
-        if (index == 3 && !ParentControls.shopVisible) {
-          FandoghiCoach.instruction('حالت تمرکز روشن است؛ فروشگاه بعداً باز می‌شود 🎯');
-          return;
-        }
         setState(() => _currentTab = index);
       },
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 220),
         curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: selected
-              ? AppColors.primary.withOpacity(0.08)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
+          color: selected ? activeColor.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(18),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              child: Icon(
-                icon,
-                color: selected ? AppColors.primary : inactiveColor,
-                size: selected ? 26 : 24,
+            AnimatedScale(
+              scale: selected ? 1.12 : 1.0,
+              duration: const Duration(milliseconds: 180),
+              child: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: selected
+                      ? activeColor.withOpacity(0.18)
+                      : Colors.grey.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: selected ? activeColor.withOpacity(0.5) : Colors.transparent,
+                    width: 1.5,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    emoji,
+                    style: TextStyle(
+                      fontSize: selected ? 22 : 20,
+                      color: selected ? null : Colors.grey.shade600,
+                    ),
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 3),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 10,
-                color: selected ? AppColors.primary : inactiveColor,
-                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+              style: AppFonts.vazirmatn(
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
+                color: selected ? activeColor : inactiveColor,
               ),
             ),
           ],
         ),
       ),
-    ).animate(target: selected ? 1 : 0)
-        .scale(begin: const Offset(0.95, 0.95), end: const Offset(1.0, 1.0), duration: 200.ms);
-  }
-
-  Widget _navItemCenter() {
-    final selected = _currentTab == 2;
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.mediumImpact();
-        AudioService.select();
-        setState(() => _currentTab = 2);
-      },
-      child: Container(
-        width: 60,
-        height: 60,
-        decoration: BoxDecoration(
-          gradient: selected
-              ? AppGradients.sunset
-              : AppGradients.primary,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: (selected ? AppColors.sunset1 : AppColors.primary)
-                  .withOpacity(0.4),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Icon(
-          Icons.map_rounded,
-          color: Colors.white,
-          size: selected ? 30 : 28,
-        ),
-      )
-          .animate(
-            onPlay: (c) => c.repeat(reverse: true),
-          )
-          .moveY(
-            begin: 0,
-            end: -4,
-            duration: 2000.ms,
-            curve: Curves.easeInOut,
-          ),
     );
   }
-
 }

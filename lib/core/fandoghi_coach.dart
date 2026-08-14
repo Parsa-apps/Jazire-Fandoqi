@@ -164,6 +164,26 @@ class FandoghiCoach {
         duration: const Duration(seconds: 4),
       );
 
+  static final List<String> _friendlyQuotes = [
+    'من همیشه کنارتم قهرمان! 🌰✨',
+    'تو خیلی باهوشی، ادامه بده! 🌟',
+    'یادت نره آب بخوری دوست من! 💧',
+    'تمرین بیشتر یعنی یادگیری بهتر! 📚',
+    'لبخند بزن کوچولو، امروز عالی پیش میره! 😊',
+    'چشم‌هات خسته نشه؛ یه نفس عمیق بکش! 🌈',
+    'هر روز داری قوی‌تر و داناتر میشی! 💪',
+  ];
+
+  static void randomFriendlyTip() {
+    final quote = _friendlyQuotes[DateTime.now().millisecond % _friendlyQuotes.length];
+    say(
+      quote,
+      mood: FandoghiMood.excited,
+      tone: FandoghiCoachTone.encouragement,
+      duration: const Duration(seconds: 3),
+    );
+  }
+
   static void clear() {
     _hideTimer?.cancel();
     _hideTimer = null;
