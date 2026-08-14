@@ -26,6 +26,8 @@ class PillRect {
   static const Map<String, PillRect> byAsset = {
     'assets/theme_map/island_cartoon.png': PillRect(0.395, 0.622, 0.345, 0.070),
     'assets/theme_map/island_story.png': PillRect(0.512, 0.660, 0.360, 0.075),
+    // جزیرهٔ قصه‌ها دکمهٔ توکار ندارد؛ لنگر روی چمنِ جلوی فندقی است
+    'assets/theme_map/island_tales.png': PillRect(0.497, 0.735, 0.360, 0.075),
     'assets/theme_map/island_game.png': PillRect(0.355, 0.558, 0.335, 0.075),
     'assets/theme_map/island_lullaby.png': PillRect(0.560, 0.520, 0.460, 0.075),
     'assets/theme_map/island_profile.png': PillRect(0.685, 0.630, 0.320, 0.075),
@@ -36,6 +38,7 @@ class PillRect {
   static const Map<String, double> aspectByAsset = {
     'assets/theme_map/island_cartoon.png': 511 / 440,
     'assets/theme_map/island_story.png': 509 / 440,
+    'assets/theme_map/island_tales.png': 585 / 440,
     'assets/theme_map/island_game.png': 432 / 440,
     'assets/theme_map/island_lullaby.png': 466 / 440,
     'assets/theme_map/island_profile.png': 547 / 440,

@@ -63,7 +63,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
   double _scrollOffset = 0;
 
   /// ارتفاع کل نقشه نسبت به ارتفاع صفحه — نقشه حدود ۲٫۵ صفحه بلند است
-  static const double _mapHeightFactor = 2.85;
+  static const double _mapHeightFactor = 3.41;
 
   @override
   void initState() {
@@ -221,17 +221,28 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
       _Slot(
         asset: 'assets/theme_map/island_cartoon.png',
         label: 'کارتون‌ها',
-        top: 0.185,
+        top: 0.1605,
         side: -1,
         widthMul: 1.00,
         phase: 0.10,
         onTap: () => _go('/cartoons'),
       ),
+      // قصه‌ها: درست یک پله پایین‌تر از کارتون‌ها — فندقی روی چمن نشسته
+      // و کتاب باز دستش است.
+      _Slot(
+        asset: 'assets/theme_map/island_tales.png',
+        label: 'قصه‌ها',
+        top: 0.2646,
+        side: 1,
+        widthMul: 1.00,
+        phase: 0.22,
+        onTap: () => _go('/stories'),
+      ),
       _Slot(
         asset: 'assets/theme_map/island_story.png',
         label: 'قصه و فارسی',
-        top: 0.305,
-        side: 1,
+        top: 0.3815,
+        side: -1,
         widthMul: 1.00,
         phase: 0.35,
         onTap: () => _openHub(FandoqiHubs.farsi),
@@ -239,7 +250,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
       _Slot(
         asset: 'assets/theme_map/island_game.png',
         label: 'بازی‌ها',
-        top: 0.428,
+        top: 0.4852,
         side: 0,
         widthMul: 1.10,
         phase: 0.55,
@@ -248,8 +259,8 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
       _Slot(
         asset: 'assets/theme_map/island_lullaby.png',
         label: 'لالایی',
-        top: 0.553,
-        side: -1,
+        top: 0.5832,
+        side: 1,
         widthMul: 1.00,
         phase: 0.72,
         onTap: () => _go('/lullabies'),
@@ -257,8 +268,8 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
       _Slot(
         asset: 'assets/theme_map/island_profile.png',
         label: 'خانهٔ من',
-        top: 0.675,
-        side: 1,
+        top: 0.6795,
+        side: -1,
         widthMul: 1.00,
         phase: 0.20,
         onTap: () => showProfileEditor(context),
@@ -266,8 +277,8 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
       _Slot(
         asset: 'assets/theme_map/island_about.png',
         label: 'دربارهٔ ما',
-        top: 0.797,
-        side: -1,
+        top: 0.7898,
+        side: 1,
         widthMul: 0.94,
         phase: 0.88,
         onTap: () => _go('/about'),
@@ -299,7 +310,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
 
         // ── تابلوی آویزان خوش‌آمدگویی ──
         Positioned(
-          top: mapH * 0.004,
+          top: mapH * 0.003,
           left: (w - signW) / 2,
           width: signW,
           child: _welcomeSign(signW),
@@ -309,7 +320,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
         // هالهٔ طلایی از خود فندقی بزرگ‌تر است، پس کادر را به اندازهٔ هاله
         // می‌گیریم تا چیزی بریده نشود.
         Positioned(
-          top: mapH * 0.093,
+          top: mapH * 0.082,
           left: (w - heroW * HeroFandoq.haloFactor) / 2,
           width: heroW * HeroFandoq.haloFactor,
           child: HeroFandoq(
@@ -339,10 +350,10 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
 
         // ── ناحیهٔ زیرِ آب: حباب‌های شناور و چهار دنیای یادگیری ──
         Positioned(
-          top: mapH * 0.895,
+          top: mapH * 0.908,
           left: 0,
           right: 0,
-          height: mapH * 0.105,
+          height: mapH * 0.092,
           child: Stack(
             children: [
               Positioned.fill(
