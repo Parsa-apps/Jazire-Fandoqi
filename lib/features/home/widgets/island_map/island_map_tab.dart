@@ -32,7 +32,7 @@ import 'island_node.dart';
 ///   ۵. فارسی (چپ)
 ///   ۶. بازی‌ها (وسط)
 ///   ۷. لالایی (راست)
-///   ۸. خانهٔ من (چپ)
+///   ۸. پروفایل من (چپ)
 ///   ۹. دربارهٔ ما (راست)
 ///  ۱۰. ناحیهٔ زیرِ آب: ریاضی، حروف، علوم، هنر
 ///
@@ -268,7 +268,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
       ),
       _Slot(
         asset: 'assets/theme_map/island_profile.png',
-        label: 'خانهٔ من',
+        label: 'پروفایل من',
         top: 0.6795,
         side: -1,
         widthMul: 1.00,

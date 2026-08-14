@@ -101,7 +101,9 @@ class AudioService {
     handleAudioSessionActivation: false,
   );
 
-  static const double _bgmVolume = 0.22;
+  /// سقف امن موسیقی پس‌زمینه؛ کنترل کاربر به‌صورت ۰ تا ۱ روی این مقدار
+  /// اعمال می‌شود. ۵۰٪ از این سقف همان میکس قبلی ۰٫۲۲ است.
+  static const double _maximumBgmVolume = 0.44;
   static const double _duckedBgmFactor = 0.10;
   static String? _currentBgmAsset;
   static String? _loadedBgmAsset;
@@ -507,7 +509,9 @@ class AudioService {
 
   static bool get canPlayAudio => !_muted;
   static double get _effectiveBgmVolume =>
-      _bgmVolume * (_foregroundAudioCount > 0 ? _duckedBgmFactor : 1.0);
+      _maximumBgmVolume *
+      GameData.musicVolume *
+      (_foregroundAudioCount > 0 ? _duckedBgmFactor : 1.0);
 
   static Future<void> playBgmSection(String section) async {
     final asset = backgroundTracks[section];
@@ -545,8 +549,15 @@ class AudioService {
     unawaited(_bgmPlayer.stop());
   }
 
+  /// پیش‌نمایش فوری کنترل کاربر. [volume] نرمال‌شده و بین صفر تا یک است؛
+  /// ذخیرهٔ مقدار نهایی بر عهدهٔ [GameData.setMusicVolume] است.
   static void setBgmVolume(double volume) {
-    unawaited(_bgmPlayer.setVolume(volume.clamp(0.0, 1.0)));
+    final normalized = volume.clamp(0.0, 1.0).toDouble();
+    final duckFactor =
+        _foregroundAudioCount > 0 ? _duckedBgmFactor : 1.0;
+    unawaited(
+      _bgmPlayer.setVolume(_maximumBgmVolume * normalized * duckFactor),
+    );
   }
 
   /// هر صدای محتوایی (گوینده، داستان یا ویدیو) این جفت متد را صدا می‌زند.

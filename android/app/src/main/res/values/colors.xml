@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Teal sky matching the new walnut-island adaptive-icon background -->
-    <color name="ic_launcher_background">#67C6F5</color>
+    <!-- Pastel edge color matching the new Fandoghi lantern app icon. -->
+    <color name="ic_launcher_background">#E6F1E8</color>
 </resources>
