@@ -7,13 +7,17 @@ import 'package:jazireh_fandoghi/core/ai_system.dart';
 import 'package:jazireh_fandoghi/core/cartoons/aparat_service.dart';
 import 'package:jazireh_fandoghi/core/cartoons/cartoon_data.dart';
 import 'package:jazireh_fandoghi/core/audio_service.dart';
+import 'package:jazireh_fandoghi/core/content_access_policy.dart';
 import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
 import 'package:jazireh_fandoghi/core/game_data.dart';
+import 'package:jazireh_fandoghi/core/monetization.dart';
 import 'package:jazireh_fandoghi/features/cartoons/cartoon_player_screen.dart';
+import 'package:jazireh_fandoghi/features/shop/full_version_paywall.dart';
 import 'package:jazireh_fandoghi/features/cartoons/widgets/cartoon_cover.dart';
 import 'package:jazireh_fandoghi/features/cartoons/widgets/cartoon_rating_dialog.dart';
 import 'package:jazireh_fandoghi/features/profile/sticker_album_screen.dart';
 import 'package:jazireh_fandoghi/shared/widgets/fandoghi_v2.dart';
+import 'package:jazireh_fandoghi/shared/widgets/premium_lock_overlay.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// 🎬 CARTOON HUB SCREEN — کارتون‌کده و سینما کودک فوق پیشرفته
@@ -31,6 +35,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
   int _featuredIndex = 0;
   bool _onlyFavorites = false;
+  bool _hasFullVersion = false;
   late String _suggestedCartoonId;
 
   @override
@@ -39,6 +44,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
     // فندقی فقط در بخش بازی/یادگیری حضور دارد؛ در سینما کارتون نمایش داده نمی‌شود.
     FandoghiCoach.disablePersistentPresence();
     _suggestedCartoonId = AI.suggestCartoon();
+    _refreshEntitlement();
 
     // 🖼️ پیش‌بارگیری پوستر کارتون‌ها (قاب واقعی شخصیت‌ها) در پس‌زمینه
     final ordered = <Cartoon>[
@@ -169,18 +175,40 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
     return list;
   }
 
-  void _openCartoon(Cartoon cartoon, {int episodeIndex = 0}) {
+  bool _isLocked(Cartoon cartoon) =>
+      !_hasFullVersion && !ContentAccessPolicy.isCartoonFree(cartoon.id);
+
+  Future<bool> _refreshEntitlement() async {
+    final hasFullVersion = await Monetization.hasFullVersion();
+    if (mounted && hasFullVersion != _hasFullVersion) {
+      setState(() => _hasFullVersion = hasFullVersion);
+    }
+    return hasFullVersion;
+  }
+
+  Future<void> _openCartoon(Cartoon cartoon, {int episodeIndex = 0}) async {
     HapticFeedback.lightImpact();
     AudioService.select();
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        settings: RouteSettings(name: '/cartoon/${cartoon.id}'),
-        builder: (_) => CartoonPlayerScreen(
-          cartoon: cartoon,
-          initialEpisodeIndex: episodeIndex,
-        ),
-      ),
-    ).then((_) => setState(() {}));
+    if (!ContentAccessPolicy.isCartoonFree(cartoon.id) &&
+        !await Monetization.hasFullVersion()) {
+      if (!mounted) return;
+      await showFullVersionPaywall(context, featureName: cartoon.title);
+      if (!mounted || !await _refreshEntitlement()) return;
+    }
+    if (!mounted) return;
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(
+            settings: RouteSettings(name: '/cartoon/${cartoon.id}'),
+            builder: (_) => CartoonPlayerScreen(
+              cartoon: cartoon,
+              initialEpisodeIndex: episodeIndex,
+            ),
+          ),
+        )
+        .then((_) {
+          if (mounted) setState(() {});
+        });
   }
 
   void _goToGames() {
@@ -515,7 +543,14 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                   color: cartoon.themeColor.withOpacity(0.25),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Text('تماشا ▶', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                child: Text(
+                  _isLocked(cartoon) ? 'قفل 🔒' : 'تماشا ▶',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),
@@ -695,6 +730,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                   }),
                 ),
               ),
+              if (_isLocked(cartoon)) const PremiumLockOverlay(),
             ],
           ),
         ),
@@ -973,6 +1009,8 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                                 ),
                               ),
                             ),
+                            if (_isLocked(cartoon))
+                              const PremiumLockOverlay(),
                         ],
                       ),
                     ),

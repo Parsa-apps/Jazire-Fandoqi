@@ -4,9 +4,13 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
 import '../../core/audio_service.dart';
+import '../../core/content_access_policy.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/learning_content/lullabies_data.dart';
+import '../../core/monetization.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
+import '../../shared/widgets/premium_lock_overlay.dart';
+import '../shop/full_version_paywall.dart';
 import 'lullaby_player_screen.dart';
 
 /// ═══════════════════════════════════════════════════════
@@ -21,11 +25,14 @@ class LullabyHubScreen extends StatefulWidget {
 }
 
 class _LullabyHubScreenState extends State<LullabyHubScreen> {
+  bool _hasFullVersion = false;
+
   @override
   void initState() {
     super.initState();
     // فندقی فقط در بخش بازی/یادگیری حضور دارد.
     FandoghiCoach.disablePersistentPresence();
+    _refreshEntitlement();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         FandoghiCoach.say(
@@ -37,9 +44,27 @@ class _LullabyHubScreenState extends State<LullabyHubScreen> {
     });
   }
 
-  void _openLullaby(Lullaby lullaby) {
+  bool _isLocked(Lullaby lullaby) =>
+      !_hasFullVersion && !ContentAccessPolicy.isLullabyFree(lullaby.id);
+
+  Future<bool> _refreshEntitlement() async {
+    final hasFullVersion = await Monetization.hasFullVersion();
+    if (mounted && hasFullVersion != _hasFullVersion) {
+      setState(() => _hasFullVersion = hasFullVersion);
+    }
+    return hasFullVersion;
+  }
+
+  Future<void> _openLullaby(Lullaby lullaby) async {
     HapticFeedback.lightImpact();
     AudioService.sleepChime();
+    if (!ContentAccessPolicy.isLullabyFree(lullaby.id) &&
+        !await Monetization.hasFullVersion()) {
+      if (!mounted) return;
+      await showFullVersionPaywall(context, featureName: lullaby.title);
+      if (!mounted || !await _refreshEntitlement()) return;
+    }
+    if (!mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute(
         settings: RouteSettings(name: '/lullaby/${lullaby.id}'),
@@ -246,6 +271,8 @@ class _LullabyHubScreenState extends State<LullabyHubScreen> {
                               child: const Text('پخش با صدای بچگانه 🌙', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
                             ),
                           ),
+                          if (_isLocked(lullaby))
+                            const PremiumLockOverlay(),
                         ],
                       ),
                     ),

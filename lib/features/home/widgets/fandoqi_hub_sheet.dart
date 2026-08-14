@@ -103,7 +103,7 @@ class FandoqiHubs {
         emoji: '📚',
         route: '/vocabulary',
         gameName: 'واژگان',
-        isFree: true,
+        isFree: false,
       ),
       HubActivity(
         title: 'بازی تشخیص صداها',
@@ -111,7 +111,7 @@ class FandoqiHubs {
         emoji: '🎧',
         route: '/sound_match',
         gameName: 'صدا',
-        isFree: true,
+        isFree: false,
       ),
     ],
   );
@@ -158,7 +158,7 @@ class FandoqiHubs {
         emoji: '⚖️',
         route: '/concepts',
         gameName: 'مفاهیم',
-        isFree: true,
+        isFree: false,
       ),
     ],
   );
@@ -188,7 +188,7 @@ class FandoqiHubs {
         emoji: '🎵',
         route: '/sound_match',
         gameName: 'صدا',
-        isFree: true,
+        isFree: false,
       ),
       HubActivity(
         title: 'حباب‌ترکان حروف و کلمات',
@@ -243,7 +243,7 @@ class FandoqiHubs {
         emoji: '🧭',
         route: '/life-skills',
         gameName: 'مهارت زندگی',
-        isFree: true,
+        isFree: false,
       ),
       HubActivity(
         title: 'مفاهیم علوم و دنیای اطراف',
@@ -251,7 +251,7 @@ class FandoqiHubs {
         emoji: '🌍',
         route: '/concepts',
         gameName: 'مفاهیم',
-        isFree: true,
+        isFree: false,
       ),
     ],
   );
