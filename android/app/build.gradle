@@ -200,9 +200,8 @@ if (System.getenv("GITHUB_ACTIONS") == "true") {
         inputs.file(rootProject.file("../pubspec.lock"))
         outputs.file(qualityMarker)
         environment "FLUTTER_ALREADY_LOCKED", "true"
-        commandLine "bash", "-lc",
-            "\"${flutterExecutable.absolutePath}\" analyze --no-fatal-warnings --no-fatal-infos && " +
-            "\"${flutterExecutable.absolutePath}\" test --reporter expanded"
+        environment "PATH", "${flutterExecutable.parentFile.absolutePath}:${System.getenv('PATH')}"
+        commandLine "bash", rootProject.file("../tool/ci_quality_gate.sh").absolutePath
         doLast {
             qualityMarker.parentFile.mkdirs()
             qualityMarker.text = "passed\n"
