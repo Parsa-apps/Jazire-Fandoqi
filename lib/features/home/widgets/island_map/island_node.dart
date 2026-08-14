@@ -396,3 +396,140 @@ class HeroFandoq extends StatelessWidget {
     );
   }
 }
+
+/// 🫧 حباب یادگیری زیرِ آب — برادر کوچک‌ترِ [IslandNode].
+///
+/// همان زبان تصویری را دارد: تصویر سه‌بعدیِ شناور + پلاک کپسولیِ کرم با
+/// حاشیهٔ عسلی. فرقش این است که تصویر گرد است و پلاک همیشه زیرِ حباب
+/// می‌نشیند، نه رویش، تا داخل حباب دیده شود.
+class BubbleNode extends StatefulWidget {
+  const BubbleNode({
+    super.key,
+    required this.asset,
+    required this.label,
+    required this.width,
+    required this.floatAnimation,
+    required this.onTap,
+    this.floatPhase = 0,
+  });
+
+  final String asset;
+  final String label;
+  final double width;
+  final Animation<double> floatAnimation;
+  final VoidCallback onTap;
+  final double floatPhase;
+
+  @override
+  State<BubbleNode> createState() => _BubbleNodeState();
+}
+
+class _BubbleNodeState extends State<BubbleNode>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pressCtrl;
+  late final Animation<double> _press;
+
+  @override
+  void initState() {
+    super.initState();
+    _pressCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 130),
+      reverseDuration: const Duration(milliseconds: 300),
+    );
+    _press = CurvedAnimation(
+      parent: _pressCtrl,
+      curve: Curves.easeOut,
+      reverseCurve: Curves.easeOutBack,
+    );
+  }
+
+  @override
+  void dispose() {
+    _pressCtrl.dispose();
+    super.dispose();
+  }
+
+  void _handleTap() {
+    HapticFeedback.lightImpact();
+    AudioService.tap();
+    widget.onTap();
+  }
+
+  /// متن کمی ریزتر از سکوهاست چون حباب‌ها چهارتایی کنار هم می‌نشینند
+  double get _fontSize => (widget.width * 0.215).clamp(12.0, 21.0);
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: widget.label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => _pressCtrl.forward(),
+        onTapUp: (_) => _pressCtrl.reverse(),
+        onTapCancel: () => _pressCtrl.reverse(),
+        onTap: _handleTap,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedBuilder(
+              animation: Listenable.merge([widget.floatAnimation, _press]),
+              builder: (context, child) {
+                final phase =
+                    (widget.floatAnimation.value + widget.floatPhase) % 1.0;
+                final bob = sin(phase * 2 * pi);
+                return Transform.translate(
+                  // حباب‌ها بالا و پایین می‌روند، انگار توی آب معلق‌اند
+                  offset: Offset(bob * 2, bob * 5),
+                  child: Transform.scale(
+                    scale: 1.0 - _press.value * 0.08,
+                    child: child,
+                  ),
+                );
+              },
+              child: Image.asset(
+                widget.asset,
+                width: widget.width,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.medium,
+              ),
+            ),
+            SizedBox(height: widget.width * 0.05),
+            _labelPlate(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// دقیقاً همان پلاکِ سکوها، فقط کوچک‌تر — تا کل نقشه یک‌دست بماند.
+  Widget _labelPlate() {
+    final fs = _fontSize;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: fs * 0.52, vertical: fs * 0.17),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFDF7),
+        borderRadius: BorderRadius.circular(fs),
+        border: Border.all(color: const Color(0xFFFFB300), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.22),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Text(
+        widget.label,
+        maxLines: 1,
+        style: AppFonts.kids(
+          fontSize: fs,
+          fontWeight: FontWeight.w800,
+          color: const Color(0xFF2E4756),
+          height: 1.15,
+        ),
+      ),
+    );
+  }
+}

@@ -462,90 +462,38 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
   /// نوار حباب‌های زیرِ آب — چهار دنیای یادگیری که سکوی اختصاصی ندارند.
   /// (فارسی و بازی‌ها روی خودِ نقشه سکو دارند، پس اینجا تکرار نمی‌شوند.)
   Widget _underwaterBar(double w) {
+    // حباب‌ها هم‌خانوادهٔ سکوها هستند: اندازه‌شان با عرض صفحه بالا و پایین
+    // می‌رود و برچسبشان همان پلاک کپسولیِ سکوهاست.
+    final bubbleW = ((w - 24) / 4 * 0.86).clamp(58.0, 104.0);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _hubBubble(FandoqiHubs.math, 'ریاضی', Icons.calculate_rounded),
+          _hubBubble(FandoqiHubs.math, 'ریاضی', 'bubble_math', bubbleW, 0.05),
+          _hubBubble(FandoqiHubs.lettersAndSounds, 'حروف', 'bubble_letters',
+              bubbleW, 0.30),
           _hubBubble(
-            FandoqiHubs.lettersAndSounds, 'حروف', Icons.abc_rounded),
-          _hubBubble(FandoqiHubs.science, 'علوم', Icons.science_rounded),
-          _hubBubble(FandoqiHubs.art, 'هنر', Icons.palette_rounded),
+              FandoqiHubs.science, 'علوم', 'bubble_science', bubbleW, 0.55),
+          _hubBubble(FandoqiHubs.art, 'هنر', 'bubble_art', bubbleW, 0.80),
         ],
       ),
     );
   }
 
-  /// یک حباب شیشه‌ای که یک هاب یادگیری را باز می‌کند
-  Widget _hubBubble(HubData hub, String label, IconData icon) {
-    return _bubbleShortcut(
-      icon: icon,
-      color: hub.primaryColor,
+  /// یک حباب شیشه‌ای که یک هاب یادگیری را باز می‌کند — همان زبانِ تصویریِ
+  /// سکوها: تصویر سه‌بعدی + پلاک کپسولیِ کرم با حاشیهٔ عسلی.
+  Widget _hubBubble(
+      HubData hub, String label, String asset, double width, double phase) {
+    return BubbleNode(
+      asset: 'assets/theme_map/$asset.png',
       label: label,
+      width: width,
+      floatAnimation: _floatCtrl,
+      floatPhase: phase,
       onTap: () => _openHub(hub),
-    );
-  }
-
-  Widget _bubbleShortcut({
-    required IconData icon,
-    required Color color,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        AudioService.tap();
-        onTap();
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 58,
-            height: 58,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withOpacity(0.94),
-                  Colors.white.withOpacity(0.64),
-                ],
-              ),
-              border:
-                  Border.all(color: Colors.white.withOpacity(0.9), width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.18),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Icon(icon, color: color, size: 30),
-          ),
-          const SizedBox(height: 5),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.30),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              label,
-              style: AppFonts.kids(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-                height: 1.2,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
