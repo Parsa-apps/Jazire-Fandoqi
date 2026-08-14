@@ -41,8 +41,6 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
     _suggestedCartoonId = AI.suggestCartoon();
 
     // 🖼️ پیش‌بارگیری پوستر کارتون‌ها (قاب واقعی شخصیت‌ها) در پس‌زمینه
-    // تا کودک مثل ویترین فروشگاه، هر کارتون را از روی عکس بشناسد.
-    // اولویت با کارتون‌های «ویژه» است، بعد بقیه.
     final ordered = <Cartoon>[
       ...CartoonData.getFeatured(),
       ...CartoonData.allCartoons.where((c) => !c.isFeatured),
@@ -58,6 +56,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
+        _maybeShowParentDisclosure();
         FandoghiCoach.say(
           'به کارتون‌کده فندقی خوش اومدی! روی هر کارتون که دوست داری بزن تا تماشا کنیم 🍿🎬',
           mood: FandoghiMood.excited,
@@ -65,6 +64,92 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
         );
       }
     });
+  }
+
+  /// ▶️ دیالوگ اطلاع‌رسانی یک‌باره برای والدین در اولین ورود به بخش کارتون
+  /// تا کافه‌بازار ببیند شفاف‌سازی درون‌اپ هم انجام شده است.
+  Future<void> _maybeShowParentDisclosure() async {
+    final shown = GameData.getBool('cartoon_parent_disclosure_shown') ?? false;
+    if (shown) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: const Color(0xFF1E1B38),
+        title: Row(
+          children: [
+            const Text('👨‍👩‍👧', style: TextStyle(fontSize: 28)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'اطلاعیه به والدین عزیز',
+                style: AppFonts.vazirmatn(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _disclosureRow(Icons.wifi_rounded, Colors.lightBlueAccent,
+                'بخش «کارتون‌کده» تنها بخش آنلاین اپ است و برای پخش به اینترنت نیاز دارد.'),
+            const SizedBox(height: 10),
+            _disclosureRow(Icons.verified_rounded, Colors.greenAccent,
+                'ویدیوها فقط از سرویس ویدیوی ایرانی آپارات (aparat.com) و صرفاً از طریق هش‌های از پیش تأییدشده و فهرست سفید پخش می‌شوند.'),
+            const SizedBox(height: 10),
+            _disclosureRow(Icons.shield_rounded, Colors.amberAccent,
+                'هیچ‌گونه جستجوی آزاد، تبلیغ، لینک خروجی به سایت‌های ثالث، یا ارسال اطلاعات کودک به سرور وجود ندارد.'),
+            const SizedBox(height: 10),
+            _disclosureRow(Icons.offline_bolt_rounded, Colors.pinkAccent,
+                'سایر بخش‌های اپ (آموزش حروف، بازی‌ها، لالایی‌ها، داستان‌ها، فلش‌کارت‌ها) کاملاً آفلاین هستند.'),
+            const SizedBox(height: 12),
+            const Text(
+              'در صورت اعتراض به محتوای هر قسمت، از پشتیبانی درون‌اپ گزارش دهید تا در نسخهٔ بعدی جایگزین شود.',
+              style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.5),
+              textAlign: TextAlign.justify,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              GameData.setBool('cartoon_parent_disclosure_shown', true);
+              Navigator.of(ctx).pop();
+            },
+            child: Text(
+              'مطّلع شدم ✅',
+              style: AppFonts.vazirmatn(
+                color: Colors.lightBlueAccent,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _disclosureRow(IconData icon, Color color, String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.5),
+            textAlign: TextAlign.justify,
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -151,30 +236,8 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                   // Search & Quick Filter Bar
                   SliverToBoxAdapter(child: _buildSearchBar()),
 
-                  // نکتهٔ پخش آنلاین (کارتون‌ها از سرورهای ایران پخش می‌شوند)
-                  SliverToBoxAdapter(
-                    child: Container(
-                      margin: const EdgeInsets.fromLTRB(16, 2, 16, 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.blueAccent.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.blueAccent.withOpacity(0.4)),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.cloud_queue_rounded, color: Colors.lightBlueAccent, size: 18),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'کارتون‌ها به‌صورت آنلاین و با لینک مستقیم از سرورهای ایران پخش می‌شوند (اینترنت لازم است).',
-                              style: TextStyle(color: Colors.white70, fontSize: 11, height: 1.5),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  // 📢 اطلاعیه شفاف برای والدین (مورد تأیید کافه‌بازار برای ردهٔ سنی خردسال)
+                  SliverToBoxAdapter(child: _buildOnlineDisclosureBanner()),
 
                   // Category Chips
                   SliverToBoxAdapter(child: _buildCategoryChips()),
@@ -985,6 +1048,82 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
           );
         },
         childCount: list.length,
+      ),
+    );
+  }
+
+  Widget _buildOnlineDisclosureBanner() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 2, 16, 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0F4C75), Color(0xFF3282B8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.lightBlueAccent.withOpacity(0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.lightBlueAccent.withOpacity(0.18),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.cloud_done_rounded,
+                    color: Colors.lightBlueAccent, size: 18),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'این بخش آنلاین است — پخش از آپارات',
+                  style: AppFonts.vazirmatn(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: _maybeShowParentDisclosure,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    'جزئیات',
+                    style: AppFonts.vazirmatn(
+                      color: const Color(0xFF0F4C75),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'ویدیوهای این بخش فقط از سرویس ویدیوی ایرانی آپارات (aparat.com) و از طریق فهرست سفید (هش‌های تأییدشده) پخش می‌شوند — بدون جستجوی آزاد، بدون تبلیغ و بدون ارسال اطلاعات. بقیهٔ بخش‌های اپ (بازی، آموزش، لالایی، داستان) کاملاً آفلاین هستند.',
+            style: TextStyle(color: Colors.white70, fontSize: 10.5, height: 1.5),
+            textAlign: TextAlign.justify,
+          ),
+        ],
       ),
     );
   }
