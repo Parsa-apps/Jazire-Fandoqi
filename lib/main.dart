@@ -10,6 +10,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'app/theme_controller.dart';
 import 'core/audio_service.dart';
+import 'core/background_music_observer.dart';
 import 'core/fandoghi_coach.dart';
 import 'core/game_data.dart';
 import 'core/game_launch.dart';
@@ -159,6 +160,8 @@ class JazirehFandoghiApp extends StatefulWidget {
 class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
     with WidgetsBindingObserver {
   final ThemeController _themeController = ThemeController();
+  final BackgroundMusicObserver _backgroundMusicObserver =
+      BackgroundMusicObserver();
 
   @override
   void initState() {
@@ -199,6 +202,7 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
           theme: _themeController.themeFor(Brightness.light),
           darkTheme: _themeController.themeFor(Brightness.dark),
           themeMode: ThemeMode.system,
+          navigatorObservers: <NavigatorObserver>[_backgroundMusicObserver],
           builder: (context, child) => GrowthAppShell(
             child: FandoghiCoachOverlay(
               child: _PlayTimeTracker(

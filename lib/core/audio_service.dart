@@ -24,6 +24,7 @@ class AudioService {
   static const String _lettersPath = 'assets/audio/letters/';
   static const String _numbersPath = 'assets/audio/numbers/';
   static const String _learningPath = 'assets/audio/learning/';
+  static const String _bgmPath = 'assets/audio/bgm/';
 
   /// فهرست افکت‌های بسته‌بندی‌شده — برای تست و بازتولید.
   static const List<String> sfxNames = <String>[
@@ -93,6 +94,20 @@ class AudioService {
     handleAudioSessionActivation: false,
   );
 
+  /// فایل‌های گفتاری و نشانه‌های شنیداری روی پلیر جدا پخش می‌شوند تا افکت
+  /// دکمه یا جشن، سؤال بازی و تلفظ آموزشی را قطع نکند.
+  static final AudioPlayer _voicePlayer = AudioPlayer(
+    handleInterruptions: false,
+    handleAudioSessionActivation: false,
+  );
+
+  static const double _bgmVolume = 0.22;
+  static const double _duckedBgmFactor = 0.10;
+  static String? _currentBgmAsset;
+  static String? _loadedBgmAsset;
+  static int _bgmRequest = 0;
+  static int _foregroundAudioCount = 0;
+
   /// موتور TTS — فقط برای محتوای پویا و به‌عنوان آخرین راه.
   static final FlutterTts _tts = FlutterTts();
 
@@ -147,6 +162,9 @@ class AudioService {
       await _tts.setPitch(1.06);
       await _tts.setSpeechRate(0.40);
       await _tts.setVolume(1.0);
+      // در غیر این صورت Future مربوط به speak قبل از پایان گفتار تمام می‌شود
+      // و موسیقی زودتر از موعد از حالت ده‌درصد خارج خواهد شد.
+      await _tts.awaitSpeakCompletion(true);
       _ttsAvailable = true;
     } catch (error) {
       _ttsAvailable = false;
@@ -192,6 +210,28 @@ class AudioService {
       unawaited(player.play());
     } catch (error) {
       LoggerService.e('SFX missing: $assetPath', error);
+    }
+  }
+
+  /// پخش محتوای اصلی شنیداری (تلفظ، سؤال یا صدای محیط) با Ducking خودکار.
+  /// تا پایان فایل صبر می‌کند؛ بنابراین موسیقی دقیقاً در زمان درست برمی‌گردد.
+  static Future<void> playVoiceAsset(
+    String assetPath, {
+    double volume = voiceVolume,
+  }) async {
+    if (_muted) return;
+    await _ensureInitialized();
+    if (_muted) return;
+    beginForegroundAudio();
+    try {
+      await _voicePlayer.stop();
+      await _voicePlayer.setVolume(volume.clamp(0.0, 1.0));
+      await _voicePlayer.setAsset(assetPath);
+      await _voicePlayer.play();
+    } catch (error) {
+      LoggerService.e('Voice asset missing: $assetPath', error);
+    } finally {
+      endForegroundAudio();
     }
   }
 
@@ -281,7 +321,7 @@ class AudioService {
     if (_muted) return;
     final String? asset = letterAssetFor(letter);
     if (asset == null) return;
-    await _playFromPool(asset, volume: voiceVolume);
+    await playVoiceAsset(asset, volume: voiceVolume);
   }
 
   // ─────────────────────────── اعداد (آفلاین) ───────────────────────────
@@ -296,7 +336,7 @@ class AudioService {
     if (_muted) return;
     final String? asset = numberAssetFor(number);
     if (asset == null) return;
-    await _playFromPool(asset, volume: voiceVolume);
+    await playVoiceAsset(asset, volume: voiceVolume);
   }
 
   // ─────────────────────── واژه‌های آموزشی آفلاین ───────────────────────
@@ -331,26 +371,94 @@ class AudioService {
     if (_muted) return;
     final asset = learningVoiceAsset(topicId: topicId, cardId: cardId);
     if (asset != null) {
-      await _playFromPool(asset, volume: voiceVolume);
+      await playVoiceAsset(asset, volume: voiceVolume);
       return;
     }
     await speak(fallbackText);
   }
 
   // ─────────────────────────── موسیقی پس‌زمینه ───────────────────────────
-  // به‌درخواست کاربر: هیچ موسیقی پس‌زمینه‌ای پخش نمی‌شود.
-  // متدها برای سازگاری با کدهای قدیمی نگه داشته شده ولی بی‌اثرند.
+
+  static const Map<String, String> backgroundTracks = <String, String>{
+    'home': '${_bgmPath}home_island.wav',
+    'games': '${_bgmPath}games_adventure.wav',
+    'cartoons': '${_bgmPath}cartoon_cinema.wav',
+    'stories': '${_bgmPath}story_dreams.wav',
+    'learning': '${_bgmPath}learning_garden.wav',
+  };
+
+  static bool get canPlayAudio => !_muted;
+  static double get _effectiveBgmVolume =>
+      _bgmVolume * (_foregroundAudioCount > 0 ? _duckedBgmFactor : 1.0);
+
+  static Future<void> playBgmSection(String section) async {
+    final asset = backgroundTracks[section];
+    if (asset == null) {
+      stopBgm();
+      return;
+    }
+    await playBgm(asset);
+  }
 
   static Future<void> playBgm(String assetPath) async {
-    // عمداً خالی — موسیقی پس‌زمینه خاموش است.
+    _currentBgmAsset = assetPath;
+    final request = ++_bgmRequest;
+    if (_muted) return;
+    await _ensureInitialized();
+    if (_muted || request != _bgmRequest) return;
+    try {
+      if (_loadedBgmAsset != assetPath) {
+        await _bgmPlayer.stop();
+        if (request != _bgmRequest) return;
+        await _bgmPlayer.setAsset(assetPath);
+        _loadedBgmAsset = assetPath;
+        await _bgmPlayer.setLoopMode(LoopMode.one);
+      }
+      await _bgmPlayer.setVolume(_effectiveBgmVolume);
+      if (!_bgmPlayer.playing) unawaited(_bgmPlayer.play());
+    } catch (error) {
+      LoggerService.e('BGM missing: $assetPath', error);
+    }
   }
 
   static void stopBgm() {
-    _bgmPlayer.stop();
+    _currentBgmAsset = null;
+    _bgmRequest++;
+    unawaited(_bgmPlayer.stop());
   }
 
   static void setBgmVolume(double volume) {
-    // بدون تغییر — BGM خاموش است.
+    unawaited(_bgmPlayer.setVolume(volume.clamp(0.0, 1.0)));
+  }
+
+  /// هر صدای محتوایی (گوینده، داستان یا ویدیو) این جفت متد را صدا می‌زند.
+  /// شمارنده باعث می‌شود هم‌پوشانی دو صدا، موسیقی را زودتر از موعد بلند نکند.
+  static void beginForegroundAudio() {
+    _foregroundAudioCount++;
+    unawaited(_bgmPlayer.setVolume(_effectiveBgmVolume));
+  }
+
+  static void endForegroundAudio() {
+    if (_foregroundAudioCount > 0) _foregroundAudioCount--;
+    unawaited(_bgmPlayer.setVolume(_effectiveBgmVolume));
+  }
+
+  /// پس از تغییر کلید صدای صفحه اصلی، همه پلیرهای مرکزی فوراً همگام می‌شوند.
+  static Future<void> syncSoundSetting() async {
+    if (_muted) {
+      _speechQueue.clear();
+      try {
+        await _tts.stop();
+      } catch (_) {}
+      await _voicePlayer.stop();
+      for (final player in _sfxPool) {
+        await player.stop();
+      }
+      await _bgmPlayer.pause();
+      return;
+    }
+    final asset = _currentBgmAsset;
+    if (asset != null) await playBgm(asset);
   }
 
   // ─────────────────────────── TTS پویا (فقط محتوای زنده) ───────────────────────────
@@ -389,16 +497,21 @@ class AudioService {
 
   static Future<void> _drainQueue() async {
     _speaking = true;
-    while (_speechQueue.isNotEmpty && !_muted && _ttsAvailable) {
-      final text = _speechQueue.removeAt(0);
-      try {
-        await _tts.speak(text);
-      } catch (error) {
-        LoggerService.e('TTS speak failed', error);
-        break;
+    beginForegroundAudio();
+    try {
+      while (_speechQueue.isNotEmpty && !_muted && _ttsAvailable) {
+        final text = _speechQueue.removeAt(0);
+        try {
+          await _tts.speak(text);
+        } catch (error) {
+          LoggerService.e('TTS speak failed', error);
+          break;
+        }
       }
+    } finally {
+      _speaking = false;
+      endForegroundAudio();
     }
-    _speaking = false;
   }
 
   // ─────────────────────────── سازگاری با نسخه قدیم ───────────────────────────
@@ -415,6 +528,7 @@ class AudioService {
     for (final AudioPlayer player in _sfxPool) {
       player.dispose();
     }
+    _voicePlayer.dispose();
     _bgmPlayer.dispose();
   }
 }

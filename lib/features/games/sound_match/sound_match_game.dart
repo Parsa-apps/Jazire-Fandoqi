@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../app/app_colors.dart';
 import '../../../app/design_tokens.dart';
@@ -13,7 +12,6 @@ import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
-import '../../../core/learning_content/learning_topics.dart';
 import '../../../core/play_limit.dart';
 import '../../../shared/widgets/child_touch_target.dart';
 import '../../../shared/widgets/fandoghi_premium.dart';
@@ -36,13 +34,27 @@ class SoundMatchGame extends StatefulWidget {
 }
 
 class _SoundMatchGameState extends State<SoundMatchGame> {
-  static const List<String> _sounds = <String>[
-    '🐶', '🐱', '🐮', '🐔', '🦆', '🐸', '🐴', '🐑',
-    '🚗', '🚌', '✈️', '🚂', '⏰', '📞', '🚀', '⛵',
+  static const List<_SoundCue> _sounds = <_SoundCue>[
+    _SoundCue('dog', 'سگ', '🐶'),
+    _SoundCue('cat', 'گربه', '🐱'),
+    _SoundCue('cow', 'گاو', '🐮'),
+    _SoundCue('chicken', 'مرغ', '🐔'),
+    _SoundCue('duck', 'اردک', '🦆'),
+    _SoundCue('frog', 'قورباغه', '🐸'),
+    _SoundCue('horse', 'اسب', '🐴'),
+    _SoundCue('sheep', 'گوسفند', '🐑'),
+    _SoundCue('car', 'ماشین', '🚗'),
+    _SoundCue('bus', 'اتوبوس', '🚌'),
+    _SoundCue('airplane', 'هواپیما', '✈️'),
+    _SoundCue('train', 'قطار', '🚂'),
+    _SoundCue('clock', 'ساعت', '⏰'),
+    _SoundCue('phone', 'تلفن', '📞'),
+    _SoundCue('rocket', 'موشک', '🚀'),
+    _SoundCue('boat', 'قایق', '⛵'),
   ];
 
-  late LearningCard _target;
-  late List<LearningCard> _options;
+  late _SoundCue _target;
+  late List<_SoundCue> _options;
   int _round = 0;
   int _correct = 0;
   int _score = 0;
@@ -72,20 +84,17 @@ class _SoundMatchGameState extends State<SoundMatchGame> {
 
   void _newRound() {
     final rng = Random();
-    final pool = <LearningCard>[
-      for (final s in _sounds)
-        LearningCard(id: s, name: s, emoji: s, sound: s),
-    ];
-    _target = pool[rng.nextInt(pool.length)];
-    final others = pool.where((c) => c.id != _target.id).toList()
+    _target = _sounds[rng.nextInt(_sounds.length)];
+    final others = _sounds.where((cue) => cue.id != _target.id).toList()
       ..shuffle();
-    _options = <LearningCard>[_target, others[0], others[1], others[2]]
+    _options = <_SoundCue>[_target, others[0], others[1], others[2]]
       ..shuffle();
   }
 
   void _playSound() {
-    AudioService.tap();
-    unawaited(AudioService.speak(_target.sound));
+    // نسخه قبل emoji را به TTS می‌داد؛ emoji هنگام پاک‌سازی حذف می‌شد و تنها
+    // صدای tap شبیه بوق باقی می‌ماند. اکنون نشانه واقعی آفلاین پخش می‌شود.
+    unawaited(AudioService.playVoiceAsset(_target.assetPath));
   }
 
   void _answer(int index) {
@@ -106,7 +115,7 @@ class _SoundMatchGameState extends State<SoundMatchGame> {
       FandoghiCoach.correct('آفرین! گوش‌هایت عالی کار می‌کنند 👂✨');
       unawaited(AudioService.playCorrect());
     } else {
-      FandoghiCoach.incorrect(_target.sound);
+      FandoghiCoach.incorrect(_target.label);
       unawaited(AudioService.playWrong());
     }
     Future<void>.delayed(const Duration(milliseconds: 1200), () {
@@ -134,6 +143,20 @@ class _SoundMatchGameState extends State<SoundMatchGame> {
         Future<void>.delayed(const Duration(milliseconds: 400), _playSound);
       }
     });
+  }
+
+  void _restart() {
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _round = 0;
+      _score = 0;
+      _correct = 0;
+      _locked = false;
+      _finished = false;
+      _selected = null;
+      _newRound();
+    });
+    Future<void>.delayed(const Duration(milliseconds: 350), _playSound);
   }
 
   @override
@@ -298,7 +321,7 @@ class _SoundMatchGameState extends State<SoundMatchGame> {
               child: Column(children: [Text('$_correct درست از ۶ — شنیداری قوی شد!', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)), Text('امتیاز: $_score', style: TextStyle(color: Colors.white70, fontSize: 13))]),
             ),
             const SizedBox(height: 20),
-            SizedBox(width: double.infinity, child: PremiumButton(text: 'دور جدید 🔄', icon: Icons.replay_rounded, onPressed: () { HapticFeedback.mediumImpact(); setState(() { _round = 0; _score = 0; _correct = 0; _locked = false; _finished = false; _selected = null; _newRound(); }); })),
+            SizedBox(width: double.infinity, child: PremiumButton(text: 'دور جدید 🔄', icon: Icons.replay_rounded, onPressed: _restart)),
             const SizedBox(height: 10),
             SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.home_rounded, size: 18, color: Colors.white), label: Text('برگشت به خانه', style: AppFonts.vazirmatn(color: Colors.white)), style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), side: const BorderSide(color: Colors.white54), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg))))),
           ],
@@ -306,4 +329,14 @@ class _SoundMatchGameState extends State<SoundMatchGame> {
       ),
     );
   }
+}
+
+class _SoundCue {
+  const _SoundCue(this.id, this.label, this.emoji);
+
+  final String id;
+  final String label;
+  final String emoji;
+
+  String get assetPath => 'assets/audio/sound_match/$id.wav';
 }

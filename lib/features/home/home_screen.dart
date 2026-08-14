@@ -36,8 +36,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
     _tabWidgets[2] = FandoqiIslandTab(
       onOpenStageMap: () => _openStageMapScreen(),
-      onOpenBackpack: () => setState(() => _currentTab = 1),
-      onOpenAchievements: () => setState(() => _currentTab = 0),
+      onOpenBackpack: () => _selectTab(1),
+      onOpenAchievements: () => _selectTab(0),
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -50,10 +50,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
+  void _selectTab(int index) {
+    setState(() => _currentTab = index);
+    AudioService.playBgmSection(index == 1 ? 'learning' : 'home');
+  }
+
   void _openStageMapScreen() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const StageMapScreen()),
+      MaterialPageRoute(
+        settings: const RouteSettings(name: '/game/stage-map'),
+        builder: (_) => const StageMapScreen(),
+      ),
     );
   }
 
@@ -62,11 +70,66 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.watch(gameStateProvider);
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentTab,
-        children: List<Widget>.generate(5, _tabFor),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: IndexedStack(
+              index: _currentTab,
+              children: List<Widget>.generate(5, _tabFor),
+            ),
+          ),
+          Positioned(
+            top: 0,
+            left: 10,
+            child: SafeArea(child: _buildSoundToggle()),
+          ),
+        ],
       ),
       bottomNavigationBar: _buildBottomNav(),
+    );
+  }
+
+  Widget _buildSoundToggle() {
+    final enabled = GameData.soundEnabled;
+    return Semantics(
+      button: true,
+      label: enabled ? 'قطع همه صداها' : 'روشن کردن صداها',
+      child: Tooltip(
+        message: enabled ? 'بی‌صدا' : 'با صدا',
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: () async {
+              HapticFeedback.selectionClick();
+              GameData.setSoundEnabled(!enabled);
+              await AudioService.syncSoundSetting();
+              if (mounted) setState(() {});
+            },
+            child: Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.94),
+                border: Border.all(color: const Color(0xFF81D4FA), width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.16),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Icon(
+                enabled ? Icons.volume_up_rounded : Icons.volume_off_rounded,
+                color: enabled ? const Color(0xFF0277BD) : const Color(0xFFE65100),
+                size: 29,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -79,8 +142,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       1 => const LearningLibraryScreen(embedded: true),
       2 => FandoqiIslandTab(
           onOpenStageMap: () => _openStageMapScreen(),
-          onOpenBackpack: () => setState(() => _currentTab = 1),
-          onOpenAchievements: () => setState(() => _currentTab = 0),
+          onOpenBackpack: () => _selectTab(1),
+          onOpenAchievements: () => _selectTab(0),
         ),
       3 => const ReportCardTab(),
       4 => const ProfileScreen(embedded: true),
@@ -167,7 +230,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       onTap: () {
         HapticFeedback.mediumImpact();
         AudioService.tap();
-        setState(() => _currentTab = 2);
+        _selectTab(2);
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -263,7 +326,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       onTap: () {
         HapticFeedback.lightImpact();
         AudioService.tap();
-        setState(() => _currentTab = index);
+        _selectTab(index);
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
