@@ -102,16 +102,43 @@ class AudioService {
   static bool _initialized = false;
   static bool _ttsAvailable = false;
 
+  /// فاز H2: راه‌اندازی صدا از مسیر بحرانی اولین فریم خارج شده است.
+  /// این Future یک‌بار ساخته و کش می‌شود (همان الگوی `GameData._loadFuture`)
+  /// تا هر مسیری که زودتر از موعد صدا بخواهد، منتظر همان راه‌اندازی بماند
+  /// و رفتار دقیقاً مثل قبل باقی بماند.
+  static Future<void>? _initFuture;
+
   static String? _lastSfxName;
   static DateTime _lastSfxAt = DateTime.fromMillisecondsSinceEpoch(0);
   static const Duration _uiDebounce = Duration(milliseconds: 45);
   static const Set<String> _uiSfx = <String>{'tap', 'click', 'tick'};
 
-  static Future<void> init() async {
-    if (_initialized) return;
+  /// راه‌اندازی صوت. idempotent است و می‌توان بدون `await` صدایش زد؛
+  /// خودِ متدهای پخش قبل از کار، منتظر پایان همین Future می‌مانند.
+  static Future<void> init() {
+    if (_initialized) return Future<void>.value();
+    return _initFuture ??= _initInternal();
+  }
 
-    for (final AudioPlayer player in _sfxPool) {
-      await player.setVolume(defaultSfxVolume);
+  /// هر مسیر پخش صدا از این عبور می‌کند تا اگر راه‌اندازی هنوز تمام نشده
+  /// باشد (چون بعد از اولین فریم شروع می‌شود) صدا از دست نرود.
+  static Future<void> _ensureInitialized() {
+    if (_initialized) return Future<void>.value();
+    return init();
+  }
+
+  static Future<void> _initInternal() async {
+    // بلندی هر هشت پلیر مستقل است؛ موازی انجام می‌شود تا هشت رفت‌وبرگشت
+    // platform channel پشت‌سرهم صف نکشند.
+    // این راه‌اندازی هرگز throw نمی‌کند: چون دیگر در main منتظرش نمی‌مانیم،
+    // یک خطای صوتی نباید بعداً از داخل یک متد پخش بیرون بزند.
+    try {
+      await Future.wait<void>(<Future<void>>[
+        for (final AudioPlayer player in _sfxPool)
+          player.setVolume(defaultSfxVolume),
+      ]);
+    } catch (error) {
+      LoggerService.e('Audio pool volume init failed', error);
     }
 
     // لحن گرم و شمرده — نه صدای بچگانهٔ مصنوعی با pitch بالا.
@@ -152,6 +179,10 @@ class AudioService {
     String assetPath, {
     double volume = defaultSfxVolume,
   }) async {
+    if (_muted) return;
+    // اگر راه‌اندازی (که بعد از اولین فریم شروع می‌شود) هنوز تمام نشده،
+    // اینجا کامل می‌شود تا هیچ افکتی از دست نرود.
+    await _ensureInitialized();
     if (_muted) return;
     try {
       final AudioPlayer player = _acquirePlayer();
@@ -329,7 +360,11 @@ class AudioService {
   /// TTS بی‌صدا رد می‌شود.
   static Future<void> speak(String text) async {
     final clean = text.trim();
-    if (clean.isEmpty || _muted || !_ttsAvailable) return;
+    if (clean.isEmpty || _muted) return;
+    // `_ttsAvailable` تا پایان راه‌اندازی معلوم نیست؛ پس اول منتظر می‌مانیم
+    // وگرنه اولین درخواست گفتار بی‌صدا رد می‌شد.
+    await _ensureInitialized();
+    if (_muted || !_ttsAvailable) return;
 
     final spoken = clean
         .replaceAll(RegExp(r'[\p{Extended_Pictographic}]', unicode: true), ' ')
