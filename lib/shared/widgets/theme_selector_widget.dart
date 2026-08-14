@@ -16,6 +16,14 @@ class ThemeSelectorWidget extends StatefulWidget {
 class _ThemeSelectorWidgetState extends State<ThemeSelectorWidget> {
   final List<Map<String, dynamic>> _themes = [
     {
+      'id': 'island_map',
+      'title': 'نقشه جزیره فندقی 🗺️',
+      'subtitle': 'تم اصلی برنامه — نقشه شناور و دریایی',
+      'gradient': const [Color(0xFF2E9BD6), Color(0xFF8FD8F7)],
+      'accent': const Color(0xFFFFB300),
+      'icon': Icons.map_rounded,
+    },
+    {
       'id': 'royal_gold',
       'title': 'سلطنتی طلایی 👑',
       'subtitle': 'تم لوکس و درخشان پارسا اپس',

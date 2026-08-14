@@ -13,7 +13,7 @@ import '../gateway/learning_library_screen.dart';
 import '../profile/profile_screen.dart';
 import '../stage_map/stage_map_screen.dart';
 import 'widgets/achievements_tab.dart';
-import 'widgets/fandoqi_island_tab.dart';
+import 'widgets/island_map/island_map_tab.dart';
 import 'widgets/report_card_tab.dart';
 
 /// ═══════════════════════════════════════════════
@@ -34,7 +34,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _tabWidgets[2] = FandoqiIslandTab(
+    _tabWidgets[2] = IslandMapTab(
       onOpenStageMap: () => _openStageMapScreen(),
       onOpenBackpack: () => setState(() => _currentTab = 1),
       onOpenAchievements: () => setState(() => _currentTab = 0),
@@ -77,14 +77,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final Widget widget = switch (index) {
       0 => const AchievementsTab(),
       1 => const LearningLibraryScreen(embedded: true),
-      2 => FandoqiIslandTab(
+      2 => IslandMapTab(
           onOpenStageMap: () => _openStageMapScreen(),
           onOpenBackpack: () => setState(() => _currentTab = 1),
           onOpenAchievements: () => setState(() => _currentTab = 0),
         ),
       3 => const ReportCardTab(),
       4 => const ProfileScreen(embedded: true),
-      _ => FandoqiIslandTab(
+      _ => IslandMapTab(
           onOpenStageMap: () => _openStageMapScreen(),
         ),
     };

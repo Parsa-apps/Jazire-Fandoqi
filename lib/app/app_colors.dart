@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 // ═══════════════════════════════════════════════
 
 enum AppThemeMode {
+  /// 🗺️ تم اصلی برنامه — نقشهٔ جزیرهٔ فندقی (اسکرول عمودی)
+  islandMap,
   royalGold,
   fandoghiIsland,
   oceanBreeze,
@@ -19,6 +21,26 @@ class AppColors {
   static const primaryLight = Color(0xFFA29BFE);
   static const primaryDark = Color(0xFF4834D4);
   
+  // ── 🗺️ Island Map Palette (تم اصلی: نقشهٔ جزیرهٔ فندقی) ──
+  // رنگ‌های گرم، شاد و کودکانه؛ هماهنگ با دارایی‌های assets/theme_map/
+  static const mapPrimary = Color(0xFF2E9BD6); // آبی اقیانوس
+  static const mapSecondary = Color(0xFF8BC34A); // سبز پستهٔ چمن جزیره
+  static const mapAccent = Color(0xFFFFB300); // زرد عسلی
+  static const mapCoral = Color(0xFFFF8A65); // مرجانی گرم
+  static const mapBackground = Color(0xFFEAF6FE); // آسمان روشن
+  static const mapSurface = Color(0xFFFFFDF7); // سفید کرمی گرم
+  static const mapCard = Color(0xFFFFFFFF);
+  static const mapText = Color(0xFF2E4756); // آبی‌خاکستری تیره و خوانا
+  static const mapWood = Color(0xFFC98A3E); // چوب تابلو و پل
+  static const mapWoodDark = Color(0xFF8D5A24);
+
+  // گرادیان آسمان → اقیانوس برای پس‌زمینهٔ نقشه (سه چرخهٔ روز)
+  static const mapSkyMorning = Color(0xFFBFE9FF);
+  static const mapSkyNoon = Color(0xFF8FD8F7);
+  static const mapSkyNight = Color(0xFF3B4C7A);
+  static const mapSeaTop = Color(0xFF4FC3F7);
+  static const mapSeaDeep = Color(0xFF0277BD);
+
   // Royal Gold Palette (تم سلطنتی طلایی فندقی)
   static const royalGoldPrimary = Color(0xFF3023AE);
   static const royalGoldSecondary = Color(0xFFFFD700);
