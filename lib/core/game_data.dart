@@ -112,6 +112,12 @@ class GameData {
   static bool treasureOpened = false;
   static bool goldenChestOpened = false;
   static bool soundEnabled = true;
+
+  /// بلندی موسیقی پس‌زمینه به‌صورت نرمال‌شده (۰ = قطع، ۱ = بیشترین حد امن).
+  /// مقدار پیش‌فرض ۵۰٪ دقیقاً معادل میکس قبلی برنامه است.
+  static const double defaultMusicVolume = 0.5;
+  static double musicVolume = defaultMusicVolume;
+
   static bool luckyWheelSpunToday = false;
   static bool aiBuddyUnlocked = false;
 
@@ -226,6 +232,7 @@ class GameData {
       treasureOpened = prefs.getBool('tr') ?? false;
       goldenChestOpened = prefs.getBool('gc') ?? false;
       soundEnabled = prefs.getBool('sn') ?? true;
+      musicVolume = _normalizeMusicVolume(prefs.getDouble('mv'));
       textScale = (prefs.getDouble('tsc') ?? 1.0).clamp(0.85, 1.4).toDouble();
       activeTheme = prefs.getString('activeTheme') ?? 'island_map';
       isLeftHanded = prefs.getBool('lh') ?? false;
@@ -310,6 +317,11 @@ class GameData {
     } catch (_) {
       // Secure storage unavailable → keep the local mirror as-is.
     }
+  }
+
+  static double _normalizeMusicVolume(Object? value) {
+    if (value is! num || !value.isFinite) return defaultMusicVolume;
+    return value.toDouble().clamp(0.0, 1.0).toDouble();
   }
 
   static int _readInt(
@@ -432,6 +444,7 @@ class GameData {
     treasureOpened = asBool('tr', false);
     goldenChestOpened = asBool('gc', false);
     soundEnabled = asBool('sn', true);
+    musicVolume = _normalizeMusicVolume(d['mv']);
     isLeftHanded = asBool('lh', false);
     final tsc = d['tsc'];
     if (tsc is num) textScale = tsc.toDouble().clamp(0.85, 1.4).toDouble();
@@ -514,6 +527,7 @@ class GameData {
         'tr': treasureOpened,
         'gc': goldenChestOpened,
         'sn': soundEnabled,
+        'mv': musicVolume,
         'tsc': textScale,
         'activeTheme': activeTheme,
         'lh': isLeftHanded,
@@ -659,6 +673,7 @@ class GameData {
     await prefs.setBool('tr', treasureOpened);
     await prefs.setBool('gc', goldenChestOpened);
     await prefs.setBool('sn', soundEnabled);
+    await prefs.setDouble('mv', musicVolume);
     await prefs.setDouble('tsc', textScale);
     await prefs.setString('activeTheme', activeTheme);
     await prefs.setBool('lh', isLeftHanded);
@@ -1134,6 +1149,13 @@ class GameData {
     unawaited(save());
   }
 
+  /// تنظیم و ذخیرهٔ بلندی موسیقی، مستقل از افکت‌ها و صدای گوینده.
+  static void setMusicVolume(double value) {
+    musicVolume = _normalizeMusicVolume(value);
+    _notify();
+    unawaited(save());
+  }
+
   /// فاز ۷: تنظیم مقیاس فونت توسط والدین.
   static void setTextScale(double value) {
     textScale = value.clamp(0.85, 1.4).toDouble();
@@ -1504,6 +1526,7 @@ class GameData {
     treasureOpened = false;
     goldenChestOpened = false;
     soundEnabled = true;
+    musicVolume = defaultMusicVolume;
     textScale = 1.0;
     isLeftHanded = false;
     luckyWheelSpunToday = false;

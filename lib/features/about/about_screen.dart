@@ -37,7 +37,9 @@ class AboutScreen extends StatelessWidget {
       opened = false;
     }
     if (!opened && context.mounted) {
-      await _copy(context, AppLegal.websiteUrl, 'لینک سایت پارسا اپس');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('امکان باز کردن سایت وجود ندارد.')),
+      );
     }
   }
 
@@ -57,7 +59,6 @@ class AboutScreen extends StatelessWidget {
           const SizedBox(height: 22),
           ParsaWebsiteCard(
             title: AppLegal.websiteName,
-            address: AppLegal.websiteAddress,
             onTap: () => _openWebsite(context),
           )
               .animate()

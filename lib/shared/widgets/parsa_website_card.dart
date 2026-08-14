@@ -13,12 +13,10 @@ class ParsaWebsiteCard extends StatefulWidget {
     super.key,
     required this.onTap,
     this.title = 'سایت پارسا اپس',
-    this.address = 'parsa-apps.github.io',
   });
 
   final VoidCallback onTap;
   final String title;
-  final String address;
 
   @override
   State<ParsaWebsiteCard> createState() => _ParsaWebsiteCardState();
@@ -62,7 +60,7 @@ class _ParsaWebsiteCardState extends State<ParsaWebsiteCard>
     return Semantics(
       link: true,
       button: true,
-      label: '${widget.title}، ${widget.address}، باز کردن وب‌سایت',
+      label: '${widget.title}، ورود مستقیم به وب‌سایت',
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         onEnter: (_) => setState(() => _hovered = true),
@@ -103,7 +101,6 @@ class _ParsaWebsiteCardState extends State<ParsaWebsiteCard>
           },
           child: _CardBody(
             title: widget.title,
-            address: widget.address,
             onTap: widget.onTap,
             hovered: _hovered,
             animation: _controller,
@@ -117,14 +114,12 @@ class _ParsaWebsiteCardState extends State<ParsaWebsiteCard>
 class _CardBody extends StatelessWidget {
   const _CardBody({
     required this.title,
-    required this.address,
     required this.onTap,
     required this.hovered,
     required this.animation,
   });
 
   final String title;
-  final String address;
   final VoidCallback onTap;
   final bool hovered;
   final Animation<double> animation;
@@ -274,48 +269,7 @@ class _CardBody extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 17),
-                    Directionality(
-                      textDirection: TextDirection.ltr,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 11,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(15),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.14),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.lock_rounded,
-                              size: 15,
-                              color: Color(0xFF80FFDB),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                address,
-                                key: const ValueKey('parsa_website_address'),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.15,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 18),
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 220),
                       height: 48,
@@ -338,7 +292,7 @@ class _CardBody extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'مشاهده سایت',
+                            'ورود مستقیم به سایت',
                             style: TextStyle(
                               color: Color(0xFF102A56),
                               fontSize: 15,
