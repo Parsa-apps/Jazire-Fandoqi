@@ -28,3 +28,12 @@ key.properties
 # OS
 .DS_Store
 Thumbs.db
+
+# Generated promo video renders + intermediate build artefacts
+promo/
+.tmp_build/
+.tmp_preview/
+
+# Python bytecode
+__pycache__/
+*.pyc
