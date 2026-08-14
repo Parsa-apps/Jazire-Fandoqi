@@ -7,9 +7,13 @@ import '../../../../app/app_fonts.dart';
 import '../../../../core/audio_service.dart';
 
 /// موقعیت دکمهٔ شیشه‌ایِ خالی که داخل خودِ تصویر هر سکو کشیده شده است.
-/// چون مولد تصویر نمی‌تواند فارسی بنویسد، تابلوها عمداً خالی تولید شدند و
-/// متن با ویجت دقیقاً روی همان دکمه می‌نشیند. مقادیر کسری از عرض/ارتفاع
-/// تصویرند تا در هر اندازهٔ صفحه درست بمانند.
+/// چون مولد تصویر نمی‌تواند فارسی بنویسد، تابلوها عمداً خالی تولید شدند.
+///
+/// این دکمه‌ها در خودِ تصویر بسیار کم‌ارتفاع‌اند (حدود ۱۴ پیکسل روی گوشی)،
+/// پس متنِ محبوس در آن‌ها هیچ‌وقت به‌اندازهٔ کافی بزرگ نمی‌شود. به همین
+/// دلیل `cx`/`cy` را فقط به‌عنوان **نقطهٔ لنگر** به کار می‌بریم و یک پلاکِ
+/// اندازه‌شده با خودِ متن دقیقاً روی همان نقطه می‌نشیند و دکمهٔ زیرین را
+/// می‌پوشاند. مقادیر کسری از عرض/ارتفاع تصویرند.
 class PillRect {
   final double cx;
   final double cy;
@@ -185,21 +189,24 @@ class _IslandNodeState extends State<IslandNode>
                   : _image(w),
             ),
 
-            // ── برچسب فارسی، دقیقاً روی دکمهٔ شیشه‌ایِ داخل تصویر ──
+            // ── پلاک برچسب، لنگرانداخته روی دکمهٔ داخل تصویر ──
+            // پلاک از کادر سکو بیرون می‌زند (clipBehavior: none) تا متن
+            // بتواند بزرگ باشد بدون اینکه تصویر را بپوشاند.
             if (pill != null)
               Positioned(
-                left: (pill.cx - pill.w / 2) * w,
-                top: (pill.cy - pill.h / 2) * h,
-                width: pill.w * w,
-                height: pill.h * h,
-                child: _pillLabel(pill.h * h),
+                left: 0,
+                top: pill.cy * h - _plateHeight / 2,
+                width: w,
+                height: _plateHeight,
+                child: _anchoredPlate(pill.cx),
               )
             else
               Positioned(
                 left: 0,
-                right: 0,
-                bottom: h * 0.06,
-                child: Center(child: _fallbackLabel()),
+                width: w,
+                height: _plateHeight,
+                bottom: h * 0.05,
+                child: _anchoredPlate(0.5),
               ),
 
             if (widget.locked)
@@ -229,46 +236,53 @@ class _IslandNodeState extends State<IslandNode>
         filterQuality: FilterQuality.medium,
       );
 
-  /// متن داخل دکمهٔ شیشه‌ای — اندازهٔ فونت با ارتفاع دکمه بالا و پایین می‌رود
-  Widget _pillLabel(double pillH) {
-    return Center(
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Text(
-          widget.label,
-          maxLines: 1,
-          textAlign: TextAlign.center,
-          style: AppFonts.vazirmatn(
-            fontSize: (pillH * 0.62).clamp(9.0, 16.0),
-            fontWeight: FontWeight.w900,
-            color: widget.labelColor,
-            shadows: const [
-              Shadow(
-                color: Color(0x66FFFFFF),
-                blurRadius: 2,
-                offset: Offset(0, 1),
-              ),
-            ],
-          ),
-        ),
-      ),
+  /// اندازهٔ متن برچسب — نسبت به عرض سکو بزرگ می‌شود تا روی هر صفحه‌ای
+  /// درشت و خوانا بماند. حد پایین برای گوشی‌های کوچک، حد بالا برای تبلت.
+  double get _fontSize => (widget.width * 0.150).clamp(17.0, 34.0);
+
+  /// ارتفاع تقریبی پلاک (متن + پدینگ + حاشیه)
+  double get _plateHeight => _fontSize * 1.5 + 6;
+
+  /// پلاک با اندازهٔ طبیعیِ خودش روی لنگرِ افقی می‌نشیند. اگر از عرضِ سکو
+  /// پهن‌تر شد، به‌جای فشرده‌شدنِ متن آزادانه بیرون می‌زند و
+  /// `Alignment` خودش آن را نرم داخل کادر نگه می‌دارد.
+  Widget _anchoredPlate(double cx) {
+    return OverflowBox(
+      minWidth: 0,
+      maxWidth: double.infinity,
+      minHeight: 0,
+      maxHeight: double.infinity,
+      alignment: Alignment((cx * 2 - 1).clamp(-1.0, 1.0), 0),
+      child: _labelPlate(),
     );
   }
 
-  Widget _fallbackLabel() {
+  /// پلاک برچسب: کپسول روشن با حاشیهٔ عسلی، دقیقاً به اندازهٔ خودِ متن.
+  Widget _labelPlate() {
+    final fs = _fontSize;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      padding: EdgeInsets.symmetric(horizontal: fs * 0.52, vertical: fs * 0.17),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.94),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFFFD180), width: 2),
+        color: const Color(0xFFFFFDF7),
+        borderRadius: BorderRadius.circular(fs),
+        border: Border.all(color: const Color(0xFFFFB300), width: 2.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.22),
+            blurRadius: 7,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Text(
         widget.label,
-        style: AppFonts.vazirmatn(
-          fontSize: 13,
-          fontWeight: FontWeight.w900,
+        maxLines: 1,
+        textAlign: TextAlign.center,
+        style: AppFonts.kids(
+          fontSize: fs,
+          fontWeight: FontWeight.w800,
           color: widget.labelColor,
+          height: 1.15,
         ),
       ),
     );

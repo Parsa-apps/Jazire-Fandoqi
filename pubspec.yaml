@@ -105,6 +105,14 @@ flutter:
 
   # فاز ۷ (تکمیل): فونت محلی آفلاین — fallback واقعی برای GoogleFonts
   fonts:
+    # فونت کودکانهٔ تم نقشه — تپل و گرد، هم‌خانوادهٔ تصویرسازی‌ها.
+    # محلی بسته می‌شود تا در حالت آفلاین هم قطعاً رندر شود.
+    - family: BalooBhaijaan2
+      fonts:
+        - asset: assets/fonts/BalooBhaijaan2-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/BalooBhaijaan2-ExtraBold.ttf
+          weight: 800
     - family: Vazirmatn
       fonts:
         - asset: assets/fonts/Vazirmatn-Regular.ttf

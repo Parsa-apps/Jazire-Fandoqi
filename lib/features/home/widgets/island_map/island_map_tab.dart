@@ -63,7 +63,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
   double _scrollOffset = 0;
 
   /// ارتفاع کل نقشه نسبت به ارتفاع صفحه — نقشه حدود ۲٫۵ صفحه بلند است
-  static const double _mapHeightFactor = 2.55;
+  static const double _mapHeightFactor = 2.85;
 
   @override
   void initState() {
@@ -211,15 +211,17 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
 
   // ─── محتوای نقشه: سکوها، پل‌ها و ناحیهٔ زیرِ آب ─────────────
   Widget _buildMapContent(double w, double mapH) {
-    final islandW = (w * 0.455).clamp(140.0, 215.0);
-    final heroW = (w * 0.40).clamp(120.0, 190.0);
+    // سکوها عمداً درشت‌اند: برچسب‌ها نسبت به عرضِ سکو اندازه می‌گیرند،
+    // پس سکوی بزرگ‌تر یعنی متنِ کارتونی و درشتِ خوانا برای بچهٔ کوچک.
+    final islandW = (w * 0.56).clamp(150.0, 250.0);
+    final heroW = (w * 0.42).clamp(120.0, 200.0);
 
     // چیدمان مارپیچ: هر سکو با جای عمودی، سمت (چپ/وسط/راست) و ضریب اندازه
     final slots = <_Slot>[
       _Slot(
         asset: 'assets/theme_map/island_cartoon.png',
         label: 'کارتون‌ها',
-        top: 0.178,
+        top: 0.185,
         side: -1,
         widthMul: 1.00,
         phase: 0.10,
@@ -228,7 +230,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
       _Slot(
         asset: 'assets/theme_map/island_story.png',
         label: 'قصه و فارسی',
-        top: 0.297,
+        top: 0.305,
         side: 1,
         widthMul: 1.00,
         phase: 0.35,
@@ -237,7 +239,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
       _Slot(
         asset: 'assets/theme_map/island_game.png',
         label: 'بازی‌ها',
-        top: 0.420,
+        top: 0.428,
         side: 0,
         widthMul: 1.10,
         phase: 0.55,
@@ -246,7 +248,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
       _Slot(
         asset: 'assets/theme_map/island_lullaby.png',
         label: 'لالایی',
-        top: 0.545,
+        top: 0.553,
         side: -1,
         widthMul: 1.00,
         phase: 0.72,
@@ -255,7 +257,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
       _Slot(
         asset: 'assets/theme_map/island_profile.png',
         label: 'خانهٔ من',
-        top: 0.660,
+        top: 0.675,
         side: 1,
         widthMul: 1.00,
         phase: 0.20,
@@ -264,7 +266,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
       _Slot(
         asset: 'assets/theme_map/island_about.png',
         label: 'دربارهٔ ما',
-        top: 0.780,
+        top: 0.797,
         side: -1,
         widthMul: 0.94,
         phase: 0.88,
@@ -273,7 +275,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
     ];
 
     // هندسهٔ هر سکو: مستطیل واقعی‌اش روی نقشه
-    const margin = 0.035;
+    const margin = 0.025;
     final rects = <Rect>[];
     for (final s in slots) {
       final iw = islandW * s.widthMul;
@@ -286,7 +288,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
       rects.add(Rect.fromLTWH(left, mapH * s.top, iw, ih));
     }
 
-    final signW = (w * 0.66).clamp(210.0, 330.0);
+    final signW = (w * 0.72).clamp(210.0, 340.0);
 
     return Stack(
       clipBehavior: Clip.none,
@@ -307,7 +309,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
         // هالهٔ طلایی از خود فندقی بزرگ‌تر است، پس کادر را به اندازهٔ هاله
         // می‌گیریم تا چیزی بریده نشود.
         Positioned(
-          top: mapH * 0.070,
+          top: mapH * 0.093,
           left: (w - heroW * HeroFandoq.haloFactor) / 2,
           width: heroW * HeroFandoq.haloFactor,
           child: HeroFandoq(
@@ -424,10 +426,11 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
                 children: [
                   Text(
                     'جزیرهٔ فندقی',
-                    style: AppFonts.vazirmatn(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w900,
+                    style: AppFonts.kids(
+                      fontSize: signW * 0.125,
+                      fontWeight: FontWeight.w800,
                       color: const Color(0xFF5D3A12),
+                      height: 1.1,
                       shadows: const [
                         Shadow(
                           color: Color(0x55FFFFFF),
@@ -440,10 +443,11 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
                   const SizedBox(height: 3),
                   Text(
                     'خوش اومدی $childName!',
-                    style: AppFonts.vazirmatn(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
+                    style: AppFonts.kids(
+                      fontSize: signW * 0.065,
+                      fontWeight: FontWeight.w700,
                       color: const Color(0xFF7B4E1C),
+                      height: 1.15,
                     ),
                   ),
                 ],
@@ -521,21 +525,22 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
                 ),
               ],
             ),
-            child: Icon(icon, color: color, size: 28),
+            child: Icon(icon, color: color, size: 30),
           ),
           const SizedBox(height: 5),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
             decoration: BoxDecoration(
               color: Colors.black.withOpacity(0.30),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
               label,
-              style: AppFonts.vazirmatn(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
+              style: AppFonts.kids(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
                 color: Colors.white,
+                height: 1.2,
               ),
             ),
           ),
@@ -656,10 +661,11 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
                 const SizedBox(width: 8),
                 Text(
                   'سلام $childName!',
-                  style: AppFonts.vazirmatn(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w900,
+                  style: AppFonts.kids(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.mapText,
+                    height: 1.2,
                   ),
                 ),
               ],
@@ -719,10 +725,11 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
           const SizedBox(width: 3),
           Text(
             PersianDigits.toFa(value),
-            style: AppFonts.vazirmatn(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w900,
+            style: AppFonts.kids(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
               color: AppColors.mapText,
+              height: 1.2,
             ),
           ),
         ],
