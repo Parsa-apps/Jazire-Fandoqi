@@ -30,7 +30,7 @@ class AnimatedListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget item = child
+    final entranceAnimation = child
         .animate()
         .fadeIn(
           delay: delay * index,
@@ -45,13 +45,13 @@ class AnimatedListItem extends StatelessWidget {
           curve: Curves.easeOutCubic,
         );
 
-    if (enableTapAnimation) {
-      item = item.scale(
-        begin: const Offset(1, 1),
-        end: const Offset(0.98, 0.98),
-        duration: 100.ms,
-      );
-    }
+    Widget item = enableTapAnimation
+        ? entranceAnimation.scale(
+            begin: const Offset(1, 1),
+            end: const Offset(0.98, 0.98),
+            duration: 100.ms,
+          )
+        : entranceAnimation;
 
     if (onTap != null) {
       return GestureDetector(
