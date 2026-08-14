@@ -52,3 +52,8 @@ design/theme_map/*_check.png
 design/theme_map/*_grid.png
 design/theme_map/layout_preview.png
 design/theme_map/parts_contact_sheet.png
+
+# Promo video build intermediates (regenerate with promo/aurora/particles.py + build_video_fast.py)
+promo/aurora/fx/
+promo/aurora/clips/
+promo/aurora/tmp/
