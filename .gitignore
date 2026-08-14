@@ -33,3 +33,7 @@ Thumbs.db
 promo/
 .tmp_build/
 .tmp_preview/
+
+# Python bytecode
+__pycache__/
+*.pyc
