@@ -3,7 +3,7 @@
 > موارد امنیتی قابل اجرا در مخزن تکمیل شده‌اند. تنظیم keystore و کلید RSA وظیفهٔ محیط انتشار است؛ تغییر workflow نیز به مجوز `workflows` مالک نیاز دارد.
 
 ### 1 Flutter 3.27 + Impeller — در انتظار ارتقای هماهنگ CI
-- پروژه فعلاً روی Flutter 3.24.3 و پین سازگار `image_cropper_platform_interface` می‌ماند. ارتقا باید هم‌زمان با workflow انجام شود تا CI نشکند.
+- پروژه فعلاً روی Flutter 3.24.3 می‌ماند. وابستگی ناسازگار `image_cropper` و پین `image_cropper_platform_interface` پس از جایگزینی با Photo Picker امن سیستم حذف شدند؛ ارتقای SDK همچنان باید هم‌زمان با workflow انجام شود.
 
 ### 3 CrashReport پیشرفته
 - `CrashReportStore` + `LoggerService` + کارت والد «گزارش خطاهای دستگاه» — پیاده شد

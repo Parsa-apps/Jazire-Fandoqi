@@ -447,7 +447,17 @@ class _AppGatewayScreenState extends State<AppGatewayScreen>
         child: ColoredBox(
           color: Colors.white,
           child: hasPhoto
-              ? Image.file(File(GameData.profilePhotoPath), fit: BoxFit.cover)
+              ? Image.file(
+                  File(GameData.profilePhotoPath),
+                  fit: BoxFit.cover,
+                  cacheWidth: 132,
+                  cacheHeight: 132,
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.person_rounded,
+                    color: Color(0xFF6C5CE7),
+                    size: 24,
+                  ),
+                )
               : GameData.avatar.startsWith('assets/')
                   ? Image.asset(GameData.avatar, fit: BoxFit.cover)
                   : Center(

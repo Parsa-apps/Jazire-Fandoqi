@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 🔒 ممیزی حریم خصوصی و امنیت انتشار
-# شبکه فقط برای کارتون‌های آپارات و لینک پشتیبانی تلگرام مجاز است؛
-# دادهٔ کودک نباید به هیچ endpoint دیگری ارسال شود.
+# شبکهٔ داده فقط برای کارتون‌های آپارات است؛ لینک‌های خارجی رسمی پارسا اپس
+# و شبکه‌های اجتماعی صرفاً با url_launcher باز می‌شوند و داده‌ای ارسال نمی‌کنند.
 set -Eeuo pipefail
 
 FAILED=0
@@ -55,7 +55,15 @@ from pathlib import Path
 import re
 from urllib.parse import urlparse
 
-allowed_hosts = {'aparat.com', 'www.aparat.com', 'api.aparat.com', 't.me'}
+allowed_hosts = {
+    'aparat.com',
+    'www.aparat.com',
+    'api.aparat.com',
+    't.me',
+    'instagram.com',
+    'www.instagram.com',
+    'parsa-apps.github.io',
+}
 url_pattern = re.compile(r"https?://[^\s'\"<>)}]+")
 violations = []
 for path in Path('lib').rglob('*.dart'):
@@ -72,7 +80,7 @@ if violations:
     print('❌ [URL خارج از allowlist] پیدا شد:')
     print('\n'.join(violations[:20]))
     raise SystemExit(1)
-print('✅ [URLها] فقط HTTPS آپارات و تلگرام مجاز هستند')
+print('✅ [URLها] فقط HTTPS سرویس‌ها و صفحات رسمی مجاز هستند')
 PY
 then
   FAILED=1

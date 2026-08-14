@@ -125,7 +125,7 @@ class AparatService {
   }
 
   /// تطبیق دقیق دامنه (نه `contains`) تا آدرسی مثل
-  /// `https://evil.com/aparat.com/x.mp4` عبور نکند.
+  /// آدرس فریبندهٔ `evil.com/aparat.com/x.mp4` عبور نکند.
   static bool _isAllowedHost(String host) {
     final h = host.toLowerCase();
     for (final allowed in allowedHosts) {

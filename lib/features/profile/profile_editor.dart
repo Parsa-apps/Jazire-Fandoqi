@@ -1,105 +1,74 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:image_cropper/image_cropper.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../core/game_data.dart';
+import '../../core/logger_service.dart';
 
+const int _maxProfilePhotoBytes = 20 * 1024 * 1024;
+
+/// Opens the profile editor and keeps gallery selection transactional:
+/// a newly selected file replaces the old photo only after the user saves.
 Future<void> showProfileEditor(BuildContext context) async {
   final name = TextEditingController(text: GameData.childName);
-  String? photo =
-      GameData.profilePhotoPath.isEmpty ? null : GameData.profilePhotoPath;
+  final initialPhotoPath = GameData.profilePhotoPath;
+  String? photo = initialPhotoPath.isEmpty ? null : initialPhotoPath;
+  String? stagedPhotoPath;
+  String? committedPhotoPath;
   String selectedAvatar = GameData.avatar;
+  bool isPickingPhoto = false;
 
-  Future<void> pickPhoto(StateSetter setState) async {
+  Future<void> pickPhoto(
+    BuildContext sheetContext,
+    StateSetter setSheetState,
+  ) async {
+    if (isPickingPhoto) return;
+    setSheetState(() => isPickingPhoto = true);
+
     try {
       final picker = ImagePicker();
-      final image = await picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1600,
-        imageQuality: 92,
-      );
+      final image = await _recoverOrPickPhoto(picker);
       if (image == null) return;
 
-      String selectedPath = image.path;
+      final savedPath = await _persistProfilePhoto(image);
+      if (!sheetContext.mounted) {
+        await _deleteFile(savedPath);
+        return;
+      }
 
-      // برش تصویر با مدیریت خطا و fallback امن
-      try {
-        final cropped = await ImageCropper().cropImage(
-          sourcePath: image.path,
-          compressFormat: ImageCompressFormat.jpg,
-          compressQuality: 90,
-          maxWidth: 800,
-          maxHeight: 800,
-          aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
-          uiSettings: [
-            AndroidUiSettings(
-              toolbarTitle: 'برش عکس پروفایل',
-              toolbarColor: const Color(0xFF6C43D9),
-              toolbarWidgetColor: Colors.white,
-              activeControlsWidgetColor: const Color(0xFF6C43D9),
-              initAspectRatio: CropAspectRatioPreset.square,
-              lockAspectRatio: true,
-              cropStyle: CropStyle.circle,
-            ),
-            IOSUiSettings(
-              title: 'برش عکس پروفایل',
-              cropStyle: CropStyle.circle,
-              aspectRatioLockEnabled: true,
-            ),
-          ],
+      final previousStagedPath = stagedPhotoPath;
+      setSheetState(() {
+        stagedPhotoPath = savedPath;
+        photo = savedPath;
+      });
+
+      if (previousStagedPath != null && previousStagedPath != savedPath) {
+        await _deleteFile(previousStagedPath);
+      }
+    } on PlatformException catch (error, stackTrace) {
+      LoggerService.e('Profile gallery selection failed', error, stackTrace);
+      if (sheetContext.mounted) {
+        _showPhotoError(sheetContext, _messageForPlatformError(error));
+      }
+    } on _ProfilePhotoException catch (error, stackTrace) {
+      LoggerService.e('Invalid profile photo rejected', error, stackTrace);
+      if (sheetContext.mounted) {
+        _showPhotoError(sheetContext, error.message);
+      }
+    } catch (error, stackTrace) {
+      LoggerService.e('Profile photo processing failed', error, stackTrace);
+      if (sheetContext.mounted) {
+        _showPhotoError(
+          sheetContext,
+          'عکس انتخاب‌شده قابل استفاده نیست؛ لطفاً عکس دیگری انتخاب کنید.',
         );
-        if (cropped != null) {
-          selectedPath = cropped.path;
-        }
-      } catch (cropError) {
-        debugPrint('Crop error (fallback to picked image): $cropError');
       }
-
-      final file = File(selectedPath);
-      if (!await file.exists()) return;
-
-      final docs = await getApplicationDocumentsDirectory();
-      final profileDir = Directory('${docs.path}/profile');
-      if (!await profileDir.exists()) {
-        await profileDir.create(recursive: true);
-      }
-
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final destination =
-          File('${profileDir.path}/profile_photo_$timestamp.jpg');
-      final saved = await file.copy(destination.path);
-
-      // پاک کردن عکس‌های قبلی پروفایل
-      try {
-        final entries = profileDir.listSync();
-        for (final entry in entries) {
-          if (entry is File && entry.path != saved.path) {
-            try {
-              entry.deleteSync();
-            } catch (_) {}
-          }
-        }
-      } catch (_) {}
-
-      PaintingBinding.instance.imageCache.clear();
-      PaintingBinding.instance.imageCache.clearLiveImages();
-
-      if (context.mounted) {
-        setState(() {
-          photo = saved.path;
-        });
-      }
-    } catch (e) {
-      debugPrint('Profile photo pick error: $e');
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('خطا در انتخاب عکس؛ لطفاً دوباره تلاش کنید.'),
-          ),
-        );
+    } finally {
+      if (sheetContext.mounted) {
+        setSheetState(() => isPickingPhoto = false);
       }
     }
   }
@@ -137,7 +106,9 @@ Future<void> showProfileEditor(BuildContext context) async {
               ),
               const SizedBox(height: 18),
               GestureDetector(
-                onTap: () => pickPhoto(setState),
+                onTap: isPickingPhoto
+                    ? null
+                    : () => pickPhoto(context, setState),
                 child: Stack(
                   alignment: Alignment.bottomRight,
                   children: [
@@ -159,47 +130,53 @@ Future<void> showProfileEditor(BuildContext context) async {
                         ],
                       ),
                       child: ClipOval(
-                        child: photo != null && File(photo!).existsSync()
-                            ? Image.file(
-                                File(photo!),
-                                fit: BoxFit.cover,
-                                width: 92,
-                                height: 92,
-                              )
-                            : selectedAvatar.startsWith('assets/')
-                                ? Image.asset(
-                                    selectedAvatar,
-                                    fit: BoxFit.cover,
-                                    width: 92,
-                                    height: 92,
-                                  )
-                                : Center(
-                                    child: Text(
-                                      selectedAvatar,
-                                      style: const TextStyle(fontSize: 42),
-                                    ),
-                                  ),
+                        child: _ProfileAvatarPreview(
+                          photoPath: photo,
+                          selectedAvatar: selectedAvatar,
+                        ),
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.all(6),
+                      width: 32,
+                      height: 32,
+                      alignment: Alignment.center,
                       decoration: const BoxDecoration(
                         color: Color(0xFF6C43D9),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.camera_alt_rounded,
-                        color: Colors.white,
-                        size: 18,
-                      ),
+                      child: isPickingPhoto
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.camera_alt_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'برای انتخاب یا تغییر عکس ضربه بزنید',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: isPickingPhoto
+                    ? null
+                    : () => pickPhoto(context, setState),
+                icon: isPickingPhoto
+                    ? const SizedBox(
+                        width: 17,
+                        height: 17,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.photo_library_outlined, size: 20),
+                label: Text(
+                  isPickingPhoto ? 'در حال آماده‌سازی عکس…' : 'انتخاب از گالری',
+                ),
               ),
               const SizedBox(height: 18),
               const Align(
@@ -217,10 +194,12 @@ Future<void> showProfileEditor(BuildContext context) async {
                   final asset = 'assets/avatars/avatar_$index.webp';
                   final active = selectedAvatar == asset && photo == null;
                   return GestureDetector(
-                    onTap: () => setState(() {
-                      selectedAvatar = asset;
-                      photo = null;
-                    }),
+                    onTap: isPickingPhoto
+                        ? null
+                        : () => setState(() {
+                              selectedAvatar = asset;
+                              photo = null;
+                            }),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 180),
                       width: 54,
@@ -255,14 +234,17 @@ Future<void> showProfileEditor(BuildContext context) async {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: () {
-                    GameData.updateProfile(
-                      name: name.text,
-                      photoPath: photo ?? '',
-                      avatarIcon: selectedAvatar,
-                    );
-                    Navigator.pop(sheetContext);
-                  },
+                  onPressed: isPickingPhoto
+                      ? null
+                      : () {
+                          committedPhotoPath = photo ?? '';
+                          GameData.updateProfile(
+                            name: name.text,
+                            photoPath: committedPhotoPath,
+                            avatarIcon: selectedAvatar,
+                          );
+                          Navigator.pop(sheetContext);
+                        },
                   child: const Text('ذخیره تغییرات'),
                 ),
               ),
@@ -272,5 +254,178 @@ Future<void> showProfileEditor(BuildContext context) async {
       ),
     ),
   );
+
   name.dispose();
+
+  // A dismissed sheet must not delete the user's current photo. Conversely,
+  // selecting an avatar or saving a new image should remove obsolete files.
+  try {
+    if (committedPhotoPath == null) {
+      if (stagedPhotoPath != null) await _deleteFile(stagedPhotoPath!);
+      return;
+    }
+
+    if (stagedPhotoPath != null && stagedPhotoPath != committedPhotoPath) {
+      await _deleteFile(stagedPhotoPath!);
+    }
+    if (initialPhotoPath.isNotEmpty &&
+        initialPhotoPath != committedPhotoPath) {
+      await _deleteOwnedProfilePhoto(initialPhotoPath);
+    }
+  } catch (error, stackTrace) {
+    LoggerService.e('Profile photo cleanup failed', error, stackTrace);
+  }
+}
+
+/// Android can destroy MainActivity while the system gallery is open. The
+/// official picker stores that result, so consume it before starting a new
+/// request. This turns a perceived restart/close into a recoverable selection.
+Future<XFile?> _recoverOrPickPhoto(ImagePicker picker) async {
+  final lostData = await picker.retrieveLostData();
+  if (!lostData.isEmpty) {
+    final recoveredFiles = lostData.files;
+    if (recoveredFiles != null && recoveredFiles.isNotEmpty) {
+      return recoveredFiles.first;
+    }
+    if (lostData.exception != null) throw lostData.exception!;
+  }
+
+  return picker.pickImage(
+    source: ImageSource.gallery,
+    maxWidth: 1200,
+    maxHeight: 1200,
+    imageQuality: 88,
+    requestFullMetadata: false,
+  );
+}
+
+Future<String> _persistProfilePhoto(XFile image) async {
+  final source = File(image.path);
+  if (!await source.exists()) {
+    throw const _ProfilePhotoException('فایل عکس انتخاب‌شده پیدا نشد.');
+  }
+
+  final sourceSize = await source.length();
+  if (sourceSize <= 0) {
+    throw const _ProfilePhotoException('فایل عکس انتخاب‌شده خالی است.');
+  }
+  if (sourceSize > _maxProfilePhotoBytes) {
+    throw const _ProfilePhotoException(
+      'حجم عکس خیلی زیاد است؛ لطفاً عکس کوچک‌تری انتخاب کنید.',
+    );
+  }
+
+  final profileDirectory = await _getProfileDirectory();
+  final id = DateTime.now().microsecondsSinceEpoch;
+  final temporary = File('${profileDirectory.path}/.profile_photo_$id.tmp');
+  final destination = File('${profileDirectory.path}/profile_photo_$id.img');
+
+  try {
+    await source.copy(temporary.path);
+    if (!await temporary.exists() || await temporary.length() <= 0) {
+      throw const _ProfilePhotoException('ذخیره عکس کامل نشد؛ دوباره تلاش کنید.');
+    }
+    final saved = await temporary.rename(destination.path);
+    return saved.path;
+  } catch (_) {
+    await _deleteFile(temporary.path);
+    rethrow;
+  }
+}
+
+Future<Directory> _getProfileDirectory() async {
+  final documents = await getApplicationDocumentsDirectory();
+  final directory = Directory('${documents.path}/profile');
+  if (!await directory.exists()) {
+    await directory.create(recursive: true);
+  }
+  return directory;
+}
+
+Future<void> _deleteOwnedProfilePhoto(String path) async {
+  final directory = await _getProfileDirectory();
+  final prefix = '${directory.path}${Platform.pathSeparator}';
+  if (!path.startsWith(prefix)) return;
+
+  final fileName = path.substring(prefix.length);
+  if (!fileName.startsWith('profile_photo_')) return;
+  await _deleteFile(path);
+}
+
+Future<void> _deleteFile(String path) async {
+  try {
+    final file = File(path);
+    if (await file.exists()) await file.delete();
+  } catch (_) {
+    // Best-effort cleanup must never make profile editing fail.
+  }
+}
+
+String _messageForPlatformError(PlatformException error) {
+  final code = error.code.toLowerCase();
+  if (code.contains('denied') || code.contains('permission')) {
+    return 'دسترسی به عکس‌ها داده نشد. لطفاً از تنظیمات دستگاه اجازه دسترسی بدهید.';
+  }
+  if (code == 'already_active') {
+    return 'انتخاب‌گر عکس باز است؛ لطفاً همان پنجره را کامل کنید.';
+  }
+  return 'گالری باز نشد؛ لطفاً دوباره تلاش کنید.';
+}
+
+void _showPhotoError(BuildContext context, String message) {
+  ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+    SnackBar(content: Text(message)),
+  );
+}
+
+class _ProfileAvatarPreview extends StatelessWidget {
+  const _ProfileAvatarPreview({
+    required this.photoPath,
+    required this.selectedAvatar,
+  });
+
+  final String? photoPath;
+  final String selectedAvatar;
+
+  @override
+  Widget build(BuildContext context) {
+    if (photoPath != null) {
+      return Image.file(
+        File(photoPath!),
+        fit: BoxFit.cover,
+        width: 92,
+        height: 92,
+        cacheWidth: 276,
+        cacheHeight: 276,
+        errorBuilder: (_, __, ___) => _fallbackAvatar(),
+      );
+    }
+    return _fallbackAvatar();
+  }
+
+  Widget _fallbackAvatar() {
+    if (selectedAvatar.startsWith('assets/')) {
+      return Image.asset(
+        selectedAvatar,
+        fit: BoxFit.cover,
+        width: 92,
+        height: 92,
+      );
+    }
+    return Center(
+      child: Text(
+        selectedAvatar,
+        style: const TextStyle(fontSize: 42),
+      ),
+    );
+  }
+}
+
+class _ProfilePhotoException implements Exception {
+  const _ProfilePhotoException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }

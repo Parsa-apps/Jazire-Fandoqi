@@ -9,6 +9,7 @@ import 'package:jazireh_fandoghi/features/about/about_screen.dart';
 import 'package:jazireh_fandoghi/features/cartoons/cartoon_hub_screen.dart';
 import 'package:jazireh_fandoghi/features/gateway/app_gateway_screen.dart';
 import 'package:jazireh_fandoghi/features/home/home_screen.dart';
+import 'package:jazireh_fandoghi/features/profile/profile_editor.dart';
 
 void main() {
   setUp(() {
@@ -96,6 +97,31 @@ void main() {
 
     expect(find.text('کارتون‌کده فندقی'), findsOneWidget);
     expect(find.text('همه کارتون‌ها'), findsOneWidget);
+  });
+
+  testWidgets('profile editor exposes a stable gallery action', (tester) async {
+    GameData.resetForTesting();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => FilledButton(
+              onPressed: () => showProfileEditor(context),
+              child: const Text('ویرایش'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('ویرایش'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ویرایش پروفایل'), findsOneWidget);
+    expect(find.text('انتخاب از گالری'), findsOneWidget);
+    expect(find.text('ذخیره تغییرات'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('about screen mirrors the public Parsa Apps page', (tester) async {

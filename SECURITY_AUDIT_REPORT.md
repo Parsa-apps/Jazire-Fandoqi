@@ -46,7 +46,7 @@ export شده‌ی غیرضروری و بدون جمع‌آوری دادهٔ ک�
 | ذخیره‌سازی محلی | Hive (`playerBox`، `crash_logs`)، SharedPreferences، بکاپ `.parsa`، گرنت پریمیوم |
 | شبکه | فقط HTTPS به `www.aparat.com` و `api.aparat.com` (کارتون و پوستر) |
 | پرداخت | MethodChannel `kudake_iran/billing` → Poolakey (کافه‌بازار) |
-| اجزای اندروید | فقط `MainActivity` (exported، لازم برای launcher) + `UCropActivity` |
+| اجزای اندروید | فقط `MainActivity` (exported، لازم برای launcher)؛ انتخاب عکس با Photo Picker سیستم و بدون Activity یا مجوز ذخیره‌سازی اضافه |
 | سطح‌های دیگر | هیچ WebView، هیچ deep link، هیچ سرویس/گیرندهٔ broadcast، هیچ ContentProvider |
 
 ---

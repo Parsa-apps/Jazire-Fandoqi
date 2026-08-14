@@ -186,7 +186,5 @@ flutter {
 dependencies {
     // Poolakey is the official open-source Cafe Bazaar billing client.
     implementation "com.github.cafebazaar.Poolakey:poolakey:2.2.0"
-    // AppCompat for uCrop Activity & theme support
-    implementation "androidx.appcompat:appcompat:1.7.0"
     implementation "androidx.annotation:annotation:1.7.1"
 }

@@ -231,8 +231,23 @@ class _ProfileState extends ConsumerState<ProfileScreen>
                         ),
                         border: Border.all(color: Colors.white, width: 3),
                       ),
-                      child: GameData.profilePhotoPath.isNotEmpty && File(GameData.profilePhotoPath).existsSync()
-                          ? ClipOval(child: Image.file(File(GameData.profilePhotoPath), fit: BoxFit.cover, width: 100, height: 100))
+                      child: GameData.profilePhotoPath.isNotEmpty &&
+                              File(GameData.profilePhotoPath).existsSync()
+                          ? ClipOval(
+                              child: Image.file(
+                                File(GameData.profilePhotoPath),
+                                fit: BoxFit.cover,
+                                width: 100,
+                                height: 100,
+                                cacheWidth: 300,
+                                cacheHeight: 300,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.person_rounded,
+                                  color: Colors.white,
+                                  size: 48,
+                                ),
+                              ),
+                            )
                           : GameData.avatar.startsWith('assets/')
                               ? ClipOval(child: Image.asset(GameData.avatar, fit: BoxFit.cover, width: 100, height: 100))
                               : Center(child: Text(GameData.avatar, style: const TextStyle(fontSize: 48))),
