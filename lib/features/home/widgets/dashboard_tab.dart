@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/app_fonts.dart';
 import '../../../core/ai_system.dart';
 import '../../../core/audio_service.dart';
+import '../../../core/content_access.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../core/growth/growth.dart';
@@ -60,15 +61,9 @@ class _DashboardState extends ConsumerState<DashboardTab>
     super.dispose();
   }
 
-  static const _freeGames = {
-    'الفبا',
-    'اعداد',
-    'رنگ‌ها',
-    'ستاره‌گیری',
-    'حباب‌ترکان',
-    'نقاشی',
-    'مهارت زندگی',
-  };
+  /// مرجع واحد قوانین رایگان/پولی (`ContentAccess`) — دیگر هر صفحه
+  /// لیست جداگانه‌ای ندارد.
+  static const _freeGames = ContentAccess.freeGameNames;
 
   Future<void> _openGame(String route, String gameName) async {
     HapticFeedback.heavyImpact();

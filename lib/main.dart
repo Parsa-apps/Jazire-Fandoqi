@@ -11,6 +11,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'app/theme_controller.dart';
 import 'core/audio_service.dart';
 import 'core/background_music_observer.dart';
+import 'core/content_access.dart';
 import 'core/fandoghi_coach.dart';
 import 'core/game_data.dart';
 import 'core/game_launch.dart';
@@ -144,6 +145,9 @@ Future<void> main() async {
   // بنابراین حتی اگر کودک فوراً دکمه‌ای بزند صدا از دست نمی‌رود.
   WidgetsBinding.instance.addPostFrameCallback((_) {
     unawaited(AudioService.init());
+    // 🔐 وضعیت نسخهٔ کامل یک‌بار در startup کش می‌شود تا هر صفحه‌ای
+    // (کارتون، قصه، لالایی، الفبا، اعداد) بدون تأخیر بداند چه چیزی باز است.
+    unawaited(ContentAccess.refresh());
   });
 }
 
@@ -249,19 +253,31 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
         '/puzzle': (context) => const PuzzleGame(),
         '/math_race': (context) => const MathRaceGame(),
         '/pattern': (context) => const PatternGame(),
-        '/sound_match': (context) => const SoundMatchGame(),
-        '/body_parts': (context) => const BodyPartsGame(),
+        '/sound_match': (context) => GameAccessGate(
+              gameName: 'صدا',
+              child: const SoundMatchGame(),
+            ),
+        '/body_parts': (context) => GameAccessGate(
+              gameName: 'بدن',
+              child: const BodyPartsGame(),
+            ),
         '/island_builder': (context) => const IslandBuilderGame(),
         '/buddy_chat': (context) => const BuddyChatScreen(),
         '/stickers': (context) => const StickerAlbumScreen(),
         '/parent': (context) => const ParentPanel(),
         '/about': (context) => const AboutScreen(),
         '/privacy': (context) => const PrivacyPolicyScreen(),
-        '/life-skills': (context) => const LifeSkillsHubScreen(),
+        '/life-skills': (context) => GameAccessGate(
+              gameName: 'مهارت زندگی',
+              child: const LifeSkillsHubScreen(),
+            ),
         '/search': (context) => const CatalogSearchScreen(),
         '/weekly-report': (context) => const WeeklyReportScreen(),
         '/certificates': (context) => const CertificatesScreen(),
-        '/vocabulary': (context) => const VocabularyScreen(),
+        '/vocabulary': (context) => GameAccessGate(
+              gameName: 'واژگان',
+              child: const VocabularyScreen(),
+            ),
         '/whats-new': (context) => const WhatsNewScreen(),
         '/parent-booklet': (context) => const ParentBookletScreen(),
       },
@@ -285,12 +301,20 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
           if (childrenStory != null) {
             return MaterialPageRoute(
               settings: settings,
-              builder: (_) => StoryReaderScreen(story: childrenStory),
+              builder: (_) => PremiumContentGate(
+                isUnlocked: () => ContentAccess.isStoryUnlocked(childrenStory.id),
+                contentName: childrenStory.title,
+                child: StoryReaderScreen(story: childrenStory),
+              ),
             );
           }
           return MaterialPageRoute(
             settings: settings,
-            builder: (_) => StoryScreen(storyId: storyId),
+            builder: (_) => PremiumContentGate(
+              isUnlocked: () => ContentAccess.isStoryUnlocked(storyId),
+              contentName: 'قصه',
+              child: StoryScreen(storyId: storyId),
+            ),
           );
         }
         // 🎬 پخش کارتون (/cartoon/<id> یا /cartoon_player)
@@ -299,7 +323,11 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
           final cartoon = CartoonData.getCartoonById(cartoonId) ?? CartoonData.allCartoons.first;
           return MaterialPageRoute(
             settings: settings,
-            builder: (_) => CartoonPlayerScreen(cartoon: cartoon),
+            builder: (_) => PremiumContentGate(
+              isUnlocked: () => ContentAccess.isCartoonUnlocked(cartoon.id),
+              contentName: cartoon.title,
+              child: CartoonPlayerScreen(cartoon: cartoon),
+            ),
           );
         }
         if (name == '/cartoon_player') {
@@ -307,7 +335,11 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
           final cartoon = args is Cartoon ? args : CartoonData.allCartoons.first;
           return MaterialPageRoute(
             settings: settings,
-            builder: (_) => CartoonPlayerScreen(cartoon: cartoon),
+            builder: (_) => PremiumContentGate(
+              isUnlocked: () => ContentAccess.isCartoonUnlocked(cartoon.id),
+              contentName: cartoon.title,
+              child: CartoonPlayerScreen(cartoon: cartoon),
+            ),
           );
         }
         // 🌙 لالایی‌ها (/lullaby/<id>)
@@ -325,7 +357,14 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
           final lullabyId = name.substring('/lullaby/'.length);
           final lullaby = LullabiesData.byId(lullabyId);
           if (lullaby != null) {
-            return MaterialPageRoute(settings: settings, builder: (_) => LullabyPlayerScreen(lullaby: lullaby));
+            return MaterialPageRoute(
+              settings: settings,
+              builder: (_) => PremiumContentGate(
+                isUnlocked: () => ContentAccess.isLullabyUnlocked(lullaby.id),
+                contentName: lullaby.title,
+                child: LullabyPlayerScreen(lullaby: lullaby),
+              ),
+            );
           }
         }
         // فاز ۲۲-۲۸: آکادمی‌های محتوایی (/academy/numbers, /academy/colors ...)

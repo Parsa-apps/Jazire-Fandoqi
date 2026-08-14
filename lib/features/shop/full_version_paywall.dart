@@ -7,6 +7,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
 import '../../app/design_tokens.dart';
+import '../../core/content_access.dart';
 import '../../core/fandoghi_models.dart';
 import '../../core/growth/smart_conversion.dart';
 import '../../core/monetization.dart';
@@ -21,6 +22,154 @@ String _normalizeDigits(String input) {
     result = result.replaceAll(persianDigits[i], englishDigits[i]);
   }
   return result;
+}
+
+/// 💰 قیمت نسخهٔ کامل — یک مرجع واحد، تا عدد در دکمه، کارت قیمت و
+/// هدر همیشه یکی باشد.
+const String kFullVersionPriceDigits = '۴۹٬۰۰۰';
+const String kFullVersionPriceWords = 'چهل و نه هزار تومان';
+
+/// هدر پی‌وال: لوگوی فندقی در کنار قیمتِ بزرگ که «تایپ» می‌شود.
+///
+/// رقم‌ها یکی‌یکی مثل ماشین‌تحریر ظاهر می‌شوند، بعد کلمهٔ «تومان» و
+/// در پایان نوشتهٔ حروفی محو-ظاهر می‌شود؛ چشمِ والد دقیقاً روی عدد
+/// می‌نشیند بدون اینکه شلوغ شود.
+class _PriceHeadline extends StatefulWidget {
+  const _PriceHeadline();
+
+  @override
+  State<_PriceHeadline> createState() => _PriceHeadlineState();
+}
+
+class _PriceHeadlineState extends State<_PriceHeadline>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<int> _typed;
+
+  static const String _price = kFullVersionPriceDigits;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 140 * _price.length),
+    );
+    _typed = StepTween(begin: 0, end: _price.length).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
+    );
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const FandoghiPremium(
+          size: 84,
+          mood: FandoghiMood.celebrating,
+          showParticles: true,
+        )
+            .animate()
+            .scale(duration: 600.ms, curve: Curves.elasticOut)
+            .then()
+            .shimmer(duration: 1400.ms, color: const Color(0x66FFD54F)),
+        const SizedBox(width: 10),
+        Flexible(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AnimatedBuilder(
+                animation: _typed,
+                builder: (context, _) {
+                  final shown = _price.substring(0, _typed.value);
+                  final done = _typed.value == _price.length;
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      ShaderMask(
+                        shaderCallback: (bounds) => const LinearGradient(
+                          colors: [
+                            Color(0xFFFFA726),
+                            Color(0xFFF06292),
+                            Color(0xFFBA68C8),
+                          ],
+                        ).createShader(bounds),
+                        child: Text(
+                          shown.isEmpty ? ' ' : shown,
+                          style: AppFonts.vazirmatn(
+                            fontSize: 40,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            height: 1.1,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      AnimatedOpacity(
+                        opacity: done ? 1 : 0,
+                        duration: const Duration(milliseconds: 300),
+                        child: Text(
+                          'تومان',
+                          style: AppFonts.vazirmatn(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFF6C5CE7),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              Text(
+                kFullVersionPriceWords,
+                style: AppFonts.vazirmatn(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.black54,
+                ),
+              )
+                  .animate()
+                  .fadeIn(delay: 900.ms, duration: 500.ms)
+                  .slideY(begin: 0.4, end: 0),
+              const SizedBox(height: 4),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFD700).withOpacity(0.25),
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
+                  border: Border.all(color: const Color(0xFFFFC107)),
+                ),
+                child: Text(
+                  'یک‌بار پرداخت • برای همیشه',
+                  style: AppFonts.vazirmatn(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    color: const Color(0xFF8D6E00),
+                  ),
+                ),
+              )
+                  .animate()
+                  .fadeIn(delay: 1200.ms)
+                  .scale(begin: const Offset(0.85, 0.85), curve: Curves.easeOutBack),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 /// A parent-facing, one-time purchase surface — PREMIUM V2
@@ -128,6 +277,8 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
     setState(() => _loading = false);
     if (ok) {
       HapticFeedback.heavyImpact();
+      await ContentAccess.refresh();
+      if (!mounted) return;
       Navigator.pop(context, true);
     } else {
       showDialog(
@@ -150,7 +301,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx), child: Text('باشه', style: AppFonts.vazirmatn(color: AppColors.primary))),
-            FilledButton(onPressed: () async { Navigator.pop(ctx); if (await Monetization.restoreFullVersion() && mounted) Navigator.pop(context, true); }, style: FilledButton.styleFrom(backgroundColor: AppColors.primary), child: Text('بازیابی خرید', style: AppFonts.vazirmatn(color: Colors.white))),
+            FilledButton(onPressed: () async { Navigator.pop(ctx); if (await Monetization.restoreFullVersion()) { await ContentAccess.refresh(); if (mounted) Navigator.pop(context, true); } }, style: FilledButton.styleFrom(backgroundColor: AppColors.primary), child: Text('بازیابی خرید', style: AppFonts.vazirmatn(color: Colors.white))),
           ],
         ),
       );
@@ -171,7 +322,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                   Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(2))),
                   const SizedBox(height: 16),
                   // هدر پریمیوم
-                  const FandoghiPremium(size: 84, mood: FandoghiMood.celebrating, showParticles: true).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
+                  const _PriceHeadline(),
                   const SizedBox(height: 12),
                   ShaderMask(
                     shaderCallback: (bounds) => const LinearGradient(colors: [Color(0xFFFFA726), Color(0xFFF06292), Color(0xFFBA68C8)]).createShader(bounds),
@@ -228,10 +379,10 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadii.lg)),
                           child: Column(
                             children: [
-                              Text('قیمت در کافه‌بازار', style: TextStyle(fontSize: 10, color: Colors.black54, fontWeight: FontWeight.w700)),
+                              Text('قیمت نسخه کامل', style: TextStyle(fontSize: 10, color: Colors.black54, fontWeight: FontWeight.w700)),
                               const SizedBox(height: 2),
-                              Text('مشاهده در بازار', style: AppFonts.vazirmatn(fontSize: 13, fontWeight: FontWeight.w900, color: AppColors.primary)),
-                              const Icon(Icons.storefront_rounded, size: 16, color: AppColors.primary),
+                              Text(kFullVersionPriceDigits, style: AppFonts.vazirmatn(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.primary)),
+                              Text(kFullVersionPriceWords, style: AppFonts.vazirmatn(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.black54)),
                             ],
                           ),
                         ),
@@ -268,7 +419,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                       icon: _loading
                           ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                           : const Icon(Icons.lock_open_rounded, color: Colors.white, size: 20),
-                      label: Text(_loading ? 'در حال اتصال امن...' : 'خرید امن از کافه‌بازار', style: AppFonts.vazirmatn(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
+                      label: Text(_loading ? 'در حال اتصال امن...' : 'خرید امن — $kFullVersionPriceDigits تومان', style: AppFonts.vazirmatn(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
@@ -289,7 +440,10 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                             ? null
                             : () async {
                                 HapticFeedback.lightImpact();
-                                if (await Monetization.restoreFullVersion() && mounted) Navigator.pop(context, true);
+                                if (await Monetization.restoreFullVersion()) {
+                                  await ContentAccess.refresh();
+                                  if (mounted) Navigator.pop(context, true);
+                                }
                               },
                         child: Text('بازیابی خرید قبلی', style: AppFonts.vazirmatn(fontWeight: FontWeight.w800, color: AppColors.primary, fontSize: 13)),
                       ),

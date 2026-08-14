@@ -4,9 +4,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
 import '../../core/audio_service.dart';
+import '../../core/content_access.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/learning_content/lullabies_data.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
+import '../shop/full_version_paywall.dart';
 import 'lullaby_player_screen.dart';
 
 /// ═══════════════════════════════════════════════════════
@@ -26,6 +28,10 @@ class _LullabyHubScreenState extends State<LullabyHubScreen> {
     super.initState();
     // فندقی فقط در بخش بازی/یادگیری حضور دارد.
     FandoghiCoach.disablePersistentPresence();
+    // 🔐 اگر خرید فعال باشد، قفل‌ها بلافاصله بعد از تأیید استور برداشته می‌شوند.
+    ContentAccess.refreshThen(() {
+      if (mounted) setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         FandoghiCoach.say(
@@ -37,7 +43,15 @@ class _LullabyHubScreenState extends State<LullabyHubScreen> {
     });
   }
 
-  void _openLullaby(Lullaby lullaby) {
+  /// 🔒 نسخهٔ رایگان: فقط ۲ لالایی اول باز است.
+  Future<void> _openLullaby(Lullaby lullaby) async {
+    if (!ContentAccess.isLullabyUnlocked(lullaby.id)) {
+      HapticFeedback.mediumImpact();
+      await showFullVersionPaywall(context, featureName: lullaby.title);
+      await ContentAccess.refresh();
+      if (mounted) setState(() {});
+      return;
+    }
     HapticFeedback.lightImpact();
     AudioService.sleepChime();
     Navigator.of(context).push(
@@ -62,6 +76,12 @@ class _LullabyHubScreenState extends State<LullabyHubScreen> {
                 slivers: [
                   SliverToBoxAdapter(child: _buildWelcomeBanner()),
                   SliverToBoxAdapter(child: _buildInfoCard()),
+                  const SliverToBoxAdapter(
+                    child: FreeTierNotice(
+                      freeCount: ContentAccess.freeLullabies,
+                      itemLabel: 'لالایی',
+                    ),
+                  ),
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
                     sliver: _buildGrid(),
@@ -194,6 +214,7 @@ class _LullabyHubScreenState extends State<LullabyHubScreen> {
       delegate: SliverChildBuilderDelegate(
         (context, index) {
           final lullaby = LullabiesData.all[index];
+          final unlocked = ContentAccess.isLullabyUnlocked(lullaby.id);
           return GestureDetector(
             onTap: () => _openLullaby(lullaby),
             child: Container(
@@ -246,6 +267,7 @@ class _LullabyHubScreenState extends State<LullabyHubScreen> {
                               child: const Text('پخش با صدای بچگانه 🌙', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
                             ),
                           ),
+                          if (!unlocked) const PremiumLockOverlay(borderRadius: 0),
                         ],
                       ),
                     ),
@@ -273,7 +295,7 @@ class _LullabyHubScreenState extends State<LullabyHubScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(color: lullaby.themeColor.withOpacity(0.35), borderRadius: BorderRadius.circular(10)),
-                                  child: const Text('پخش 🎵', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                                  child: Text(unlocked ? 'پخش 🎵' : 'نسخه کامل 🔒', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                                 ),
                               ],
                             ),

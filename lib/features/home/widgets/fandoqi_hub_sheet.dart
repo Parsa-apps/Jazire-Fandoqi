@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../app/app_fonts.dart';
 import '../../../app/app_theme.dart';
 import '../../../core/audio_service.dart';
+import '../../../core/content_access.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_launch.dart';
 import '../../../core/growth/growth.dart';
@@ -103,7 +104,7 @@ class FandoqiHubs {
         emoji: '📚',
         route: '/vocabulary',
         gameName: 'واژگان',
-        isFree: true,
+        isFree: false,
       ),
       HubActivity(
         title: 'بازی تشخیص صداها',
@@ -111,7 +112,7 @@ class FandoqiHubs {
         emoji: '🎧',
         route: '/sound_match',
         gameName: 'صدا',
-        isFree: true,
+        isFree: false,
       ),
     ],
   );
@@ -158,7 +159,7 @@ class FandoqiHubs {
         emoji: '⚖️',
         route: '/concepts',
         gameName: 'مفاهیم',
-        isFree: true,
+        isFree: false,
       ),
     ],
   );
@@ -188,7 +189,7 @@ class FandoqiHubs {
         emoji: '🎵',
         route: '/sound_match',
         gameName: 'صدا',
-        isFree: true,
+        isFree: false,
       ),
       HubActivity(
         title: 'حباب‌ترکان حروف و کلمات',
@@ -243,7 +244,7 @@ class FandoqiHubs {
         emoji: '🧭',
         route: '/life-skills',
         gameName: 'مهارت زندگی',
-        isFree: true,
+        isFree: false,
       ),
       HubActivity(
         title: 'مفاهیم علوم و دنیای اطراف',
@@ -251,7 +252,7 @@ class FandoqiHubs {
         emoji: '🌍',
         route: '/concepts',
         gameName: 'مفاهیم',
-        isFree: true,
+        isFree: false,
       ),
     ],
   );
@@ -539,7 +540,8 @@ class _FandoqiHubSheetWidgetState extends State<_FandoqiHubSheetWidget>
                                 floatPhase: (i * 0.23) % 1.0,
                                 floatAnimation: _floatCtrl,
                                 accent: hub.primaryColor,
-                                locked: !hub.activities[i].isFree,
+                                locked: !hub.activities[i].isFree &&
+                                    !ContentAccess.isPremium,
                                 onTap: () =>
                                     _launchActivity(context, hub.activities[i]),
                               ),

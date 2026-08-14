@@ -4,10 +4,12 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
 import '../../core/audio_service.dart';
+import '../../core/content_access.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';
 import '../../core/learning_content/children_stories_data.dart';
+import '../shop/full_version_paywall.dart';
 import 'story_reader_screen.dart';
 
 /// ═══════════════════════════════════════════════════════════════
@@ -33,6 +35,10 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
     super.initState();
     // فندقی فقط در بخش بازی/یادگیری حضور دارد.
     FandoghiCoach.disablePersistentPresence();
+    // 🔐 اگر خرید فعال باشد، قفل‌ها بلافاصله بعد از تأیید استور برداشته می‌شوند.
+    ContentAccess.refreshThen(() {
+      if (mounted) setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         FandoghiCoach.say(
@@ -67,7 +73,15 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
     return list;
   }
 
-  void _openStory(ChildrenStory story) {
+  /// 🔒 نسخهٔ رایگان: فقط ۲ قصهٔ اول باز است.
+  Future<void> _openStory(ChildrenStory story) async {
+    if (!ContentAccess.isStoryUnlocked(story.id)) {
+      HapticFeedback.mediumImpact();
+      await showFullVersionPaywall(context, featureName: story.title);
+      await ContentAccess.refresh();
+      if (mounted) setState(() {});
+      return;
+    }
     HapticFeedback.lightImpact();
     AudioService.select();
     Navigator.of(context)
@@ -112,6 +126,14 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
 
                   // نوار جستجو و فیلتر علاقه‌مندی‌ها
                   SliverToBoxAdapter(child: _buildSearchBar()),
+
+                  // 🔒 مرز نسخهٔ رایگان
+                  const SliverToBoxAdapter(
+                    child: FreeTierNotice(
+                      freeCount: ContentAccess.freeStories,
+                      itemLabel: 'قصه',
+                    ),
+                  ),
 
                   // چیپ‌های دسته‌بندی موضوعی
                   SliverToBoxAdapter(child: _buildCategoryChips()),
@@ -670,6 +692,7 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
           final story = list[index];
           final isCompleted = GameData.hasCompletedStory(story.id);
           final isFav = GameData.isStoryFavorite(story.id);
+          final unlocked = ContentAccess.isStoryUnlocked(story.id);
 
           return GestureDetector(
             onTap: () => _openStory(story),
@@ -809,6 +832,8 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
                               ),
                             ),
                           ),
+                          // 🔒 نسخهٔ رایگان: فقط ۲ قصهٔ اول باز است
+                          if (!unlocked) const PremiumLockOverlay(borderRadius: 0),
                         ],
                       ),
                     ),
@@ -856,9 +881,9 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
                                     color: story.themeColor.withOpacity(0.35),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: const Text(
-                                    'بخوانیم 📖',
-                                    style: TextStyle(
+                                  child: Text(
+                                    unlocked ? 'بخوانیم 📖' : 'نسخه کامل 🔒',
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,

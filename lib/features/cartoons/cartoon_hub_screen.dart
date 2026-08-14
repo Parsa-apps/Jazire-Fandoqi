@@ -7,12 +7,14 @@ import 'package:jazireh_fandoghi/core/ai_system.dart';
 import 'package:jazireh_fandoghi/core/cartoons/aparat_service.dart';
 import 'package:jazireh_fandoghi/core/cartoons/cartoon_data.dart';
 import 'package:jazireh_fandoghi/core/audio_service.dart';
+import 'package:jazireh_fandoghi/core/content_access.dart';
 import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
 import 'package:jazireh_fandoghi/core/game_data.dart';
 import 'package:jazireh_fandoghi/features/cartoons/cartoon_player_screen.dart';
 import 'package:jazireh_fandoghi/features/cartoons/widgets/cartoon_cover.dart';
 import 'package:jazireh_fandoghi/features/cartoons/widgets/cartoon_rating_dialog.dart';
 import 'package:jazireh_fandoghi/features/profile/sticker_album_screen.dart';
+import 'package:jazireh_fandoghi/features/shop/full_version_paywall.dart';
 import 'package:jazireh_fandoghi/shared/widgets/fandoghi_v2.dart';
 
 /// ═══════════════════════════════════════════════════════════════
@@ -39,6 +41,10 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
     // فندقی فقط در بخش بازی/یادگیری حضور دارد؛ در سینما کارتون نمایش داده نمی‌شود.
     FandoghiCoach.disablePersistentPresence();
     _suggestedCartoonId = AI.suggestCartoon();
+    // 🔐 اگر خرید فعال باشد، قفل‌ها بلافاصله بعد از تأیید استور برداشته می‌شوند.
+    ContentAccess.refreshThen(() {
+      if (mounted) setState(() {});
+    });
 
     // 🖼️ پیش‌بارگیری پوستر کارتون‌ها (قاب واقعی شخصیت‌ها) در پس‌زمینه
     // تا کودک مثل ویترین فروشگاه، هر کارتون را از روی عکس بشناسد.
@@ -84,7 +90,15 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
     return list;
   }
 
-  void _openCartoon(Cartoon cartoon, {int episodeIndex = 0}) {
+  /// 🔒 در نسخهٔ رایگان فقط ۲ کارتون اول باز است؛ بقیه پی‌وال را باز می‌کنند.
+  Future<void> _openCartoon(Cartoon cartoon, {int episodeIndex = 0}) async {
+    if (!ContentAccess.isCartoonUnlocked(cartoon.id)) {
+      HapticFeedback.mediumImpact();
+      await showFullVersionPaywall(context, featureName: cartoon.title);
+      await ContentAccess.refresh();
+      if (mounted) setState(() {});
+      return;
+    }
     HapticFeedback.lightImpact();
     AudioService.select();
     Navigator.of(context).push(
@@ -173,6 +187,14 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                           ),
                         ],
                       ),
+                    ),
+                  ),
+
+                  // 🔒 مرز نسخهٔ رایگان
+                  const SliverToBoxAdapter(
+                    child: FreeTierNotice(
+                      freeCount: ContentAccess.freeCartoons,
+                      itemLabel: 'کارتون',
                     ),
                   ),
 
@@ -824,6 +846,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
         (context, index) {
           final cartoon = list[index];
           final isFav = GameData.isCartoonFavorite(cartoon.id);
+          final unlocked = ContentAccess.isCartoonUnlocked(cartoon.id);
 
           return GestureDetector(
             onTap: () => _openCartoon(cartoon),
@@ -910,6 +933,8 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                                 ),
                               ),
                             ),
+                            // 🔒 نسخهٔ رایگان: فقط ۲ کارتون اول باز است
+                            if (!unlocked) const PremiumLockOverlay(borderRadius: 0),
                         ],
                       ),
                     ),
@@ -963,9 +988,9 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                                     color: cartoon.themeColor.withOpacity(0.25),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: const Text(
-                                    'تماشا ▶',
-                                    style: TextStyle(
+                                  child: Text(
+                                    unlocked ? 'تماشا ▶' : 'نسخه کامل 🔒',
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,

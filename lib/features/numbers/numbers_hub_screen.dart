@@ -5,10 +5,12 @@ import '../../app/app_colors.dart';
 import '../../app/design_tokens.dart';
 import '../../app/app_fonts.dart';
 import '../../core/audio_service.dart';
+import '../../core/content_access.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';
 import '../../shared/widgets/fandoghi_premium.dart';
+import '../shop/full_version_paywall.dart';
 
 /// 🔢 NUMBERS HUB PREMIUM — پیشنهاد ۲۴
 /// اعداد ۱-۲۰ + جمع/تفریق داستانی با فندقی — با شمارش واقعی سیب/گردو
@@ -25,6 +27,10 @@ class _NumbersHubState extends State<NumbersHubScreen> {
   void initState() {
     super.initState();
     FandoghiCoach.enablePersistentPresence();
+    // 🔐 اگر خرید فعال باشد، قفل‌ها بلافاصله بعد از تأیید استور برداشته می‌شوند.
+    ContentAccess.refreshThen(() {
+      if (mounted) setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FandoghiCoach.say('به دنیای اعداد خوش اومدی! 🔢 با سیب و گردو می‌شمریم — بزن روی هر عدد!', mood: FandoghiMood.excited, duration: const Duration(seconds: 4));
     });
@@ -108,8 +114,18 @@ class _NumbersHubState extends State<NumbersHubScreen> {
                   itemBuilder: (context, index) {
                     final n = index + 1;
                     final selected = _selectedNumber == n;
+                    // 🔒 نسخهٔ رایگان: فقط ۲ عدد اول باز است.
+                    final unlocked = ContentAccess.isNumberUnlocked(n);
                     return GestureDetector(
-                      onTap: () {
+                      onTap: () async {
+                        if (!unlocked) {
+                          HapticFeedback.mediumImpact();
+                          await showFullVersionPaywall(context,
+                              featureName: 'عدد $n');
+                          await ContentAccess.refresh();
+                          if (mounted) setState(() {});
+                          return;
+                        }
                         HapticFeedback.selectionClick();
                         setState(() => _selectedNumber = n);
                         GameData.recordAnswer(correct: true, skill: 'counting');
@@ -117,12 +133,36 @@ class _NumbersHubState extends State<NumbersHubScreen> {
                       child: AnimatedContainer(
                         duration: AppMotion.fast,
                         decoration: BoxDecoration(
-                          color: selected ? const Color(0xFFE65100) : Colors.white.withOpacity(0.92),
+                          color: selected
+                              ? const Color(0xFFE65100)
+                              : Colors.white.withOpacity(unlocked ? 0.92 : 0.35),
                           borderRadius: BorderRadius.circular(AppRadii.lg),
                           border: Border.all(color: selected ? Colors.white : Colors.white.withOpacity(0.5), width: selected ? 2.5 : 1),
                           boxShadow: selected ? AppShadows.colored(const Color(0xFFE65100), opacity: 0.3) : AppShadows.soft,
                         ),
-                        child: Center(child: Text('$n', style: AppFonts.vazirmatn(fontSize: 18, fontWeight: FontWeight.w900, color: selected ? Colors.white : const Color(0xFF4E342E)))),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Text('$n',
+                                style: AppFonts.vazirmatn(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w900,
+                                    color: selected
+                                        ? Colors.white
+                                        : (unlocked
+                                            ? const Color(0xFF4E342E)
+                                            : const Color(0xFF8D6E63)))),
+                            if (!unlocked)
+                              const Align(
+                                alignment: Alignment.bottomLeft,
+                                child: Padding(
+                                  padding: EdgeInsets.all(3),
+                                  child: Icon(Icons.lock_rounded,
+                                      size: 12, color: Color(0xFFB0682B)),
+                                ),
+                              ),
+                          ],
+                        ),
                       ).animate(delay: (index * 20).ms).fadeIn(duration: 300.ms).scale(begin: const Offset(0.85, 0.85)),
                     );
                   },

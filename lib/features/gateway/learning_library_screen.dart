@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
 import '../../app/design_tokens.dart';
+import '../../core/content_access.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/fandoghi_models.dart';
 import '../../shared/widgets/child_touch_target.dart';
@@ -164,6 +165,7 @@ class _LearningLibraryScreenState extends State<LearningLibraryScreen> {
                     final entry = _entries[index];
                     return _LibraryCard(
                       entry: entry,
+                      locked: !ContentAccess.isRouteUnlocked(entry.route),
                       onTap: () => _open(entry.route),
                     ).animate(delay: (index * 70).ms).fadeIn(duration: 350.ms).scale(
                           begin: const Offset(0.9, 0.9),
@@ -200,7 +202,15 @@ class _LibraryCard extends StatelessWidget {
   final _LibraryEntry entry;
   final VoidCallback onTap;
 
-  const _LibraryCard({required this.entry, required this.onTap});
+  /// در نسخهٔ رایگان این دنیا قفل است (گیت واقعی روی خودِ مسیر است؛
+  /// این فقط نشانهٔ بصری برای والد و کودک است).
+  final bool locked;
+
+  const _LibraryCard({
+    required this.entry,
+    required this.onTap,
+    this.locked = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -256,7 +266,34 @@ class _LibraryCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Icon(Icons.arrow_back_rounded, color: entry.color, size: 20),
+              if (locked)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFC107).withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(AppRadii.pill),
+                    border: Border.all(color: const Color(0xFFFFC107)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.lock_rounded,
+                          size: 12, color: Color(0xFF8D6E00)),
+                      const SizedBox(width: 4),
+                      Text(
+                        'نسخه کامل',
+                        style: AppFonts.vazirmatn(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF8D6E00),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Icon(Icons.arrow_back_rounded, color: entry.color, size: 20),
             ],
           ),
         ),

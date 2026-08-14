@@ -9,11 +9,13 @@ import '../../../app/app_colors.dart';
 import '../../../app/design_tokens.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import '../../../core/audio_service.dart';
+import '../../../core/content_access.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
 import '../../../shared/widgets/handwriting_score_overlay.dart';
+import '../../shop/full_version_paywall.dart';
 
 /// A local-first Persian alphabet academy: see, hear/read, trace, receive
 /// feedback, and repeat. The trace check is intentionally transparent and
@@ -42,6 +44,10 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   void initState() {
     super.initState();
     FandoghiCoach.enablePersistentPresence();
+    // 🔐 اگر خرید فعال باشد، قفل‌ها بلافاصله بعد از تأیید استور برداشته می‌شوند.
+    ContentAccess.refreshThen(() {
+      if (mounted) setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (GameData.isDailyLimitReached) {
@@ -62,7 +68,16 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     super.dispose();
   }
 
-  void _selectLesson(int index) {
+  Future<void> _selectLesson(int index) async {
+    // 🔒 نسخهٔ رایگان: فقط ردیف اولِ حروف (۸ حرف) باز است.
+    if (!ContentAccess.isLetterUnlocked(index)) {
+      HapticFeedback.mediumImpact();
+      await showFullVersionPaywall(context,
+          featureName: 'حرف «${_lessons[index].letter}»');
+      await ContentAccess.refresh();
+      if (mounted) setState(() {});
+      return;
+    }
     setState(() => _lessonIndex = index);
     FandoghiCoach.instruction(
       'حرف «${_lessons[index].letter}» را انتخاب کردی؛ اسمش ${_lessons[index].word} است. حالا دکمه‌ی «تمرین نوشتن» را بزن ✍️',
@@ -320,26 +335,80 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
               fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            children: List.generate(_lessons.length, (index) {
-              final selected = index == _lessonIndex;
-              return ChoiceChip(
-                label: Text(_lessons[index].letter),
-                selected: selected,
-                onSelected: (_) => _selectLesson(index),
-                selectedColor: AppColors.primary,
-                backgroundColor: Colors.white.withOpacity(0.1),
-                labelStyle: AppFonts.balooBhaijaan2(
-                  color: selected ? Colors.white : Colors.white70,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 16,
+          if (!ContentAccess.isPremium)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'در نسخه رایگان فقط ردیف اول حروف باز است 🔒',
+                style: AppFonts.balooBhaijaan2(
+                  color: const Color(0xFFFFD54F),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
                 ),
-                side: BorderSide(color: Colors.white.withOpacity(0.1)),
+              ),
+            ),
+          const SizedBox(height: 10),
+          // چیدمان ثابتِ ۸ حرف در هر ردیف؛ پس «ردیف اولِ» رایگان دقیقاً
+          // همان ۸ حرف اول است و کودک/والد مرز رایگان را می‌بیند.
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const perRow = ContentAccess.alphabetRowSize;
+              const spacing = 7.0;
+              final cell =
+                  (constraints.maxWidth - spacing * (perRow - 1)) / perRow;
+              return Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: List.generate(_lessons.length, (index) {
+                  final selected = index == _lessonIndex;
+                  final unlocked = ContentAccess.isLetterUnlocked(index);
+                  return SizedBox(
+                    width: cell,
+                    height: cell,
+                    child: GestureDetector(
+                      onTap: () => _selectLesson(index),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? AppColors.primary
+                              : Colors.white.withOpacity(unlocked ? 0.10 : 0.04),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: selected
+                                ? Colors.white
+                                : Colors.white.withOpacity(0.12),
+                          ),
+                        ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Text(
+                              _lessons[index].letter,
+                              style: AppFonts.balooBhaijaan2(
+                                color: !unlocked
+                                    ? Colors.white24
+                                    : (selected ? Colors.white : Colors.white70),
+                                fontWeight: FontWeight.w900,
+                                fontSize: 16,
+                              ),
+                            ),
+                            if (!unlocked)
+                              const Align(
+                                alignment: Alignment.bottomLeft,
+                                child: Padding(
+                                  padding: EdgeInsets.all(3),
+                                  child: Icon(Icons.lock_rounded,
+                                      size: 12, color: Color(0xFFFFD54F)),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }),
               );
-            }),
+            },
           ),
         ],
       ),
@@ -615,7 +684,8 @@ class _TraceScreenState extends State<_TraceScreen> {
                       onNext: () {
                         if (_lastResult!.passed) {
                           // حرف بعدی
-                          final next = (_lessonIndex + 1) % widget.lessons.length;
+                          var next = (_lessonIndex + 1) % widget.lessons.length;
+                          if (!ContentAccess.isLetterUnlocked(next)) next = 0;
                           setState(() {
                             _lessonIndex = next;
                             _strokes.clear();
@@ -677,9 +747,17 @@ class _TraceScreenState extends State<_TraceScreen> {
             tooltip: 'تغییر حرف',
             icon: const Icon(Icons.menu_book_rounded, size: 24),
             color: Colors.white,
-            onSelected: _selectLesson,
+            onSelected: (i) {
+              if (!ContentAccess.isLetterUnlocked(i)) {
+                showFullVersionPaywall(context,
+                    featureName: 'حرف «${widget.lessons[i].letter}»');
+                return;
+              }
+              _selectLesson(i);
+            },
             itemBuilder: (context) =>
                 List.generate(widget.lessons.length, (i) {
+              final unlocked = ContentAccess.isLetterUnlocked(i);
               return PopupMenuItem<int>(
                 value: i,
                 child: Row(
@@ -690,7 +768,9 @@ class _TraceScreenState extends State<_TraceScreen> {
                       style: AppFonts.balooBhaijaan2(
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
-                        color: AppColors.textPrimary,
+                        color: unlocked
+                            ? AppColors.textPrimary
+                            : AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -702,6 +782,11 @@ class _TraceScreenState extends State<_TraceScreen> {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
+                    if (!unlocked) ...[
+                      const SizedBox(width: 6),
+                      const Icon(Icons.lock_rounded,
+                          size: 14, color: Color(0xFFB08D00)),
+                    ],
                   ],
                 ),
               );
