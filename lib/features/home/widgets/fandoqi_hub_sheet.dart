@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import '../../../app/app_colors.dart';
 import '../../../app/app_fonts.dart';
+import '../../../app/app_theme.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_launch.dart';
 import '../../../core/growth/growth.dart';
 import '../../../core/monetization.dart';
 import '../../shop/full_version_paywall.dart';
+import 'island_map/hub_island_node.dart';
+import 'island_map/island_map_background.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// 🏝️ مدل اطلاعات هر هاب آموزشی / بازی
@@ -32,6 +34,11 @@ class HubActivity {
     this.isFree = true,
     required this.gameName,
   });
+
+  /// نام کوتاهِ روی پلاکِ سکو. عنوان کامل («آکادمی الفبای فارسی») برای
+  /// پلاک بلند است و متن را ریز می‌کند، ولی `gameName` همیشه یک اسمِ
+  /// کوتاه و بچگانه است («الفبا»)، پس همان را روی سکو می‌نویسیم.
+  String get shortTitle => gameName;
 }
 
 class HubData {
@@ -362,24 +369,74 @@ class FandoqiHubs {
 }
 
 /// ═══════════════════════════════════════════════════════════════
-/// 🚀 Bottom Sheet نمایش فعالیت‌های هر هاب
+/// 🚀 صفحهٔ جزیره‌ایِ هر هاب
+///
+/// قبلاً فعالیت‌های هر هاب یک لیستِ کارتِ سفید بود که با تمِ نقشهٔ
+/// جزیره هیچ ربطی نداشت. حالا همان فعالیت‌ها روی سکوهای شناور
+/// می‌نشینند: همان آسمان و دریا، همان حباب‌ها، همان پلاک‌های کِرِمی
+/// و همان انیمیشن‌ها. یعنی کودک هرجای برنامه برود، در همان جزیره است.
 /// ═══════════════════════════════════════════════════════════════
 void showFandoqiHubSheet(BuildContext context, HubData hub) {
   HapticFeedback.mediumImpact();
   AudioService.select();
   FandoghiCoach.instruction(hub.coachGreeting);
 
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (ctx) => _FandoqiHubSheetWidget(hub: hub),
+  Navigator.of(context).push(
+    PageRouteBuilder(
+      opaque: false,
+      barrierColor: Colors.black26,
+      transitionDuration: const Duration(milliseconds: 320),
+      reverseTransitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (_, __, ___) => _FandoqiHubSheetWidget(hub: hub),
+      transitionsBuilder: (_, anim, __, child) {
+        final curved = CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
+        return FadeTransition(
+          opacity: curved,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.06),
+              end: Offset.zero,
+            ).animate(curved),
+            child: child,
+          ),
+        );
+      },
+    ),
   );
 }
 
-class _FandoqiHubSheetWidget extends StatelessWidget {
+class _FandoqiHubSheetWidget extends StatefulWidget {
   final HubData hub;
   const _FandoqiHubSheetWidget({required this.hub});
+
+  @override
+  State<_FandoqiHubSheetWidget> createState() => _FandoqiHubSheetWidgetState();
+}
+
+class _FandoqiHubSheetWidgetState extends State<_FandoqiHubSheetWidget>
+    with TickerProviderStateMixin {
+  late final AnimationController _floatCtrl;
+  late final AnimationController _bubbleCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _floatCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 5),
+    )..repeat();
+    _bubbleCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 12),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _floatCtrl.dispose();
+    _bubbleCtrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _launchActivity(BuildContext context, HubActivity act) async {
     HapticFeedback.heavyImpact();
@@ -411,311 +468,208 @@ class _FandoqiHubSheetWidget extends StatelessWidget {
     }
   }
 
+  void _close() {
+    HapticFeedback.lightImpact();
+    Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final hub = widget.hub;
     final size = MediaQuery.of(context).size;
+    final w = size.width;
 
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: size.height * 0.85,
-      ),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9F6F0),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(36)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.25),
-            blurRadius: 30,
-            offset: const Offset(0, -10),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    final islandW = (w * 0.46).clamp(150.0, 220.0);
+    final islandH = islandW * HubIslandNode.blankAspect;
+
+    // مسیر مارپیچ: سکوها یکی‌درمیان چپ و راست، مثل نقشهٔ اصلی
+    const stepFactor = 0.86; // فاصلهٔ عمودی بر حسب ارتفاع سکو
+    final step = islandH * stepFactor;
+    final n = hub.activities.length;
+    final pathHeight = step * (n - 1) + islandH + 24;
+
+    final rects = <Rect>[];
+    for (var i = 0; i < n; i++) {
+      final left = i.isEven ? w * 0.045 : w - w * 0.045 - islandW;
+      rects.add(Rect.fromLTWH(left, 12 + step * i, islandW, islandH));
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Stack(
         children: [
-          // دستگیره بالای شیت
-          const SizedBox(height: 12),
-          Container(
-            width: 48,
-            height: 5,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade400,
-              borderRadius: BorderRadius.circular(3),
+          Positioned.fill(
+            child: IslandMapBackground(
+              scrollOffset: 0,
+              cycle: AppTheme.currentCycle,
+              progress: 0.55,
             ),
           ),
-          const SizedBox(height: 12),
+          Positioned.fill(
+            child: FloatingBubbles(animation: _bubbleCtrl, count: 12),
+          ),
 
-          // هدر رنگی هاب با مسکات و گرادیان
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: hub.gradient,
-              ),
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: hub.shadowColor.withOpacity(0.4),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Row(
+          SafeArea(
+            child: Column(
               children: [
-                // عکس مسکات با افکت درخشان
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.22),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withOpacity(0.6), width: 2),
-                  ),
-                  child: Image.asset(
-                    hub.mascotImage,
-                    fit: BoxFit.contain,
-                  ),
-                ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
-                const SizedBox(width: 14),
+                _header(hub),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        hub.title,
-                        style: AppFonts.vazirmatn(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black.withOpacity(0.3),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: SizedBox(
+                      width: w,
+                      height: pathHeight + 24,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          // پل‌ها زیر سکوها کشیده می‌شوند
+                          for (var i = 0; i < n - 1; i++)
+                            _bridge(rects[i], rects[i + 1]),
+
+                          for (var i = 0; i < n; i++)
+                            Positioned(
+                              left: rects[i].left,
+                              top: rects[i].top,
+                              width: islandW,
+                              child: HubIslandNode(
+                                label: hub.activities[i].shortTitle,
+                                emoji: hub.activities[i].emoji,
+                                image: hub.activities[i].image,
+                                width: islandW,
+                                floatPhase: (i * 0.23) % 1.0,
+                                floatAnimation: _floatCtrl,
+                                accent: hub.primaryColor,
+                                locked: !hub.activities[i].isFree,
+                                onTap: () =>
+                                    _launchActivity(context, hub.activities[i]),
+                              ),
                             ),
-                          ],
-                        ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        hub.subtitle,
-                        style: AppFonts.vazirmatn(
-                          fontSize: 12,
-                          color: Colors.white.withOpacity(0.92),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // لیست فعالیت‌های داخل هاب
-          Flexible(
-            child: ListView.separated(
-              shrinkWrap: true,
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
-              itemCount: hub.activities.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (ctx, index) {
-                final act = hub.activities[index];
-                return _ActivityCard(
-                  activity: act,
-                  hubColor: hub.primaryColor,
-                  index: index,
-                  onTap: () => _launchActivity(context, act),
-                );
-              },
             ),
           ),
         ],
       ),
     );
   }
-}
 
-class _ActivityCard extends StatefulWidget {
-  final HubActivity activity;
-  final Color hubColor;
-  final int index;
-  final VoidCallback onTap;
+  /// پلِ طنابی بین دو سکو — مثل نقشهٔ اصلی، از لنگرِ خودِ سکوها
+  Widget _bridge(Rect a, Rect b) {
+    final p1 = Offset(a.left + a.width * 0.55, a.top + a.height * 0.52);
+    final p2 = Offset(b.left + b.width * 0.45, b.top + b.height * 0.40);
+    final d = p2 - p1;
+    final bw = d.distance * 1.04;
+    final bh = bw * 281 / 720;
 
-  const _ActivityCard({
-    required this.activity,
-    required this.hubColor,
-    required this.index,
-    required this.onTap,
-  });
-
-  @override
-  State<_ActivityCard> createState() => _ActivityCardState();
-}
-
-class _ActivityCardState extends State<_ActivityCard> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final act = widget.activity;
-
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTap: widget.onTap,
-      child: AnimatedScale(
-        scale: _pressed ? 0.97 : 1.0,
-        duration: const Duration(milliseconds: 120),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: widget.hubColor.withOpacity(0.25),
-              width: 1.8,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              // تصویر یا ایموجی کارت
-              Container(
-                width: 58,
-                height: 58,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: widget.hubColor.withOpacity(0.12),
-                  border: Border.all(
-                    color: widget.hubColor.withOpacity(0.3),
-                    width: 1.5,
-                  ),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: act.image != null
-                      ? Image.asset(act.image!, fit: BoxFit.cover)
-                      : Center(
-                          child: Text(
-                            act.emoji,
-                            style: const TextStyle(fontSize: 28),
-                          ),
-                        ),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            act.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppFonts.vazirmatn(
-                              fontSize: 15.5,
-                              fontWeight: FontWeight.w900,
-                              color: const Color(0xFF2C3E50),
-                            ),
-                          ),
-                        ),
-                        if (!act.isFree) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFB300),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.star, color: Colors.white, size: 12),
-                                SizedBox(width: 2),
-                                Text(
-                                  'ویژه',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      act.subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppFonts.vazirmatn(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              // دکمه شروع بازی / ورود
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      widget.hubColor,
-                      widget.hubColor.withOpacity(0.85),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: widget.hubColor.withOpacity(0.35),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Text(
-                  'شروع 🚀',
-                  style: AppFonts.vazirmatn(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
+    return Positioned(
+      left: (p1.dx + p2.dx) / 2 - bw / 2,
+      top: (p1.dy + p2.dy) / 2 - bh / 2,
+      width: bw,
+      height: bh,
+      child: IgnorePointer(
+        child: Transform.rotate(
+          angle: d.direction,
+          child: Image.asset(
+            'assets/theme_map/bridge.png',
+            fit: BoxFit.fill,
+            filterQuality: FilterQuality.medium,
           ),
         ),
       ),
-    ).animate().fadeIn(
-      delay: Duration(milliseconds: 100 + widget.index * 60),
-      duration: 350.ms,
-    ).slideX(begin: 0.1, curve: Curves.easeOutCubic);
+    );
+  }
+
+  /// تابلوی بالای صفحه: مسکات هاب + نام + دکمهٔ بازگشت
+  Widget _header(HubData hub) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+      child: Row(
+        children: [
+          _roundButton(
+            icon: Icons.arrow_back_rounded,
+            onTap: _close,
+            color: hub.primaryColor,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFDF7),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: hub.primaryColor, width: 2.5),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x33000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: hub.primaryColor.withOpacity(0.14),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Image.asset(
+                      hub.mascotImage,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
+                  ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      hub.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppFonts.kids(
+                        fontSize: 19,
+                        color: const Color(0xFF2E4756),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _roundButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 46,
+        height: 46,
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFDF7),
+          shape: BoxShape.circle,
+          border: Border.all(color: color, width: 2.5),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x33000000),
+              blurRadius: 8,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Icon(icon, color: color, size: 24),
+      ),
+    );
   }
 }

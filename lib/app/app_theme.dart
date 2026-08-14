@@ -51,6 +51,19 @@ class AppTheme {
     double textScale = 1.0,
   }) {
     switch (modeId) {
+      // 🗺️ تم اصلی برنامه — نقشهٔ جزیرهٔ فندقی
+      case 'island_map':
+        return _buildCustomTheme(
+          brightness: Brightness.light,
+          primary: AppColors.mapPrimary,
+          secondary: AppColors.mapAccent,
+          surface: AppColors.mapSurface,
+          background: AppColors.mapBackground,
+          cardColor: AppColors.mapCard,
+          textColor: AppColors.mapText,
+          textScale: textScale,
+        );
+
       case 'royal_gold':
         return _buildCustomTheme(
           brightness: Brightness.dark,
@@ -112,9 +125,21 @@ class AppTheme {
         );
 
       case 'seasonal':
-      default:
         final isDark = cycle == DayCycle.night || systemBrightness == Brightness.dark;
         return _buildTheme(isDark ? Brightness.dark : Brightness.light, textScale: textScale);
+
+      // تم اصلی، برای هر شناسهٔ ناشناخته هم همین برگردانده می‌شود
+      default:
+        return _buildCustomTheme(
+          brightness: Brightness.light,
+          primary: AppColors.mapPrimary,
+          secondary: AppColors.mapAccent,
+          surface: AppColors.mapSurface,
+          background: AppColors.mapBackground,
+          cardColor: AppColors.mapCard,
+          textColor: AppColors.mapText,
+          textScale: textScale,
+        );
     }
   }
 

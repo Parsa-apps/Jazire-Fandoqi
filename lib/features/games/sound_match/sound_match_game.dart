@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../app/app_colors.dart';
 import '../../../app/design_tokens.dart';
@@ -36,9 +35,26 @@ class SoundMatchGame extends StatefulWidget {
 }
 
 class _SoundMatchGameState extends State<SoundMatchGame> {
-  static const List<String> _sounds = <String>[
-    '🐶', '🐱', '🐮', '🐔', '🦆', '🐸', '🐴', '🐑',
-    '🚗', '🚌', '✈️', '🚂', '⏰', '📞', '🚀', '⛵',
+  /// (اموجی، نام فارسی) — نام فارسی حتماً لازم است: `AudioService.speak`
+  /// اموجی‌ها را حذف می‌کند، پس اگر متنِ خوانده‌شده خودِ اموجی باشد بازی
+  /// کاملاً بی‌صدا می‌شود و کودک چیزی برای شنیدن ندارد.
+  static const List<(String, String)> _sounds = <(String, String)>[
+    ('🐶', 'سگ'),
+    ('🐱', 'گربه'),
+    ('🐮', 'گاو'),
+    ('🐔', 'مرغ'),
+    ('🦆', 'اردک'),
+    ('🐸', 'قورباغه'),
+    ('🐴', 'اسب'),
+    ('🐑', 'گوسفند'),
+    ('🚗', 'ماشین'),
+    ('🚌', 'اتوبوس'),
+    ('✈️', 'هواپیما'),
+    ('🚂', 'قطار'),
+    ('⏰', 'ساعت'),
+    ('📞', 'تلفن'),
+    ('🚀', 'موشک'),
+    ('⛵', 'قایق'),
   ];
 
   late LearningCard _target;
@@ -73,8 +89,13 @@ class _SoundMatchGameState extends State<SoundMatchGame> {
   void _newRound() {
     final rng = Random();
     final pool = <LearningCard>[
-      for (final s in _sounds)
-        LearningCard(id: s, name: s, emoji: s, sound: s),
+      for (final entry in _sounds)
+        LearningCard(
+          id: entry.$1,
+          name: entry.$2,
+          emoji: entry.$1,
+          sound: entry.$2,
+        ),
     ];
     _target = pool[rng.nextInt(pool.length)];
     final others = pool.where((c) => c.id != _target.id).toList()
@@ -106,7 +127,7 @@ class _SoundMatchGameState extends State<SoundMatchGame> {
       FandoghiCoach.correct('آفرین! گوش‌هایت عالی کار می‌کنند 👂✨');
       unawaited(AudioService.playCorrect());
     } else {
-      FandoghiCoach.incorrect(_target.sound);
+      FandoghiCoach.incorrect('من گفتم «${_target.name}» 👂');
       unawaited(AudioService.playWrong());
     }
     Future<void>.delayed(const Duration(milliseconds: 1200), () {

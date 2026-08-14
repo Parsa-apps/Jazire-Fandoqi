@@ -53,6 +53,34 @@ class AppFonts {
     }
   }
 
+  /// 🧸 فونت کودکانهٔ تم نقشه — تپل، گرد و شاد.
+  ///
+  /// برخلاف بقیهٔ متدها این یکی سراغ GoogleFonts نمی‌رود: فایل فونت داخل
+  /// خود برنامه بسته شده، پس آفلاین هم قطعاً رندر می‌شود و هیچ‌وقت
+  /// صفحهٔ سفید نمی‌دهد. برای تیترها و دکمه‌های بزرگ استفاده شود، نه
+  /// متن‌های طولانی.
+  static TextStyle kids({
+    Color? color,
+    double? fontSize,
+    FontWeight fontWeight = FontWeight.w800,
+    double? letterSpacing,
+    double? height,
+    List<Shadow>? shadows,
+  }) {
+    return TextStyle(
+      fontFamily: 'BalooBhaijaan2',
+      // این خانواده فقط ۷۰۰ و ۸۰۰ دارد؛ وزن‌های دیگر به نزدیک‌ترین می‌افتند
+      fontWeight: fontWeight.index >= FontWeight.w800.index
+          ? FontWeight.w800
+          : FontWeight.w700,
+      color: color,
+      fontSize: fontSize,
+      letterSpacing: letterSpacing,
+      height: height,
+      shadows: shadows,
+    );
+  }
+
   static TextStyle balooBhaijaan2({
     TextStyle? textStyle,
     Color? color,

@@ -112,7 +112,7 @@ class GameData {
   static double textScale = 1.0;
 
   /// تم پویا و فعال برنامه
-  static String activeTheme = 'royal_gold';
+  static String activeTheme = 'island_map';
 
   /// فاز ۱۶: ترجیح دست کودک (چپ‌دست / راست‌دست)
   static bool isLeftHanded = false;
@@ -220,7 +220,7 @@ class GameData {
       goldenChestOpened = prefs.getBool('gc') ?? false;
       soundEnabled = prefs.getBool('sn') ?? true;
       textScale = (prefs.getDouble('tsc') ?? 1.0).clamp(0.85, 1.4).toDouble();
-      activeTheme = prefs.getString('activeTheme') ?? 'royal_gold';
+      activeTheme = prefs.getString('activeTheme') ?? 'island_map';
       isLeftHanded = prefs.getBool('lh') ?? false;
       lastWeekReset = prefs.getString('lwr') ?? '';
       highScore = _readInt('hs', 0);
@@ -428,7 +428,7 @@ class GameData {
     isLeftHanded = asBool('lh', false);
     final tsc = d['tsc'];
     if (tsc is num) textScale = tsc.toDouble().clamp(0.85, 1.4).toDouble();
-    activeTheme = asString('activeTheme', 'royal_gold');
+    activeTheme = asString('activeTheme', 'island_map');
     lastWeekReset = asString('lwr', '');
     highScore = asInt('hs', 0).clamp(0, _maxStoredCounter);
     mathRaceHighScore = asInt('mrhs', 0).clamp(0, _maxStoredCounter);

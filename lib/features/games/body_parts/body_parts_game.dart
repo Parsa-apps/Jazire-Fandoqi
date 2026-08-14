@@ -90,7 +90,11 @@ class _BodyPartsGameState extends State<BodyPartsGame> {
 
   void _saySense(int index) {
     AudioService.tap();
-    unawaited(AudioService.speak('${_parts[index].$1}، ${_parts[index].$3}'));
+    // روی گوشی‌های بدون TTS فارسی، `speak` بی‌صدا رد می‌شود (تا لهجهٔ عربی
+    // پخش نشود)؛ پس همان جمله را از زبان فندقی هم نشان می‌دهیم.
+    final part = _parts[index];
+    FandoghiCoach.instruction('${part.$1} ${part.$2} — ${part.$3}!');
+    unawaited(AudioService.speak('${part.$1}، ${part.$3}'));
   }
 
   @override
