@@ -3,11 +3,15 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../app/app_colors.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
+import '../../core/audio_service.dart';
 import '../../core/fandoghi_coach.dart';
+import 'fandoghi_hazelnut_character.dart';
 
-/// لایهٔ سراسری بازخورد. شخصیت مربی دیگر روی صفحه شناور نیست
-/// تا جلوی دکمه‌های کودک را نگیرد. متن راهنما با فونت درشت و
-/// انیمیشن نرم از بالای صفحه ظاهر می‌شود.
+/// ═══════════════════════════════════════════════════════════════
+/// 🌰 FANDOGHI COACH OVERLAY — لایه سراسری همراه و مربی هوشمند
+/// کاملاً بدون مزاحمت برای لمس گزینه‌ها و خواندن متون (Non-Intrusive)
+/// پیام‌ها از بالا به صورت بنر سبک ظاهر شده و لمس را به لایه‌های زیرین عبور می‌دهند
+/// ═══════════════════════════════════════════════════════════════
 class FandoghiCoachOverlay extends StatelessWidget {
   final Widget child;
 
@@ -24,8 +28,11 @@ class FandoghiCoachOverlay extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           child,
+          // لایه بنر پیام‌های فندقی (IgnorePointer فعال است تا هیچ دکمه‌ای مسدود نشود)
           const Positioned.fill(
-            child: IgnorePointer(child: _CoachToastLayer()),
+            child: IgnorePointer(
+              child: _CoachToastLayer(),
+            ),
           ),
         ],
       ),
@@ -46,7 +53,7 @@ class _CoachToastLayer extends StatelessWidget {
           child: Align(
             alignment: Alignment.topCenter,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: _CoachToast(message: message),
             ),
           ),
@@ -64,26 +71,20 @@ class _CoachToast extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final toneColor = switch (message.tone) {
-      FandoghiCoachTone.success => const Color(0xFF00B894),
-      FandoghiCoachTone.encouragement => const Color(0xFF0984E3),
-      FandoghiCoachTone.warning => const Color(0xFFE17055),
-      FandoghiCoachTone.neutral => const Color(0xFF00A8C6),
-    };
-    final emoji = switch (message.tone) {
-      FandoghiCoachTone.success => '🌟',
-      FandoghiCoachTone.encouragement => '💪',
-      FandoghiCoachTone.warning => '🌙',
-      FandoghiCoachTone.neutral => '✨',
+      FandoghiCoachTone.success => const Color(0xFF27AE60),
+      FandoghiCoachTone.encouragement => const Color(0xFF2980B9),
+      FandoghiCoachTone.warning => const Color(0xFFE67E22),
+      FandoghiCoachTone.neutral => const Color(0xFF8E44AD),
     };
 
     return Semantics(
       liveRegion: true,
-      label: message.text,
+      label: 'پیام فندقی: ${message.text}',
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 280),
         transitionBuilder: (child, animation) {
           final slide = Tween<Offset>(
-            begin: const Offset(0, -0.18),
+            begin: const Offset(0, -0.22),
             end: Offset.zero,
           ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutBack));
           return FadeTransition(
@@ -93,34 +94,48 @@ class _CoachToast extends StatelessWidget {
         },
         child: Container(
           key: ValueKey<int>(message.id),
-          constraints: const BoxConstraints(maxWidth: 440),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          constraints: const BoxConstraints(maxWidth: 460),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.97),
-            borderRadius: BorderRadius.circular(22),
+            color: Colors.white.withOpacity(0.96),
+            borderRadius: BorderRadius.circular(24),
             border: Border.all(color: toneColor.withOpacity(0.55), width: 2),
             boxShadow: [
               BoxShadow(
-                color: toneColor.withOpacity(0.28),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
+                color: toneColor.withOpacity(0.24),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(emoji, style: const TextStyle(fontSize: 26)),
+              // کاراکتر فندقی سخنگو در کنار پیام
+              SizedBox(
+                width: 44,
+                height: 44,
+                child: FandoghiHazelnutCharacter(
+                  size: 44,
+                  mood: message.mood,
+                  isTalking: true,
+                ),
+              ),
               const SizedBox(width: 10),
               Flexible(
                 child: Text(
                   message.text,
                   textAlign: TextAlign.start,
                   style: AppFonts.vazirmatn(
-                    color: AppColors.textPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    height: 1.45,
+                    color: const Color(0xFF2C3E50),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    height: 1.4,
                   ),
                 ),
               ),
@@ -129,8 +144,8 @@ class _CoachToast extends StatelessWidget {
         )
             .animate(key: ValueKey<int>(message.id))
             .scale(
-              begin: const Offset(0.92, 0.92),
-              duration: 320.ms,
+              begin: const Offset(0.94, 0.94),
+              duration: 280.ms,
               curve: Curves.easeOutBack,
             ),
       ),
