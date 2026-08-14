@@ -439,6 +439,26 @@ class BubblePopFlameGame extends FlameGame {
     return colors[int.parse(n) % colors.length];
   }
 
+  /// شمارهٔ کارت رنگ در بستهٔ صوتی آفلاین (`assets/audio/learning/colors`).
+  /// ترتیب دقیقاً مطابق `learning_topics.dart` است تا صدای درست پخش شود.
+  String _colorCardIndex(String value) {
+    const map = <String, int>{
+      'red': 1,
+      'yellow': 2,
+      'blue': 3,
+      'green': 4,
+      'orange': 5,
+      'purple': 6,
+      'pink': 7,
+      'brown': 8,
+      'white': 9,
+      'black': 10,
+      'gray': 11,
+      'gold': 12,
+    };
+    return '${map[value] ?? 1}';
+  }
+
   Color _colorFromName(String name) {
     switch (name) {
       case 'red': return const Color(0xFFE53935);
@@ -542,14 +562,17 @@ class BubblePopFlameGame extends FlameGame {
         case BubbleMode.letters:
           unawaited(AudioService.pronounceLetter(_targetKey));
         case BubbleMode.numbers:
-          final n = int.tryParse(_targetKey);
-          if (n != null) {
-            unawaited(AudioService.speakNumber(n));
-          } else {
-            unawaited(AudioService.speak(_targetKey));
-          }
+          // ارقام فارسی/عربی هم درست تشخیص داده می‌شوند تا به TTS نیفتیم.
+          unawaited(AudioService.speakNumberText(_targetKey));
         case BubbleMode.colors:
-          unawaited(AudioService.speak(targetLabel));
+          // صدای ضبط‌شدهٔ رنگ‌ها (c01..c12) — نه TTS دستگاه.
+          unawaited(
+            AudioService.speakLearningCard(
+              topicId: 'colors',
+              cardId: 'c${_colorCardIndex(_targetKey)}',
+              fallbackText: targetLabel,
+            ),
+          );
       }
       // شمارش ترکاندن‌های درست روی هدف فعلی
       _correctHitsOnTarget++;

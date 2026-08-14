@@ -141,19 +141,60 @@ class AudioService {
       LoggerService.e('Audio pool volume init failed', error);
     }
 
-    // لحن گرم و شمرده — نه صدای بچگانهٔ مصنوعی با pitch بالا.
+    // لحن گرم و کودکانه.
+    //
+    // ⚠️ نکتهٔ مهم (رفع باگ «صدای عربی»): روی خیلی از گوشی‌ها موتور TTS
+    // فارسی نصب نیست. در آن حالت `setLanguage('fa-IR')` خطا نمی‌دهد و موتور
+    // ساکت هم نمی‌ماند؛ متن فارسی را با نزدیک‌ترین زبانِ موجود — معمولاً
+    // عربی — می‌خواند و صدای عربی با صدای ضبط‌شدهٔ فارسی قاطی می‌شود.
+    // پس قبل از فعال‌کردن TTS، واقعاً بررسی می‌کنیم که زبان فارسی موجود
+    // باشد؛ در غیر این صورت TTS خاموش می‌ماند و فقط فایل‌های ضبط‌شدهٔ
+    // داخل اپ پخش می‌شوند.
     try {
-      await _tts.setLanguage('fa-IR');
-      await _tts.setPitch(1.06);
-      await _tts.setSpeechRate(0.40);
-      await _tts.setVolume(1.0);
-      _ttsAvailable = true;
+      _ttsAvailable = await _hasPersianVoice();
+      if (_ttsAvailable) {
+        await _tts.setLanguage('fa-IR');
+        await _tts.setPitch(1.22);
+        await _tts.setSpeechRate(0.42);
+        await _tts.setVolume(1.0);
+      } else {
+        LoggerService.i(
+          'Persian TTS not installed — falling back to bundled recordings only',
+        );
+      }
     } catch (error) {
       _ttsAvailable = false;
       LoggerService.e('TTS unavailable on this device', error);
     }
 
     _initialized = true;
+  }
+
+  /// آیا موتور TTS دستگاه واقعاً فارسی حرف می‌زند؟
+  ///
+  /// هم `isLanguageAvailable` و هم فهرست زبان‌ها را چک می‌کنیم؛ بعضی
+  /// دستگاه‌ها فقط یکی از این دو را درست پاسخ می‌دهند. اگر هیچ‌کدام فارسی
+  /// را تأیید نکند، جواب منفی است تا هرگز صدای عربی/انگلیسی جای فارسی
+  /// پخش نشود.
+  static Future<bool> _hasPersianVoice() async {
+    bool available = false;
+    try {
+      final dynamic result = await _tts.isLanguageAvailable('fa-IR');
+      available = result == true;
+    } catch (_) {
+      available = false;
+    }
+    if (available) return true;
+
+    try {
+      final dynamic languages = await _tts.getLanguages;
+      if (languages is List) {
+        return languages
+            .map((dynamic lang) => lang.toString().toLowerCase())
+            .any((String lang) => lang.startsWith('fa'));
+      }
+    } catch (_) {}
+    return false;
   }
 
   static bool get _muted =>
@@ -233,10 +274,62 @@ class AudioService {
 
   // ─────────────────────────── حروف الفبا (آفلاین) ───────────────────────────
 
-  /// نگاشت حرف فارسی به شماره فایل صوتی (l01..l32).
+  /// نویسه‌های عربی که ممکن است از کیبورد، متن‌های کپی‌شده یا داده‌های قدیمی
+  /// وارد شوند و شکل فارسی‌شان با آن‌ها یکی نیست. اگر این‌ها نرمال نشوند،
+  /// `letterIndex` آن‌ها را پیدا نمی‌کند و صدای حرف پخش نمی‌شود (یا بدتر:
+  /// به TTS می‌افتد و روی گوشی‌های بدون فارسی با لهجهٔ عربی خوانده می‌شود).
+  static const Map<String, String> _arabicToPersian = <String, String>{
+    'ك': 'ک', // ARABIC KAF → PERSIAN KEHEH
+    'ي': 'ی', // ARABIC YEH → FARSI YEH
+    'ى': 'ی', // ALEF MAKSURA → FARSI YEH
+    'ئ': 'ی',
+    'ة': 'ه', // TEH MARBUTA → HEH
+    'أ': 'ا',
+    'إ': 'ا',
+    'ٱ': 'ا',
+    'ؤ': 'و',
+    'ء': 'ا',
+  };
+
+  /// اعشار عربی‌ـهندی (٠١٢…) و فارسی (۰۱۲…) به ارقام لاتین.
+  static const Map<String, String> _digitsToLatin = <String, String>{
+    '۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4',
+    '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9',
+    '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4',
+    '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9',
+  };
+
+  /// حرف ورودی را به شکل استاندارد فارسی برمی‌گرداند:
+  /// حذف اعراب/کشیده/نویسه‌های نامرئی + تبدیل نویسه‌های عربی.
+  static String normalizeLetter(String input) {
+    final StringBuffer buffer = StringBuffer();
+    for (final int rune in input.runes) {
+      // اعراب و علائم ترکیبی عربی (فتحه، کسره، تشدید، …)
+      if (rune >= 0x064B && rune <= 0x065F) continue;
+      if (rune == 0x0640) continue; // ـ (تطویل)
+      if (rune == 0x0670) continue; // الف خنجری
+      if (rune >= 0x200B && rune <= 0x200F) continue; // نویسه‌های نامرئی
+      if (rune == 0xFEFF) continue;
+      final String ch = String.fromCharCode(rune);
+      buffer.write(_arabicToPersian[ch] ?? ch);
+    }
+    return buffer.toString().trim();
+  }
+
+  /// ارقام فارسی/عربی داخل متن را به لاتین تبدیل می‌کند تا `int.tryParse` کار کند.
+  static String normalizeDigits(String input) {
+    final StringBuffer buffer = StringBuffer();
+    for (final String ch in input.split('')) {
+      buffer.write(_digitsToLatin[ch] ?? ch);
+    }
+    return buffer.toString();
+  }
+
+  /// نگاشت حرف فارسی به شماره فایل صوتی (l01..l33).
+  /// «آ» و «ا» دو فایل جدا دارند: l01 = «آ مثل آهو»، l33 = «الف مثل ابر».
   static const Map<String, int> letterIndex = {
     'آ': 1,
-    'ا': 1,
+    'ا': 33,
     'ب': 2,
     'پ': 3,
     'ت': 4,
@@ -271,12 +364,17 @@ class AudioService {
   };
 
   static String? letterAssetFor(String letter) {
-    final int? idx = letterIndex[letter];
+    final String key = normalizeLetter(letter);
+    if (key.isEmpty) return null;
+    // ورودی ممکن است «ب» یا «بـ» یا «بادبادک» باشد؛ اولین نویسهٔ شناخته‌شده ملاک است.
+    final int? idx = letterIndex[key] ?? letterIndex[key.substring(0, 1)];
     if (idx == null) return null;
     return '$_lettersPath${'l${idx.toString().padLeft(2, '0')}'}.mp3';
   }
 
   /// تلفظ رسای حرف فارسی از فایل آفلاین.
+  /// هرگز به TTS نمی‌افتد؛ اگر حرف ناشناخته باشد ساکت می‌ماند تا موتور
+  /// پیش‌فرض دستگاه (که اغلب عربی است) اسم حرف را عربی نخواند.
   static Future<void> pronounceLetter(String letter) async {
     if (_muted) return;
     final String? asset = letterAssetFor(letter);
@@ -291,12 +389,32 @@ class AudioService {
     return '$_numbersPath${'n${number.toString().padLeft(2, '0')}'}.mp3';
   }
 
+  /// همان `numberAssetFor` ولی از روی متن — ارقام فارسی «۷» و عربی «٧»
+  /// هم پشتیبانی می‌شوند تا بازی‌هایی که کلید متنی دارند به TTS نیفتند.
+  static String? numberAssetForText(String text) {
+    final int? value = int.tryParse(normalizeDigits(text).trim());
+    if (value == null) return null;
+    return numberAssetFor(value);
+  }
+
   /// تلفظ عدد فارسی از فایل آفلاین (در صورت موجود بودن).
   static Future<void> speakNumber(int number) async {
     if (_muted) return;
     final String? asset = numberAssetFor(number);
     if (asset == null) return;
     await _playFromPool(asset, volume: voiceVolume);
+  }
+
+  /// تلفظ عدد از روی متن (با ارقام فارسی/عربی). اگر عدد در بستهٔ آفلاین
+  /// نباشد، به TTS برمی‌گردد.
+  static Future<void> speakNumberText(String text) async {
+    if (_muted) return;
+    final String? asset = numberAssetForText(text);
+    if (asset != null) {
+      await _playFromPool(asset, volume: voiceVolume);
+      return;
+    }
+    await speak(text);
   }
 
   // ─────────────────────── واژه‌های آموزشی آفلاین ───────────────────────
