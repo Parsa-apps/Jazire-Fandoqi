@@ -279,8 +279,11 @@ def scene_logo(frame, ctx: Ctx, t, dur):
     app = seg(t, 0.35, 1.55)
     if app > 0:
         e = ease_out_elastic(app)
-        size = ctx.d * 640
-        cx, cy = ctx.p(0.5, 0.40 if ctx.portrait else 0.42)
+        size = ctx.d * (640 if ctx.portrait else 600)
+        # Landscape has half the vertical room, so logo and mascot sit
+        # side by side instead of stacked (otherwise the mascot covers
+        # the lettering baked into the logo).
+        cx, cy = ctx.p(0.5, 0.40) if ctx.portrait else ctx.p(0.37, 0.44)
         y = lerp(-ctx.h * 0.35, cy, ease_out_cubic(seg(t, 0.35, 1.15)))
         float_y = math.sin((t - 1.5) * 1.7) * ctx.u * 12 if t > 1.5 else 0
         sc = lerp(0.55, 1.0, e)
@@ -293,11 +296,12 @@ def scene_logo(frame, ctx: Ctx, t, dur):
     # mascot peeks in from the bottom, waving
     mp = seg(t, 1.25, 2.25)
     if mp > 0:
-        h = ctx.d * 700
-        base_y = ctx.h * (0.82 if ctx.portrait else 0.86)
+        h = ctx.d * (700 if ctx.portrait else 620)
+        base_y = ctx.h * (0.82 if ctx.portrait else 0.72)
+        mx = ctx.w * (0.5 if ctx.portrait else 0.71)
         y = lerp(ctx.h + h * 0.6, base_y, ease_out_back(mp, 1.2))
         mascot_bob(frame, ctx, "wow" if t < 2.6 else "cheer",
-                   (ctx.w * (0.5 if ctx.portrait else 0.5), y), h, t, rot_amp=4.0, hop_px=ctx.u * 14)
+                   (mx, y), h, t, rot_amp=4.0, hop_px=ctx.u * 14)
 
     vignette(frame, 0.30)
 
@@ -540,8 +544,9 @@ def scene_final(frame, ctx: Ctx, t, dur):
     glow(frame, ctx.p(0.5, 0.40), ctx.d * 1700, (255, 250, 220), 0.34, 2.0)
 
     lp = seg(t, 0.1, 1.0)
-    size = ctx.d * (760 if ctx.portrait else 700)
-    cx, cy = ctx.p(0.5, 0.36 if ctx.portrait else 0.38)
+    size = ctx.d * (760 if ctx.portrait else 640)
+    # side-by-side end card in landscape — see scene_logo for the reasoning
+    cx, cy = ctx.p(0.5, 0.36) if ctx.portrait else ctx.p(0.36, 0.44)
     if lp > 0:
         sc = ease_out_elastic(lp)
         pulse = breathe(t, 1.9, 0.028)
@@ -560,10 +565,11 @@ def scene_final(frame, ctx: Ctx, t, dur):
 
     mp = seg(t, 0.75, 1.7)
     if mp > 0:
-        h = ctx.d * (840 if ctx.portrait else 720)
-        y = lerp(ctx.h + h, ctx.h * (0.79 if ctx.portrait else 0.78), ease_out_back(mp, 1.4))
+        h = ctx.d * (840 if ctx.portrait else 680)
+        mx = ctx.w * (0.5 if ctx.portrait else 0.72)
+        y = lerp(ctx.h + h, ctx.h * (0.79 if ctx.portrait else 0.71), ease_out_back(mp, 1.4))
         mascot_bob(frame, ctx, "proud" if t < dur * 0.5 else "cheer",
-                   (ctx.w * 0.5, y), h, t, rot_amp=4.0, hop_px=ctx.u * 16)
+                   (mx, y), h, t, rot_amp=4.0, hop_px=ctx.u * 16)
 
     # a soft light sweep across the logo near the end
     sw = seg(t, dur * 0.55, dur * 0.55 + 0.9)
