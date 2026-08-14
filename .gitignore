@@ -38,3 +38,17 @@ Thumbs.db
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Island-map theme design scratch.
+# The transparent masters (design/theme_map/parts_cutout/), the approved
+# composition reference and make_transparent.py ARE committed so the shipping
+# assets in assets/theme_map/ can be regenerated. Raw renders and the
+# throwaway measurement overlays are not.
+design/theme_map/parts/
+design/theme_map/full_map_v1.png
+design/theme_map/full_map_v2a.png
+design/theme_map/full_map_v2b.png
+design/theme_map/*_check.png
+design/theme_map/*_grid.png
+design/theme_map/layout_preview.png
+design/theme_map/parts_contact_sheet.png

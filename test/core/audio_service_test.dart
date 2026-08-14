@@ -45,7 +45,81 @@ void main() {
     });
   });
 
+  group('Persian/Arabic character hygiene', () {
+    test('normalizes Arabic look-alikes to their Persian form', () {
+      expect(AudioService.normalizeLetter('ك'), 'ک');
+      expect(AudioService.normalizeLetter('ي'), 'ی');
+      expect(AudioService.normalizeLetter('ى'), 'ی');
+      expect(AudioService.normalizeLetter('ة'), 'ه');
+      expect(AudioService.normalizeLetter('أ'), 'ا');
+      expect(AudioService.normalizeLetter('إ'), 'ا');
+      // اعراب و کشیده حذف می‌شوند
+      expect(AudioService.normalizeLetter('بَ'), 'ب');
+      expect(AudioService.normalizeLetter('كـ'), 'ک');
+      expect(AudioService.normalizeLetter(' ی '), 'ی');
+    });
+
+    test('Arabic keyboard letters still find their Persian recording', () {
+      expect(
+        AudioService.letterAssetFor('ك'),
+        AudioService.letterAssetFor('ک'),
+      );
+      expect(
+        AudioService.letterAssetFor('ي'),
+        AudioService.letterAssetFor('ی'),
+      );
+      expect(
+        AudioService.letterAssetFor('أ'),
+        AudioService.letterAssetFor('ا'),
+      );
+    });
+
+    test('converts Persian and Arabic-Indic digits to latin', () {
+      expect(AudioService.normalizeDigits('۱۲'), '12');
+      expect(AudioService.normalizeDigits('٧'), '7');
+      expect(AudioService.numberAssetForText('۷'),
+          'assets/audio/numbers/n07.mp3');
+      expect(AudioService.numberAssetForText('٢٠'),
+          'assets/audio/numbers/n20.mp3');
+      expect(AudioService.numberAssetForText('21'), isNull);
+      expect(AudioService.numberAssetForText('حرف'), isNull);
+    });
+  });
+
   group('letter and number assets', () {
+    test('gives آ and ا their own separate recordings', () {
+      expect(AudioService.letterAssetFor('آ'), 'assets/audio/letters/l01.mp3');
+      expect(AudioService.letterAssetFor('ا'), 'assets/audio/letters/l33.mp3');
+      expect(
+        AudioService.letterAssetFor('آ'),
+        isNot(AudioService.letterAssetFor('ا')),
+      );
+    });
+
+    test('every mapped letter has a bundled recording on disk', () {
+      for (final entry in AudioService.letterIndex.entries) {
+        final path = AudioService.letterAssetFor(entry.key);
+        expect(path, isNotNull, reason: entry.key);
+        expect(File(path!).existsSync(), isTrue, reason: '${entry.key} → $path');
+        expect(File(path).lengthSync(), greaterThan(4000), reason: entry.key);
+      }
+    });
+
+    test('the 33 letter recordings are all distinct files', () {
+      final paths = AudioService.letterIndex.keys
+          .map(AudioService.letterAssetFor)
+          .toSet();
+      expect(paths, hasLength(33));
+    });
+
+    test('every number 0-20 has a bundled recording on disk', () {
+      for (var n = 0; n <= 20; n++) {
+        final path = AudioService.numberAssetFor(n)!;
+        expect(File(path).existsSync(), isTrue, reason: '$n → $path');
+        expect(File(path).lengthSync(), greaterThan(3000), reason: '$n');
+      }
+    });
+
     test('maps the full Persian alphabet to l01-l32', () {
       const letters = <String>[
         'آ',
@@ -88,8 +162,10 @@ void main() {
           'assets/audio/letters/l${(i + 1).toString().padLeft(2, '0')}.mp3',
         );
       }
-      expect(AudioService.letterAssetFor('ا'), AudioService.letterAssetFor('آ'));
+      // «ا» دیگر روی فایل «آ» سوار نمی‌شود؛ ضبط اختصاصی خودش را دارد.
+      expect(AudioService.letterAssetFor('ا'), 'assets/audio/letters/l33.mp3');
       expect(AudioService.letterAssetFor('x'), isNull);
+      expect(AudioService.letterAssetFor(''), isNull);
     });
 
     test('maps numbers 0-20 and rejects the rest', () {

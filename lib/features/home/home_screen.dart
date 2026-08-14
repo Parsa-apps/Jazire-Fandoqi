@@ -13,7 +13,7 @@ import '../gateway/learning_library_screen.dart';
 import '../profile/profile_screen.dart';
 import '../stage_map/stage_map_screen.dart';
 import 'widgets/achievements_tab.dart';
-import 'widgets/fandoqi_island_tab.dart';
+import 'widgets/island_map/island_map_tab.dart';
 import 'widgets/report_card_tab.dart';
 
 /// ═══════════════════════════════════════════════
@@ -34,7 +34,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _tabWidgets[2] = FandoqiIslandTab(
+    _tabWidgets[2] = IslandMapTab(
       onOpenStageMap: () => _openStageMapScreen(),
       onOpenBackpack: () => _selectTab(1),
       onOpenAchievements: () => _selectTab(0),
@@ -140,14 +140,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final Widget widget = switch (index) {
       0 => const AchievementsTab(),
       1 => const LearningLibraryScreen(embedded: true),
-      2 => FandoqiIslandTab(
+      2 => IslandMapTab(
           onOpenStageMap: () => _openStageMapScreen(),
           onOpenBackpack: () => _selectTab(1),
           onOpenAchievements: () => _selectTab(0),
         ),
       3 => const ReportCardTab(),
       4 => const ProfileScreen(embedded: true),
-      _ => FandoqiIslandTab(
+      _ => IslandMapTab(
           onOpenStageMap: () => _openStageMapScreen(),
         ),
     };
@@ -173,47 +173,57 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         top: false,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          // هر خانه سهم مساوی می‌گیرد تا فونتِ درشت‌ترِ کودکانه هیچ‌وقت
+          // روی گوشی‌های باریک سرریز نکند.
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               // ۱. دستاوردها (سمت چپ)
-              _navItem(
-                index: 0,
-                emoji: '🏆',
-                icon: Icons.emoji_events_rounded,
-                iconColor: const Color(0xFFFFB300),
-                label: 'دستاوردها',
+              Expanded(
+                child: _navItem(
+                  index: 0,
+                  emoji: '🏆',
+                  icon: Icons.emoji_events_rounded,
+                  iconColor: const Color(0xFFFFB300),
+                  label: 'دستاوردها',
+                ),
               ),
 
               // ۲. کوله‌پشتی
-              _navItem(
-                index: 1,
-                emoji: '🎒',
-                icon: Icons.backpack_rounded,
-                iconColor: const Color(0xFF1E88E5),
-                label: 'کوله‌پشتی',
+              Expanded(
+                child: _navItem(
+                  index: 1,
+                  emoji: '🎒',
+                  icon: Icons.backpack_rounded,
+                  iconColor: const Color(0xFF1E88E5),
+                  label: 'کوله‌پشتی',
+                ),
               ),
 
               // ۳. خانه (دکمه مرکزی شناور و برجسته با دایره آبی و آیکون خانه)
               _buildCenterHomeNav(),
 
               // ۴. کارنامه
-              _navItem(
-                index: 3,
-                emoji: '📘',
-                icon: Icons.menu_book_rounded,
-                iconColor: const Color(0xFF00ACC1),
-                label: 'کارنامه',
+              Expanded(
+                child: _navItem(
+                  index: 3,
+                  emoji: '📘',
+                  icon: Icons.menu_book_rounded,
+                  iconColor: const Color(0xFF00ACC1),
+                  label: 'کارنامه',
+                ),
               ),
 
               // ۵. داستان و پروفایل
-              _navItem(
-                index: 4,
-                emoji: '👤',
-                icon: Icons.person_rounded,
-                iconColor: const Color(0xFF42A5F5),
-                label: 'داستان',
+              Expanded(
+                child: _navItem(
+                  index: 4,
+                  emoji: '👤',
+                  icon: Icons.person_rounded,
+                  iconColor: const Color(0xFF42A5F5),
+                  label: 'داستان',
+                ),
               ),
             ],
           ),
@@ -267,9 +277,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
           Text(
             'خانه',
-            style: AppFonts.vazirmatn(
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
+            style: AppFonts.kids(
+              fontSize: 14.5,
+              fontWeight: FontWeight.w800,
+              height: 1.2,
               color: selected ? const Color(0xFF0277BD) : const Color(0xFF546E7A),
             ),
           ),
@@ -331,7 +342,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         decoration: BoxDecoration(
           color: selected ? activeColor.withOpacity(0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(18),
@@ -367,12 +378,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
             const SizedBox(height: 3),
-            Text(
-              label,
-              style: AppFonts.vazirmatn(
-                fontSize: 11,
-                fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
-                color: selected ? activeColor : inactiveColor,
+            // روی صفحه‌های خیلی باریک فقط کمی کوچک می‌شود، نه اینکه بشکند
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                style: AppFonts.kids(
+                  fontSize: 13.5,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w700,
+                  height: 1.2,
+                  color: selected ? activeColor : inactiveColor,
+                ),
               ),
             ),
           ],
