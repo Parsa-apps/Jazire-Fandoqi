@@ -39,8 +39,9 @@ up from and down to black.
   116 BPM, with the arrangement building in energy toward the end card.
   Nothing is sampled from a third party, so it is safe to publish.
 - **SFX** — the app's own `assets/audio/sfx/*.wav` cues, timed to the animation.
-- **Voice-over** — Persian, cheerful, child-friendly. Music and SFX duck
-  automatically under the narration.
+- **Voice-over** — Persian, cheerful, child-friendly; six lines shipped in
+  `tools/promo_video/vo/`. Music and SFX duck automatically under the
+  narration.
 
 ## Usage
 
@@ -57,6 +58,9 @@ python3 tools/promo_video/render.py --preset portrait --scale 0.25 --fps 10
 python3 tools/promo_video/render.py --preset both --logo path/to/logo.png
 ```
 
+The narration lives in `tools/promo_video/vo/` and is picked up automatically;
+`--vo-dir` points the mixer at a different folder.
+
 Useful flags: `--fps`, `--crf` (lower = better quality), `--workers`,
 `--outdir`, `--audio` (reuse an already-built mix — handy when rendering the
 second aspect ratio).
@@ -72,13 +76,30 @@ second aspect ratio).
 
 ## Replacing the voice-over
 
-Voice clips live in `.tmp_build/vo/` and are referenced by
+The Persian narration ships with the repo in `tools/promo_video/vo/`
+(`s1.mp3` … `s6.mp3`, ~190 KB total) and is referenced by
 `audio_mix.vo_cues()` as `(filename, start_second, gain)`. Drop in new
-recordings with the same names, or edit the cue list, then re-render.
+recordings with the same names and re-render, point `--vo-dir` at another
+folder, or edit the cue list if the new clips have different lengths.
+
+| Clip | Cue | Line |
+| --- | --- | --- |
+| `s1.mp3` | 1.00 s | به جزیره فندقی خوش اومدی! |
+| `s2.mp3` | 4.50 s | سه دنیای رنگی برای یادگیری و بازی |
+| `s3.mp3` | 9.30 s | ده‌ها بازی شاد که دقت و هوش کودک رو تقویت می‌کنه. |
+| `s4.mp3` | 15.40 s | قصه‌ها و لالایی‌های دلنشین برای وقت خواب. |
+| `s5.mp3` | 20.90 s | ستاره جمع کن، جایزه بگیر، قهرمان شو! |
+| `s6.mp3` | 26.90 s | جزیره فندقی؛ امن و بدون تبلیغات. |
+
+Each cue is placed so the line lands inside its own scene and finishes before
+the next cross-fade; music and SFX duck automatically underneath.
 
 ## Notes
 
-- `promo/` and `.tmp_build/` are git-ignored — the artwork ships in the repo,
-  the multi-megabyte renders do not.
+- The finished renders in `promo/` are committed so the store team can grab
+  them straight from the repo; they are also attached to a GitHub Release.
+  `.tmp_build/` (scratch frames + audio mix) stays git-ignored.
+- The logo defaults to `assets/icons/app_icon.png` (1024×1024 master, sharp at
+  1080p); `--logo` overrides it.
 - Frame rendering is CPU-bound and parallel; on a 2-core box a full 1080×1920
   pass takes roughly 8–9 minutes.

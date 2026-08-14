@@ -77,7 +77,8 @@ CONTENT_CARDS = [
     f"{A}stories/story_7_page_1.webp",
 ]
 
-LOGO = f"{A}icons/icon_512.webp"  # replaced by the user's logo when supplied
+# 1024x1024 master icon — crisp at 1080p/4K. Override with `--logo path.png`.
+LOGO = f"{A}icons/app_icon.png"
 
 
 # --------------------------------------------------------------------------- helpers

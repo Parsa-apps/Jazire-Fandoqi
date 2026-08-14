@@ -294,13 +294,15 @@ def sfx_cues():
 
 # (file, time, gain)
 def vo_cues():
+    # Timed against build_timeline() in render.py (0.55 s cross-fades):
+    #   logo 0.00 | play 4.05 | games 8.30 | content 14.65 | rewards 20.10 | final 26.15
     return [
-        ("1.mp3", 0.85, 1.0),
-        ("s2.mp3", 4.55, 1.0),
-        ("s3.mp3", 8.75, 1.0),
-        ("s4.mp3", 15.05, 1.0),
-        ("5.mp3", 20.35, 1.0),
-        ("s6.mp3", 26.45, 1.0),
+        ("s1.mp3", 1.00, 1.0),   # 2.47 s -> ends 3.47   (logo scene)
+        ("s2.mp3", 4.50, 1.0),   # 4.22 s -> ends 8.72   (worlds)
+        ("s3.mp3", 9.30, 1.0),   # 5.18 s -> ends 14.48  (games)
+        ("s4.mp3", 15.40, 1.0),  # 4.44 s -> ends 19.84  (stories & lullabies)
+        ("s5.mp3", 20.90, 1.0),  # 4.37 s -> ends 25.27  (rewards)
+        ("s6.mp3", 26.90, 1.0),  # 4.58 s -> ends 31.48  (end card)
     ]
 
 
