@@ -183,6 +183,35 @@ flutter {
     source = "../.."
 }
 
+// GitHub release builds are also the project's automated QA runner. Keeping
+// this dependency next to the Android release tasks ensures analyzer errors or
+// failing Flutter tests can never produce a distributable artifact, even when
+// the workflow itself only invokes `flutter build`.
+if (System.getenv("GITHUB_ACTIONS") == "true") {
+    def flutterExecutable = new File(System.getenv("FLUTTER_ROOT"), "bin/flutter")
+    def qualityMarker = rootProject.file("../build/ci-quality-gate.ok")
+    def ciQualityGate = tasks.register("ciQualityGate", Exec) {
+        group = "verification"
+        description = "Runs Flutter analysis and the complete automated test suite."
+        workingDir rootProject.file("..")
+        inputs.files(rootProject.fileTree("../lib") { include "**/*.dart" })
+        inputs.files(rootProject.fileTree("../test") { include "**/*.dart" })
+        inputs.file(rootProject.file("../pubspec.yaml"))
+        inputs.file(rootProject.file("../pubspec.lock"))
+        outputs.file(qualityMarker)
+        environment "FLUTTER_ALREADY_LOCKED", "true"
+        commandLine "bash", "-lc",
+            "\"${flutterExecutable.absolutePath}\" analyze --no-fatal-warnings --no-fatal-infos && " +
+            "\"${flutterExecutable.absolutePath}\" test --reporter expanded"
+        doLast {
+            qualityMarker.parentFile.mkdirs()
+            qualityMarker.text = "passed\n"
+        }
+    }
+    tasks.matching { it.name == "assembleRelease" || it.name == "bundleRelease" }
+        .configureEach { dependsOn(ciQualityGate) }
+}
+
 dependencies {
     // Poolakey is the official open-source Cafe Bazaar billing client.
     implementation "com.github.cafebazaar.Poolakey:poolakey:2.2.0"
