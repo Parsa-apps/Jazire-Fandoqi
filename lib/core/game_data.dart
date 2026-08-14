@@ -37,6 +37,13 @@ class GameData {
   static bool get isLoaded => _isLoaded;
   static bool get persistenceAvailable => _persistenceAvailable;
 
+  /// دستیارهای سبک برای ذخیره‌سازی تنظیمات بولین (مانند تیک‌های اطلاع‌رسانی والدین).
+  static bool? getBool(String key) => _prefs?.getBool(key);
+  static Future<void> setBool(String key, bool value) async {
+    if (_prefs == null) return;
+    await _prefs!.setBool(key, value);
+  }
+
   // Player stats
   static int stars = 0;
   static int coins = 0;
