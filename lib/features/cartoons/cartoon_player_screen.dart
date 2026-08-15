@@ -223,7 +223,13 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
     }
 
     try {
-      final controller = VideoPlayerController.networkUrl(Uri.parse(url));
+      final controller = VideoPlayerController.networkUrl(
+        Uri.parse(url),
+        httpHeaders: const {
+          'User-Agent': 'Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+          'Referer': 'https://www.aparat.com/',
+        },
+      );
       _controller = controller;
       controller.addListener(_videoListener);
       await controller.initialize();
