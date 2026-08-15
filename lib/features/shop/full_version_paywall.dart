@@ -13,7 +13,7 @@ import '../../core/monetization.dart';
 import '../../core/security/privacy_protection.dart';
 import '../../shared/widgets/fandoghi_premium.dart';
 
-String _normalizeDigits(String input) {
+String normalizePaywallDigits(String input) {
   const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
   const englishDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
   String result = input;
@@ -98,7 +98,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                   focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.lg), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
                 ),
                 onSubmitted: (_) {
-                  final normalized = _normalizeDigits(answer.text.trim());
+                  final normalized = normalizePaywallDigits(answer.text.trim());
                   Navigator.pop(dialogContext, normalized == correctAnswer);
                 },
               ),
@@ -107,7 +107,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                 children: [
                   Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(dialogContext, false), style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg))), child: Text('انصراف', style: AppFonts.vazirmatn(fontWeight: FontWeight.w700, color: Colors.red)))),
                   const SizedBox(width: 12),
-                  Expanded(child: FilledButton(onPressed: () { final normalized = _normalizeDigits(answer.text.trim()); Navigator.pop(dialogContext, normalized == correctAnswer); }, style: FilledButton.styleFrom(backgroundColor: AppColors.primary, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg))), child: Text('تأیید', style: AppFonts.vazirmatn(fontWeight: FontWeight.w900, color: Colors.white)))),
+                  Expanded(child: FilledButton(onPressed: () { final normalized = normalizePaywallDigits(answer.text.trim()); Navigator.pop(dialogContext, normalized == correctAnswer); }, style: FilledButton.styleFrom(backgroundColor: AppColors.primary, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg))), child: Text('تأیید', style: AppFonts.vazirmatn(fontWeight: FontWeight.w900, color: Colors.white)))),
                 ],
               ),
             ],
@@ -170,8 +170,39 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                 children: [
                   Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(2))),
                   const SizedBox(height: 16),
-                  // هدر پریمیوم
-                  const FandoghiPremium(size: 84, mood: FandoghiMood.celebrating, showParticles: true).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
+                  // هدر قیمت: لوگوی فندقی و قیمت با افکت تایپ
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFFF3D6), Color(0xFFF2E9FF)],
+                      ),
+                      borderRadius: BorderRadius.circular(AppRadii.xl),
+                      border: Border.all(
+                        color: const Color(0xFFFFB84D).withOpacity(0.45),
+                        width: 1.5,
+                      ),
+                      boxShadow: AppShadows.colored(
+                        const Color(0xFFFFA726),
+                        opacity: 0.18,
+                      ),
+                    ),
+                    child: const Row(
+                      children: [
+                        FandoghiPremium(
+                          size: 92,
+                          mood: FandoghiMood.celebrating,
+                          showParticles: true,
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(child: _TypingPrice()),
+                      ],
+                    ),
+                  )
+                      .animate()
+                      .fadeIn(duration: 350.ms)
+                      .scale(duration: 650.ms, curve: Curves.elasticOut),
                   const SizedBox(height: 12),
                   ShaderMask(
                     shaderCallback: (bounds) => const LinearGradient(colors: [Color(0xFFFFA726), Color(0xFFF06292), Color(0xFFBA68C8)]).createShader(bounds),
@@ -308,6 +339,95 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
         ),
       );
 
+}
+
+class _TypingPrice extends StatelessWidget {
+  const _TypingPrice();
+
+  static const _numericPrice = '49/000';
+  static const _writtenPrice = 'چهل و نه هزار تومان';
+
+  @override
+  Widget build(BuildContext context) {
+    final totalCharacters = _numericPrice.length + _writtenPrice.length;
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: totalCharacters.toDouble()),
+      duration: const Duration(milliseconds: 2600),
+      curve: Curves.linear,
+      builder: (context, value, child) {
+        final visibleCharacters = value.floor();
+        final numericCount = min(visibleCharacters, _numericPrice.length);
+        final writtenCount = min(
+          max(visibleCharacters - _numericPrice.length, 0),
+          _writtenPrice.length,
+        );
+        final isComplete = visibleCharacters >= totalCharacters;
+        final cursorVisible = !isComplete && (value * 3).floor().isEven;
+        final typingNumeric = visibleCharacters <= _numericPrice.length;
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: 50,
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '${_numericPrice.substring(0, numericCount)}'
+                    '${typingNumeric && cursorVisible ? '▌' : ''}',
+                    maxLines: 1,
+                    textAlign: TextAlign.center,
+                    textDirection: TextDirection.ltr,
+                    style: AppFonts.vazirmatn(
+                      fontSize: 40,
+                      height: 1,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF6C43D9),
+                      shadows: const [
+                        Shadow(
+                          color: Color(0x33FF9F1C),
+                          blurRadius: 10,
+                          offset: Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            SizedBox(
+              height: 34,
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '${_writtenPrice.substring(0, writtenCount)}'
+                    '${!typingNumeric && cursorVisible ? '▌' : ''}',
+                    maxLines: 1,
+                    textAlign: TextAlign.center,
+                    textDirection: TextDirection.rtl,
+                    style: AppFonts.vazirmatn(
+                      fontSize: 20,
+                      height: 1.35,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF5A348B),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    ).animate().shimmer(
+          delay: 2700.ms,
+          duration: 900.ms,
+          color: const Color(0x99FFD54F),
+        );
+  }
 }
 
 class _PremiumBenefit extends StatelessWidget {

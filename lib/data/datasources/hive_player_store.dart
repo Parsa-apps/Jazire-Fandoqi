@@ -18,6 +18,22 @@ class HivePlayerStore {
 
   static Box<dynamic>? _box;
 
+  // Widget/unit tests and the production storage-degraded path must not try to
+  // open Hive before a platform path exists. Keeping the fallback here also
+  // gives entitlement and other small-value stores the same behaviour as
+  // GameData instead of silently losing their writes.
+  static bool _memoryOnly = false;
+  static final Map<String, Object?> _memoryValues = <String, Object?>{};
+
+  static void useMemoryStorage({bool clear = false}) {
+    _memoryOnly = true;
+    if (clear) _memoryValues.clear();
+  }
+
+  static void useHiveStorage() {
+    _memoryOnly = false;
+  }
+
   static Future<Box<dynamic>> _getBox() async {
     if (_box != null && _box!.isOpen) return _box!;
     final box = Hive.isBoxOpen(boxName)
@@ -30,9 +46,16 @@ class HivePlayerStore {
   /// اسنپ‌شات کامل وضعیت؛ در صورت نبود یا نسخه قدیمی `null` برمی‌گرداند
   /// تا فراخوان برود سراغ منبع قدیمی (SharedPreferences) و Migration کند.
   static Future<Map<String, Object?>?> readSnapshot() async {
+    if (_memoryOnly) {
+      final raw = _memoryValues[_dataKey];
+      return raw is Map<String, Object?>
+          ? Map<String, Object?>.from(raw)
+          : null;
+    }
     try {
       final box = await _getBox();
-      final version = (box.get(_schemaVersionKey, defaultValue: 0) as num?)?.toInt() ?? 0;
+      final version =
+          (box.get(_schemaVersionKey, defaultValue: 0) as num?)?.toInt() ?? 0;
       if (version < schemaVersion) return null;
       final raw = box.get(_dataKey);
       if (raw is! Map) return null;
@@ -48,6 +71,11 @@ class HivePlayerStore {
 
   /// نوشتن اسنپ‌شات + ثبت نسخه اسکیما.
   static Future<void> writeSnapshot(Map<String, Object?> snapshot) async {
+    if (_memoryOnly) {
+      _memoryValues[_dataKey] = Map<String, Object?>.from(snapshot);
+      _memoryValues[_schemaVersionKey] = schemaVersion;
+      return;
+    }
     try {
       final box = await _getBox();
       await box.put(_dataKey, snapshot);
@@ -59,6 +87,7 @@ class HivePlayerStore {
 
   /// مقدار ساده (برای داده‌های غیر از وضعیت بازی مثل توکن اشتراک).
   static Future<Object?> readValue(String key) async {
+    if (_memoryOnly) return _memoryValues[key];
     try {
       final box = await _getBox();
       return box.get(key);
@@ -68,6 +97,10 @@ class HivePlayerStore {
   }
 
   static Future<void> writeValue(String key, Object? value) async {
+    if (_memoryOnly) {
+      _memoryValues[key] = value;
+      return;
+    }
     try {
       final box = await _getBox();
       await box.put(key, value);

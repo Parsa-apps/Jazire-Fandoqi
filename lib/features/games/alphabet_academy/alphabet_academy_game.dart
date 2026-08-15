@@ -9,11 +9,14 @@ import '../../../app/app_colors.dart';
 import '../../../app/design_tokens.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import '../../../core/audio_service.dart';
+import '../../../core/content_access_policy.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
+import '../../../core/monetization.dart';
 import '../../../core/play_limit.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
 import '../../../shared/widgets/handwriting_score_overlay.dart';
+import '../../shop/full_version_paywall.dart';
 
 /// A local-first Persian alphabet academy: see, hear/read, trace, receive
 /// feedback, and repeat. The trace check is intentionally transparent and
@@ -35,6 +38,7 @@ class AlphabetAcademyGame extends StatefulWidget {
 
 class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   int _lessonIndex = 0;
+  bool _hasFullVersion = false;
 
   _LetterLesson get _lesson => _lessons[_lessonIndex];
 
@@ -42,6 +46,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   void initState() {
     super.initState();
     FandoghiCoach.enablePersistentPresence();
+    _refreshEntitlement();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (GameData.isDailyLimitReached) {
@@ -62,7 +67,28 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     super.dispose();
   }
 
-  void _selectLesson(int index) {
+  bool _isLocked(int index) =>
+      !_hasFullVersion && !ContentAccessPolicy.isAlphabetLessonFree(index);
+
+  Future<bool> _refreshEntitlement() async {
+    final hasFullVersion = await Monetization.hasFullVersion();
+    if (mounted && hasFullVersion != _hasFullVersion) {
+      setState(() => _hasFullVersion = hasFullVersion);
+    }
+    return hasFullVersion;
+  }
+
+  Future<void> _selectLesson(int index) async {
+    if (!ContentAccessPolicy.isAlphabetLessonFree(index) &&
+        !await Monetization.hasFullVersion()) {
+      if (!mounted) return;
+      await showFullVersionPaywall(
+        context,
+        featureName: 'حرف «${_lessons[index].letter}»',
+      );
+      if (!await _refreshEntitlement()) return;
+    }
+    if (!mounted) return;
     setState(() => _lessonIndex = index);
     FandoghiCoach.instruction(
       'حرف «${_lessons[index].letter}» را انتخاب کردی؛ اسمش ${_lessons[index].word} است. حالا دکمه‌ی «تمرین نوشتن» را بزن ✍️',
@@ -72,13 +98,14 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   }
 
   Future<void> _openTraceScreen() async {
-    if (!canStartPlay(context)) return;
+    if (_isLocked(_lessonIndex) || !canStartPlay(context)) return;
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         fullscreenDialog: true,
         builder: (_) => _TraceScreen(
           lessons: _lessons,
           initialIndex: _lessonIndex,
+          hasFullVersion: _hasFullVersion,
           stageId: widget.stageId,
           stageNumber: widget.stageNumber,
         ),
@@ -321,25 +348,74 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
             ),
           ),
           const SizedBox(height: 10),
-          Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            children: List.generate(_lessons.length, (index) {
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              // The alphabet is intentionally laid out as fixed rows of eight;
+              // the first visual row is the free sample.
+              crossAxisCount: ContentAccessPolicy.freeAlphabetTopRowCount,
+              mainAxisSpacing: 7,
+              crossAxisSpacing: 5,
+            ),
+            itemCount: _lessons.length,
+            itemBuilder: (context, index) {
               final selected = index == _lessonIndex;
-              return ChoiceChip(
-                label: Text(_lessons[index].letter),
-                selected: selected,
-                onSelected: (_) => _selectLesson(index),
-                selectedColor: AppColors.primary,
-                backgroundColor: Colors.white.withOpacity(0.1),
-                labelStyle: AppFonts.balooBhaijaan2(
-                  color: selected ? Colors.white : Colors.white70,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 16,
+              final locked = _isLocked(index);
+              return Semantics(
+                button: true,
+                label: locked
+                    ? 'حرف ${_lessons[index].letter}، نسخه کامل'
+                    : 'حرف ${_lessons[index].letter}',
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: () => _selectLesson(index),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? AppColors.primary
+                            : locked
+                                ? Colors.black.withOpacity(0.28)
+                                : Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: selected
+                              ? Colors.white70
+                              : Colors.white.withOpacity(0.12),
+                        ),
+                      ),
+                      child: Stack(
+                        children: [
+                          Center(
+                            child: Text(
+                              _lessons[index].letter,
+                              style: AppFonts.balooBhaijaan2(
+                                color: locked ? Colors.white54 : Colors.white,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                          if (locked)
+                            const Positioned(
+                              top: 2,
+                              right: 2,
+                              child: Icon(
+                                Icons.lock_rounded,
+                                color: Colors.amberAccent,
+                                size: 11,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                side: BorderSide(color: Colors.white.withOpacity(0.1)),
               );
-            }),
+            },
           ),
         ],
       ),
@@ -353,12 +429,14 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
 class _TraceScreen extends StatefulWidget {
   final List<_LetterLesson> lessons;
   final int initialIndex;
+  final bool hasFullVersion;
   final String? stageId;
   final int? stageNumber;
 
   const _TraceScreen({
     required this.lessons,
     required this.initialIndex,
+    required this.hasFullVersion,
     this.stageId,
     this.stageNumber,
   });
@@ -383,6 +461,10 @@ class _TraceScreenState extends State<_TraceScreen> {
   }
 
   void _selectLesson(int index) {
+    if (!widget.hasFullVersion &&
+        !ContentAccessPolicy.isAlphabetLessonFree(index)) {
+      return;
+    }
     setState(() {
       _lessonIndex = index;
       _strokes.clear();
@@ -614,8 +696,11 @@ class _TraceScreenState extends State<_TraceScreen> {
                       }),
                       onNext: () {
                         if (_lastResult!.passed) {
-                          // حرف بعدی
-                          final next = (_lessonIndex + 1) % widget.lessons.length;
+                          // حرف بعدی؛ در نسخه رایگان داخل همان ردیف اول می‌مانیم.
+                          final availableCount = widget.hasFullVersion
+                              ? widget.lessons.length
+                              : ContentAccessPolicy.freeAlphabetTopRowCount;
+                          final next = (_lessonIndex + 1) % availableCount;
                           setState(() {
                             _lessonIndex = next;
                             _strokes.clear();
@@ -680,8 +765,11 @@ class _TraceScreenState extends State<_TraceScreen> {
             onSelected: _selectLesson,
             itemBuilder: (context) =>
                 List.generate(widget.lessons.length, (i) {
+              final locked = !widget.hasFullVersion &&
+                  !ContentAccessPolicy.isAlphabetLessonFree(i);
               return PopupMenuItem<int>(
                 value: i,
+                enabled: !locked,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -690,18 +778,30 @@ class _TraceScreenState extends State<_TraceScreen> {
                       style: AppFonts.balooBhaijaan2(
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
-                        color: AppColors.textPrimary,
+                        color: locked
+                            ? AppColors.textSecondary.withOpacity(0.45)
+                            : AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       widget.lessons[i].word,
                       style: AppFonts.balooBhaijaan2(
-                        color: AppColors.textSecondary,
+                        color: locked
+                            ? AppColors.textSecondary.withOpacity(0.45)
+                            : AppColors.textSecondary,
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
+                    if (locked) ...[
+                      const SizedBox(width: 8),
+                      const Icon(
+                        Icons.lock_rounded,
+                        size: 15,
+                        color: AppColors.primary,
+                      ),
+                    ],
                   ],
                 ),
               );

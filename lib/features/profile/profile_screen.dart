@@ -1,5 +1,7 @@
-import 'dart:math';
+import 'dart:async';
 import 'dart:io';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -34,6 +36,7 @@ class _ProfileState extends ConsumerState<ProfileScreen>
   late AnimationController _radarCtrl;
   late AnimationController _ringCtrl;
   late AnimationController _barCtrl;
+  final List<Timer> _staggerTimers = [];
 
   @override
   void initState() {
@@ -53,20 +56,26 @@ class _ProfileState extends ConsumerState<ProfileScreen>
       duration: const Duration(milliseconds: 1000),
     );
 
-    // Staggered animations
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) _radarCtrl.forward();
-    });
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) _ringCtrl.forward();
-    });
-    Future.delayed(const Duration(milliseconds: 700), () {
-      if (mounted) _barCtrl.forward();
-    });
+    // Staggered animations. Keep the timers cancellable so leaving the
+    // embedded profile before they start does not retain disposed state.
+    _staggerTimers.addAll([
+      Timer(const Duration(milliseconds: 300), () {
+        if (mounted) _radarCtrl.forward();
+      }),
+      Timer(const Duration(milliseconds: 500), () {
+        if (mounted) _ringCtrl.forward();
+      }),
+      Timer(const Duration(milliseconds: 700), () {
+        if (mounted) _barCtrl.forward();
+      }),
+    ]);
   }
 
   @override
   void dispose() {
+    for (final timer in _staggerTimers) {
+      timer.cancel();
+    }
     _radarCtrl.dispose();
     _ringCtrl.dispose();
     _barCtrl.dispose();

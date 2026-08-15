@@ -87,6 +87,7 @@ class AchievementSystem {
     const Achievement(id: 'animal_30', title: 'دانشنامه حیوانات', description: '۳۰ حیوان — همه را شناختی!', emoji: '🌿', target: 30, type: 'animals', category: 'حیوانات'),
     // ── لالایی و جزیره ──
     const Achievement(id: 'lullaby_1', title: 'خواب شیرین', description: 'یک لالایی گوش دادی', emoji: '🌙', target: 1, type: 'lullaby', category: 'لالایی'),
+    const Achievement(id: 'lullaby_5', title: 'ستارهٔ شب', description: '۵ لالایی گوش دادی', emoji: '🌟', target: 5, type: 'lullaby', category: 'لالایی'),
     const Achievement(id: 'island_1', title: 'معمار جزیره', description: 'اولین تزئین جزیره', emoji: '🏝️', target: 1, type: 'island', category: 'جزیره'),
   ];
 
@@ -134,7 +135,7 @@ class AchievementSystem {
       case 'animals':
         return (GameData.skills['animals'] ?? 0) >= achievement.target;
       case 'lullaby':
-        return (GameData.skills['lullaby'] ?? 0) >= achievement.target || GameData.watchedCartoons.length >= achievement.target;
+        return (GameData.skills['lullaby'] ?? 0) >= achievement.target;
       case 'island':
         return GameData.islandDecorations.length >= achievement.target;
       default:

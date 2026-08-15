@@ -578,6 +578,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
         GameData.childName.isNotEmpty ? GameData.childName : 'آریا';
     final stars = GameData.stars;
     final coins = GameData.coins;
+    final compact = MediaQuery.sizeOf(context).width < 370;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -585,7 +586,10 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
         GestureDetector(
           onTap: () => showProfileEditor(context),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: EdgeInsets.symmetric(
+              horizontal: compact ? 4 : 10,
+              vertical: compact ? 4 : 6,
+            ),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.94),
               borderRadius: BorderRadius.circular(26),
@@ -601,8 +605,8 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 38,
-                  height: 38,
+                  width: compact ? 34 : 38,
+                  height: compact ? 34 : 38,
                   decoration: BoxDecoration(
                     color: const Color(0xFF81D4FA),
                     shape: BoxShape.circle,
@@ -618,31 +622,42 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  'سلام $childName!',
-                  style: AppFonts.kids(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.mapText,
-                    height: 1.2,
+                if (!compact) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    'سلام $childName!',
+                    style: AppFonts.kids(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.mapText,
+                      height: 1.2,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
         ),
         Row(
           children: [
-            _statChip(Icons.star_rounded, const Color(0xFFFFB300), stars),
-            const SizedBox(width: 6),
-            _statChip(Icons.monetization_on_rounded,
-                const Color(0xFFFF9800), coins),
-            const SizedBox(width: 6),
+            _statChip(
+              Icons.star_rounded,
+              const Color(0xFFFFB300),
+              stars,
+              compact: compact,
+            ),
+            SizedBox(width: compact ? 4 : 6),
+            _statChip(
+              Icons.monetization_on_rounded,
+              const Color(0xFFFF9800),
+              coins,
+              compact: compact,
+            ),
+            SizedBox(width: compact ? 4 : 6),
             GestureDetector(
               onTap: _openStageMap,
               child: Container(
-                padding: const EdgeInsets.all(9),
+                padding: EdgeInsets.all(compact ? 7 : 9),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.94),
                   shape: BoxShape.circle,
@@ -664,9 +679,17 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
     );
   }
 
-  Widget _statChip(IconData icon, Color color, int value) {
+  Widget _statChip(
+    IconData icon,
+    Color color,
+    int value, {
+    bool compact = false,
+  }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 5 : 9,
+        vertical: compact ? 5 : 6,
+      ),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.94),
         borderRadius: BorderRadius.circular(18),
@@ -681,12 +704,12 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: 17),
-          const SizedBox(width: 3),
+          Icon(icon, color: color, size: compact ? 15 : 17),
+          SizedBox(width: compact ? 2 : 3),
           Text(
             PersianDigits.toFa(value),
             style: AppFonts.kids(
-              fontSize: 15,
+              fontSize: compact ? 13 : 15,
               fontWeight: FontWeight.w800,
               color: AppColors.mapText,
               height: 1.2,

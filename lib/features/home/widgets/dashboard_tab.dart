@@ -67,7 +67,6 @@ class _DashboardState extends ConsumerState<DashboardTab>
     'ستاره‌گیری',
     'حباب‌ترکان',
     'نقاشی',
-    'مهارت زندگی',
   };
 
   Future<void> _openGame(String route, String gameName) async {

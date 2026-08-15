@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../../core/fandoghi_models.dart';
@@ -31,6 +33,8 @@ class _FandoghiHazelnutCharacterState extends State<FandoghiHazelnutCharacter>
   late final AnimationController _idleCtrl;
   late final AnimationController _blinkCtrl;
   late final AnimationController _talkCtrl;
+  final Random _random = Random();
+  Timer? _blinkTimer;
 
   @override
   void initState() {
@@ -44,8 +48,8 @@ class _FandoghiHazelnutCharacterState extends State<FandoghiHazelnutCharacter>
     _blinkCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200),
-    );
-    _startBlinkLoop();
+    )..addStatusListener(_handleBlinkStatus);
+    _scheduleBlink();
 
     _talkCtrl = AnimationController(
       vsync: this,
@@ -54,13 +58,20 @@ class _FandoghiHazelnutCharacterState extends State<FandoghiHazelnutCharacter>
     if (widget.isTalking) _talkCtrl.repeat(reverse: true);
   }
 
-  void _startBlinkLoop() async {
-    while (mounted) {
-      final waitSeconds = 2 + Random().nextInt(4);
-      await Future.delayed(Duration(seconds: waitSeconds));
-      if (!mounted) break;
-      await _blinkCtrl.forward();
-      await _blinkCtrl.reverse();
+  void _scheduleBlink() {
+    _blinkTimer?.cancel();
+    final waitSeconds = 2 + _random.nextInt(4);
+    _blinkTimer = Timer(Duration(seconds: waitSeconds), () {
+      _blinkTimer = null;
+      if (mounted) _blinkCtrl.forward(from: 0);
+    });
+  }
+
+  void _handleBlinkStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed) {
+      _blinkCtrl.reverse();
+    } else if (status == AnimationStatus.dismissed && mounted) {
+      _scheduleBlink();
     }
   }
 
@@ -77,6 +88,8 @@ class _FandoghiHazelnutCharacterState extends State<FandoghiHazelnutCharacter>
 
   @override
   void dispose() {
+    _blinkTimer?.cancel();
+    _blinkCtrl.removeStatusListener(_handleBlinkStatus);
     _idleCtrl.dispose();
     _blinkCtrl.dispose();
     _talkCtrl.dispose();
