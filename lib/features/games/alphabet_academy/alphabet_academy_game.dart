@@ -135,18 +135,17 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   ///
   /// باگ قبلی: روی هر کلمه حلقه‌ای از `pronounceLetter` اجرا می‌شد، پس
   /// به‌جای «باران» صدای «ب، الف، ر، الف، ن» — آن هم روی هم — پخش می‌شد.
-  /// حالا خودِ واژه با گویندهٔ فارسی خوانده می‌شود و اگر موتور فارسی روی
-  /// دستگاه نصب نباشد، به‌جای سکوت، کلمه شمرده‌شمرده هجی می‌شود و یک
-  /// راهنمای کوتاه هم به کودک/والد نشان داده می‌شود.
+  ///
+  /// حالا کلمه‌های کارگاه صدای **ضبط‌شدهٔ آفلاین** دارند (گوشی کودک اغلب
+  /// اینترنت و موتور فارسی ندارد). اگر کلمه‌ای هنوز ضبط نشده باشد و TTS
+  /// فارسی هم نباشد، به‌جای سکوت شمرده‌شمرده هجی می‌شود.
   Future<void> _readWord(String word) async {
     HapticFeedback.lightImpact();
     final spoken = await AudioService.speakWord(word);
     if (spoken || !mounted) return;
-    // موتور فارسی روی دستگاه نیست: به‌جای سکوت، کلمه شمرده‌شمرده هجی
-    // می‌شود و علتش هم برای کودک/والد توضیح داده می‌شود.
     final clean = AudioService.cleanSpokenText(word);
     FandoghiCoach.say(
-      'گویندهٔ فارسی روی این دستگاه نصب نیست، پس «$clean» را حرف‌به‌حرف می‌خوانم 🔤',
+      'صدای «$clean» را هنوز ندارم، پس حرف‌به‌حرف برایت می‌خوانم 🔤',
       mood: FandoghiMood.thinking,
       duration: const Duration(seconds: 4),
     );

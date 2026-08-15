@@ -24,6 +24,7 @@ class AudioService {
   static const String _lettersPath = 'assets/audio/letters/';
   static const String _numbersPath = 'assets/audio/numbers/';
   static const String _learningPath = 'assets/audio/learning/';
+  static const String _wordsPath = 'assets/audio/words/';
   static const String _bgmPath = 'assets/audio/bgm/';
 
   /// فهرست افکت‌های بسته‌بندی‌شده — برای تست و بازتولید.
@@ -450,6 +451,63 @@ class AudioService {
     return buffer.toString().replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 
+  /// ─────────────── واژه‌های کارگاه واژه‌سازی (آفلاین) ───────────────
+  ///
+  /// گوشیِ کودک معمولاً اینترنت و موتور TTS فارسی ندارد، پس کلمه‌های
+  /// کارگاه واژه‌سازیِ آکادمی الفبا با صدای ضبط‌شده داخل خود اپ می‌آیند.
+  /// کلید نگاشت، شکلِ **تمیزشدهٔ** کلمه است (بدون ایموجی/اعراب) تا با
+  /// خروجی `cleanSpokenText` بخواند.
+  static const Map<String, String> wordAudioKeys = <String, String>{
+    'آب': 'w01',
+    'بابا': 'w02',
+    'باد': 'w03',
+    'داد': 'w04',
+    'آباد': 'w05',
+    'مادر': 'w06',
+    'توت': 'w07',
+    'دوست': 'w08',
+    'دست': 'w09',
+    'سوت': 'w10',
+    'باران': 'w11',
+    'ایران': 'w12',
+    'سبز': 'w13',
+    'نان': 'w14',
+    'زرد': 'w15',
+    'شیر': 'w16',
+    'یاس': 'w17',
+    'اردک': 'w18',
+    'ستاره': 'w19',
+    'دریا': 'w20',
+    'کفش': 'w21',
+    'ورزش': 'w22',
+    'پا': 'w23',
+    'گل': 'w24',
+    'کودک': 'w25',
+    'فیل': 'w26',
+    'خرس': 'w27',
+    'قاشق': 'w28',
+    'بلبل': 'w29',
+    'برف': 'w30',
+    'جوجه': 'w31',
+    'خورشید': 'w32',
+    'چتر': 'w33',
+    'هواپیما': 'w34',
+    'ژاله': 'w35',
+    'صابون': 'w36',
+    'عسل': 'w37',
+    'حباب': 'w38',
+    'طبل': 'w39',
+    'غاز': 'w40',
+    'ظرف': 'w41',
+  };
+
+  /// مسیر فایل ضبط‌شدهٔ یک کلمه، یا `null` اگر ضبط نشده باشد.
+  static String? wordAssetFor(String word) {
+    final key = wordAudioKeys[cleanSpokenText(word)];
+    if (key == null) return null;
+    return '$_wordsPath$key.wav';
+  }
+
   /// آیا موتور فارسی دستگاه آمادهٔ خواندن واژه است؟
   /// (راه‌اندازی صوت را در صورت نیاز کامل می‌کند.)
   static Future<bool> canSpeakPersian() async {
@@ -463,18 +521,31 @@ class AudioService {
   /// قبلاً حلقهٔ `pronounceLetter` روی تک‌تک نویسه‌ها اجرا می‌شد و نتیجه‌اش
   /// «الف… ب… ر…» (آن هم روی هم) بود، نه خواندن خود کلمه.
   ///
-  /// اگر موتور فارسی روی دستگاه نباشد `false` برمی‌گرداند تا رابط کاربری
-  /// بتواند راهنمای مناسب نشان دهد؛ هرگز به هجی‌کردن خودکار نمی‌افتد.
+  /// ترتیب اولویت:
+  ///   ۱. صدای ضبط‌شدهٔ داخل اپ (کاملاً آفلاین) — مسیر عادی.
+  ///   ۲. اگر آن کلمه ضبط نشده باشد و موتور فارسی دستگاه موجود باشد، TTS.
+  ///   ۳. در غیر این صورت `false` تا رابط کاربری تصمیم بگیرد (مثلاً هجی).
+  ///
+  /// هرگز به TTSِ غیرفارسی نمی‌افتد؛ روی گوشی‌های بدون فارسی این کار
+  /// باعث خوانده‌شدن متن با لهجهٔ عربی می‌شد.
   static Future<bool> speakWord(String word) async {
     if (_muted) return false;
     final clean = cleanSpokenText(word);
     if (clean.isEmpty) return false;
-    await _ensureInitialized();
-    if (_muted || !_ttsAvailable) return false;
+
     // لمس سریع چند کلمه نباید صداها را روی هم بیندازد: گفتار و هجیِ قبلی
     // قطع می‌شوند و فقط آخرین کلمه خوانده می‌شود.
     _spellSession++;
     _interruptSpeech();
+
+    final asset = wordAssetFor(clean);
+    if (asset != null) {
+      await playVoiceAsset(asset, volume: voiceVolume);
+      return true;
+    }
+
+    await _ensureInitialized();
+    if (_muted || !_ttsAvailable) return false;
     await speak(clean);
     return true;
   }
