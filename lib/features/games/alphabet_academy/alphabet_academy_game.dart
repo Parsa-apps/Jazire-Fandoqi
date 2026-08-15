@@ -18,6 +18,7 @@ import '../../../core/play_limit.dart';
 import '../../../shared/widgets/child_touch_target.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
 import '../../../shared/widgets/handwriting_score_overlay.dart';
+import '../../../shared/widgets/particle_celebration.dart';
 import '../../shop/full_version_paywall.dart';
 
 /// ────────────────────────────────────────────────────────────
@@ -26,6 +27,7 @@ import '../../shop/full_version_paywall.dart';
 /// دو حالت جامع:
 /// ۱. حالت اول: مطابق کتاب بخوانیم اول دبستان (زنجیره بسته‌های نشانه‌های ۱ و ۲ + کارگاه واژه‌سازی)
 /// ۲. حالت دوم: جستجوی الفبایی آزاد (الف تا ی + جستجوی زنده)
+/// ۳. رفتار معلم واقعی: قفل بودن حرف بعدی تا تایید رسمی خط کودک
 /// ────────────────────────────────────────────────────────────
 enum _AlphabetMode { grade1, alphabetical }
 
@@ -903,12 +905,15 @@ class _TraceScreen extends StatefulWidget {
   State<_TraceScreen> createState() => _TraceScreenState();
 }
 
-class _TraceScreenState extends State<_TraceScreen> {
+class _TraceScreenState extends State<_TraceScreen>
+    with SingleTickerProviderStateMixin {
   final GlobalKey _canvasKey = GlobalKey();
   final List<List<Offset>> _strokes = <List<Offset>>[];
   late int _lessonIndex;
   _TraceResult? _lastResult;
   bool _checking = false;
+  bool _showMagicDemo = false;
+  late AnimationController _demoController;
 
   _LetterLesson get _lesson => widget.lessons[_lessonIndex];
 
@@ -916,6 +921,40 @@ class _TraceScreenState extends State<_TraceScreen> {
   void initState() {
     super.initState();
     _lessonIndex = widget.initialIndex;
+    _demoController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          setState(() => _showMagicDemo = false);
+        }
+      });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _speakVoiceGuidance();
+    });
+  }
+
+  @override
+  void dispose() {
+    _demoController.dispose();
+    super.dispose();
+  }
+
+  void _speakVoiceGuidance() {
+    final text =
+        'نشانه «${_lesson.letter}» را ببین! از نقطه سبز شروع کن و با انگشتت روی خط کرسی بکش ✍️';
+    FandoghiCoach.instruction(text);
+    unawaited(AudioService.speak('از نقطه سبز شروع کن و نشانه ${_lesson.letter} را بنویس'));
+  }
+
+  void _playMagicPenDemo() {
+    HapticFeedback.mediumImpact();
+    setState(() => _showMagicDemo = true);
+    _demoController.forward(from: 0);
+    AudioService.swoosh();
+    unawaited(AudioService.speak('حرکت قلم جادویی را ببین و یاد بگیر!'));
   }
 
   void _selectLesson(int index) {
@@ -932,9 +971,7 @@ class _TraceScreenState extends State<_TraceScreen> {
       _strokes.clear();
       _lastResult = null;
     });
-    FandoghiCoach.instruction(
-      'نشانه «${widget.lessons[index].letter}» را نگاه کن؛ با انگشت روی خط کرسی بنویس ✍️',
-    );
+    _speakVoiceGuidance();
   }
 
   void _startStroke(DragStartDetails details) {
@@ -957,7 +994,7 @@ class _TraceScreenState extends State<_TraceScreen> {
       _lastResult = null;
     });
     FandoghiCoach.instruction(
-      'اشکالی ندارد؛ صفحه را تمیز کردیم. دوباره با آرامش بنویس 🌰',
+      'صفحه تمیز شد! دوباره با آرامش از نقطه سبز شروع کن 🌰',
     );
   }
 
@@ -969,6 +1006,9 @@ class _TraceScreenState extends State<_TraceScreen> {
     });
   }
 
+  /// ═══════════════════════════════════════════════════════════
+  /// 👩‍🏫 ارزیابی واقعی و سخت‌گیرانه معلم کلاس اول (Teacher Evaluation)
+  /// ═══════════════════════════════════════════════════════════
   Future<void> _checkTrace() async {
     if (_checking) return;
     if (GameData.isDailyLimitReached) {
@@ -989,24 +1029,32 @@ class _TraceScreenState extends State<_TraceScreen> {
         _checking = false;
       });
       GameData.recordAnswer(correct: result.passed, skill: 'alphabet');
+
       if (result.passed) {
+        // تأیید رسمی معلم + مهر صدآفرین
         GameData.progressMission('alphabet');
         GameData.addCoins(8);
         GameData.addStars(1);
         AudioService.star();
         AudioService.correct();
+        AudioService.win();
         if (widget.stageId != null) {
-          GameData.completeStage(widget.stageId!,
-              stageNumber: widget.stageNumber);
+          GameData.completeStage(
+            widget.stageId!,
+            stageNumber: widget.stageNumber,
+          );
         }
         FandoghiCoach.correct(
-          'آفرین! نشانه «${_lesson.letter}» را با دقت نوشتی ✨',
+          'آفرین صدآفرین! خط نشانه «${_lesson.letter}» تایید شد و مهر قبولی گرفتی 🌟',
         );
+        unawaited(AudioService.speak('آفرین صدآفرین! خیلی تمیز نوشتی. مهر قبولی رو گرفتی'));
       } else {
+        // عدم تایید معلم — باید دوباره تمرین کند
         AudioService.wrong();
         FandoghiCoach.instruction(
-          'نزدیک شدی! دوباره روی خط کم‌رنگ بکش 🌱',
+          'هنوز کامل نشد! باید از نقطه سبز شروع کنی و دقیقاً روی خطوط کم‌رنگ بکشی ✍️',
         );
+        unawaited(AudioService.speak('هنوز کامل نشد! دوباره از نقطه سبز شروع کن'));
       }
     } catch (_) {
       if (mounted) setState(() => _checking = false);
@@ -1023,12 +1071,14 @@ class _TraceScreenState extends State<_TraceScreen> {
         points.add(p);
       }
     }
-    if (points.length < 5) {
+    // حداقل ۱۲ نقطه کشیده شده برای جلوگیری از تپ‌های تصادفی
+    if (points.length < 12) {
       return const _TraceResult(score: 0.2, passed: false);
     }
 
     final coverage = await _computeGuideCoverage(size, points);
-    final passed = coverage >= 0.35;
+    // شرط قبولی سخت‌گیرانه معلم: پوشش حداقل ۵۲٪ خطوط نشانه
+    final passed = coverage >= 0.52;
     return _TraceResult(score: coverage, passed: passed);
   }
 
@@ -1093,12 +1143,18 @@ class _TraceScreenState extends State<_TraceScreen> {
                   behavior: HitTestBehavior.opaque,
                   onPanStart: _startStroke,
                   onPanUpdate: _updateStroke,
-                  child: CustomPaint(
-                    painter: _TracePainter(
-                      letter: _lesson.letter,
-                      strokes: _strokes,
-                    ),
-                    child: const SizedBox.expand(),
+                  child: AnimatedBuilder(
+                    animation: _demoController,
+                    builder: (context, _) {
+                      return CustomPaint(
+                        painter: _TracePainter(
+                          letter: _lesson.letter,
+                          strokes: _strokes,
+                          demoProgress: _showMagicDemo ? _demoController.value : 0.0,
+                        ),
+                        child: const SizedBox.expand(),
+                      );
+                    },
                   ),
                 ),
               ),
@@ -1115,10 +1171,11 @@ class _TraceScreenState extends State<_TraceScreen> {
               bottom: 0,
               child: _traceBottomBar(),
             ),
+            // اورلی ارزیابی دقیق معلم با قفل حرف بعدی
             if (_lastResult != null)
               Positioned.fill(
                 child: Container(
-                  color: Colors.black.withOpacity(0.35),
+                  color: Colors.black.withOpacity(0.4),
                   alignment: Alignment.center,
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -1130,27 +1187,39 @@ class _TraceScreenState extends State<_TraceScreen> {
                         _strokes.clear();
                         _lastResult = null;
                       }),
-                      onNext: () {
-                        if (_lastResult!.passed) {
-                          final next = (_lessonIndex + 1) % widget.lessons.length;
-                          setState(() {
-                            _lessonIndex = next;
-                            _strokes.clear();
-                            _lastResult = null;
-                          });
-                        } else {
-                          setState(() => _lastResult = null);
-                        }
+                      onShowGuide: () {
+                        setState(() {
+                          _strokes.clear();
+                          _lastResult = null;
+                        });
+                        _playMagicPenDemo();
                       },
+                      onNext: _lastResult!.passed
+                          ? () {
+                              final next = (_lessonIndex + 1) % widget.lessons.length;
+                              setState(() {
+                                _lessonIndex = next;
+                                _strokes.clear();
+                                _lastResult = null;
+                              });
+                              _speakVoiceGuidance();
+                            }
+                          : null,
                     ),
                   ),
                 ),
               ),
             Positioned(
-              top: 70,
+              top: 65,
               left: 12,
               child: _letterPreview(),
             ),
+            if (_lastResult != null && _lastResult!.passed)
+              const Positioned.fill(
+                child: IgnorePointer(
+                  child: ParticleCelebration(trigger: true, particleCount: 45),
+                ),
+              ),
           ],
         ),
       ),
@@ -1161,7 +1230,7 @@ class _TraceScreenState extends State<_TraceScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.92),
+        color: Colors.white.withOpacity(0.95),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
@@ -1188,39 +1257,11 @@ class _TraceScreenState extends State<_TraceScreen> {
             ),
           ),
           const Spacer(),
-          PopupMenuButton<int>(
-            tooltip: 'تغییر حرف',
-            icon: const Icon(Icons.menu_book_rounded, size: 24),
-            color: Colors.white,
-            onSelected: _selectLesson,
-            itemBuilder: (context) =>
-                List.generate(widget.lessons.length, (i) {
-              return PopupMenuItem<int>(
-                value: i,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      widget.lessons[i].letter,
-                      style: AppFonts.balooBhaijaan2(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      widget.lessons[i].word,
-                      style: AppFonts.balooBhaijaan2(
-                        color: AppColors.textSecondary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
+          // دکمه قلم جادویی
+          IconButton(
+            tooltip: 'نشانم بده (قلم جادویی)',
+            onPressed: _playMagicPenDemo,
+            icon: const Icon(Icons.auto_awesome_rounded, color: Colors.orange, size: 24),
           ),
         ],
       ),
@@ -1229,8 +1270,8 @@ class _TraceScreenState extends State<_TraceScreen> {
 
   Widget _letterPreview() {
     return Container(
-      width: 78,
-      height: 78,
+      width: 76,
+      height: 76,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
@@ -1248,7 +1289,7 @@ class _TraceScreenState extends State<_TraceScreen> {
         _lesson.letter,
         style: AppFonts.vazirmatn(
           color: AppColors.primary,
-          fontSize: 44,
+          fontSize: 40,
           fontWeight: FontWeight.w900,
           height: 1,
         ),
@@ -1286,12 +1327,11 @@ class _TraceScreenState extends State<_TraceScreen> {
           FilledButton.icon(
             onPressed: _strokes.isEmpty || _checking ? null : _checkTrace,
             icon: const Icon(Icons.verified_rounded, size: 20),
-            label: Text(_checking ? 'در حال بررسی…' : 'بررسی کن'),
+            label: Text(_checking ? 'در حال بررسی معلم…' : 'تأیید معلم ✍️'),
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               textStyle: AppFonts.balooBhaijaan2(
                 fontWeight: FontWeight.w900,
                 fontSize: 17,
@@ -1373,31 +1413,50 @@ Offset _guideTextOffset(Size size, TextPainter painter) {
 class _TracePainter extends CustomPainter {
   final String letter;
   final List<List<Offset>> strokes;
+  final double demoProgress;
 
-  const _TracePainter({required this.letter, required this.strokes});
+  const _TracePainter({
+    required this.letter,
+    required this.strokes,
+    this.demoProgress = 0.0,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
-    // رسم خط زمینه اصلی (خط کرسی آبی/قرمز اول دبستان)
+    // رسم خط زمینه اصلی (خط کرسی آبی اول دبستان)
     final baselineY = size.height * 0.74;
     final baselinePaint = Paint()
-      ..color = Colors.blue.withOpacity(0.35)
+      ..color = Colors.blue.withOpacity(0.40)
       ..strokeWidth = 2.5
       ..style = PaintingStyle.stroke;
 
     canvas.drawLine(
-      Offset(size.width * 0.1, baselineY),
-      Offset(size.width * 0.9, baselineY),
+      Offset(size.width * 0.08, baselineY),
+      Offset(size.width * 0.92, baselineY),
       baselinePaint,
     );
 
+    // نوشتن برچسب «خط کرسی»
+    final labelPainter = TextPainter(
+      text: TextSpan(
+        text: 'خط کرسی (خط زمینه)',
+        style: TextStyle(
+          color: Colors.blue.shade700,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.rtl,
+    )..layout();
+    labelPainter.paint(canvas, Offset(size.width * 0.1, baselineY + 4));
+
     // خط کمکی بالایی (نقطه‌چین)
     final topGuidePaint = Paint()
-      ..color = Colors.red.withOpacity(0.20)
+      ..color = Colors.red.withOpacity(0.25)
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
     for (var x = size.width * 0.15; x < size.width * 0.85; x += 12) {
-      canvas.drawCircle(Offset(x, size.height * 0.30), 1.0, topGuidePaint);
+      canvas.drawCircle(Offset(x, size.height * 0.28), 1.0, topGuidePaint);
     }
 
     // راهنمای کم‌رنگ نشانه
@@ -1409,24 +1468,52 @@ class _TracePainter extends CustomPainter {
     final offset = _guideTextOffset(size, guidePainter);
     guidePainter.paint(canvas, offset);
 
-    // نقطه شروع سبز (Start Dot) و جهت قلم
+    // نقطه شروع سبز تپنده (Start Dot)
+    final startDotPos = Offset(offset.dx + guidePainter.width * 0.76, offset.dy + 22);
+
+    // امواج نورانی رادار نقطه سبز
+    final wavePaint = Paint()
+      ..color = const Color(0xFF2ECC71).withOpacity(0.30)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    canvas.drawCircle(startDotPos, 12, wavePaint);
+
     final startDotPaint = Paint()
       ..color = const Color(0xFF2ECC71)
       ..style = PaintingStyle.fill;
-    final startDotPos = Offset(offset.dx + guidePainter.width * 0.75, offset.dy + 20);
-    canvas.drawCircle(startDotPos, 6, startDotPaint);
+    canvas.drawCircle(startDotPos, 6.5, startDotPaint);
+
+    // رسم انیمیشن قلم جادویی (Demo Pen)
+    if (demoProgress > 0.0) {
+      final demoPos = Offset.lerp(
+        startDotPos,
+        Offset(offset.dx + guidePainter.width * 0.25, baselineY - 10),
+        demoProgress,
+      )!;
+
+      final penPaint = Paint()
+        ..color = Colors.amber
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(demoPos, 10, penPaint);
+
+      final sparkPaint = Paint()
+        ..color = Colors.orange
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3;
+      canvas.drawCircle(demoPos, 16, sparkPaint);
+    }
 
     // خطوطی که کودک کشیده
     final strokePaint = Paint()
       ..color = AppColors.primaryDark
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 7
+      ..strokeWidth = 8
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
     for (final stroke in strokes) {
       if (stroke.isEmpty) continue;
       if (stroke.length == 1) {
-        canvas.drawCircle(stroke.first, 3.5, strokePaint..style = PaintingStyle.fill);
+        canvas.drawCircle(stroke.first, 4.0, strokePaint..style = PaintingStyle.fill);
         strokePaint.style = PaintingStyle.stroke;
         continue;
       }
