@@ -1,4 +1,5 @@
 import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
@@ -276,28 +277,6 @@ def repackMyketAar = tasks.register("repackMyketAar") {
             }
         }
 
-        def tempClasses = File.createTempFile("myket-classes", ".jar")
-        int dropped = 0
-
-        // ۱) همهٔ ورودی‌های AAR را کپی کن؛ classes.jar را موقتاً کنار بگذار.
-        def zin = new ZipInputStream(new FileInputStream(aar))
-        def zout = new ZipOutputStream(new FileOutputStream(out))
-        try {
-            def entry
-            while ((entry = zin.nextEntry) != null) {
-                if (entry.name == "classes.jar") {
-                    tempClasses.withOutputStream { copyBytes(zin, it) }
-                } else {
-                    zout.putNextEntry(new ZipEntry(entry.name))
-                    copyBytes(zin, zout)
-                    zout.closeEntry()
-                }
-            }
-        } finally {
-            zin.close()
-        }
-
-        // ۲) classes.jar را بدون کلاس‌های AIDL تکراریِ مشترک با Poolakey بنویس.
         // checkReleaseDuplicateClasses دقیقاً همین ۴ کلاس را گزارش می‌داد؛
         // بقیهٔ کلاس‌های احتمالی همان پکیج (که در Poolakey نیستند) حفظ می‌شوند
         // تا SDK مایکت در زمان اجرا چیزی کم نداشته باشد.
@@ -307,28 +286,54 @@ def repackMyketAar = tasks.register("repackMyketAar") {
             'com/android/vending/billing/IInAppBillingService$Stub.class',
             'com/android/vending/billing/IInAppBillingService$Stub$Proxy.class',
         ] as Set
-        zout.putNextEntry(new ZipEntry("classes.jar"))
-        def jin = new ZipInputStream(new FileInputStream(tempClasses))
+        int dropped = 0
+
+        def zf = new ZipFile(aar)
+        def zout = new ZipOutputStream(new FileOutputStream(out))
         try {
-            def entry
-            while ((entry = jin.nextEntry) != null) {
-                if (duplicateAidlClasses.contains(entry.name)) {
-                    dropped++
-                    logger.lifecycle("  [repackMyketAar] dropped ${entry.name}")
-                    continue
+            // ۱) همهٔ ورودی‌های AAR به‌جز classes.jar را دست‌نخورده کپی کن.
+            zf.entries().each { sourceEntry ->
+                if (sourceEntry.name == "classes.jar") {
+                    return
                 }
-                if (entry.name.startsWith("com/android/vending/billing/")) {
-                    logger.warn("  [repackMyketAar] kept extra vending class not in Poolakey: ${entry.name}")
-                }
-                zout.putNextEntry(new ZipEntry(entry.name))
-                copyBytes(jin, zout)
+                zout.putNextEntry(new ZipEntry(sourceEntry.name))
+                copyBytes(zf.getInputStream(sourceEntry), zout)
                 zout.closeEntry()
             }
+
+            // ۲) classes.jar را در حافظه فیلتر کن و بعد به AAR خروجی بنویس.
+            def filteredClasses = new ByteArrayOutputStream()
+            def filteredZip = new ZipOutputStream(filteredClasses)
+            try {
+                def jin = new ZipInputStream(zf.getInputStream(zf.getEntry("classes.jar")))
+                try {
+                    def innerEntry
+                    while ((innerEntry = jin.nextEntry) != null) {
+                        if (duplicateAidlClasses.contains(innerEntry.name)) {
+                            dropped++
+                            logger.warn("  [repackMyketAar] dropped ${innerEntry.name}")
+                            continue
+                        }
+                        if (innerEntry.name.startsWith("com/android/vending/billing/")) {
+                            logger.warn("  [repackMyketAar] kept extra vending class (not in Poolakey): ${innerEntry.name}")
+                        }
+                        filteredZip.putNextEntry(new ZipEntry(innerEntry.name))
+                        copyBytes(jin, filteredZip)
+                        filteredZip.closeEntry()
+                    }
+                } finally {
+                    jin.close()
+                }
+            } finally {
+                filteredZip.close()
+            }
+            zout.putNextEntry(new ZipEntry("classes.jar"))
+            zout.write(filteredClasses.toByteArray())
+            zout.closeEntry()
         } finally {
-            jin.close()
+            zout.close()
+            zf.close()
         }
-        zout.close()
-        tempClasses.delete()
 
         if (dropped != 4) {
             throw new GradleException(
