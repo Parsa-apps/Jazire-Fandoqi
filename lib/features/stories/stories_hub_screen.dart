@@ -1,8 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+
 import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
+import '../../app/app_theme.dart';
 import '../../core/audio_service.dart';
 import '../../core/content_access_policy.dart';
 import '../../core/fandoghi_coach.dart';
@@ -10,14 +13,15 @@ import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';
 import '../../core/learning_content/children_stories_data.dart';
 import '../../core/monetization.dart';
-import '../../shared/widgets/premium_lock_overlay.dart';
+import '../home/widgets/island_map/island_map_background.dart';
 import '../shop/full_version_paywall.dart';
 import 'story_reader_screen.dart';
 
-/// ═══════════════════════════════════════════════════════════════
-/// 📚 STORIES HUB SCREEN — قصه‌خانه و داستان‌های کودکانه (نسخه پیشرفته)
-/// بخش جدید شامل ۱۰ داستان کامل، مصور، فیلتر علاقه‌مندی‌ها و پاداش مطالعه
-/// ═══════════════════════════════════════════════════════════════
+/// قصه‌خانهٔ جزیره‌ای؛ یک انتخاب ساده، بزرگ و یکدست برای کودکان خردسال.
+///
+/// هر داستان روی سکوی مستقل خودش قرار دارد. جستجو، فیلتر، بنر، گردونه و
+/// کارت‌های تو‌در‌تو عمداً حذف شده‌اند تا کودک فقط یک تصمیم روشن داشته باشد:
+/// لمس سکوی قصه‌ای که دوست دارد.
 class StoriesHubScreen extends StatefulWidget {
   const StoriesHubScreen({super.key});
 
@@ -25,52 +29,56 @@ class StoriesHubScreen extends StatefulWidget {
   State<StoriesHubScreen> createState() => _StoriesHubScreenState();
 }
 
-class _StoriesHubScreenState extends State<StoriesHubScreen> {
-  StoryCategoryType _selectedCategory = StoryCategoryType.all;
-  String _searchQuery = '';
-  final TextEditingController _searchCtrl = TextEditingController();
-  int _featuredIndex = 0;
-  bool _onlyFavorites = false;
+class _StoriesHubScreenState extends State<StoriesHubScreen>
+    with SingleTickerProviderStateMixin {
+  final ScrollController _scrollController = ScrollController();
+  late final AnimationController _floatController;
+
+  double _scrollOffset = 0;
   bool _hasFullVersion = false;
 
   @override
   void initState() {
     super.initState();
-    // فندقی فقط در بخش بازی/یادگیری حضور دارد.
-    FandoghiCoach.disablePersistentPresence();
+    _floatController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 5),
+    )..repeat();
+    _scrollController.addListener(_onScroll);
     _refreshEntitlement();
+
+    FandoghiCoach.disablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        FandoghiCoach.say(
-          'یه داستان قشنگ انتخاب کن تا با هم بخونیم 📚✨',
-          mood: FandoghiMood.excited,
-          duration: const Duration(seconds: 3),
-        );
-      }
+      if (!mounted) return;
+      FandoghiCoach.say(
+        'هر قصه روی یک سکوی جادویی منتظر توست! یکی را لمس کن 📖',
+        mood: FandoghiMood.excited,
+        duration: const Duration(seconds: 4),
+      );
     });
   }
 
   @override
   void dispose() {
-    _searchCtrl.dispose();
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    _floatController.dispose();
     super.dispose();
   }
 
-  List<ChildrenStory> get _filteredStories {
-    var list = ChildrenStoriesData.getByCategory(_selectedCategory);
-    if (_searchQuery.isNotEmpty) {
-      final q = _searchQuery.trim().toLowerCase();
-      list = list.where((s) {
-        return s.title.toLowerCase().contains(q) ||
-            s.subtitle.toLowerCase().contains(q) ||
-            s.description.toLowerCase().contains(q) ||
-            s.moralMessage.toLowerCase().contains(q);
-      }).toList();
+  void _onScroll() {
+    final next = _scrollController.hasClients ? _scrollController.offset : 0.0;
+    if ((next - _scrollOffset).abs() > 1.5) {
+      setState(() => _scrollOffset = next);
     }
-    if (_onlyFavorites) {
-      list = list.where((s) => GameData.isStoryFavorite(s.id)).toList();
-    }
-    return list;
+  }
+
+  double get _scrollProgress {
+    if (!_scrollController.hasClients) return 0;
+    final max = _scrollController.position.maxScrollExtent;
+    if (max <= 0) return 0;
+    return (_scrollController.offset / max).clamp(0.0, 1.0);
   }
 
   bool _isLocked(ChildrenStory story) =>
@@ -87,6 +95,7 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
   Future<void> _openStory(ChildrenStory story) async {
     HapticFeedback.lightImpact();
     AudioService.select();
+
     if (!ContentAccessPolicy.isStoryFree(story.id) &&
         !await Monetization.hasFullVersion()) {
       if (!mounted) return;
@@ -94,58 +103,179 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
       if (!mounted || !await _refreshEntitlement()) return;
     }
     if (!mounted) return;
-    Navigator.of(context)
-        .push(
-          MaterialPageRoute(
-            settings: RouteSettings(name: '/story/${story.id}'),
-            builder: (_) => StoryReaderScreen(story: story),
-          ),
-        )
-        .then((_) {
-          if (mounted) setState(() {});
-        });
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        settings: RouteSettings(name: '/story/${story.id}'),
+        builder: (_) => StoryReaderScreen(story: story),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
+  void _goBack() {
+    HapticFeedback.selectionClick();
+    AudioService.tap();
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).pushReplacementNamed('/home');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final featuredStories = ChildrenStoriesData.getFeaturedStories();
-    final completedCount = ChildrenStoriesData.allStories
-        .where((s) => GameData.hasCompletedStory(s.id))
-        .length;
+    final stories = ChildrenStoriesData.allStories;
+    final completedCount =
+        stories.where((story) => GameData.hasCompletedStory(story.id)).length;
+    final cycle = AppTheme.currentCycle;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF131127),
-      body: SafeArea(
-        child: Column(
+      backgroundColor: AppColors.mapBackground,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: IslandMapBackground(
+              scrollOffset: _scrollOffset,
+              cycle: cycle,
+              progress: _scrollProgress * 0.62,
+            ),
+          ),
+          Positioned.fill(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final topInset = MediaQuery.paddingOf(context).top + 82;
+                return SingleChildScrollView(
+                  key: const ValueKey('story_island_scroll'),
+                  controller: _scrollController,
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
+                  padding: EdgeInsets.only(
+                    top: topInset,
+                    bottom: MediaQuery.paddingOf(context).bottom + 34,
+                  ),
+                  child: _StoryIslandMap(
+                    width: constraints.maxWidth,
+                    stories: stories,
+                    floatAnimation: _floatController,
+                    isLocked: _isLocked,
+                    onStoryTap: _openStory,
+                  ),
+                );
+              },
+            ),
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                child: _StoryTopBar(
+                  completedCount: completedCount,
+                  totalCount: stories.length,
+                  onBack: _goBack,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StoryTopBar extends StatelessWidget {
+  const _StoryTopBar({
+    required this.completedCount,
+    required this.totalCount,
+    required this.onBack,
+  });
+
+  final int completedCount;
+  final int totalCount;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      label: 'قصه‌خانه فندقی، $completedCount قصه از $totalCount قصه خوانده شده',
+      child: Container(
+        height: 64,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFDF8EA).withOpacity(0.94),
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(color: const Color(0xFFFFC857), width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF5B3B1E).withOpacity(0.2),
+              blurRadius: 15,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
           children: [
-            // ۱. نوار بالای صفحه
-            _buildTopBar(completedCount),
-
-            // ۲. ناحیه اسکرول شونده اصلی
+            IconButton(
+              key: const ValueKey('stories_back'),
+              onPressed: onBack,
+              tooltip: 'بازگشت',
+              style: IconButton.styleFrom(
+                backgroundColor: const Color(0xFF7E57C2),
+                foregroundColor: Colors.white,
+                minimumSize: const Size(48, 48),
+              ),
+              icon: const Icon(Icons.arrow_forward_rounded, size: 25),
+            ),
+            const SizedBox(width: 9),
+            ClipOval(
+              child: Image.asset(
+                'assets/mascot/fandoghi_baby.webp',
+                width: 45,
+                height: 45,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(width: 8),
             Expanded(
-              child: CustomScrollView(
-                physics: const BouncingScrollPhysics(),
-                slivers: [
-                  // بنر خوش‌آمدگویی و پاداش
-                  SliverToBoxAdapter(
-                      child: _buildWelcomeBanner(completedCount)),
-
-                  // گردونه داستان‌های ویژه (در صورت عدم جستجو یا فیلتر)
-                  if (_searchQuery.isEmpty && !_onlyFavorites)
-                    SliverToBoxAdapter(
-                      child: _buildFeaturedCarousel(featuredStories),
+              child: Text(
+                'قصه‌خانه',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppFonts.kids(
+                  color: const Color(0xFF3B2B52),
+                  fontSize: 23,
+                ),
+              ),
+            ),
+            Container(
+              constraints: const BoxConstraints(minWidth: 66),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE6F7DF),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF8BC34A)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.auto_stories_rounded,
+                    color: Color(0xFF558B2F),
+                    size: 19,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '$completedCount/$totalCount',
+                    style: AppFonts.kids(
+                      color: const Color(0xFF3E6D21),
+                      fontSize: 15,
                     ),
-
-                  // نوار جستجو و فیلتر علاقه‌مندی‌ها
-                  SliverToBoxAdapter(child: _buildSearchBar()),
-
-                  // چیپ‌های دسته‌بندی موضوعی
-                  SliverToBoxAdapter(child: _buildCategoryChips()),
-
-                  // شبکه کارت‌های داستان
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
-                    sliver: _buildStoryGrid(),
                   ),
                 ],
               ),
@@ -153,799 +283,436 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
           ],
         ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: _buildSwitchToGamesFab(),
     );
   }
+}
 
-  Widget _buildTopBar(int completedCount) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Row(
+class _StoryIslandMap extends StatelessWidget {
+  const _StoryIslandMap({
+    required this.width,
+    required this.stories,
+    required this.floatAnimation,
+    required this.isLocked,
+    required this.onStoryTap,
+  });
+
+  static const double _stepHeight = 238;
+  static const double _introHeight = 92;
+
+  final double width;
+  final List<ChildrenStory> stories;
+  final Animation<double> floatAnimation;
+  final bool Function(ChildrenStory story) isLocked;
+  final ValueChanged<ChildrenStory> onStoryTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final mapHeight = _introHeight + stories.length * _stepHeight + 32;
+    final platformWidth = (width * 0.60).clamp(196.0, 270.0);
+
+    return SizedBox(
+      width: width,
+      height: mapHeight,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          GestureDetector(
-            onTap: () {
-              if (Navigator.of(context).canPop()) {
-                Navigator.of(context).pop();
-              } else {
-                Navigator.of(context).pushReplacementNamed('/home');
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white12),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: CustomPaint(
+                painter: _StoryTrailPainter(
+                  storyCount: stories.length,
+                  stepHeight: _stepHeight,
+                  introHeight: _introHeight,
+                ),
               ),
-              child: const Icon(Icons.arrow_back_ios_new_rounded,
-                  color: Colors.white, size: 20),
             ),
           ),
-          const SizedBox(width: 12),
-
-          Expanded(
-            child: Row(
-              children: [
-                const Text('📚', style: TextStyle(fontSize: 24)),
-                const SizedBox(width: 8),
-                Text(
-                  'قصه‌خانه فندقی',
-                  style: AppFonts.vazirmatn(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
+          Positioned(
+            top: 2,
+            left: 20,
+            right: 20,
+            child: _GuideBubble(storyCount: stories.length),
           ),
-
-          // شمارنده داستان‌های خوانده‌شده
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.18),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.green.withOpacity(0.4)),
+          for (var index = 0; index < stories.length; index++)
+            Positioned(
+              key: ValueKey('story_platform_$index'),
+              top: _introHeight + index * _stepHeight,
+              left: index.isEven ? 8 : null,
+              right: index.isOdd ? 8 : null,
+              child: _StoryPlatform(
+                index: index,
+                story: stories[index],
+                width: platformWidth,
+                floatAnimation: floatAnimation,
+                locked: isLocked(stories[index]),
+                completed: GameData.hasCompletedStory(stories[index].id),
+                onTap: () => onStoryTap(stories[index]),
+              ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.check_circle_rounded,
-                    color: Colors.greenAccent, size: 18),
-                const SizedBox(width: 4),
-                Text(
-                  '$completedCount / ${ChildrenStoriesData.allStories.length}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          // شمارنده سکه
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.amber.withOpacity(0.18),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.amber.withOpacity(0.4)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.monetization_on_rounded,
-                    color: Colors.amber, size: 18),
-                const SizedBox(width: 4),
-                Text(
-                  '${GameData.coins}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildWelcomeBanner(int completedCount) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+class _GuideBubble extends StatelessWidget {
+  const _GuideBubble({required this.storyCount});
+
+  final int storyCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 10),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF5C6BC0), Color(0xFF7E57C2)],
-          ),
+          color: Colors.white.withOpacity(0.92),
           borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFFFFC857), width: 2),
           boxShadow: [
             BoxShadow(
-              color: Colors.indigo.withOpacity(0.35),
-              blurRadius: 12,
+              color: Colors.black.withOpacity(0.13),
+              blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Row(
-          children: [
-            const Text('📖', style: TextStyle(fontSize: 48)),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '۱۰ داستان کودکانه و مصور',
-                    style: AppFonts.vazirmatn(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'با کلمات طلایی، مسابقه درک مطلب و قصه شب 🌙 هر داستان ۵ ستاره و ۲۵ سکه جایزه دارد!',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+        child: Text(
+          'یکی از $storyCount سکوی قصه را لمس کن! ✨',
+          textAlign: TextAlign.center,
+          style: AppFonts.kids(
+            color: const Color(0xFF4B3565),
+            fontSize: 17,
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildFeaturedCarousel(List<ChildrenStory> featured) {
-    if (featured.isEmpty) return const SizedBox.shrink();
-    final story = featured[_featuredIndex % featured.length];
+class _StoryPlatform extends StatefulWidget {
+  const _StoryPlatform({
+    required this.index,
+    required this.story,
+    required this.width,
+    required this.floatAnimation,
+    required this.locked,
+    required this.completed,
+    required this.onTap,
+  });
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+  final int index;
+  final ChildrenStory story;
+  final double width;
+  final Animation<double> floatAnimation;
+  final bool locked;
+  final bool completed;
+  final VoidCallback onTap;
+
+  @override
+  State<_StoryPlatform> createState() => _StoryPlatformState();
+}
+
+class _StoryPlatformState extends State<_StoryPlatform>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pressController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pressController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 120),
+      reverseDuration: const Duration(milliseconds: 260),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pressController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final height = widget.width * 0.84;
+    final coverSize = widget.width * 0.39;
+    final phaseOffset = widget.index * 0.13;
+
+    return Semantics(
+      button: true,
+      label: '${widget.story.title}${widget.locked ? '، قفل' : ''}${widget.completed ? '، خوانده شده' : ''}',
       child: GestureDetector(
-        onTap: () => _openStory(story),
-        child: Container(
-          height: 185,
-          decoration: BoxDecoration(
-            gradient: story.gradient,
-            borderRadius: BorderRadius.circular(26),
-            boxShadow: [
-              BoxShadow(
-                color: story.themeColor.withOpacity(0.4),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.25),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '🔥 داستان ویژه • ${story.categoryLabel}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            story.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppFonts.vazirmatn(
-                              fontSize: 19,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            story.subtitle,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withOpacity(0.9),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.menu_book_rounded,
-                                        color: Colors.black87, size: 18),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'بخوانیم',
-                                      style: AppFonts.vazirmatn(
-                                        color: Colors.black87,
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Text(
-                                '${story.pages.length} صفحه • ${story.readingTime}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Center(
-                        child: Container(
-                          height: 135,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(22),
-                            border: Border.all(
-                                color: Colors.white.withOpacity(0.55), width: 2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.25),
-                                blurRadius: 10,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: story.coverAsset != null
-                                ? Image.asset(
-                                    story.coverAsset!,
-                                    fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (context, error, stackTrace) =>
-                                            _buildEmojiCover(story),
-                                  )
-                                : _buildEmojiCover(story),
-                          ),
-                        )
-                            .animate(onPlay: (c) => c.repeat(reverse: true))
-                            .moveY(
-                                begin: 0,
-                                end: -5,
-                                duration: 1800.ms,
-                                curve: Curves.easeInOut),
-                      ),
-                    ),
-                  ],
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => _pressController.forward(),
+        onTapCancel: () => _pressController.reverse(),
+        onTapUp: (_) => _pressController.reverse(),
+        onTap: widget.onTap,
+        child: AnimatedBuilder(
+          animation: Listenable.merge([
+            widget.floatAnimation,
+            _pressController,
+          ]),
+          builder: (context, child) {
+            final phase =
+                (widget.floatAnimation.value + phaseOffset) % 1.0;
+            final bob = math.sin(phase * math.pi * 2);
+            return Transform.translate(
+              offset: Offset(0, bob * 6),
+              child: Transform.rotate(
+                angle: bob * 0.01 * (widget.index.isEven ? 1 : -1),
+                child: Transform.scale(
+                  scale: 1 - _pressController.value * 0.07,
+                  child: child,
                 ),
               ),
-
-              Positioned(
-                bottom: 10,
-                left: 0,
-                right: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(featured.length, (i) {
-                    final isSel = i == (_featuredIndex % featured.length);
-                    return GestureDetector(
-                      onTap: () => setState(() => _featuredIndex = i),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: isSel ? 20 : 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: isSel ? Colors.white : Colors.white38,
-                          borderRadius: BorderRadius.circular(3),
+            );
+          },
+          child: SizedBox(
+            width: widget.width,
+            height: height,
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.topCenter,
+              children: [
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Image.asset(
+                    'assets/theme_map/island_blank.png',
+                    width: widget.width,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.medium,
+                  ),
+                ),
+                Positioned(
+                  top: 4,
+                  child: Container(
+                    width: coverSize,
+                    height: coverSize,
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      border: Border.all(
+                        color: widget.completed
+                            ? const Color(0xFF6FCF67)
+                            : const Color(0xFFFFC857),
+                        width: 4,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: widget.story.themeColor.withOpacity(0.35),
+                          blurRadius: 13,
+                          offset: const Offset(0, 5),
                         ),
-                      ),
-                    );
-                  }),
+                      ],
+                    ),
+                    child: ClipOval(child: _cover()),
+                  ),
                 ),
-              ),
-              if (_isLocked(story)) const PremiumLockOverlay(),
-            ],
+                Positioned(
+                  top: 4,
+                  right: widget.width * 0.09,
+                  child: _numberBadge(),
+                ),
+                if (widget.completed)
+                  Positioned(
+                    top: coverSize * 0.72,
+                    left: widget.width * 0.25,
+                    child: _statusBadge(
+                      icon: Icons.check_rounded,
+                      color: const Color(0xFF43A047),
+                      label: 'خواندم',
+                    ),
+                  ),
+                if (widget.locked)
+                  Positioned(
+                    top: coverSize * 0.73,
+                    right: widget.width * 0.23,
+                    child: _statusBadge(
+                      icon: Icons.lock_rounded,
+                      color: const Color(0xFF7E57C2),
+                      label: 'قفل',
+                    ),
+                  ),
+                Positioned(
+                  left: -18,
+                  right: -18,
+                  bottom: height * 0.03,
+                  child: Center(child: _titlePlate()),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildEmojiCover(ChildrenStory story) {
-    return Container(
-      color: story.themeColor.withOpacity(0.3),
-      alignment: Alignment.center,
-      child: Text(
-        story.coverEmoji,
-        style: const TextStyle(fontSize: 54),
+  Widget _cover() {
+    final asset = widget.story.coverAsset;
+    if (asset == null) return _emojiCover();
+    return Image.asset(
+      asset,
+      fit: BoxFit.cover,
+      filterQuality: FilterQuality.medium,
+      errorBuilder: (_, __, ___) => _emojiCover(),
+    );
+  }
+
+  Widget _emojiCover() {
+    return ColoredBox(
+      color: widget.story.themeColor.withOpacity(0.24),
+      child: Center(
+        child: Text(
+          widget.story.coverEmoji,
+          style: TextStyle(fontSize: widget.width * 0.20),
+        ),
       ),
     );
   }
 
-  Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white12),
-              ),
-              child: TextField(
-                controller: _searchCtrl,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-                onChanged: (val) => setState(() => _searchQuery = val),
-                decoration: InputDecoration(
-                  hintText: 'جستجو در عنوان یا پند داستان‌ها...',
-                  hintStyle: TextStyle(
-                      color: Colors.white.withOpacity(0.4), fontSize: 13),
-                  prefixIcon: const Icon(Icons.search_rounded,
-                      color: Colors.white54, size: 22),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear_rounded,
-                              color: Colors.white54, size: 18),
-                          onPressed: () {
-                            _searchCtrl.clear();
-                            setState(() => _searchQuery = '');
-                          },
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
+  Widget _numberBadge() {
+    return Container(
+      width: 38,
+      height: 38,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFDF7),
+        shape: BoxShape.circle,
+        border: Border.all(color: const Color(0xFFFFB300), width: 2.5),
+        boxShadow: const [
+          BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3)),
+        ],
+      ),
+      child: Text(
+        '${widget.index + 1}',
+        style: AppFonts.kids(
+          color: const Color(0xFF5D4037),
+          fontSize: 17,
+        ),
+      ),
+    );
+  }
 
-          // دکمه فیلتر علاقه‌مندی‌ها
-          GestureDetector(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              AudioService.tap();
-              setState(() => _onlyFavorites = !_onlyFavorites);
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              height: 48,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
-                color: _onlyFavorites
-                    ? Colors.redAccent.withOpacity(0.25)
-                    : Colors.white.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color:
-                      _onlyFavorites ? Colors.redAccent : Colors.white12,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    _onlyFavorites
-                        ? Icons.favorite_rounded
-                        : Icons.favorite_border_rounded,
-                    color: _onlyFavorites ? Colors.redAccent : Colors.white70,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'علاقه‌ها',
-                    style: TextStyle(
-                      color: _onlyFavorites
-                          ? Colors.redAccent
-                          : Colors.white70,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+  Widget _statusBadge({
+    required IconData icon,
+    required Color color,
+    required String label,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 5)],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white, size: 15),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: AppFonts.kids(color: Colors.white, fontSize: 11),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCategoryChips() {
+  Widget _titlePlate() {
     return Container(
-      height: 52,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: ChildrenStoriesData.categories.length,
-        itemBuilder: (context, index) {
-          final cat = ChildrenStoriesData.categories[index];
-          final isSelected = _selectedCategory == cat.type;
-
-          return GestureDetector(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              AudioService.tap();
-              setState(() => _selectedCategory = cat.type);
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              margin: const EdgeInsets.only(left: 8),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected ? cat.color : Colors.white.withOpacity(0.07),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: isSelected ? Colors.white38 : Colors.white12,
-                ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: cat.color.withOpacity(0.4),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Row(
-                children: [
-                  Text(cat.emoji, style: const TextStyle(fontSize: 18)),
-                  const SizedBox(width: 6),
-                  Text(
-                    cat.title,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.white70,
-                      fontWeight:
-                          isSelected ? FontWeight.w900 : FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+      constraints: BoxConstraints(maxWidth: widget.width + 32),
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFDF7),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFFFB300), width: 2.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.24),
+            blurRadius: 7,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Text(
+        widget.story.title,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        style: AppFonts.kids(
+          color: const Color(0xFF3E3150),
+          fontSize: 16,
+          height: 1.15,
+        ),
       ),
     );
   }
+}
 
-  Widget _buildStoryGrid() {
-    final list = _filteredStories;
+class _StoryTrailPainter extends CustomPainter {
+  const _StoryTrailPainter({
+    required this.storyCount,
+    required this.stepHeight,
+    required this.introHeight,
+  });
 
-    if (list.isEmpty) {
-      return SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 40),
-          child: Column(
-            children: [
-              const Text('🔍', style: TextStyle(fontSize: 50)),
-              const SizedBox(height: 12),
-              Text(
-                'داستانی با این موضوع پیدا نشد!',
-                style: AppFonts.vazirmatn(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white70,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+  final int storyCount;
+  final double stepHeight;
+  final double introHeight;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (storyCount < 2) return;
+
+    final path = Path();
+    for (var index = 0; index < storyCount; index++) {
+      final x = index.isEven ? size.width * 0.35 : size.width * 0.65;
+      final y = introHeight + index * stepHeight + stepHeight * 0.50;
+      if (index == 0) {
+        path.moveTo(x, y);
+      } else {
+        final previousX = index.isEven
+            ? size.width * 0.65
+            : size.width * 0.35;
+        final previousY = y - stepHeight;
+        path.cubicTo(
+          previousX,
+          previousY + stepHeight * 0.46,
+          x,
+          y - stepHeight * 0.46,
+          x,
+          y,
+        );
+      }
     }
 
-    return SliverGrid(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 14,
-        crossAxisSpacing: 14,
-        childAspectRatio: 0.72,
-      ),
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final story = list[index];
-          final isCompleted = GameData.hasCompletedStory(story.id);
-          final isFav = GameData.isStoryFavorite(story.id);
-
-          return GestureDetector(
-            onTap: () => _openStory(story),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E1B38),
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(
-                  color: isCompleted
-                      ? Colors.greenAccent.withOpacity(0.5)
-                      : story.themeColor.withOpacity(0.3),
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: story.themeColor.withOpacity(0.15),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          if (story.coverAsset != null)
-                            Image.asset(
-                              story.coverAsset!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  _buildEmojiCover(story),
-                            )
-                          else
-                            _buildEmojiCover(story),
-
-                          Positioned(
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            height: 40,
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    const Color(0xFF1E1B38),
-                                    const Color(0xFF1E1B38).withOpacity(0.0),
-                                  ],
-                                  begin: Alignment.bottomCenter,
-                                  end: Alignment.topCenter,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          // دکمه لایک داستان در گوشه بالا سمت چپ
-                          Positioned(
-                            top: 8,
-                            left: 8,
-                            child: GestureDetector(
-                              onTap: () {
-                                HapticFeedback.lightImpact();
-                                final wasFav = isFav;
-                                GameData.toggleStoryFavorite(story.id);
-                                if (!wasFav) AudioService.coin();
-                                setState(() {});
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.4),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  isFav
-                                      ? Icons.favorite_rounded
-                                      : Icons.favorite_border_rounded,
-                                  color: isFav ? Colors.redAccent : Colors.white,
-                                  size: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          if (isCompleted)
-                            Positioned(
-                              top: 8,
-                              right: 8,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withOpacity(0.9),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.check_circle_rounded,
-                                        color: Colors.white, size: 14),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'خوانده‌شده',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-
-                          Positioned(
-                            bottom: 6,
-                            left: 8,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.6),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                '${story.pages.length} صفحه مصور',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (_isLocked(story))
-                            const PremiumLockOverlay(),
-                        ],
-                      ),
-                    ),
-
-                    Expanded(
-                      flex: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '${story.coverEmoji} ${story.title}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppFonts.vazirmatn(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 13,
-                              ),
-                            ),
-                            Text(
-                              story.categoryLabel,
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.6),
-                                fontSize: 11,
-                              ),
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '⏱️ ${story.readingTime}',
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: story.themeColor.withOpacity(0.35),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Text(
-                                    'بخوانیم 📖',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-        childCount: list.length,
-      ),
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = Colors.white.withOpacity(0.52)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 8
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = const Color(0xFFFFD166).withOpacity(0.85)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3
+        ..strokeCap = StrokeCap.round,
     );
   }
 
-  Widget _buildSwitchToGamesFab() {
-    return GestureDetector(
-      onTap: () => Navigator.of(context).pushReplacementNamed('/gateway'),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        decoration: BoxDecoration(
-          gradient: AppGradients.primary,
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withOpacity(0.5),
-              blurRadius: 20,
-              offset: const Offset(0, 6),
-            ),
-          ],
-          border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.home_rounded, color: Colors.white, size: 24),
-            const SizedBox(width: 10),
-            Text(
-              'بازگشت به جزیره 🏝️',
-              style: AppFonts.vazirmatn(
-                fontSize: 15,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        ),
-      ),
-    )
-        .animate(onPlay: (c) => c.repeat(reverse: true))
-        .moveY(begin: 0, end: -4, duration: 1500.ms);
-  }
+  @override
+  bool shouldRepaint(covariant _StoryTrailPainter oldDelegate) =>
+      oldDelegate.storyCount != storyCount ||
+      oldDelegate.stepHeight != stepHeight ||
+      oldDelegate.introHeight != introHeight;
 }
