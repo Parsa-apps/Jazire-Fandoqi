@@ -178,15 +178,42 @@ void main() {
       }
     });
 
-    test('all 86 recordings are distinct files that exist on disk', () {
-      expect(AudioService.wordAudioKeys, hasLength(86));
+    test('all 126 recordings are distinct files that exist on disk', () {
+      expect(AudioService.wordAudioKeys, hasLength(126));
       final paths = AudioService.wordAudioKeys.keys
           .map(AudioService.wordAssetFor)
           .toSet();
-      expect(paths, hasLength(86));
+      expect(paths, hasLength(126));
       for (final path in paths) {
         expect(File(path!).existsSync(), isTrue, reason: path);
       }
+    });
+
+    test('every allograph sample word has a bundled recording', () {
+      // کارت «اشکال چهارگانه»: هر خانه یک کلمهٔ لمس‌شدنی دارد. اگر یکی
+      // صدا نداشته باشد کودک به‌جای کلمه، هجی می‌شنود.
+      final source =
+          File('lib/features/games/alphabet_academy/alphabet_academy_game.dart')
+              .readAsStringSync();
+      final words = <String>{};
+      for (final block in RegExp(r'allographWords: \[(.*?)\]', dotAll: true)
+          .allMatches(source)) {
+        for (final m in RegExp(r"'([^']*)'").allMatches(block.group(1)!)) {
+          words.add(AudioService.cleanSpokenText(m.group(1)!));
+        }
+      }
+
+      expect(words, isNotEmpty);
+      for (final word in words) {
+        final path = AudioService.wordAssetFor(word);
+        expect(path, isNotNull, reason: 'کلمهٔ «$word» ضبط نشده است');
+        expect(File(path!).existsSync(), isTrue, reason: '$word → $path');
+      }
+    });
+
+    test('no two words share the same recording file', () {
+      final files = AudioService.wordAudioKeys.values.toList();
+      expect(files.toSet(), hasLength(files.length));
     });
 
     test('recorded allograph sample words resolve to their own clip', () {
@@ -227,8 +254,8 @@ void main() {
         expect(channels, 1, reason: key);
         expect(rate, 22050, reason: key);
       }
-      // کل بستهٔ کلمات باید زیر ۶ مگابایت بماند.
-      expect(total, lessThan(6 * 1024 * 1024));
+      // کل بستهٔ کلمات باید زیر ۸ مگابایت بماند.
+      expect(total, lessThan(8 * 1024 * 1024));
     });
   });
 
