@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../app/app_fonts.dart';
+import 'parsa_apps_logo.dart';
 
 /// قاب معرفی وب‌سایت پارسا اپس در صفحهٔ درباره و پشتیبانی.
 ///
@@ -192,31 +193,9 @@ class _CardBody extends StatelessWidget {
                                 0.045,
                             child: child,
                           ),
-                          child: Container(
-                            width: 58,
-                            height: 58,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF00F5D4), Color(0xFF48CAE4)],
-                              ),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.72),
-                                width: 1.4,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF00F5D4)
-                                      .withOpacity(0.42),
-                                  blurRadius: 20,
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.language_rounded,
-                              color: Color(0xFF102A56),
-                              size: 31,
-                            ),
+                          child: const ParsaAppsLogo(
+                            size: 62,
+                            borderRadius: 16,
                           ),
                         ),
                         const SizedBox(width: 14),

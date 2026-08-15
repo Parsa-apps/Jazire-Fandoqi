@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -240,11 +239,21 @@ class _ProfileState extends ConsumerState<ProfileScreen>
                         ),
                         border: Border.all(color: Colors.white, width: 3),
                       ),
-                      child: GameData.profilePhotoPath.isNotEmpty && File(GameData.profilePhotoPath).existsSync()
-                          ? ClipOval(child: Image.file(File(GameData.profilePhotoPath), fit: BoxFit.cover, width: 100, height: 100))
-                          : GameData.avatar.startsWith('assets/')
-                              ? ClipOval(child: Image.asset(GameData.avatar, fit: BoxFit.cover, width: 100, height: 100))
-                              : Center(child: Text(GameData.avatar, style: const TextStyle(fontSize: 48))),
+                      child: GameData.avatar.startsWith('assets/')
+                          ? ClipOval(
+                              child: Image.asset(
+                                GameData.avatar,
+                                fit: BoxFit.cover,
+                                width: 100,
+                                height: 100,
+                              ),
+                            )
+                          : Center(
+                              child: Text(
+                                GameData.avatar,
+                                style: const TextStyle(fontSize: 48),
+                              ),
+                            ),
                       ),
                     ).animate().scale(
                     duration: 600.ms,

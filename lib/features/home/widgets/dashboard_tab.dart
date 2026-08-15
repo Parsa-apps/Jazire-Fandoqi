@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -563,27 +562,19 @@ class _DashboardState extends ConsumerState<DashboardTab>
                       ],
                     ),
                     child: ClipOval(
-                      child: GameData.profilePhotoPath.isNotEmpty &&
-                              File(GameData.profilePhotoPath).existsSync()
-                          ? Image.file(
-                              File(GameData.profilePhotoPath),
+                      child: GameData.avatar.startsWith('assets/')
+                          ? Image.asset(
+                              GameData.avatar,
                               fit: BoxFit.cover,
                               width: 44,
                               height: 44,
                             )
-                          : GameData.avatar.startsWith('assets/')
-                              ? Image.asset(
-                                  GameData.avatar,
-                                  fit: BoxFit.cover,
-                                  width: 44,
-                                  height: 44,
-                                )
-                              : Center(
-                                  child: Text(
-                                    GameData.avatar,
-                                    style: const TextStyle(fontSize: 22),
-                                  ),
-                                ),
+                          : Center(
+                              child: Text(
+                                GameData.avatar,
+                                style: const TextStyle(fontSize: 22),
+                              ),
+                            ),
                     ),
                   ),
                 ),
