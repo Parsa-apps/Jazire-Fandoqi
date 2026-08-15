@@ -297,15 +297,28 @@ def repackMyketAar = tasks.register("repackMyketAar") {
             zin.close()
         }
 
-        // ۲) classes.jar را بدون کلاس‌های تکراری AIDL گوگل بنویس.
+        // ۲) classes.jar را بدون کلاس‌های AIDL تکراریِ مشترک با Poolakey بنویس.
+        // checkReleaseDuplicateClasses دقیقاً همین ۴ کلاس را گزارش می‌داد؛
+        // بقیهٔ کلاس‌های احتمالی همان پکیج (که در Poolakey نیستند) حفظ می‌شوند
+        // تا SDK مایکت در زمان اجرا چیزی کم نداشته باشد.
+        def duplicateAidlClasses = [
+            'com/android/vending/billing/IInAppBillingService.class',
+            'com/android/vending/billing/IInAppBillingService$Default.class',
+            'com/android/vending/billing/IInAppBillingService$Stub.class',
+            'com/android/vending/billing/IInAppBillingService$Stub$Proxy.class',
+        ] as Set
         zout.putNextEntry(new ZipEntry("classes.jar"))
         def jin = new ZipInputStream(new FileInputStream(tempClasses))
         try {
             def entry
             while ((entry = jin.nextEntry) != null) {
-                if (entry.name.startsWith("com/android/vending/billing/")) {
+                if (duplicateAidlClasses.contains(entry.name)) {
                     dropped++
+                    logger.lifecycle("  [repackMyketAar] dropped ${entry.name}")
                     continue
+                }
+                if (entry.name.startsWith("com/android/vending/billing/")) {
+                    logger.warn("  [repackMyketAar] kept extra vending class not in Poolakey: ${entry.name}")
                 }
                 zout.putNextEntry(new ZipEntry(entry.name))
                 copyBytes(jin, zout)
@@ -317,10 +330,9 @@ def repackMyketAar = tasks.register("repackMyketAar") {
         zout.close()
         tempClasses.delete()
 
-        // AIDL گوگل دقیقاً ۴ کلاس تولید می‌کند (اینترفیس + ۳ کلاس داخلی).
         if (dropped != 4) {
             throw new GradleException(
-                "Expected to drop 4 com.android.vending.billing classes from the Myket AAR but dropped ${dropped}"
+                "Expected to drop 4 duplicate com.android.vending.billing classes from the Myket AAR but dropped ${dropped}"
             )
         }
         logger.lifecycle("Repacked Myket AAR without com.android.vending.billing.* (${dropped} classes dropped)")
