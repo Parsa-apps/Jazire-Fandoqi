@@ -53,7 +53,7 @@ class _LifeSkillsGameState extends State<LifeSkillsGame> {
         return;
       }
       FandoghiCoach.instruction('به دنیای ${widget.topic.title} خوش آمدی!');
-      unawaited(AudioService.speak(widget.topic.questions.isEmpty ? '' : _current.prompt));
+      _speakCurrentQuestion();
     });
   }
 
@@ -64,6 +64,11 @@ class _LifeSkillsGameState extends State<LifeSkillsGame> {
   }
 
   LifeSkillQuestion get _current => _round[_index];
+
+  void _speakCurrentQuestion() {
+    if (widget.topic.questions.isEmpty) return;
+    unawaited(AudioService.speak(_current.prompt));
+  }
 
   List<String> _buildOptions() {
     final count = AdaptiveCoach.optionCountForAge();
@@ -124,7 +129,7 @@ class _LifeSkillsGameState extends State<LifeSkillsGame> {
           _locked = false;
           if (skip) _wrongStreak = 0;
         });
-        unawaited(AudioService.speak(_current.prompt));
+        _speakCurrentQuestion();
       }
     });
   }
@@ -174,7 +179,14 @@ class _LifeSkillsGameState extends State<LifeSkillsGame> {
                   style: AppFonts.vazirmatn(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800),
                 ),
               ),
-              const SizedBox(width: 36),
+              IconButton(
+                tooltip: 'خواندن صوتی سؤال',
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  _speakCurrentQuestion();
+                },
+                icon: const Icon(Icons.volume_up_rounded, color: Colors.amberAccent, size: 26),
+              ),
             ],
           ),
         ),
@@ -190,10 +202,25 @@ class _LifeSkillsGameState extends State<LifeSkillsGame> {
         Text(_current.emoji, style: const TextStyle(fontSize: 64)),
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-          child: Text(
-            _current.prompt,
-            textAlign: TextAlign.center,
-            style: AppFonts.vazirmatn(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, height: 1.4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  _current.prompt,
+                  textAlign: TextAlign.center,
+                  style: AppFonts.vazirmatn(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900, height: 1.4),
+                ),
+              ),
+              IconButton.filledTonal(
+                tooltip: 'خواندن صوتی',
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  AudioService.speak(_current.prompt);
+                },
+                icon: const Icon(Icons.volume_up_rounded, size: 20, color: Colors.white),
+              ),
+            ],
           ),
         ),
         Expanded(
@@ -219,12 +246,24 @@ class _LifeSkillsGameState extends State<LifeSkillsGame> {
                       borderRadius: BorderRadius.circular(22),
                       border: Border.all(color: Colors.white.withOpacity(selected ? 1 : 0.25)),
                     ),
-                    child: Center(
-                      child: Text(
-                        _options[i],
-                        textAlign: TextAlign.center,
-                        style: AppFonts.vazirmatn(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800),
-                      ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _options[i],
+                            textAlign: TextAlign.center,
+                            style: AppFonts.vazirmatn(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'تلفظ گزینه',
+                          icon: const Icon(Icons.volume_up_rounded, size: 16, color: Colors.white70),
+                          onPressed: () {
+                            HapticFeedback.selectionClick();
+                            AudioService.speak(_options[i]);
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -240,53 +279,40 @@ class _LifeSkillsGameState extends State<LifeSkillsGame> {
     final ok = _correct >= 3;
     return Stack(
       children: [
-        if (ok) const ParticleCelebration(trigger: true, particleCount: 36),
         Center(
           child: Padding(
             padding: const EdgeInsets.all(28),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(ok ? '🏆' : '💪', style: const TextStyle(fontSize: 72))
-                    .animate()
-                    .scale(begin: const Offset(0.4, 0.4), curve: Curves.elasticOut),
+                Text(ok ? '🌟' : '🌱', style: const TextStyle(fontSize: 72)),
                 const SizedBox(height: 12),
                 Text(
-                  ok ? 'آفرین کاوشگر زندگی!' : 'تمرین خوبی بود!',
-                  style: AppFonts.vazirmatn(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                  ok ? 'آفرین به قهرمان مهارت‌ها!' : 'خوب تلاش کردی!',
+                  style: AppFonts.vazirmatn(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '$_correct درست از ${_round.length}  •  +${_correct * 8} سکه',
-                  style: const TextStyle(color: Colors.white70, fontSize: 16),
+                  '$_correct از ${_round.length} پاسخ درست',
+                  style: AppFonts.vazirmatn(color: Colors.white70, fontSize: 16, fontWeight: FontWeight.w700),
                 ),
-                const SizedBox(height: 28),
-                PremiumButton(
-                  text: 'دور بعد 🔄',
-                  icon: Icons.replay_rounded,
-                  onPressed: () {
-                    setState(() {
-                      _prepareRound();
-                      _index = 0;
-                      _correct = 0;
-                      _wrongStreak = 0;
-                      _locked = false;
-                      _finished = false;
-                      _selected = null;
-                    });
-                  },
-                ),
-                const SizedBox(height: 12),
-                PremiumButton(
-                  text: 'برگشت 🏠',
-                  icon: Icons.home_rounded,
-                  color: const Color(0xFF5C6BC0),
-                  onPressed: () => Navigator.pop(context),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: PremiumButton(
+                    text: 'ادامه و دریافت جایزه',
+                    icon: Icons.check_circle_rounded,
+                    onPressed: () => Navigator.pop(context),
+                  ),
                 ),
               ],
             ),
           ),
         ),
+        if (ok)
+          const Positioned.fill(
+            child: IgnorePointer(child: ParticleCelebration(trigger: true)),
+          ),
       ],
     );
   }

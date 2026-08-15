@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -236,28 +237,39 @@ class _LuckyWheelGameState extends State<LuckyWheelGame>
   }
 
   Widget _buildWheel() {
-    final size = MediaQuery.of(context).size.width * 0.62;
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: const RadialGradient(
-          colors: [Color(0xFF6C5CE7), Color(0xFF4834D4)],
-        ),
-        border: Border.all(color: Colors.amber, width: 6),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.5),
-            blurRadius: 30,
-            spreadRadius: 4,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screenWidth = MediaQuery.of(context).size.width;
+        final screenHeight = MediaQuery.of(context).size.height;
+        final maxDimension = math.min(constraints.maxWidth, constraints.maxHeight);
+        final base = maxDimension > 0
+            ? maxDimension * 0.85
+            : math.min(screenWidth * 0.65, screenHeight * 0.38);
+        final size = base.clamp(200.0, 320.0);
+
+        return Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const RadialGradient(
+              colors: [Color(0xFF6C5CE7), Color(0xFF4834D4)],
+            ),
+            border: Border.all(color: Colors.amber, width: 6),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withOpacity(0.5),
+                blurRadius: 30,
+                spreadRadius: 4,
+              ),
+            ],
           ),
-        ],
-      ),
-      child: CustomPaint(
-        size: Size.square(size),
-        painter: _WheelPainter(_rewards),
-      ),
+          child: CustomPaint(
+            size: Size.square(size),
+            painter: _WheelPainter(_rewards),
+          ),
+        );
+      },
     );
   }
 }

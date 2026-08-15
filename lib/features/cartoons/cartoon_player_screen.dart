@@ -223,7 +223,13 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
     }
 
     try {
-      final controller = VideoPlayerController.networkUrl(Uri.parse(url));
+      final controller = VideoPlayerController.networkUrl(
+        Uri.parse(url),
+        httpHeaders: const {
+          'User-Agent': 'Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+          'Referer': 'https://www.aparat.com/',
+        },
+      );
       _controller = controller;
       controller.addListener(_videoListener);
       await controller.initialize();
@@ -818,11 +824,42 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
                       ),
                     ),
 
-                  // نوار بارگذاری
+                  // نوار بارگذاری زیبا با تم فندقی و سینما
                   if (_videoLoading)
-                    const Positioned.fill(
-                      child: Center(
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.black.withOpacity(0.4),
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const FandoghiV2(size: 54)
+                                  .animate(onPlay: (c) => c.repeat(reverse: true))
+                                  .scale(begin: const Offset(0.9, 0.9), end: const Offset(1.1, 1.1), duration: 600.ms),
+                              const SizedBox(height: 10),
+                              Text(
+                                'فندقی در حال آماده‌کردن کارتون... 🍿🎬',
+                                style: AppFonts.vazirmatn(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              const SizedBox(
+                                width: 140,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                                  child: LinearProgressIndicator(
+                                    backgroundColor: Colors.white24,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
+                                    minHeight: 5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
 
