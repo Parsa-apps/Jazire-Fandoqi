@@ -1,3 +1,7 @@
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
+
 plugins {
     id "com.android.application"
     id "org.jetbrains.kotlin.android"
@@ -224,6 +228,116 @@ if (System.getenv("GITHUB_ACTIONS") == "true") {
         .configureEach { dependsOn(ciQualityGate) }
 }
 
+// =====================================================================
+// 🛠️ رفع تداخل کلاس‌های AIDL بین دو SDK پرداخت (Poolakey و Myket):
+//
+// هر دو کتابخانه کلاس com.android.vending.billing.IInAppBillingService
+// را باندل می‌کنند (هر دو از نمونه‌کد TrivialDrive گوگل مشتق شده‌اند) و
+// Gradle در :app:checkReleaseDuplicateClasses بیلد release را می‌شکست.
+//
+// این کلاس را نمی‌شود با exclude عادی حذف کرد چون داخل خود AAR است.
+// مقایسهٔ فایل‌های AIDL دو کتابخانه نشان می‌دهد ۷ متد اول هر دو دقیقاً
+// یکسان است (isBillingSupported، getSkuDetails، getBuyIntent،
+// getPurchases، consumePurchase، getBuyIntentV2، getPurchaseConfig) و
+// مایکت فقط از همین ۷ متد استفاده می‌کند؛ Poolakey سه متد اضافهٔ مخصوص
+// بازار را دارد (getBuyIntentV3 و ...) که فقط خودش صدا می‌زند.
+// بنابراین کپی Poolakey نگه داشته می‌شود و کپی داخل AAR مایکت هنگام
+// بیلد حذف می‌شود: هر دو SDK با همان یک نسخه کار می‌کنند (کدهای
+// تراکنش AIDL بر اساس ترتیب متدها یکسان است).
+//
+// پیاده‌سازی: وابستگی اصلی JitPack فقط برای کامپایل می‌ماند؛ برای
+// runtime یک نسخهٔ بازبسته‌بندی‌شده از همان AAR (بدون ۴ کلاس
+// com/android/vending/billing/*) ساخته و جایگزین می‌شود.
+// =====================================================================
+def myketBillingVersion = "1.19"
+def myketBillingModule = [group: "com.github.myketstore", module: "myket-billing-client"]
+
+// فقط خود AAR مایکت (بدون وابستگی‌های تراکنزیو) برای بازبسته‌بندی.
+def myketOriginalConfig = configurations.detachedConfiguration(
+    dependencies.create("com.github.myketstore:myket-billing-client:${myketBillingVersion}")
+)
+myketOriginalConfig.transitive = false
+
+def repackMyketAar = tasks.register("repackMyketAar") {
+    description = "Repackages the Myket billing AAR without the duplicate Google AIDL classes"
+    def outputFile = layout.buildDirectory.file("repacked/myket-billing-client-${myketBillingVersion}.aar")
+    inputs.files(myketOriginalConfig)
+    outputs.file(outputFile)
+    doLast {
+        def aar = myketOriginalConfig.singleFile
+        def out = outputFile.get().asFile
+        out.parentFile.mkdirs()
+
+        def copyBytes = { InputStream input, OutputStream output ->
+            byte[] buffer = new byte[16384]
+            int read
+            while ((read = input.read(buffer)) > 0) {
+                output.write(buffer, 0, read)
+            }
+        }
+
+        def tempClasses = File.createTempFile("myket-classes", ".jar")
+        int dropped = 0
+
+        // ۱) همهٔ ورودی‌های AAR را کپی کن؛ classes.jar را موقتاً کنار بگذار.
+        def zin = new ZipInputStream(new FileInputStream(aar))
+        def zout = new ZipOutputStream(new FileOutputStream(out))
+        try {
+            def entry
+            while ((entry = zin.nextEntry) != null) {
+                if (entry.name == "classes.jar") {
+                    tempClasses.withOutputStream { copyBytes(zin, it) }
+                } else {
+                    zout.putNextEntry(new ZipEntry(entry.name))
+                    copyBytes(zin, zout)
+                    zout.closeEntry()
+                }
+            }
+        } finally {
+            zin.close()
+        }
+
+        // ۲) classes.jar را بدون کلاس‌های تکراری AIDL گوگل بنویس.
+        zout.putNextEntry(new ZipEntry("classes.jar"))
+        def jin = new ZipInputStream(new FileInputStream(tempClasses))
+        try {
+            def entry
+            while ((entry = jin.nextEntry) != null) {
+                if (entry.name.startsWith("com/android/vending/billing/")) {
+                    dropped++
+                    continue
+                }
+                zout.putNextEntry(new ZipEntry(entry.name))
+                copyBytes(jin, zout)
+                zout.closeEntry()
+            }
+        } finally {
+            jin.close()
+        }
+        zout.close()
+        tempClasses.delete()
+
+        // AIDL گوگل دقیقاً ۴ کلاس تولید می‌کند (اینترفیس + ۳ کلاس داخلی).
+        if (dropped != 4) {
+            throw new GradleException(
+                "Expected to drop 4 com.android.vending.billing classes from the Myket AAR but dropped ${dropped}"
+            )
+        }
+        logger.lifecycle("Repacked Myket AAR without com.android.vending.billing.* (${dropped} classes dropped)")
+    }
+}
+
+// در مسیر runtime به‌جای AAR اصلی مایکت، نسخهٔ بازبسته‌بندی‌شده قرار
+// می‌گیرد تا تداخل کلاس‌های AIDL با Poolakey پیش نیاید.
+configurations {
+    debugRuntimeClasspath {
+        exclude group: myketBillingModule.group, module: myketBillingModule.module
+    }
+    releaseRuntimeClasspath {
+        exclude group: myketBillingModule.group, module: myketBillingModule.module
+    }
+}
+
 dependencies {
     // Poolakey is the official open-source Cafe Bazaar billing client.
     implementation "com.github.cafebazaar.Poolakey:poolakey:2.2.0"
@@ -231,9 +345,14 @@ dependencies {
     // The ads-identifier transitive dependency is excluded: this is a kids app
     // with a "no advertising ID, no tracking" privacy promise, and the billing
     // flow does not need it.
-    implementation("com.github.myketstore:myket-billing-client:1.19") {
+    implementation("com.github.myketstore:myket-billing-client:${myketBillingVersion}") {
         exclude group: "com.google.android.gms", module: "play-services-ads-identifier"
     }
+    // نسخهٔ بازبسته‌بندی‌شدهٔ AAR مایکت برای runtime (توضیح بالا).
+    runtimeOnly files(repackMyketAar)
+    // دیالوگ نصب مایکت در SDK از BottomSheet متریال استفاده می‌کند؛ چون
+    // AAR بازبسته‌بندی‌شده POM ندارد، متریال باید صریحاً اینجا بیاید.
+    implementation "com.google.android.material:material:1.12.0"
     // AppCompat for uCrop Activity & theme support
     implementation "androidx.appcompat:appcompat:1.7.0"
     implementation "androidx.annotation:annotation:1.7.1"
