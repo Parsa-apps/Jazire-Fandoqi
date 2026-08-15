@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../app/app_colors.dart';
 import '../../../app/design_tokens.dart';
@@ -20,12 +21,11 @@ import '../../../shared/widgets/handwriting_score_overlay.dart';
 import '../../shop/full_version_paywall.dart';
 
 /// ────────────────────────────────────────────────────────────
-/// 🔤 آکادمی الفبا و فارسی اول دبستان
+/// 🔤 آکادمی الفبا و فارسی اول دبستان (Grade 1 Curriculum)
 ///
-/// آموزش استاندارد نشانه‌ها مطابق کتاب بخوانیم و بنویسیم پایه اول:
-/// ۱. دو حالت چیدمان: «کتاب فارسی اول 📚» و «الفبایی سنتی 🔤»
-/// ۲. آموزش اشکال چندگانه حروف (Allographs: اول، وسط، آخر چسبان، تنها)
-/// ۳. بوم ردیابی با خط کرسی (Baseline)، نقطه شروع و جهت قلم.
+/// دو حالت جامع:
+/// ۱. حالت اول: مطابق کتاب بخوانیم اول دبستان (زنجیره بسته‌های نشانه‌های ۱ و ۲ + کارگاه واژه‌سازی)
+/// ۲. حالت دوم: جستجوی الفبایی آزاد (الف تا ی + جستجوی زنده)
 /// ────────────────────────────────────────────────────────────
 enum _AlphabetMode { grade1, alphabetical }
 
@@ -45,13 +45,34 @@ class AlphabetAcademyGame extends StatefulWidget {
 
 class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   _AlphabetMode _mode = _AlphabetMode.grade1;
+  int _selectedBundleIndex = 0;
   int _lessonIndex = 0;
   bool _hasFullVersion = false;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
-  List<_LetterLesson> get _currentLessons =>
-      _mode == _AlphabetMode.grade1 ? _grade1Lessons : _alphabeticalLessons;
+  _Grade1Bundle get _currentBundle => _grade1Bundles[_selectedBundleIndex];
 
-  _LetterLesson get _lesson => _currentLessons[_lessonIndex];
+  List<_LetterLesson> get _currentLessons {
+    if (_mode == _AlphabetMode.grade1) {
+      return _currentBundle.lessons;
+    }
+    if (_searchQuery.trim().isEmpty) {
+      return _alphabeticalLessons;
+    }
+    final q = _searchQuery.trim().toLowerCase();
+    return _alphabeticalLessons.where((l) {
+      return l.letter.contains(q) || l.word.contains(q);
+    }).toList();
+  }
+
+  _LetterLesson get _lesson {
+    final list = _currentLessons;
+    if (_lessonIndex >= list.length) {
+      _lessonIndex = 0;
+    }
+    return list.isEmpty ? _alphabeticalLessons.first : list[_lessonIndex];
+  }
 
   @override
   void initState() {
@@ -67,13 +88,14 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
         return;
       }
       FandoghiCoach.instruction(
-        'به آکادمی الفبای اول دبستان خوش آمدی! نشانه را انتخاب کن و شکل‌های مختلف آن را ببین ✍️',
+        'به آکادمی الفبای اول دبستان خوش آمدی! نشانه را انتخاب کن و کلمه‌های آن را بساز ✍️',
       );
     });
   }
 
   @override
   void dispose() {
+    _searchController.dispose();
     FandoghiCoach.clear();
     super.dispose();
   }
@@ -100,11 +122,23 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     }
     if (!mounted) return;
     setState(() => _lessonIndex = index.clamp(0, _currentLessons.length - 1));
-    final lesson = _currentLessons[_lessonIndex];
+    final lesson = _lesson;
     FandoghiCoach.instruction(
       'نشانه «${lesson.letter}» را انتخاب کردی؛ مثل «${lesson.word}». دکمه «تمرین نوشتن» را بزن ✍️',
     );
     unawaited(AudioService.pronounceLetter(lesson.letter));
+  }
+
+  void _selectBundle(int idx) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _selectedBundleIndex = idx;
+      _lessonIndex = 0;
+    });
+    FandoghiCoach.say(
+      '${_grade1Bundles[idx].title} انتخاب شد! نشانه‌ها را یاد بگیر و کلمه‌های جدید بساز ✨',
+      mood: FandoghiMood.excited,
+    );
   }
 
   void _switchMode(_AlphabetMode newMode) {
@@ -113,6 +147,8 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     setState(() {
       _mode = newMode;
       _lessonIndex = 0;
+      _searchQuery = '';
+      _searchController.clear();
     });
   }
 
@@ -132,7 +168,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     );
     if (mounted) {
       FandoghiCoach.instruction(
-        'خوب نوشتی! می‌توانی حرف دیگری را انتخاب کنی یا دوباره تمرین کنی 🌟',
+        'خوب نوشتی! می‌توانی نشانه دیگری را انتخاب کنی یا دوباره تمرین کنی 🌟',
       );
     }
   }
@@ -153,7 +189,16 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                   child: Column(
                     children: [
                       _academyHero(),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 12),
+                      if (_mode == _AlphabetMode.grade1) ...[
+                        _bundleSelectorRow(),
+                        const SizedBox(height: 12),
+                        _wordMakingWorkshopCard(),
+                        const SizedBox(height: 12),
+                      ] else ...[
+                        _searchBar(),
+                        const SizedBox(height: 12),
+                      ],
                       _lessonCard(),
                       const SizedBox(height: 14),
                       _allographsCard(),
@@ -205,7 +250,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
 
   Widget _modeSwitchBar() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.12),
@@ -270,7 +315,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: SizedBox(
-        height: 140,
+        height: 130,
         width: double.infinity,
         child: Stack(
           fit: StackFit.expand,
@@ -298,18 +343,234 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
               left: 16,
               child: Text(
                 _mode == _AlphabetMode.grade1
-                    ? 'نشانه‌های ۱ و ۲ • بخوانیم و بنویسیم'
-                    : 'ببین • بگو • بنویس • تکرار کن',
+                    ? 'زنجیره نشانه‌های ۱ و ۲ • کتاب بخوانیم اول دبستان'
+                    : 'جستجوی آزاد و تمرین ۳۳ نشانه الفبا',
                 textAlign: TextAlign.center,
                 style: AppFonts.balooBhaijaan2(
                   color: Colors.white,
-                  fontSize: 20,
+                  fontSize: 18,
                   fontWeight: FontWeight.w900,
                   shadows: const [Shadow(color: Colors.black54, blurRadius: 8)],
                 ),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _bundleSelectorRow() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          child: Row(
+            children: [
+              const Text('📦', style: TextStyle(fontSize: 16)),
+              const SizedBox(width: 6),
+              Text(
+                'بسته‌های آموزشی کتاب فارسی اول دبستان:',
+                style: AppFonts.balooBhaijaan2(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 6),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: List.generate(_grade1Bundles.length, (i) {
+              final b = _grade1Bundles[i];
+              final isSelected = i == _selectedBundleIndex;
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: GestureDetector(
+                  onTap: () => _selectBundle(i),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? b.color : Colors.white.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected ? Colors.white : Colors.white24,
+                        width: isSelected ? 2 : 1,
+                      ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: b.color.withOpacity(0.4),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          b.shortTitle,
+                          style: AppFonts.balooBhaijaan2(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        Text(
+                          b.lettersPreview,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _wordMakingWorkshopCard() {
+    final b = _currentBundle;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: b.color.withOpacity(0.18),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: b.color.withOpacity(0.4), width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('🏗️', style: TextStyle(fontSize: 20)),
+              const SizedBox(width: 8),
+              Text(
+                'کارگاه واژه‌سازی ${b.shortTitle}:',
+                style: AppFonts.balooBhaijaan2(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                'لمس کن تا بشنوی',
+                style: AppFonts.balooBhaijaan2(
+                  color: Colors.white60,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'با یادگیری نشانه‌های این بسته (${b.lettersPreview})، می‌توانی این کلمه‌ها را بسازی و بخوانی:',
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+              height: 1.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: b.createdWords.map((word) {
+              return GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  final clean = word.replaceAll(RegExp(r'[\p{Extended_Pictographic}]', unicode: true), '').trim();
+                  AudioService.speak(clean);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.12),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        word,
+                        style: AppFonts.vazirmatn(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF2C3E50),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.volume_up_rounded, size: 14, color: Color(0xFF3498DB)),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 300.ms);
+  }
+
+  Widget _searchBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white24),
+      ),
+      child: TextField(
+        controller: _searchController,
+        style: const TextStyle(color: Colors.white),
+        onChanged: (val) {
+          setState(() {
+            _searchQuery = val;
+            _lessonIndex = 0;
+          });
+        },
+        decoration: InputDecoration(
+          hintText: 'جستجوی نشانه یا کلمه (مثال: ب، سیب)...',
+          hintStyle: const TextStyle(color: Colors.white54, fontSize: 13),
+          prefixIcon: const Icon(Icons.search_rounded, color: Colors.white70),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear_rounded, color: Colors.white70),
+                  onPressed: () {
+                    setState(() {
+                      _searchController.clear();
+                      _searchQuery = '';
+                      _lessonIndex = 0;
+                    });
+                  },
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
       ),
     );
@@ -348,7 +609,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                     _lesson.letter,
                     style: AppFonts.vazirmatn(
                       color: Colors.white,
-                      fontSize: 54,
+                      fontSize: 48,
                       fontWeight: FontWeight.w900,
                       height: 1,
                     ),
@@ -448,7 +709,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
               const Text('📝', style: TextStyle(fontSize: 18)),
               const SizedBox(width: 8),
               Text(
-                'شکل‌های مختلف نشانه در کلمه (اشکال چهارگانه)',
+                'شکل‌های مختلف نشانه در کلمه (اشکال چهارگانه):',
                 style: AppFonts.balooBhaijaan2(
                   color: Colors.white,
                   fontSize: 14,
@@ -465,42 +726,48 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
               final sample = _lesson.allographWords[idx];
 
               return Expanded(
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white30),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        shape,
-                        style: AppFonts.vazirmatn(
-                          color: Colors.amberAccent,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
+                child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    AudioService.speak('$shape $label مثل $sample');
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.white30),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          shape,
+                          style: AppFonts.vazirmatn(
+                            color: Colors.amberAccent,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
-                      ),
-                      Text(
-                        label,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                        Text(
+                          label,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        sample,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
+                        const SizedBox(height: 2),
+                        Text(
+                          sample,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -525,8 +792,8 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
         children: [
           Text(
             _mode == _AlphabetMode.grade1
-                ? 'انتخاب نشانه بر اساس درس‌های اول دبستان'
-                : 'انتخاب نشانه به ترتیب الفبا',
+                ? 'نشانه‌های این بسته (${_currentBundle.shortTitle})'
+                : 'فهرست نشانه‌های الفبا',
             style: AppFonts.balooBhaijaan2(
               color: Colors.white70,
               fontSize: 15,
@@ -589,7 +856,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                               : locked
                                   ? Colors.white54
                                   : Colors.white,
-                          fontSize: 20,
+                          fontSize: 19,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
@@ -1039,6 +1306,24 @@ class _TraceScreenState extends State<_TraceScreen> {
 
 // ─────────────────────────── مدل‌های داده الفبایی ───────────────────────────
 
+class _Grade1Bundle {
+  final String shortTitle;
+  final String title;
+  final String lettersPreview;
+  final Color color;
+  final List<_LetterLesson> lessons;
+  final List<String> createdWords;
+
+  const _Grade1Bundle({
+    required this.shortTitle,
+    required this.title,
+    required this.lettersPreview,
+    required this.color,
+    required this.lessons,
+    required this.createdWords,
+  });
+}
+
 class _LetterLesson {
   final String letter;
   final String word;
@@ -1157,48 +1442,127 @@ class _TracePainter extends CustomPainter {
   bool shouldRepaint(covariant _TracePainter oldDelegate) => true;
 }
 
-// ─────────────────────────── فهرست‌های آموزشی ───────────────────────────
+// ─────────────────────────── بسته‌های کتاب فارسی اول دبستان ───────────────────────────
 
-/// چیدمان بر اساس کتاب فارسی اول دبستان (نشانه‌های ۱ و ۲)
-const _grade1Lessons = <_LetterLesson>[
-  _LetterLesson('آ ا', 'آب', '💧', allographs: ['آ', 'ا'], allographNames: ['اول', 'غیر اول'], allographWords: ['آب', 'بابا']),
-  _LetterLesson('ب', 'بابا', '👨', allographs: ['بـ', 'ـبـ', 'ـب', 'ب'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['باران', 'ابر', 'سیب', 'آب']),
-  _LetterLesson('اَ َ', 'انار', '🍎', allographs: ['اَ', 'ـَ'], allographNames: ['اول', 'غیر اول'], allographWords: ['انار', 'دست']),
-  _LetterLesson('د', 'دست', '✋', allographs: ['د', 'ـد'], allographNames: ['تنها', 'چسبان'], allographWords: ['داس', 'باد']),
-  _LetterLesson('م', 'مادر', '👩', allographs: ['مـ', 'ـمـ', 'ـم', 'م'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['مادر', 'نمد', 'پرچم', 'بادام']),
-  _LetterLesson('س', 'سیب', '🍏', allographs: ['سـ', 'ـسـ', 'ـس', 'س'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['سیب', 'پسته', 'نرگس', 'داس']),
-  _LetterLesson('او و', 'توت', '🍓', allographs: ['او', 'و'], allographNames: ['اول', 'غیر اول'], allographWords: ['او', 'توت']),
-  _LetterLesson('ت', 'تاب', '🪑', allographs: ['تـ', 'ـتـ', 'ـت', 'ت'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['تاب', 'دفتر', 'دست', 'سوت']),
-  _LetterLesson('ر', 'رنگ', '🎨', allographs: ['ر', 'ـر'], allographNames: ['تنها', 'چسبان'], allographWords: ['رنگ', 'ابر']),
-  _LetterLesson('ن', 'نان', '🍞', allographs: ['نـ', 'ـنـ', 'ـن', 'ن'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['نان', 'قند', 'دامن', 'باران']),
-  _LetterLesson('ایـ ی', 'ایران', '🇮🇷', allographs: ['ایـ', 'ـیـ', 'ـی', 'ای'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['ایران', 'سیب', 'آبی', 'سینی']),
-  _LetterLesson('ز', 'زرد', '💛', allographs: ['ز', 'ـز'], allographNames: ['تنها', 'چسبان'], allographWords: ['زرد', 'سبز']),
-  _LetterLesson('اِ ِ ـه ه', 'استخر', '🏊', allographs: ['اِ', 'ـِ', 'ـه', 'ه'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['امروز', 'نرده', 'نامه', 'کوه']),
-  _LetterLesson('ش', 'شیر', '🦁', allographs: ['شـ', 'ـشـ', 'ـش', 'ش'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['شیر', 'گوشت', 'آتش', 'کفش']),
-  _LetterLesson('ی', 'یاس', '🌸', allographs: ['یـ', 'ـیـ', 'ـی', 'ی'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['یاس', 'سایه', 'چای', 'موی']),
-  _LetterLesson('اُ ُ', 'اردک', '🦆', allographs: ['اُ', 'ـُ'], allographNames: ['اول', 'غیر اول'], allographWords: ['اردک', 'بلبل']),
-  _LetterLesson('ک', 'کفش', '👟', allographs: ['کـ', 'ـکـ', 'ـک', 'ک'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['کفش', 'شکلات', 'نمک', 'پاک']),
-  _LetterLesson('و', 'ورزش', '⚽', allographs: ['و', 'ـو'], allographNames: ['تنها', 'چسبان'], allographWords: ['ورزش', 'گاو']),
-  _LetterLesson('پ', 'پا', '🦶', allographs: ['پـ', 'ـپـ', 'ـپ', 'پ'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['پا', 'سوپ', 'توپ', 'چپ']),
-  _LetterLesson('گ', 'گل', '🌷', allographs: ['گـ', 'ـگـ', 'ـگ', 'گ'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['گل', 'نرگس', 'سگ', 'برگ']),
-  _LetterLesson('ف', 'فیل', '🐘', allographs: ['فـ', 'ـفـ', 'ـف', 'ف'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['فیل', 'دفتر', 'برف', 'سفید']),
-  _LetterLesson('خ', 'خرس', '🐻', allographs: ['خـ', 'ـخـ', 'ـخ', 'خ'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['خرس', 'درخت', 'میخ', 'کاخ']),
-  _LetterLesson('ق', 'قاشق', '🥄', allographs: ['قـ', 'ـقـ', 'ـق', 'ق'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['قاشق', 'سقف', 'بوق', 'اتاق']),
-  _LetterLesson('ل', 'لب', '👄', allographs: ['لـ', 'ـلـ', 'ـل', 'ل'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['لب', 'بلبل', 'فیل', 'گل']),
-  _LetterLesson('ج', 'جوجه', '🐥', allographs: ['جـ', 'ـجـ', 'ـج', 'ج'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['جوجه', 'مسجد', 'پنج', 'کاج']),
-  _LetterLesson('چ', 'چتر', '☂️', allographs: ['چـ', 'ـچـ', 'ـچ', 'چ'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['چتر', 'قیچی', 'هیچ', 'کوچ']),
-  _LetterLesson('هـ', 'هواپیما', '✈️', allographs: ['هـ', 'ـهـ', 'ـه', 'ه'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['هوا', 'بهار', 'نامه', 'ماه']),
-  _LetterLesson('ژ', 'ژاله', '🍮', allographs: ['ژ', 'ـژ'], allographNames: ['تنها', 'چسبان'], allographWords: ['ژاله', 'مژده']),
-  // نشانه‌های ۲
-  _LetterLesson('ص', 'صابون', '🧼', allographs: ['صـ', 'ـصـ', 'ـص', 'ص'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['صابون', 'تصویر', 'شخص', 'قرص']),
-  _LetterLesson('ذ', 'ذرت', '🌽', allographs: ['ذ', 'ـذ'], allographNames: ['تنها', 'چسبان'], allographWords: ['ذرت', 'کاغذ']),
-  _LetterLesson('ع', 'عسل', '🍯', allographs: ['عـ', 'ـعـ', 'ـع', 'ع'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['عسل', 'جعبه', 'مربع', 'شروع']),
-  _LetterLesson('ث', 'ثانیه', '⏱️', allographs: ['ثـ', 'ـثـ', 'ـث', 'ث'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['ثانیه', 'مثلث', 'کثیف', 'ارث']),
-  _LetterLesson('ح', 'حباب', '🫧', allographs: ['حـ', 'ـحـ', 'ـح', 'ح'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['حباب', 'صحرا', 'صبح', 'نوح']),
-  _LetterLesson('ض', 'ضبط', '🎙️', allographs: ['ضـ', 'ـضـ', 'ـض', 'ض'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['ضربه', 'حاضر', 'مریض', 'حوض']),
-  _LetterLesson('ط', 'طبل', '🥁', allographs: ['ط', 'ـط'], allographNames: ['تنها', 'چسبان'], allographWords: ['طبل', 'طوطی']),
-  _LetterLesson('غ', 'غاز', '🪿', allographs: ['غـ', 'ـغـ', 'ـغ', 'غ'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['غاز', 'چراغ', 'جیغ', 'مرغ']),
-  _LetterLesson('ظ', 'ظرف', '🥣', allographs: ['ظ', 'ـظ'], allographNames: ['تنها', 'چسبان'], allographWords: ['ظرف', 'ناظم']),
+const List<_Grade1Bundle> _grade1Bundles = [
+  // بسته ۱
+  _Grade1Bundle(
+    shortTitle: 'بسته ۱ (درس ۱ و ۲)',
+    title: 'بسته ۱: نشانه‌های پایه',
+    lettersPreview: 'آ ا • بـ ب • اَ َ • د',
+    color: Color(0xFFE74C3C),
+    lessons: [
+      _LetterLesson('آ ا', 'آب', '💧', allographs: ['آ', 'ا'], allographNames: ['اول', 'غیر اول'], allographWords: ['آب', 'بابا']),
+      _LetterLesson('ب', 'بابا', '👨', allographs: ['بـ', 'ـبـ', 'ـب', 'ب'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['باران', 'ابر', 'سیب', 'آب']),
+      _LetterLesson('اَ َ', 'انار', '🍎', allographs: ['اَ', 'ـَ'], allographNames: ['اول', 'غیر اول'], allographWords: ['انار', 'دست']),
+      _LetterLesson('د', 'دست', '✋', allographs: ['د', 'ـد'], allographNames: ['تنها', 'چسبان'], allographWords: ['داس', 'باد']),
+    ],
+    createdWords: ['آب 💧', 'بابا 👨', 'باد 💨', 'داد', 'آباد'],
+  ),
+  // بسته ۲
+  _Grade1Bundle(
+    shortTitle: 'بسته ۲ (درس ۳ و ۴)',
+    title: 'بسته ۲: واژه‌های مهر و خانه',
+    lettersPreview: 'مـ م • سـ س • او و • تـ ت',
+    color: Color(0xFFE67E22),
+    lessons: [
+      _LetterLesson('م', 'مادر', '👩', allographs: ['مـ', 'ـمـ', 'ـم', 'م'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['مادر', 'نمد', 'پرچم', 'بادام']),
+      _LetterLesson('س', 'سیب', '🍏', allographs: ['سـ', 'ـسـ', 'ـس', 'س'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['سیب', 'پسته', 'نرگس', 'داس']),
+      _LetterLesson('او و', 'توت', '🍓', allographs: ['او', 'و'], allographNames: ['اول', 'غیر اول'], allographWords: ['او', 'توت']),
+      _LetterLesson('ت', 'تاب', '🪑', allographs: ['تـ', 'ـتـ', 'ـت', 'ت'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['تاب', 'دفتر', 'دست', 'سوت']),
+    ],
+    createdWords: ['مادر 👩', 'توت 🍓', 'دوست 🤝', 'دست ✋', 'سوت 📢'],
+  ),
+  // بسته ۳
+  _Grade1Bundle(
+    shortTitle: 'بسته ۳ (درس ۵ و ۶)',
+    title: 'بسته ۳: ایران و طبیعت',
+    lettersPreview: 'ر • نـ ن • ایـ یـ ی ای • ز',
+    color: Color(0xFF27AE60),
+    lessons: [
+      _LetterLesson('ر', 'رنگ', '🎨', allographs: ['ر', 'ـر'], allographNames: ['تنها', 'چسبان'], allographWords: ['رنگ', 'ابر']),
+      _LetterLesson('ن', 'نان', '🍞', allographs: ['نـ', 'ـنـ', 'ـن', 'ن'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['نان', 'قند', 'دامن', 'باران']),
+      _LetterLesson('ایـ ی', 'ایران', '🇮🇷', allographs: ['ایـ', 'ـیـ', 'ـی', 'ای'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['ایران', 'سیب', 'آبی', 'سینی']),
+      _LetterLesson('ز', 'زرد', '💛', allographs: ['ز', 'ـز'], allographNames: ['تنها', 'چسبان'], allographWords: ['زرد', 'سبز']),
+    ],
+    createdWords: ['باران 🌧️', 'ایران 🇮🇷', 'سبز 🟢', 'نان 🍞', 'زرد 💛'],
+  ),
+  // بسته ۴
+  _Grade1Bundle(
+    shortTitle: 'بسته ۴ (درس ۷ و ۸)',
+    title: 'بسته ۴: آسمان و زیبایی',
+    lettersPreview: 'اِ ِ ـه ه • شـ ش • یـ ی • اُ ُ',
+    color: Color(0xFF2980B9),
+    lessons: [
+      _LetterLesson('اِ ِ ـه ه', 'استخر', '🏊', allographs: ['اِ', 'ـِ', 'ـه', 'ه'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['امروز', 'نرده', 'نامه', 'کوه']),
+      _LetterLesson('ش', 'شیر', '🦁', allographs: ['شـ', 'ـشـ', 'ـش', 'ش'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['شیر', 'گوشت', 'آتش', 'کفش']),
+      _LetterLesson('ی', 'یاس', '🌸', allographs: ['یـ', 'ـیـ', 'ـی', 'ی'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['یاس', 'سایه', 'چای', 'موی']),
+      _LetterLesson('اُ ُ', 'اردک', '🦆', allographs: ['اُ', 'ـُ'], allographNames: ['اول', 'غیر اول'], allographWords: ['اردک', 'بلبل']),
+    ],
+    createdWords: ['شیر 🦁', 'یاس 🌸', 'اردک 🦆', 'ستاره ⭐', 'دریا 🌊'],
+  ),
+  // بسته ۵
+  _Grade1Bundle(
+    shortTitle: 'بسته ۵ (درس ۹ و ۱۰)',
+    title: 'بسته ۵: بازی و پویا بودن',
+    lettersPreview: 'کـ ک • و • پـ پ • گـ گ',
+    color: Color(0xFF8E44AD),
+    lessons: [
+      _LetterLesson('ک', 'کفش', '👟', allographs: ['کـ', 'ـکـ', 'ـک', 'ک'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['کفش', 'شکلات', 'نمک', 'پاک']),
+      _LetterLesson('و', 'ورزش', '⚽', allographs: ['و', 'ـو'], allographNames: ['تنها', 'چسبان'], allographWords: ['ورزش', 'گاو']),
+      _LetterLesson('پ', 'پا', '🦶', allographs: ['پـ', 'ـپـ', 'ـپ', 'پ'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['پا', 'سوپ', 'توپ', 'چپ']),
+      _LetterLesson('گ', 'گل', '🌷', allographs: ['گـ', 'ـگـ', 'ـگ', 'گ'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['گل', 'نرگس', 'سگ', 'برگ']),
+    ],
+    createdWords: ['کفش 👟', 'ورزش ⚽', 'پا 🦶', 'گل 🌷', 'کودک 👶'],
+  ),
+  // بسته ۶
+  _Grade1Bundle(
+    shortTitle: 'بسته ۶ (درس ۱۱ و ۱۲)',
+    title: 'بسته ۶: جنگل و حیوانات',
+    lettersPreview: 'فـ ف • خـ خ • قـ ق • لـ ل',
+    color: Color(0xFF16A085),
+    lessons: [
+      _LetterLesson('ف', 'فیل', '🐘', allographs: ['فـ', 'ـفـ', 'ـف', 'ف'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['فیل', 'دفتر', 'برف', 'سفید']),
+      _LetterLesson('خ', 'خرس', '🐻', allographs: ['خـ', 'ـخـ', 'ـخ', 'خ'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['خرس', 'درخت', 'میخ', 'کاخ']),
+      _LetterLesson('ق', 'قاشق', '🥄', allographs: ['قـ', 'ـقـ', 'ـق', 'ق'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['قاشق', 'سقف', 'بوق', 'اتاق']),
+      _LetterLesson('ل', 'لب', '👄', allographs: ['لـ', 'ـلـ', 'ـل', 'ل'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['لب', 'بلبل', 'فیل', 'گل']),
+    ],
+    createdWords: ['فیل 🐘', 'خرس 🐻', 'قاشق 🥄', 'بلبل 🐦', 'برف ❄️'],
+  ),
+  // بسته ۷
+  _Grade1Bundle(
+    shortTitle: 'بسته ۷ (درس ۱۳ و ۱۴)',
+    title: 'بسته ۷: پایان نشانه‌های ۱',
+    lettersPreview: 'جـ ج • خوا • چـ چ • هـ • ژ',
+    color: Color(0xFFD35400),
+    lessons: [
+      _LetterLesson('ج', 'جوجه', '🐥', allographs: ['جـ', 'ـجـ', 'ـج', 'ج'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['جوجه', 'مسجد', 'پنج', 'کاج']),
+      _LetterLesson('خوا', 'خورشید', '☀️', allographs: ['خوا', 'ـخوا'], allographNames: ['اول', 'غیر اول'], allographWords: ['خواب', 'خواهر']),
+      _LetterLesson('چ', 'چتر', '☂️', allographs: ['چـ', 'ـچـ', 'ـچ', 'چ'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['چتر', 'قیچی', 'هیچ', 'کوچ']),
+      _LetterLesson('هـ', 'هواپیما', '✈️', allographs: ['هـ', 'ـهـ', 'ـه', 'ه'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['هوا', 'بهار', 'نامه', 'ماه']),
+      _LetterLesson('ژ', 'ژاله', '🍮', allographs: ['ژ', 'ـژ'], allographNames: ['تنها', 'چسبان'], allographWords: ['ژاله', 'مژده']),
+    ],
+    createdWords: ['جوجه 🐥', 'خورشید ☀️', 'چتر ☂️', 'هواپیما ✈️', 'ژاله 🍮'],
+  ),
+  // بسته ۸ (نشانه‌های ۲)
+  _Grade1Bundle(
+    shortTitle: 'بسته ۸ (نشانه‌های ۲)',
+    title: 'بسته ۸: نشانه‌های تکمیلی ۲',
+    lettersPreview: 'ص • ذ • ع • ث • ح • ض • ط • غ • ظ',
+    color: Color(0xFF2C3E50),
+    lessons: [
+      _LetterLesson('ص', 'صابون', '🧼', allographs: ['صـ', 'ـصـ', 'ـص', 'ص'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['صابون', 'تصویر', 'شخص', 'قرص']),
+      _LetterLesson('ذ', 'ذرت', '🌽', allographs: ['ذ', 'ـذ'], allographNames: ['تنها', 'چسبان'], allographWords: ['ذرت', 'کاغذ']),
+      _LetterLesson('ع', 'عسل', '🍯', allographs: ['عـ', 'ـعـ', 'ـع', 'ع'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['عسل', 'جعبه', 'مربع', 'شروع']),
+      _LetterLesson('ث', 'ثانیه', '⏱️', allographs: ['ثـ', 'ـثـ', 'ـث', 'ث'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['ثانیه', 'مثلث', 'کثیف', 'ارث']),
+      _LetterLesson('ح', 'حباب', '🫧', allographs: ['حـ', 'ـحـ', 'ـح', 'ح'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['حباب', 'صحرا', 'صبح', 'نوح']),
+      _LetterLesson('ض', 'ضبط', '🎙️', allographs: ['ضـ', 'ـضـ', 'ـض', 'ض'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['ضربه', 'حاضر', 'مریض', 'حوض']),
+      _LetterLesson('ط', 'طبل', '🥁', allographs: ['ط', 'ـط'], allographNames: ['تنها', 'چسبان'], allographWords: ['طبل', 'طوطی']),
+      _LetterLesson('غ', 'غاز', '🪿', allographs: ['غـ', 'ـغـ', 'ـغ', 'غ'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['غاز', 'چراغ', 'جیغ', 'مرغ']),
+      _LetterLesson('ظ', 'ظرف', '🥣', allographs: ['ظ', 'ـظ'], allographNames: ['تنها', 'چسبان'], allographWords: ['ظرف', 'ناظم']),
+    ],
+    createdWords: ['صابون 🧼', 'عسل 🍯', 'حباب 🫧', 'طبل 🥁', 'غاز 🪿', 'ظرف 🥣'],
+  ),
 ];
 
 /// چیدمان سنتی الفبایی
