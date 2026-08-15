@@ -9,12 +9,15 @@ import '../../../app/app_colors.dart';
 import '../../../app/design_tokens.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import '../../../core/audio_service.dart';
+import '../../../core/content_access_policy.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
+import '../../../core/monetization.dart';
 import '../../../core/play_limit.dart';
 import '../../../shared/widgets/child_touch_target.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
 import '../../../shared/widgets/handwriting_score_overlay.dart';
+import '../../shop/full_version_paywall.dart';
 
 /// ────────────────────────────────────────────────────────────
 /// 🔤 آکادمی الفبا و فارسی اول دبستان
@@ -43,6 +46,7 @@ class AlphabetAcademyGame extends StatefulWidget {
 class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   _AlphabetMode _mode = _AlphabetMode.grade1;
   int _lessonIndex = 0;
+  bool _hasFullVersion = false;
 
   List<_LetterLesson> get _currentLessons =>
       _mode == _AlphabetMode.grade1 ? _grade1Lessons : _alphabeticalLessons;
@@ -53,6 +57,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   void initState() {
     super.initState();
     FandoghiCoach.enablePersistentPresence();
+    _refreshEntitlement();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (GameData.isDailyLimitReached) {
@@ -73,7 +78,27 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     super.dispose();
   }
 
-  void _selectLesson(int index) {
+  bool _isLocked(int index) =>
+      !_hasFullVersion && !ContentAccessPolicy.isAlphabetLessonFree(index);
+
+  Future<bool> _refreshEntitlement() async {
+    final hasFullVersion = await Monetization.hasFullVersion();
+    if (mounted && hasFullVersion != _hasFullVersion) {
+      setState(() => _hasFullVersion = hasFullVersion);
+    }
+    return hasFullVersion;
+  }
+
+  Future<void> _selectLesson(int index) async {
+    if (_isLocked(index) && !await Monetization.hasFullVersion()) {
+      if (!mounted) return;
+      await showFullVersionPaywall(
+        context,
+        featureName: 'نشانه «${_currentLessons[index].letter}»',
+      );
+      if (!await _refreshEntitlement()) return;
+    }
+    if (!mounted) return;
     setState(() => _lessonIndex = index.clamp(0, _currentLessons.length - 1));
     final lesson = _currentLessons[_lessonIndex];
     FandoghiCoach.instruction(
@@ -92,13 +117,14 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   }
 
   Future<void> _openTraceScreen() async {
-    if (!canStartPlay(context)) return;
+    if (_isLocked(_lessonIndex) || !canStartPlay(context)) return;
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         fullscreenDialog: true,
         builder: (_) => _TraceScreen(
           lessons: _currentLessons,
           initialIndex: _lessonIndex,
+          hasFullVersion: _hasFullVersion,
           stageId: widget.stageId,
           stageNumber: widget.stageNumber,
         ),
@@ -290,6 +316,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   }
 
   Widget _lessonCard() {
+    final locked = _isLocked(_lessonIndex);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -380,9 +407,11 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: _openTraceScreen,
-              icon: const Icon(Icons.draw_rounded, size: 20),
-              label: const Text('تمرین نوشتن روی خط کرسی ✍️'),
+              onPressed: locked
+                  ? () => showFullVersionPaywall(context, featureName: 'حرف «${_lesson.letter}»')
+                  : _openTraceScreen,
+              icon: Icon(locked ? Icons.lock_rounded : Icons.draw_rounded, size: 20),
+              label: Text(locked ? 'بازگشایی نسخه کامل 🔒' : 'تمرین نوشتن روی خط کرسی ✍️'),
               style: FilledButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: AppColors.primaryDark,
@@ -517,17 +546,26 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
             ),
             itemBuilder: (context, index) {
               final item = _currentLessons[index];
-              final isSelected = index == _lessonIndex;
+              final locked = _isLocked(index);
+              final isSelected = index == _lessonIndex && !locked;
 
               return ChildTouchTarget(
                 onTap: () => _selectLesson(index),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
                   decoration: BoxDecoration(
-                    color: isSelected ? Colors.white : Colors.white.withOpacity(0.14),
+                    color: isSelected
+                        ? Colors.white
+                        : locked
+                            ? Colors.black.withOpacity(0.25)
+                            : Colors.white.withOpacity(0.14),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isSelected ? AppColors.candy1 : Colors.white.withOpacity(0.2),
+                      color: isSelected
+                          ? AppColors.candy1
+                          : locked
+                              ? Colors.white24
+                              : Colors.white.withOpacity(0.2),
                       width: isSelected ? 2.5 : 1,
                     ),
                     boxShadow: isSelected
@@ -540,15 +578,32 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                           ]
                         : null,
                   ),
-                  child: Center(
-                    child: Text(
-                      item.letter,
-                      style: AppFonts.vazirmatn(
-                        color: isSelected ? AppColors.primaryDark : Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Text(
+                        item.letter,
+                        style: AppFonts.vazirmatn(
+                          color: isSelected
+                              ? AppColors.primaryDark
+                              : locked
+                                  ? Colors.white54
+                                  : Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
-                    ),
+                      if (locked)
+                        const Positioned(
+                          top: 4,
+                          right: 4,
+                          child: Icon(
+                            Icons.lock_rounded,
+                            color: Colors.amberAccent,
+                            size: 12,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               );
@@ -565,12 +620,14 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
 class _TraceScreen extends StatefulWidget {
   final List<_LetterLesson> lessons;
   final int initialIndex;
+  final bool hasFullVersion;
   final String? stageId;
   final int? stageNumber;
 
   const _TraceScreen({
     required this.lessons,
     required this.initialIndex,
+    this.hasFullVersion = false,
     this.stageId,
     this.stageNumber,
   });
@@ -595,6 +652,14 @@ class _TraceScreenState extends State<_TraceScreen> {
   }
 
   void _selectLesson(int index) {
+    if (!widget.hasFullVersion &&
+        !ContentAccessPolicy.isAlphabetLessonFree(index)) {
+      showFullVersionPaywall(
+        context,
+        featureName: 'نشانه «${widget.lessons[index].letter}»',
+      );
+      return;
+    }
     setState(() {
       _lessonIndex = index;
       _strokes.clear();

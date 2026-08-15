@@ -4,10 +4,14 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
 import '../../core/audio_service.dart';
+import '../../core/content_access_policy.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';
 import '../../core/learning_content/children_stories_data.dart';
+import '../../core/monetization.dart';
+import '../../shared/widgets/premium_lock_overlay.dart';
+import '../shop/full_version_paywall.dart';
 import 'story_reader_screen.dart';
 
 /// ═══════════════════════════════════════════════════════════════
@@ -27,12 +31,14 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
   int _featuredIndex = 0;
   bool _onlyFavorites = false;
+  bool _hasFullVersion = false;
 
   @override
   void initState() {
     super.initState();
     // فندقی فقط در بخش بازی/یادگیری حضور دارد.
     FandoghiCoach.disablePersistentPresence();
+    _refreshEntitlement();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         FandoghiCoach.say(
@@ -67,9 +73,27 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
     return list;
   }
 
-  void _openStory(ChildrenStory story) {
+  bool _isLocked(ChildrenStory story) =>
+      !_hasFullVersion && !ContentAccessPolicy.isStoryFree(story.id);
+
+  Future<bool> _refreshEntitlement() async {
+    final hasFullVersion = await Monetization.hasFullVersion();
+    if (mounted && hasFullVersion != _hasFullVersion) {
+      setState(() => _hasFullVersion = hasFullVersion);
+    }
+    return hasFullVersion;
+  }
+
+  Future<void> _openStory(ChildrenStory story) async {
     HapticFeedback.lightImpact();
     AudioService.select();
+    if (!ContentAccessPolicy.isStoryFree(story.id) &&
+        !await Monetization.hasFullVersion()) {
+      if (!mounted) return;
+      await showFullVersionPaywall(context, featureName: story.title);
+      if (!mounted || !await _refreshEntitlement()) return;
+    }
+    if (!mounted) return;
     Navigator.of(context)
         .push(
           MaterialPageRoute(
@@ -77,7 +101,9 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
             builder: (_) => StoryReaderScreen(story: story),
           ),
         )
-        .then((_) => setState(() {}));
+        .then((_) {
+          if (mounted) setState(() {});
+        });
   }
 
   @override
@@ -462,6 +488,7 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
                   }),
                 ),
               ),
+              if (_isLocked(story)) const PremiumLockOverlay(),
             ],
           ),
         ),
@@ -809,6 +836,8 @@ class _StoriesHubScreenState extends State<StoriesHubScreen> {
                               ),
                             ),
                           ),
+                          if (_isLocked(story))
+                            const PremiumLockOverlay(),
                         ],
                       ),
                     ),

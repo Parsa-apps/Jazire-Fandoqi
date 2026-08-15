@@ -5,11 +5,14 @@ import '../../app/app_colors.dart';
 import '../../app/design_tokens.dart';
 import '../../app/app_fonts.dart';
 import '../../core/audio_service.dart';
+import '../../core/content_access_policy.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';
+import '../../core/monetization.dart';
 import '../../shared/widgets/child_touch_target.dart';
 import '../../shared/widgets/fandoghi_premium.dart';
+import '../shop/full_version_paywall.dart';
 
 /// 🔢 NUMBERS HUB PREMIUM — دنیای اعداد و دست‌ورزی ریاضی اول دبستان
 class NumbersHubScreen extends StatefulWidget {
@@ -20,22 +23,57 @@ class NumbersHubScreen extends StatefulWidget {
 
 class _NumbersHubState extends State<NumbersHubScreen> {
   int _selectedNumber = 1;
+  bool _hasFullVersion = false;
 
   @override
   void initState() {
     super.initState();
     FandoghiCoach.enablePersistentPresence();
+    _refreshEntitlement();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FandoghiCoach.say(
-        'به دنیای اعداد و ریاضی اول دبستان خوش اومدی! 🔢 بزن رو هر عدد یا بازی‌های چوب‌خط و جدول ارزش مکانی رو امتحان کن!',
+        'به دنیای اعداد و ریاضی اول دبستان خوش اومدی! 🔢 با سیب و گردو می‌شمریم یا بازی‌های چوب‌خط و جدول ارزش مکانی رو امتحان کن!',
         mood: FandoghiMood.excited,
         duration: const Duration(seconds: 4),
       );
     });
   }
 
+  bool _isLocked(int number) =>
+      !_hasFullVersion && !ContentAccessPolicy.isNumberFree(number);
+
+  Future<bool> _refreshEntitlement() async {
+    final hasFullVersion = await Monetization.hasFullVersion();
+    if (mounted && hasFullVersion != _hasFullVersion) {
+      setState(() => _hasFullVersion = hasFullVersion);
+    }
+    return hasFullVersion;
+  }
+
+  Future<void> _selectNumber(int number) async {
+    HapticFeedback.selectionClick();
+    if (!ContentAccessPolicy.isNumberFree(number) &&
+        !await Monetization.hasFullVersion()) {
+      if (!mounted) return;
+      await showFullVersionPaywall(context, featureName: 'عدد $number');
+      if (!mounted || !await _refreshEntitlement()) return;
+    }
+    if (!mounted) return;
+    setState(() => _selectedNumber = number);
+    GameData.recordAnswer(correct: true, skill: 'counting');
+  }
+
   String _emojiOf(int n) {
-    const map = {1: '🍎', 2: '🍎🍎', 3: '🍎🍎🍎', 4: '🍏🍏🍏🍏', 5: '🍎🍎🍎🍎🍎', 10: '🎂', 15: '🍉', 20: '🎉'};
+    const map = {
+      1: '🍎',
+      2: '🍎🍎',
+      3: '🍎🍎🍎',
+      4: '🍏🍏🍏🍏',
+      5: '🍎🍎🍎🍎🍎',
+      10: '🎂',
+      15: '🍉',
+      20: '🎉'
+    };
     if (map.containsKey(n)) return map[n]!;
     return '🔢';
   }
@@ -281,38 +319,64 @@ class _NumbersHubState extends State<NumbersHubScreen> {
       itemCount: 20,
       itemBuilder: (context, index) {
         final n = index + 1;
-        final selected = _selectedNumber == n;
+        final locked = _isLocked(n);
+        final selected = _selectedNumber == n && !locked;
+
         return GestureDetector(
-          onTap: () {
-            HapticFeedback.selectionClick();
-            setState(() => _selectedNumber = n);
-            GameData.recordAnswer(correct: true, skill: 'counting');
-          },
+          onTap: () => _selectNumber(n),
           child: AnimatedContainer(
             duration: AppMotion.fast,
             decoration: BoxDecoration(
-              color: selected ? const Color(0xFFE65100) : Colors.white.withOpacity(0.92),
+              color: selected
+                  ? const Color(0xFFE65100)
+                  : locked
+                      ? const Color(0xFF4E342E).withOpacity(0.78)
+                      : Colors.white.withOpacity(0.92),
               borderRadius: BorderRadius.circular(AppRadii.lg),
               border: Border.all(
-                color: selected ? Colors.white : Colors.white.withOpacity(0.5),
+                color: selected
+                    ? Colors.white
+                    : locked
+                        ? Colors.white38
+                        : Colors.white.withOpacity(0.5),
                 width: selected ? 2.5 : 1,
               ),
               boxShadow: selected
-                  ? AppShadows.colored(const Color(0xFFE65100), opacity: 0.3)
+                  ? AppShadows.colored(
+                      const Color(0xFFE65100),
+                      opacity: 0.3,
+                    )
                   : AppShadows.soft,
             ),
-            child: Center(
-              child: Text(
-                '$n',
-                style: AppFonts.vazirmatn(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: selected ? Colors.white : const Color(0xFF4E342E),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Text(
+                  '$n',
+                  style: AppFonts.vazirmatn(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: selected
+                        ? Colors.white
+                        : locked
+                            ? Colors.white70
+                            : const Color(0xFF4E342E),
+                  ),
                 ),
-              ),
+                if (locked)
+                  const Positioned(
+                    top: 3,
+                    right: 4,
+                    child: Icon(
+                      Icons.lock_rounded,
+                      color: Colors.amberAccent,
+                      size: 11,
+                    ),
+                  ),
+              ],
             ),
-          ).animate(delay: (index * 15).ms).fadeIn(duration: 250.ms).scale(begin: const Offset(0.85, 0.85)),
-        );
+          ),
+        ).animate(delay: (index * 15).ms).fadeIn(duration: 250.ms).scale(begin: const Offset(0.85, 0.85));
       },
     );
   }

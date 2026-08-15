@@ -296,6 +296,7 @@ class GameData {
   /// Used when the platform storage plugin is temporarily unavailable. The
   /// child can still use the app for this session; persistence is simply off.
   static void useMemoryFallback() {
+    HivePlayerStore.useMemoryStorage();
     _prefs = null;
     _missionDay = '';
     _isLoaded = true;
@@ -812,7 +813,7 @@ class GameData {
     'drawing': 1,
     'colors': 1,
     'math': 3, // فاز ۵۲: مأموریت ریاضی
-    'memory': 1, // فاز ۵۲: مأموریت حافظه
+    'memory': 2, // دو دور کوتاه برای تکمیل مأموریت حافظه
   };
 
   static void progressMission(String id, {int amount = 1}) {
@@ -1462,6 +1463,7 @@ class GameData {
   /// and is never called by the production UI.
   @visibleForTesting
   static void resetForTesting() {
+    HivePlayerStore.useMemoryStorage(clear: true);
     _prefs = null;
     _isLoaded = true;
     _persistenceAvailable = false;

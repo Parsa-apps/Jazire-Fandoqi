@@ -186,10 +186,10 @@ class PremiumAnimations {
   static const Duration bounce = Duration(milliseconds: 700);
 
   /// منحنی‌های انیمیشن
-  static const Curves elasticOut = Curves.elasticOut;
-  static const Curves easeOutCubic = Curves.easeOutCubic;
-  static const Curves easeOutBack = Curves.easeOutBack;
-  static const Curves spring = Curves.elasticOut;
+  static const Curve elasticOut = Curves.elasticOut;
+  static const Curve easeOutCubic = Curves.easeOutCubic;
+  static const Curve easeOutBack = Curves.easeOutBack;
+  static const Curve spring = Curves.elasticOut;
 }
 
 /// گرادیان‌های پس‌زمینه

@@ -3,9 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:jazireh_fandoghi/core/billing_service.dart';
 import 'package:jazireh_fandoghi/core/monetization.dart';
+import 'package:jazireh_fandoghi/data/datasources/hive_player_store.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() {
+    HivePlayerStore.useMemoryStorage(clear: true);
+  });
 
   test('activatePremium rejects failed store results', () async {
     final result = await Monetization.activatePremium(
