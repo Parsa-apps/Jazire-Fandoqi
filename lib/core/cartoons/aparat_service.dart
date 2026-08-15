@@ -377,9 +377,9 @@ class AparatService {
 
       // ۲) فال‌بک Regex برای استخراج ویدیو و پوستر از HTML یا اسکریپت‌های درون‌صفحه‌ای
       if (streams.isEmpty) {
-        final videoMatches = RegExp(r'(https:\/\/[^"\'\s>]+\.(?:mp4|m3u8)(?:\?[^"\'\s>]*)?)').allMatches(body);
+        final videoMatches = RegExp(r'https:\/\/[^"<\s>]+\.(?:mp4|m3u8)(?:\?[^"<\s>]*)?').allMatches(body);
         for (final match in videoMatches) {
-          final url = match.group(1);
+          final url = match.group(0);
           if (url != null && isPlayableStreamUrl(url) && !streams.any((s) => s.url == url)) {
             final q = _qualityFrom(url, 'auto');
             streams.add(VideoStream(url: url, quality: q));
@@ -388,9 +388,9 @@ class AparatService {
       }
 
       if (poster == null) {
-        final posterMatch = RegExp(r'(https:\/\/[^"\'\s>]+\.(?:jpg|jpeg|webp|png))').firstMatch(body);
+        final posterMatch = RegExp(r'https:\/\/[^"<\s>]+\.(?:jpg|jpeg|webp|png)(?:\?[^"<\s>]*)?').firstMatch(body);
         if (posterMatch != null) {
-          final url = posterMatch.group(1);
+          final url = posterMatch.group(0);
           if (url != null && isAllowedImageUrl(url)) {
             poster = url;
           }
