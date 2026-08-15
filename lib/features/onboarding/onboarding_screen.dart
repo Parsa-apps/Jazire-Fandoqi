@@ -111,7 +111,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
     // جایزه خوش‌آمدگویی ۵۰ سکه
     GameData.addCoins(50);
     FandoghiCoach.celebrate('خوش اومدی ${_nicknameController.text.isEmpty ? "قهرمان" : _nicknameController.text}! ۵۰ سکه هدیه گرفتی! 🎉');
-    Navigator.pushReplacementNamed(context, '/gateway');
+    Navigator.pushReplacementNamed(context, '/tutorial');
   }
 
   void _goBack() {

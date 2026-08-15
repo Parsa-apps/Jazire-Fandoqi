@@ -57,6 +57,7 @@ import 'features/sel/sel_hub_screen.dart';
 import 'features/gateway/learning_library_screen.dart';
 import 'features/parent/parent_panel.dart';
 import 'features/splash/splash_screen.dart';
+import 'features/tutorial/app_tutorial_screen.dart';
 import 'features/shop/game_access_gate.dart';
 import 'features/growth/catalog_search_screen.dart';
 import 'features/growth/certificates_screen.dart';
@@ -216,6 +217,7 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
         '/': (context) => const SplashScreen(),
         '/security-blocked': (context) => const TamperBlockScreen(),
         '/onboarding': (context) => const OnboardingScreen(),
+        '/tutorial': (context) => const AppTutorialScreen(),
         '/gateway': (context) => const AppGatewayScreen(),
         '/learning-library': (context) => const LearningLibraryScreen(),
         '/animals': (context) => GameAccessGate(

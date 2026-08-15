@@ -69,10 +69,12 @@ class _SplashState extends State<SplashScreen>
     _navigationTimer = Timer(const Duration(milliseconds: 1650), () {
       if (!mounted) return;
       HapticFeedback.lightImpact();
-      Navigator.pushReplacementNamed(
-        context,
-        GameData.onboardingSeen ? '/gateway' : '/onboarding',
-      );
+      final destination = !GameData.onboardingSeen
+          ? '/onboarding'
+          : GameData.tutorialDoNotShow
+              ? '/gateway'
+              : '/tutorial';
+      Navigator.pushReplacementNamed(context, destination);
     });
   }
 

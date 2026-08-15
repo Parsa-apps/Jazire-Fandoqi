@@ -67,6 +67,11 @@ class GameData {
   static int childAge = 5;
   static bool onboardingSeen = false;
 
+  /// When false, the full-screen Fandoghi walkthrough is shown after splash.
+  /// It only becomes true when the user ticks «دوباره نمایش نده» on the final
+  /// tutorial slide.
+  static bool tutorialDoNotShow = false;
+
   // Feature state
   static String lastWeekReset = '';
   static String _missionDay = '';
@@ -212,6 +217,7 @@ class GameData {
       // A missing flag means a fresh install. Existing installs that already
       // wrote the flag keep their previous onboarding decision.
       onboardingSeen = prefs.getBool('onboardingSeen') ?? false;
+      tutorialDoNotShow = prefs.getBool('tutorialDoNotShow') ?? false;
       dailyMissions = _readInt('dm', 0, min: 0, max: missionTargets.length);
       _missionDay = prefs.getString('missionDay') ?? '';
 
@@ -423,6 +429,7 @@ class GameData {
     if (childName.length > 24) childName = childName.substring(0, 24);
     childAge = asInt('childAge', 5).clamp(3, 12);
     onboardingSeen = asBool('onboardingSeen', true);
+    tutorialDoNotShow = asBool('tutorialDoNotShow', false);
     dailyMissions = asInt('dm', 0).clamp(0, missionTargets.length);
     _missionDay = asString('missionDay', '');
     final mp = d['mp'];
@@ -514,6 +521,7 @@ class GameData {
         'profilePhotoPath': profilePhotoPath,
         'childAge': childAge,
         'onboardingSeen': onboardingSeen,
+        'tutorialDoNotShow': tutorialDoNotShow,
         'dm': dailyMissions,
         'missionDay': _missionDay,
         'mp': missionProgress,
@@ -660,6 +668,7 @@ class GameData {
     await prefs.setString('profilePhotoPath', profilePhotoPath);
     await prefs.setInt('childAge', childAge);
     await prefs.setBool('onboardingSeen', onboardingSeen);
+    await prefs.setBool('tutorialDoNotShow', tutorialDoNotShow);
     await prefs.setInt('dm', dailyMissions);
     await prefs.setString('missionDay', _missionDay);
     for (final entry in missionProgress.entries) {
@@ -1128,6 +1137,14 @@ class GameData {
     unawaited(save());
   }
 
+  /// Persists the final tutorial choice. Keeping this false intentionally
+  /// replays the walkthrough on every app entry.
+  static Future<void> setTutorialDoNotShow(bool value) async {
+    tutorialDoNotShow = value;
+    _notify();
+    await save();
+  }
+
   static void updateProfile({required String name, String? photoPath, String? avatarIcon}) {
     final trimmed = name.trim();
     childName = trimmed.substring(0, trimmed.length.clamp(0, 24).toInt());
@@ -1486,6 +1503,7 @@ class GameData {
     childName = '';
     childAge = 5;
     onboardingSeen = false;
+    tutorialDoNotShow = false;
     lastWeekReset = '';
     _missionDay = '';
     lastLuckyDate = '';
