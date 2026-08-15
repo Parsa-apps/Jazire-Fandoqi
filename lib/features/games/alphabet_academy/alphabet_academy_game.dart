@@ -500,7 +500,9 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                 onTap: () {
                   HapticFeedback.lightImpact();
                   final clean = word.replaceAll(RegExp(r'[\p{Extended_Pictographic}]', unicode: true), '').trim();
-                  AudioService.speak(clean);
+                  for (final ch in clean.runes.map((r) => String.fromCharCode(r)).toList()) {
+                    unawaited(AudioService.pronounceLetter(ch));
+                  }
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -731,7 +733,9 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                 child: GestureDetector(
                   onTap: () {
                     HapticFeedback.lightImpact();
-                    AudioService.speak('$shape $label مثل $sample');
+                    for (final char in (shape + label + sample).runes.map((r) => String.fromCharCode(r)).toList()) {
+                      unawaited(AudioService.pronounceLetter(char));
+                    }
                   },
                   child: Container(
                     margin: const EdgeInsets.symmetric(horizontal: 3),

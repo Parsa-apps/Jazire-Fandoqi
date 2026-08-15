@@ -614,12 +614,20 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
                         color: const Color(0xFF039BE5), width: 2.2),
                   ),
                   child: Center(
-                    child: Text(
-                      GameData.avatar.isNotEmpty && !GameData.avatar.startsWith('assets/')
-                          ? GameData.avatar
-                          : '👦',
-                      style: const TextStyle(fontSize: 20),
-                    ),
+                    child: GameData.avatar.isNotEmpty && GameData.avatar.startsWith('assets/')
+                        ? ClipOval(
+                            child: Image.asset(
+                              GameData.avatar,
+                              width: compact ? 34 : 38,
+                              height: compact ? 34 : 38,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Text('👦', style: TextStyle(fontSize: 20)),
+                            ),
+                          )
+                        : Text(
+                            GameData.avatar.isNotEmpty ? GameData.avatar : '👦',
+                            style: const TextStyle(fontSize: 20),
+                          ),
                   ),
                 ),
                 if (!compact) ...[
