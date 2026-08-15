@@ -159,15 +159,45 @@ void main() {
       }
     });
 
-    test('all 41 recordings are distinct files that exist on disk', () {
-      expect(AudioService.wordAudioKeys, hasLength(41));
+    test('every lesson example word also has a bundled recording', () {
+      // کلمهٔ نمونهٔ هر نشانه («ب مثلِ بابا») هم روی صفحه لمس‌شدنی است.
+      final source =
+          File('lib/features/games/alphabet_academy/alphabet_academy_game.dart')
+              .readAsStringSync();
+      final words = <String>{};
+      for (final m in RegExp(r"_LetterLesson\('[^']*', '([^']*)'")
+          .allMatches(source)) {
+        words.add(AudioService.cleanSpokenText(m.group(1)!));
+      }
+
+      expect(words, isNotEmpty);
+      for (final word in words) {
+        final path = AudioService.wordAssetFor(word);
+        expect(path, isNotNull, reason: 'کلمهٔ نمونهٔ «$word» ضبط نشده است');
+        expect(File(path!).existsSync(), isTrue, reason: '$word → $path');
+      }
+    });
+
+    test('all 86 recordings are distinct files that exist on disk', () {
+      expect(AudioService.wordAudioKeys, hasLength(86));
       final paths = AudioService.wordAudioKeys.keys
           .map(AudioService.wordAssetFor)
           .toSet();
-      expect(paths, hasLength(41));
+      expect(paths, hasLength(86));
       for (final path in paths) {
         expect(File(path!).existsSync(), isTrue, reason: path);
       }
+    });
+
+    test('recorded allograph sample words resolve to their own clip', () {
+      // این‌ها روی کارت «اشکال چهارگانه» لمس می‌شوند.
+      expect(AudioService.wordAssetFor('بادام'), isNotNull);
+      expect(AudioService.wordAssetFor('پرچم'), isNotNull);
+      expect(AudioService.wordAssetFor('گاو'), isNotNull);
+      expect(
+        AudioService.wordAssetFor('توپ'),
+        isNot(AudioService.wordAssetFor('سوپ')),
+      );
     });
 
     test('lookup tolerates emoji and stray spaces around the word', () {
@@ -197,8 +227,8 @@ void main() {
         expect(channels, 1, reason: key);
         expect(rate, 22050, reason: key);
       }
-      // کل بستهٔ کلمات باید زیر ۴ مگابایت بماند.
-      expect(total, lessThan(4 * 1024 * 1024));
+      // کل بستهٔ کلمات باید زیر ۶ مگابایت بماند.
+      expect(total, lessThan(6 * 1024 * 1024));
     });
   });
 
