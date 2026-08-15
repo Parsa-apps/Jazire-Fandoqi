@@ -162,12 +162,21 @@ class _AppTutorialScreenState extends State<AppTutorialScreen>
   void _goTo(int target) {
     if (target < 0 || target >= _slides.length || target == _index) return;
     HapticFeedback.selectionClick();
+    final previousIndex = _index;
     setState(() => _index = target);
-    _pageController.animateToPage(
-      target,
-      duration: const Duration(milliseconds: 650),
-      curve: Curves.easeInOutCubicEmphasized,
-    );
+
+    // A skip can cross several lazily-built pages. Jump directly so the final
+    // choice and its matching artwork always appear together; neighbouring
+    // slides retain the premium animated transition.
+    if ((target - previousIndex).abs() > 1) {
+      _pageController.jumpToPage(target);
+    } else {
+      _pageController.animateToPage(
+        target,
+        duration: const Duration(milliseconds: 650),
+        curve: Curves.easeInOutCubicEmphasized,
+      );
+    }
     _startSlideClock();
   }
 
