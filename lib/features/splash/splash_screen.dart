@@ -7,6 +7,7 @@ import '../../app/design_tokens.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import '../../core/game_data.dart';
 import '../../shared/widgets/star_field.dart';
+import '../../shared/widgets/parsa_apps_logo.dart';
 
 /// ═══════════════════════════════════════════════
 /// 🚀 SPLASH SCREEN — Stunning First Impression
@@ -68,10 +69,9 @@ class _SplashState extends State<SplashScreen>
     _navigationTimer = Timer(const Duration(milliseconds: 1650), () {
       if (!mounted) return;
       HapticFeedback.lightImpact();
-      Navigator.pushReplacementNamed(
-        context,
-        GameData.onboardingSeen ? '/gateway' : '/onboarding',
-      );
+      final destination =
+          GameData.tutorialDoNotShow ? '/gateway' : '/tutorial';
+      Navigator.pushReplacementNamed(context, destination);
     });
   }
 
@@ -197,14 +197,30 @@ class _SplashState extends State<SplashScreen>
               right: 0,
               child: FadeTransition(
                 opacity: _fadeCtrl,
-                child: Text(
-                  'ساخته‌شده توسط فرشاد پارسا',
-                  textAlign: TextAlign.center,
-                  style: AppFonts.exo2(
-                    fontSize: 14,
-                    color: Colors.white38,
-                    fontWeight: FontWeight.w300,
-                    letterSpacing: 3,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const ParsaAppsLogo(
+                        size: 48,
+                        borderRadius: 12,
+                        showShadow: false,
+                      ),
+                      const SizedBox(width: 12),
+                      Flexible(
+                        child: Text(
+                          'ساخته‌شده توسط فرشاد پارسا',
+                          textAlign: TextAlign.center,
+                          style: AppFonts.exo2(
+                            fontSize: 14,
+                            color: Colors.white54,
+                            fontWeight: FontWeight.w300,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../app/app_colors.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
+import 'parsa_apps_logo.dart';
 
 /// ═══════════════════════════════════════════════════════════
 /// 👑 PARSA GOLD AURA CARD — کارت اختصاصی پارسا اپس و فرشاد پارسا
@@ -104,24 +105,9 @@ class _ParsaGoldAuraCardState extends State<ParsaGoldAuraCard>
               child: widget.child ??
                   Row(
                     children: [
-                      Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFFFD700), Color(0xFFFF8C00)],
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFFFD700).withOpacity(0.6 * glowOpacity),
-                              blurRadius: 16,
-                            ),
-                          ],
-                        ),
-                        child: const Center(
-                          child: Text('👑', style: TextStyle(fontSize: 32)),
-                        ),
+                      const ParsaAppsLogo(
+                        size: 68,
+                        borderRadius: 18,
                       ),
                       const SizedBox(width: 16),
                       Expanded(

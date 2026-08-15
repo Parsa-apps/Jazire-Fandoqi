@@ -171,7 +171,7 @@ Hive.initFlutter() → openBox() → AudioService.init() (شامل ستاپ TTS)
 - `targetSdk = 35`, `compileSdk = 35` — به‌روز.
 - R8 fullMode + ProGuard rules + shrinkResources.
 - `network_security_config` بدون cleartext، `allowBackup=false`، `dataExtractionRules`.
-- مجوزها مدرن و حداقلی: `READ_MEDIA_IMAGES` برای اندروید ۱۳+، `maxSdkVersion` برای مجوزهای قدیمی.
+- مجوزها حداقلی‌اند و هیچ مجوز گالری، تصویر، دوربین یا حافظهٔ خارجی درخواست نمی‌شود.
 - پرداخت کافه‌بازار با Poolakey + تأیید امضای RSA + تشخیص sandbox.
 - Anti-tamper: بررسی امضای APK در ران‌تیم (SHA-256 گواهی در BuildConfig)، تشخیص Frida/Xposed/debugger با سیاست معقول (فقط tamper قطعی مسدود می‌شود؛ root شبیه‌ساز فقط ثبت می‌شود).
 - کرش‌ها به‌صورت آفلاین در Hive ذخیره و در پنل والد قابل مشاهده‌اند؛ `ErrorWidget.builder` مانع صفحه سفید می‌شود.
@@ -180,7 +180,7 @@ Hive.initFlutter() → openBox() → AudioService.init() (شامل ستاپ TTS)
 1. **🔴 بحرانی: نشت کلید امضا** (بخش C1) — عملاً انتشار امن را بی‌معنی می‌کند.
 2. **CI هیچ تستی اجرا نمی‌کند:** در `build-apk.yml` نه `flutter analyze` هست نه `flutter test`. اسکریپت محلی `build.sh` هر دو را دارد ولی پایپ‌لاین گیت‌هاب از آن استفاده نمی‌کند. یعنی یک PR شکسته می‌تواند APK بسازد.
 3. **نام‌گذاری آرتیفکت CI قدیمی است:** `kudake_iran_v3.0.0_apk` در حالی که نسخه واقعی `6.2.0+13` است.
-4. **Flutter پین‌شده روی `3.24.3`** (سپتامبر ۲۰۲۴) — در اوت ۲۰۲۶ یعنی ~۲ سال عقب‌تر از stable. نشانه‌هایش: `dependency_overrides` برای `image_cropper_platform_interface` و کامنت NDK. هرچه این بدهی بزرگ‌تر شود، مهاجرت سخت‌تر می‌شود.
+4. **Flutter پین‌شده روی `3.24.3`** (سپتامبر ۲۰۲۴) — در اوت ۲۰۲۶ یعنی ~۲ سال عقب‌تر از stable. وابستگی قدیمی انتخاب و برش عکس حذف شده؛ کامنت NDK همچنان نیازمند بازبینی در ارتقای بعدی است. هرچه این بدهی بزرگ‌تر شود، مهاجرت سخت‌تر می‌شود.
 5. **`--obfuscate --split-debug-info` در CI نیست** (فقط در `build_optimized.sh` محلی) → کرش‌های release قابل symbolicate نیستند و باینری بدون obfuscation توزیع می‌شود.
 6. **گزارش کرش صرفاً محلی است:** هیچ ابزار remote (مثل Sentry) وجود ندارد؛ در تولید از کرش‌های واقعی بی‌خبر می‌مانید.
 7. فایل `run_log.txt` (خروجی شکست CI) در مخزن commit شده — باید حذف شود.

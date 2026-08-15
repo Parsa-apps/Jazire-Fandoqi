@@ -48,7 +48,6 @@ import 'features/lullabies/lullaby_player_screen.dart';
 import 'core/learning_content/lullabies_data.dart';
 import 'features/home/home_screen.dart';
 import 'features/profile/sticker_album_screen.dart';
-import 'features/onboarding/onboarding_screen.dart';
 import 'features/animals/animal_encyclopedia_screen.dart';
 import 'features/concepts/concepts_hub_screen.dart';
 import 'features/jobs/jobs_hub_screen.dart';
@@ -57,6 +56,7 @@ import 'features/sel/sel_hub_screen.dart';
 import 'features/gateway/learning_library_screen.dart';
 import 'features/parent/parent_panel.dart';
 import 'features/splash/splash_screen.dart';
+import 'features/tutorial/app_tutorial_screen.dart';
 import 'features/shop/game_access_gate.dart';
 import 'features/games/math/tally_marks_game.dart';
 import 'features/games/math/place_value_game.dart';
@@ -219,8 +219,10 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
       routes: {
         '/': (context) => const SplashScreen(),
         '/security-blocked': (context) => const TamperBlockScreen(),
-        '/onboarding': (context) => const OnboardingScreen(),
+        '/tutorial': (context) => const AppTutorialScreen(),
         '/gateway': (context) => const AppGatewayScreen(),
+        '/gateway-first-entry': (context) =>
+            const AppGatewayScreen(offerProfileSetup: true),
         '/learning-library': (context) => const LearningLibraryScreen(),
         '/animals': (context) => GameAccessGate(
               gameName: 'حیوانات',
