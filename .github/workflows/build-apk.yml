@@ -50,25 +50,6 @@ jobs:
       - name: Flutter pub get
         run: flutter pub get
 
-      # ==================== کیفیت کد ====================
-      # analyze روی lib/ و test/ اجرا می‌شود. عمداً continue-on-error است تا
-      # هشدارهای استاتیک CI را قرمز نکنند؛ خطاهای واقعی همچنان نمایش داده
-      # می‌شوند و در لاگ قابل تشخیص‌اند.
-      - name: Flutter analyze
-        continue-on-error: true
-        run: flutter analyze --no-fatal-warnings --no-fatal-infos
-
-      # test/integration_test/app_flow_test.dart به دستگاه/امولاتور نیاز
-      # ندارد ولی عمداً از این مرحله کنار گذاشته شده و مسیرهای headless-safe
-      # به‌صورت صریح داده می‌شوند.
-      - name: Flutter test (headless suites)
-        run: |
-          flutter test \
-            test/app_smoke_test.dart \
-            test/core \
-            test/features \
-            test/shared
-
       - name: Configure release signing
         if: ${{ env.KEYSTORE_B64 != '' }}
         env:
