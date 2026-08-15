@@ -4,11 +4,42 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:jazireh_fandoghi/core/app_legal.dart';
+import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
 import 'package:jazireh_fandoghi/core/game_data.dart';
 import 'package:jazireh_fandoghi/features/about/about_screen.dart';
 import 'package:jazireh_fandoghi/features/cartoons/cartoon_hub_screen.dart';
 import 'package:jazireh_fandoghi/features/gateway/app_gateway_screen.dart';
 import 'package:jazireh_fandoghi/features/home/home_screen.dart';
+
+Future<void> _disposeAnimatedTree(WidgetTester tester) async {
+  await tester.pumpWidget(const SizedBox.shrink());
+  FandoghiCoach.cancelSmartHint();
+  FandoghiCoach.disablePersistentPresence();
+  // Some animation packages use delayed futures that cannot be cancelled.
+  // Advance fake time after disposal so those callbacks can finish harmlessly.
+  await tester.pump(const Duration(seconds: 6));
+}
+
+Future<void> _scrollUntilContactsAreBuilt(WidgetTester tester) async {
+  final outerScrollable = find.descendant(
+    of: find.byType(ListView).first,
+    matching: find.byType(Scrollable),
+  ).first;
+  final position = tester.state<ScrollableState>(outerScrollable).position;
+  final email = find.text(AppLegal.supportEmail);
+  final telegram = find.text(AppLegal.telegramHandle);
+
+  for (var attempt = 0;
+      attempt < 10 &&
+          (email.evaluate().isEmpty || telegram.evaluate().isEmpty);
+      attempt++) {
+    final nextOffset = (position.pixels + 180)
+        .clamp(position.minScrollExtent, position.maxScrollExtent)
+        .toDouble();
+    position.jumpTo(nextOffset);
+    await tester.pump(const Duration(milliseconds: 50));
+  }
+}
 
 void main() {
   setUp(() {
@@ -51,6 +82,8 @@ void main() {
     // دکمه‌های شناور کناری (آیکونی، با برچسب دسترس‌پذیری)
     expect(find.bySemanticsLabel('هدیهٔ روزانه'), findsOneWidget);
     expect(find.bySemanticsLabel('کتابخانه'), findsOneWidget);
+
+    await _disposeAnimatedTree(tester);
   });
 
   testWidgets('gateway opens the island world without overflow', (tester) async {
@@ -67,6 +100,8 @@ void main() {
     expect(find.text('خانه'), findsOneWidget);
     expect(find.text('فارسی'), findsOneWidget);
     expect(find.text('علوم'), findsOneWidget);
+
+    await _disposeAnimatedTree(tester);
   });
 
   testWidgets('gateway stays overflow-free on a narrow phone', (tester) async {
@@ -85,6 +120,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(tester.takeException(), isNull);
+
+    await _disposeAnimatedTree(tester);
   });
 
   testWidgets('cartoon hub screen renders cartoon sections and categories', (tester) async {
@@ -112,6 +149,8 @@ void main() {
       scrollable: find.byType(Scrollable).first,
     );
     expect(find.text('همه کارتون‌ها'), findsOneWidget);
+
+    await _disposeAnimatedTree(tester);
   });
 
   testWidgets('about screen hides the raw website address and exposes a direct link', (tester) async {
@@ -123,18 +162,13 @@ void main() {
     expect(find.byKey(const ValueKey('parsa_website_link')), findsOneWidget);
     expect(find.text('ورود مستقیم به سایت'), findsOneWidget);
 
-    await tester.scrollUntilVisible(
-      find.text(AppLegal.supportEmail),
-      220,
-      scrollable: find.byType(Scrollable).first,
-    );
+    // Keep scrolling the stable outer ListView until both adjacent contact
+    // cards are built. A dynamic `Scrollable.first` can switch to a lazily
+    // created nested scrollable and then disappear between two searches.
+    await _scrollUntilContactsAreBuilt(tester);
     expect(find.text(AppLegal.supportEmail), findsOneWidget);
-
-    await tester.scrollUntilVisible(
-      find.text(AppLegal.telegramHandle),
-      220,
-      scrollable: find.byType(Scrollable).first,
-    );
     expect(find.text(AppLegal.telegramHandle), findsOneWidget);
+
+    await _disposeAnimatedTree(tester);
   });
 }

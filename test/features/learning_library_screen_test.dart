@@ -4,6 +4,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
 import 'package:jazireh_fandoghi/features/gateway/learning_library_screen.dart';
 
+Future<void> _disposeAnimatedTree(WidgetTester tester) async {
+  await tester.pumpWidget(const SizedBox.shrink());
+  FandoghiCoach.cancelSmartHint();
+  FandoghiCoach.disablePersistentPresence();
+  // Let any already-created delayed animation callbacks expire after their
+  // widgets have been disposed, without allowing them to schedule more work.
+  await tester.pump(const Duration(seconds: 6));
+}
+
 void main() {
   tearDown(() {
     FandoghiCoach.clear();
@@ -38,5 +47,7 @@ void main() {
       scrollable: find.byType(Scrollable).last,
     );
     expect(find.text('دنیای احساسات'), findsOneWidget);
+
+    await _disposeAnimatedTree(tester);
   });
 }
