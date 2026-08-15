@@ -256,7 +256,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'کارتون‌کده فندقی 🎬',
+              'کارتون‌کده فندقی',
               style: AppFonts.balooBhaijaan2(
                 color: Colors.white,
                 fontSize: 20,
