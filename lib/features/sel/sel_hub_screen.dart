@@ -1,18 +1,20 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/app_colors.dart';
 import '../../app/design_tokens.dart';
 import '../../app/app_fonts.dart';
+import '../../core/audio_service.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';
+import '../../shared/widgets/child_touch_target.dart';
 import '../../shared/widgets/fandoghi_premium.dart';
 
 /// ═══════════════════════════════════════════════════════════════
-/// 💛 SEL HUB PREMIUM — پیشنهاد ۲۷ و ۲۸
-/// هوش هیجانی: ۸ احساس + قصه اجتماعی + تمرین نفس عمیق
-/// با FandoghiPremium و انیمیشن تنفس 4-7-8
+/// 💛 SEL HUB PREMIUM — دنیای هوش هیجانی و آرام‌سازی کودک
+/// هوش هیجانی: ۸ احساس + قصه صوتی + تمرین تنفس شکمی بادکنک جادویی
 /// ═══════════════════════════════════════════════════════════════
 class SelHubScreen extends StatefulWidget {
   const SelHubScreen({super.key});
@@ -43,7 +45,11 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
     _breathCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 4000));
     FandoghiCoach.enablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      FandoghiCoach.say('به دنیای احساسات خوش اومدی! هر احساس یه رنگ داره — بزن روش تا قصه‌اش رو بشنوی 💛', mood: FandoghiMood.happy, duration: const Duration(seconds: 4));
+      FandoghiCoach.say(
+        'به دنیای احساسات خوش اومدی! هر احساس یه رنگ داره — بزن روش تا قصه‌اش رو بشنوی 💛',
+        mood: FandoghiMood.happy,
+        duration: const Duration(seconds: 4),
+      );
     });
   }
 
@@ -57,7 +63,14 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
   void _selectEmotion(_Emotion e) {
     HapticFeedback.selectionClick();
     setState(() => _selectedEmotion = e.id);
-    FandoghiCoach.say(e.story, mood: e.id == 'sad' || e.id == 'angry' || e.id == 'fear' ? FandoghiMood.shy : FandoghiMood.happy, duration: const Duration(seconds: 5));
+    FandoghiCoach.say(
+      e.story,
+      mood: e.id == 'sad' || e.id == 'angry' || e.id == 'fear'
+          ? FandoghiMood.shy
+          : FandoghiMood.happy,
+      duration: const Duration(seconds: 5),
+    );
+    unawaited(AudioService.speak(e.story));
     GameData.recordAnswer(correct: true, skill: 'emotions');
   }
 
@@ -71,18 +84,25 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _runBreathCycle() async {
-    // چرخه 4-7-8: دم 4ث، نگه 2ث (ساده‌شده برای کودک)، بازدم 4ث — 3 دور
+    // چرخه تنفس شکمی بادکنک جادویی: دم ۴ ث، نگه ۲ ث، بازدم ۴ ث — ۳ دور
     for (var cycle = 0; cycle < 3; cycle++) {
       if (!mounted || !_breathing) return;
       setState(() => _breathPhase = 0);
       _breathCtrl.forward(from: 0);
+      HapticFeedback.lightImpact();
+      unawaited(AudioService.speak('نفس عمیق بکش... بادکنک بزرگ میشه'));
       await Future.delayed(const Duration(seconds: 4));
+
       if (!mounted || !_breathing) return;
       setState(() => _breathPhase = 1);
+      HapticFeedback.selectionClick();
       await Future.delayed(const Duration(seconds: 2));
+
       if (!mounted || !_breathing) return;
       setState(() => _breathPhase = 2);
       _breathCtrl.reverse();
+      HapticFeedback.lightImpact();
+      unawaited(AudioService.speak('حالا آروم فوت کن...'));
       await Future.delayed(const Duration(seconds: 4));
     }
     if (mounted) {
@@ -90,8 +110,9 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
         _breathing = false;
         _breathPhase = 0;
       });
-      HapticFeedback.lightImpact();
+      HapticFeedback.heavyImpact();
       FandoghiCoach.celebrate('آفرین! حالا آروم‌تر شدی؟ نفس عمیق همیشه کمکت می‌کند 🌿');
+      unawaited(AudioService.speak('آفرین! حالا آروم شدی'));
     }
   }
 
@@ -100,7 +121,13 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
     final selected = _selectedEmotion == null ? null : _emotions.firstWhere((e) => e.id == _selectedEmotion);
     return Scaffold(
       body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFFFFF8E1), Color(0xFFFFE0B2), Color(0xFFFFCCBC)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFFFF8E1), Color(0xFFFFE0B2), Color(0xFFFFCCBC)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
         child: SafeArea(
           child: Column(
             children: [
@@ -138,20 +165,51 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
       child: Row(
         children: [
-          GestureDetector(
+          ChildTouchTarget(
             onTap: () => Navigator.pop(context),
             child: Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), borderRadius: BorderRadius.circular(AppRadii.md), border: Border.all(color: Colors.white), boxShadow: AppShadows.soft),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(AppRadii.md),
+                border: Border.all(color: Colors.white),
+                boxShadow: AppShadows.soft,
+              ),
               child: const Icon(Icons.arrow_back_rounded, color: Color(0xFF6D4C41), size: 20),
             ),
           ),
           const SizedBox(width: 10),
-          Expanded(child: Text('دنیای احساسات 💛', style: AppFonts.vazirmatn(color: const Color(0xFF4E342E), fontSize: 18, fontWeight: FontWeight.w900))),
+          Expanded(
+            child: Text(
+              'دنیای احساسات و هوش هیجانی 💛',
+              style: AppFonts.vazirmatn(
+                color: const Color(0xFF4E342E),
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadii.pill), boxShadow: AppShadows.soft),
-            child: Row(children: [const Text('🧠', style: TextStyle(fontSize: 14)), const SizedBox(width: 4), Text('SEL', style: AppFonts.vazirmatn(fontSize: 12, fontWeight: FontWeight.w900, color: const Color(0xFF6D4C41)))]),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(AppRadii.pill),
+              boxShadow: AppShadows.soft,
+            ),
+            child: Row(
+              children: [
+                const Text('🧠', style: TextStyle(fontSize: 14)),
+                const SizedBox(width: 4),
+                Text(
+                  'SEL',
+                  style: AppFonts.vazirmatn(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    color: const Color(0xFF6D4C41),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -174,9 +232,24 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('هر احساسی مهم است!', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
+                Text(
+                  'هر احساسی مهم است!',
+                  style: AppFonts.vazirmatn(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text('شادی، ناراحتی، خشم... همه طبیعی‌اند. یاد بگیر بشناسی و آرام شوی.', style: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 12, height: 1.6, fontWeight: FontWeight.w600)),
+                Text(
+                  'شادی، ناراحتی، خشم... همه طبیعی‌اند. یاد بگیر بشناسی و با نفس عمیق آرام شوی.',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.95),
+                    fontSize: 12,
+                    height: 1.6,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
           ),
@@ -189,7 +262,12 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4, mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 0.88),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: 0.88,
+      ),
       itemCount: _emotions.length,
       itemBuilder: (context, index) {
         final e = _emotions[index];
@@ -201,7 +279,10 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
             decoration: BoxDecoration(
               color: selected ? Colors.white : Colors.white.withOpacity(0.92),
               borderRadius: BorderRadius.circular(AppRadii.lg),
-              border: Border.all(color: selected ? e.color : Colors.white.withOpacity(0.6), width: selected ? 3 : 1.5),
+              border: Border.all(
+                color: selected ? e.color : Colors.white.withOpacity(0.6),
+                width: selected ? 3 : 1.5,
+              ),
               boxShadow: selected ? AppShadows.colored(e.color, opacity: 0.25) : AppShadows.soft,
             ),
             child: Column(
@@ -209,7 +290,14 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
               children: [
                 Text(e.emoji, style: const TextStyle(fontSize: 32)),
                 const SizedBox(height: 4),
-                Text(e.name, style: AppFonts.vazirmatn(fontSize: 12, fontWeight: FontWeight.w900, color: selected ? e.color : const Color(0xFF4E342E))),
+                Text(
+                  e.name,
+                  style: AppFonts.vazirmatn(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    color: selected ? e.color : const Color(0xFF4E342E),
+                  ),
+                ),
                 if (selected)
                   Container(
                     margin: const EdgeInsets.only(top: 4),
@@ -219,7 +307,7 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
                   ).animate().scale(duration: 300.ms, curve: Curves.elasticOut),
               ],
             ),
-          ).animate(delay: (index * 60).ms).fadeIn(duration: 350.ms).scale(begin: const Offset(0.85, 0.85), curve: Curves.easeOutBack),
+          ).animate(delay: (index * 40).ms).fadeIn(duration: 300.ms).scale(begin: const Offset(0.85, 0.85), curve: Curves.easeOutBack),
         );
       },
     );
@@ -229,7 +317,12 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadii.xl), border: Border.all(color: e.color.withOpacity(0.25), width: 1.5), boxShadow: AppShadows.medium),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppRadii.xl),
+        border: Border.all(color: e.color.withOpacity(0.25), width: 1.5),
+        boxShadow: AppShadows.medium,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -237,30 +330,65 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: e.color.withOpacity(0.12), borderRadius: BorderRadius.circular(AppRadii.md)),
+                decoration: BoxDecoration(
+                  color: e.color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(AppRadii.md),
+                ),
                 child: Text(e.emoji, style: const TextStyle(fontSize: 22)),
               ),
               const SizedBox(width: 10),
-              Text(e.name, style: AppFonts.vazirmatn(fontSize: 18, fontWeight: FontWeight.w900, color: e.color)),
+              Text(
+                e.name,
+                style: AppFonts.vazirmatn(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: e.color,
+                ),
+              ),
               const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: e.color.withOpacity(0.12), borderRadius: BorderRadius.circular(AppRadii.pill)),
-                child: Text('قصه فندقی', style: AppFonts.vazirmatn(fontSize: 11, fontWeight: FontWeight.w800, color: e.color)),
+              IconButton.filledTonal(
+                tooltip: 'پخش صوتی قصه',
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  AudioService.speak(e.story);
+                },
+                icon: const Icon(Icons.volume_up_rounded, size: 20),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          Text(e.story, style: AppFonts.vazirmatn(fontSize: 13, fontWeight: FontWeight.w600, height: 1.7, color: const Color(0xFF3E2723))),
+          Text(
+            e.story,
+            style: AppFonts.vazirmatn(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              height: 1.7,
+              color: const Color(0xFF3E2723),
+            ),
+          ),
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: e.color.withOpacity(0.08), borderRadius: BorderRadius.circular(AppRadii.lg), border: Border.all(color: e.color.withOpacity(0.15))),
+            decoration: BoxDecoration(
+              color: e.color.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(AppRadii.lg),
+              border: Border.all(color: e.color.withOpacity(0.15)),
+            ),
             child: Row(
               children: [
                 const Text('💡', style: TextStyle(fontSize: 16)),
                 const SizedBox(width: 8),
-                Expanded(child: Text(e.tip, style: AppFonts.vazirmatn(fontSize: 12, fontWeight: FontWeight.w700, height: 1.5, color: const Color(0xFF4E342E)))),
+                Expanded(
+                  child: Text(
+                    e.tip,
+                    style: AppFonts.vazirmatn(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      height: 1.5,
+                      color: const Color(0xFF4E342E),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -284,17 +412,37 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: const Color(0xFF00B894).withOpacity(0.12), borderRadius: BorderRadius.circular(AppRadii.md)),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00B894).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(AppRadii.md),
+                ),
                 child: const Icon(Icons.air_rounded, color: Color(0xFF00B894), size: 18),
               ),
               const SizedBox(width: 10),
-              Text('تمرین نفس عمیق 🌿', style: AppFonts.vazirmatn(fontSize: 15, fontWeight: FontWeight.w900, color: const Color(0xFF00695C))),
+              Text(
+                'تمرین تنفس شکمی بادکنک جادویی 🎈',
+                style: AppFonts.vazirmatn(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  color: const Color(0xFF00695C),
+                ),
+              ),
               const Spacer(),
               if (_breathing)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: const Color(0xFF00B894), borderRadius: BorderRadius.circular(AppRadii.pill)),
-                  child: Text(_breathPhase == 0 ? 'دم...' : _breathPhase == 1 ? 'نگه‌دار...' : 'بازدم...', style: AppFonts.vazirmatn(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white)),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF00B894),
+                    borderRadius: BorderRadius.circular(AppRadii.pill),
+                  ),
+                  child: Text(
+                    _breathPhase == 0 ? 'دم... (بادکنک پر)' : _breathPhase == 1 ? 'نگه‌دار...' : 'بازدم... (آروم فوت کن)',
+                    style: AppFonts.vazirmatn(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -302,21 +450,32 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
           AnimatedBuilder(
             animation: _breathCtrl,
             builder: (context, _) {
-              final scale = 0.85 + (_breathCtrl.value * 0.3);
-              final color = _breathPhase == 0 ? const Color(0xFF00B894) : _breathPhase == 1 ? const Color(0xFFFFD700) : const Color(0xFF74B9FF);
+              final scale = 0.85 + (_breathCtrl.value * 0.4);
+              final color = _breathPhase == 0
+                  ? const Color(0xFF00B894)
+                  : _breathPhase == 1
+                      ? const Color(0xFFFFD700)
+                      : const Color(0xFF74B9FF);
               return Transform.scale(
                 scale: scale,
                 child: Container(
-                  width: 120,
-                  height: 120,
+                  width: 130,
+                  height: 130,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: RadialGradient(colors: [color.withOpacity(0.25), color.withOpacity(0.08)]),
-                    border: Border.all(color: color.withOpacity(0.4), width: 3),
-                    boxShadow: [BoxShadow(color: color.withOpacity(0.25), blurRadius: 20)],
+                    gradient: RadialGradient(
+                      colors: [color.withOpacity(0.35), color.withOpacity(0.08)],
+                    ),
+                    border: Border.all(color: color.withOpacity(0.5), width: 3),
+                    boxShadow: [BoxShadow(color: color.withOpacity(0.3), blurRadius: 24)],
                   ),
                   child: Center(
-                    child: Text(_breathing ? (_breathPhase == 0 ? '🌬️' : _breathPhase == 1 ? '⏸️' : '😮‍💨') : '🌿', style: const TextStyle(fontSize: 42)),
+                    child: Text(
+                      _breathing
+                          ? (_breathPhase == 0 ? '🎈' : _breathPhase == 1 ? '✨' : '😮‍💨')
+                          : '🎈',
+                      style: const TextStyle(fontSize: 44),
+                    ),
                   ),
                 ),
               );
@@ -324,9 +483,20 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 16),
           Text(
-            _breathing ? (_breathPhase == 0 ? 'از بینی نفس بکش...' : _breathPhase == 1 ? 'نگه دار...' : 'از دهان بیرون بده...') : 'وقتی ناراحت یا عصبانی هستی، این دکمه را بزن و با فندقی نفس بکش',
+            _breathing
+                ? (_breathPhase == 0
+                    ? 'از بینی نفس بکش... بادکنک بزرگ میشه!'
+                    : _breathPhase == 1
+                        ? 'نفس رو نگه‌دار...'
+                        : 'از دهان فوت کن... آروم شدی!')
+                : 'وقتی ناراحت یا عصبانی هستی، این دکمه را بزن و ۳ بار با فندقی نفس بکش',
             textAlign: TextAlign.center,
-            style: AppFonts.vazirmatn(fontSize: 13, fontWeight: FontWeight.w600, height: 1.5, color: const Color(0xFF4E342E)),
+            style: AppFonts.vazirmatn(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              height: 1.5,
+              color: const Color(0xFF4E342E),
+            ),
           ),
           const SizedBox(height: 14),
           SizedBox(
@@ -339,7 +509,10 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
                       })
                   : _startBreathing,
               icon: Icon(_breathing ? Icons.stop_rounded : Icons.play_arrow_rounded, size: 20),
-              label: Text(_breathing ? 'توقف' : 'شروع تمرین ۳ دور 🌬️', style: AppFonts.vazirmatn(fontWeight: FontWeight.w900, fontSize: 15)),
+              label: Text(
+                _breathing ? 'توقف' : 'شروع تمرین آرام‌سازی ۳ دور 🎈',
+                style: AppFonts.vazirmatn(fontWeight: FontWeight.w900, fontSize: 15),
+              ),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF00B894),
                 foregroundColor: Colors.white,
@@ -356,7 +529,11 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
   Widget _buildTipCard() {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: const Color(0xFFFFF3E0), borderRadius: BorderRadius.circular(AppRadii.xl), border: Border.all(color: const Color(0xFFFFCC80))),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF3E0),
+        borderRadius: BorderRadius.circular(AppRadii.xl),
+        border: Border.all(color: const Color(0xFFFFCC80)),
+      ),
       child: Row(
         children: [
           const Text('👨‍👩‍👧', style: TextStyle(fontSize: 28)),
@@ -365,9 +542,24 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('برای والدین', style: AppFonts.vazirmatn(fontSize: 13, fontWeight: FontWeight.w900, color: const Color(0xFFE65100))),
+                Text(
+                  'برای والدین',
+                  style: AppFonts.vazirmatn(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    color: const Color(0xFFE65100),
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text('هر روز یک احساس را با کودک حرف بزنید: «امروز کی عصبانی شدی؟ چی کمکت کرد آروم شی؟» این گفتگو هوش هیجانی را ۲ برابر می‌کند.', style: TextStyle(fontSize: 12, height: 1.6, color: const Color(0xFF4E342E), fontWeight: FontWeight.w600)),
+                Text(
+                  'هر روز یک احساس را با کودک گفتگو کنید: «امروز کی عصبانی یا خوشحال شدی؟» این گفتگو هوش هیجانی و آرامش درونی کودک را چند برابر می‌کند.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1.6,
+                    color: const Color(0xFF4E342E),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
           ),
@@ -384,5 +576,12 @@ class _Emotion {
   final Color color;
   final String story;
   final String tip;
-  const _Emotion({required this.id, required this.name, required this.emoji, required this.color, required this.story, required this.tip});
+  const _Emotion({
+    required this.id,
+    required this.name,
+    required this.emoji,
+    required this.color,
+    required this.story,
+    required this.tip,
+  });
 }

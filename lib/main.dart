@@ -57,6 +57,10 @@ import 'features/gateway/learning_library_screen.dart';
 import 'features/parent/parent_panel.dart';
 import 'features/splash/splash_screen.dart';
 import 'features/shop/game_access_gate.dart';
+import 'features/games/math/tally_marks_game.dart';
+import 'features/games/math/place_value_game.dart';
+import 'features/games/math/number_line_game.dart';
+import 'features/games/math/symmetry_game.dart';
 import 'features/growth/catalog_search_screen.dart';
 import 'features/growth/certificates_screen.dart';
 import 'features/growth/growth_app_shell.dart';
@@ -224,6 +228,22 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
         '/numbers': (context) => GameAccessGate(
               gameName: 'اعداد',
               child: const NumbersHubScreen(),
+            ),
+        '/math/tally': (context) => GameAccessGate(
+              gameName: 'چوب‌خط',
+              child: const TallyMarksGame(),
+            ),
+        '/math/place-value': (context) => GameAccessGate(
+              gameName: 'ارزش مکانی',
+              child: const PlaceValueGame(),
+            ),
+        '/math/number-line': (context) => GameAccessGate(
+              gameName: 'محور اعداد',
+              child: const NumberLineGame(),
+            ),
+        '/math/symmetry': (context) => GameAccessGate(
+              gameName: 'تقارن',
+              child: const SymmetryGame(),
             ),
         '/jobs': (context) => GameAccessGate(
               gameName: 'شغل‌ها',
@@ -433,6 +453,18 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
         stageNumber: launch.stageNumber,
       );
     }
+    if (name.contains('چوب‌خط') || name.contains('tally')) {
+      return const TallyMarksGame();
+    }
+    if (name.contains('ارزش مکانی') || name.contains('place_value')) {
+      return const PlaceValueGame();
+    }
+    if (name.contains('محور') || name.contains('number_line')) {
+      return const NumberLineGame();
+    }
+    if (name.contains('تقارن') || name.contains('symmetry')) {
+      return const SymmetryGame();
+    }
     if (name.contains('بشنو') || name.contains('صدا') || name.contains('sound')) {
       return SoundMatchGame(
         stageId: launch.stageId,
@@ -552,8 +584,8 @@ class _PlayTimeTrackerState extends State<_PlayTimeTracker>
         ActivityTracker.tickSecond();
       }
     });
-    // فاز ۶۷: ذخیره خودکار هر ۱۰ ثانیه — بازیابی پس از کرش
-    _autosaveTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+    // بهینه‌سازی فنی فاز ۱: کاهش فرسایش دیسک و مصرف باتری — ذخیره دوره‌ای هر ۲ دقیقه
+    _autosaveTimer = Timer.periodic(const Duration(minutes: 2), (_) {
       if (_foreground && GameData.isLoaded) {
         unawaited(GameData.save());
         unawaited(GrowthStore.save());
@@ -564,6 +596,15 @@ class _PlayTimeTrackerState extends State<_PlayTimeTracker>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _foreground = state == AppLifecycleState.resumed;
+    // ذخیره فوری هنگام توقف، پس‌زمینه رفتن یا بسته شدن برنامه
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.detached) {
+      if (GameData.isLoaded) {
+        unawaited(GameData.save());
+        unawaited(GrowthStore.save());
+      }
+    }
   }
 
   @override
@@ -571,6 +612,10 @@ class _PlayTimeTrackerState extends State<_PlayTimeTracker>
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _autosaveTimer?.cancel();
+    if (GameData.isLoaded) {
+      unawaited(GameData.save());
+      unawaited(GrowthStore.save());
+    }
     super.dispose();
   }
 

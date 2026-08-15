@@ -203,16 +203,22 @@ class AparatService {
       'https://www.aparat.com/etc/api/video/videohash/$hash',
       'https://api.aparat.com/etc/api/video/videohash/$hash',
     ];
-    for (final ep in endpoints) {
-      try {
-        final res = await http.get(Uri.parse(ep), headers: _headers).timeout(_timeout);
-        if (res.statusCode != 200) continue;
-        final parsed = _parseVideoJson(res.body);
-        // برای نمایش پوستر در کارت‌ها، حتی اگر لینک پخش پیدا نشود هم
-        // نتیجه را برمی‌گردانیم تا عکس شخصیت‌ها از دست نرود.
-        if (parsed.hasSource || parsed.posterUrl != null) return parsed;
-      } catch (_) {
-        // ادامه به endpoint بعدی
+    for (var attempt = 0; attempt < 2; attempt++) {
+      for (final ep in endpoints) {
+        try {
+          final res = await http.get(Uri.parse(ep), headers: _headers).timeout(_timeout);
+          if (res.statusCode != 200) continue;
+          final parsed = _parseVideoJson(res.body);
+          // برای نمایش پوستر در کارت‌ها، حتی اگر لینک پخش پیدا نشود هم
+          // نتیجه را برمی‌گردانیم تا عکس شخصیت‌ها از دست نرود.
+          if (parsed.hasSource || parsed.posterUrl != null) return parsed;
+        } catch (_) {
+          // ادامه به endpoint بعدی
+        }
+      }
+      if (attempt == 0) {
+        // تاخیر کوتاه قبل از تلاش دوم در نوسانات لحظه‌ای اینترنت
+        await Future.delayed(const Duration(milliseconds: 500));
       }
     }
     return const AparatResolved(streams: []);

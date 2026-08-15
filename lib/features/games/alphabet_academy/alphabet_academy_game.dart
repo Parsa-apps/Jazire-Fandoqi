@@ -12,13 +12,20 @@ import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
+import '../../../shared/widgets/child_touch_target.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
 import '../../../shared/widgets/handwriting_score_overlay.dart';
 
-/// A local-first Persian alphabet academy: see, hear/read, trace, receive
-/// feedback, and repeat. The trace check is intentionally transparent and
-/// lightweight; it evaluates coverage of the guide area rather than claiming
-/// to be an opaque handwriting-AI service.
+/// ────────────────────────────────────────────────────────────
+/// 🔤 آکادمی الفبا و فارسی اول دبستان
+///
+/// آموزش استاندارد نشانه‌ها مطابق کتاب بخوانیم و بنویسیم پایه اول:
+/// ۱. دو حالت چیدمان: «کتاب فارسی اول 📚» و «الفبایی سنتی 🔤»
+/// ۲. آموزش اشکال چندگانه حروف (Allographs: اول، وسط، آخر چسبان، تنها)
+/// ۳. بوم ردیابی با خط کرسی (Baseline)، نقطه شروع و جهت قلم.
+/// ────────────────────────────────────────────────────────────
+enum _AlphabetMode { grade1, alphabetical }
+
 class AlphabetAcademyGame extends StatefulWidget {
   final String? stageId;
   final int? stageNumber;
@@ -34,9 +41,13 @@ class AlphabetAcademyGame extends StatefulWidget {
 }
 
 class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
+  _AlphabetMode _mode = _AlphabetMode.grade1;
   int _lessonIndex = 0;
 
-  _LetterLesson get _lesson => _lessons[_lessonIndex];
+  List<_LetterLesson> get _currentLessons =>
+      _mode == _AlphabetMode.grade1 ? _grade1Lessons : _alphabeticalLessons;
+
+  _LetterLesson get _lesson => _currentLessons[_lessonIndex];
 
   @override
   void initState() {
@@ -51,7 +62,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
         return;
       }
       FandoghiCoach.instruction(
-        'به آکادمی الفبا خوش آمدی! یک حرف انتخاب کن و بعد دکمه‌ی «تمرین نوشتن» را بزن ✍️',
+        'به آکادمی الفبای اول دبستان خوش آمدی! نشانه را انتخاب کن و شکل‌های مختلف آن را ببین ✍️',
       );
     });
   }
@@ -63,12 +74,21 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   }
 
   void _selectLesson(int index) {
-    setState(() => _lessonIndex = index);
+    setState(() => _lessonIndex = index.clamp(0, _currentLessons.length - 1));
+    final lesson = _currentLessons[_lessonIndex];
     FandoghiCoach.instruction(
-      'حرف «${_lessons[index].letter}» را انتخاب کردی؛ اسمش ${_lessons[index].word} است. حالا دکمه‌ی «تمرین نوشتن» را بزن ✍️',
+      'نشانه «${lesson.letter}» را انتخاب کردی؛ مثل «${lesson.word}». دکمه «تمرین نوشتن» را بزن ✍️',
     );
-    // فاز ۶: تلفظ حرف توسط فندقی
-    unawaited(AudioService.pronounceLetter(_lessons[index].letter));
+    unawaited(AudioService.pronounceLetter(lesson.letter));
+  }
+
+  void _switchMode(_AlphabetMode newMode) {
+    if (_mode == newMode) return;
+    HapticFeedback.selectionClick();
+    setState(() {
+      _mode = newMode;
+      _lessonIndex = 0;
+    });
   }
 
   Future<void> _openTraceScreen() async {
@@ -77,7 +97,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
       MaterialPageRoute<void>(
         fullscreenDialog: true,
         builder: (_) => _TraceScreen(
-          lessons: _lessons,
+          lessons: _currentLessons,
           initialIndex: _lessonIndex,
           stageId: widget.stageId,
           stageNumber: widget.stageNumber,
@@ -100,6 +120,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
           child: Column(
             children: [
               _topBar(),
+              _modeSwitchBar(),
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
@@ -108,6 +129,8 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                       _academyHero(),
                       const SizedBox(height: 14),
                       _lessonCard(),
+                      const SizedBox(height: 14),
+                      _allographsCard(),
                       const SizedBox(height: 14),
                       _letterPicker(),
                     ],
@@ -133,16 +156,16 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
           ),
           const Spacer(),
           Text(
-            'آکادمی الفبا 🔤',
+            'آکادمی الفبا و اول دبستان 🔤',
             style: AppFonts.balooBhaijaan2(
               color: Colors.white,
-              fontSize: 22,
+              fontSize: 20,
               fontWeight: FontWeight.w900,
             ),
           ),
           const Spacer(),
           Text(
-            '${_lessonIndex + 1}/${_lessons.length}',
+            '${_lessonIndex + 1}/${_currentLessons.length}',
             style: AppFonts.balooBhaijaan2(
               color: Colors.white70,
               fontSize: 16,
@@ -154,11 +177,74 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     );
   }
 
+  Widget _modeSwitchBar() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _switchMode(_AlphabetMode.grade1),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: _mode == _AlphabetMode.grade1
+                      ? AppColors.primary
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  'کتاب اول دبستان 📚',
+                  textAlign: TextAlign.center,
+                  style: AppFonts.balooBhaijaan2(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _switchMode(_AlphabetMode.alphabetical),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: _mode == _AlphabetMode.alphabetical
+                      ? AppColors.primary
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  'الفبایی سنتی 🔤',
+                  textAlign: TextAlign.center,
+                  style: AppFonts.balooBhaijaan2(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _academyHero() {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(26),
+      borderRadius: BorderRadius.circular(24),
       child: SizedBox(
-        height: 155,
+        height: 140,
         width: double.infinity,
         child: Stack(
           fit: StackFit.expand,
@@ -171,22 +257,27 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
             DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.black.withOpacity(0.05), Colors.black.withOpacity(0.55)],
+                  colors: [
+                    Colors.black.withOpacity(0.05),
+                    Colors.black.withOpacity(0.60)
+                  ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
               ),
             ),
             Positioned(
-              right: 18,
-              bottom: 14,
-              left: 18,
+              right: 16,
+              bottom: 12,
+              left: 16,
               child: Text(
-                'ببین • بگو • بنویس • تکرار کن',
+                _mode == _AlphabetMode.grade1
+                    ? 'نشانه‌های ۱ و ۲ • بخوانیم و بنویسیم'
+                    : 'ببین • بگو • بنویس • تکرار کن',
                 textAlign: TextAlign.center,
                 style: AppFonts.balooBhaijaan2(
                   color: Colors.white,
-                  fontSize: 22,
+                  fontSize: 20,
                   fontWeight: FontWeight.w900,
                   shadows: const [Shadow(color: Colors.black54, blurRadius: 8)],
                 ),
@@ -201,7 +292,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   Widget _lessonCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(26),
@@ -212,11 +303,11 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
           Row(
             children: [
               Container(
-                width: 108,
-                height: 108,
+                width: 96,
+                height: 96,
                 decoration: BoxDecoration(
                   gradient: AppGradients.candy,
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(22),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.candy1.withOpacity(0.3),
@@ -230,27 +321,27 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                     _lesson.letter,
                     style: AppFonts.vazirmatn(
                       color: Colors.white,
-                      fontSize: 68,
+                      fontSize: 54,
                       fontWeight: FontWeight.w900,
                       height: 1,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'حرف «${_lesson.letter}»',
+                      'نشانه «${_lesson.letter}»',
                       style: AppFonts.balooBhaijaan2(
                         color: Colors.white,
-                        fontSize: 23,
+                        fontSize: 22,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 4),
                     Text(
                       '${_lesson.emoji} مثلِ «${_lesson.word}»',
                       style: AppFonts.balooBhaijaan2(
@@ -259,15 +350,26 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'برای تمرین نوشتن، دکمه‌ی زیر را بزن.',
-                      style: AppFonts.balooBhaijaan2(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        height: 1.5,
-                      ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        IconButton.filledTonal(
+                          tooltip: 'تلفظ نشانه',
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            AudioService.pronounceLetter(_lesson.letter);
+                          },
+                          icon: const Icon(Icons.volume_up_rounded, size: 18),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'تلفظ صوتی',
+                          style: AppFonts.balooBhaijaan2(
+                            color: Colors.white70,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -280,14 +382,14 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
             child: FilledButton.icon(
               onPressed: _openTraceScreen,
               icon: const Icon(Icons.draw_rounded, size: 20),
-              label: const Text('تمرین نوشتن ✍️'),
+              label: const Text('تمرین نوشتن روی خط کرسی ✍️'),
               style: FilledButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: AppColors.primaryDark,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 textStyle: AppFonts.balooBhaijaan2(
                   fontWeight: FontWeight.w900,
-                  fontSize: 18,
+                  fontSize: 17,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(18),
@@ -300,10 +402,90 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     );
   }
 
+  Widget _allographsCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: Colors.white.withOpacity(0.12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('📝', style: TextStyle(fontSize: 18)),
+              const SizedBox(width: 8),
+              Text(
+                'شکل‌های مختلف نشانه در کلمه (اشکال چهارگانه)',
+                style: AppFonts.balooBhaijaan2(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: List.generate(_lesson.allographs.length, (idx) {
+              final shape = _lesson.allographs[idx];
+              final label = _lesson.allographNames[idx];
+              final sample = _lesson.allographWords[idx];
+
+              return Expanded(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.white30),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        shape,
+                        style: AppFonts.vazirmatn(
+                          color: Colors.amberAccent,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      Text(
+                        label,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        sample,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _letterPicker() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.08),
         borderRadius: BorderRadius.circular(24),
@@ -313,33 +495,64 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'انتخاب حرف برای تمرین',
+            _mode == _AlphabetMode.grade1
+                ? 'انتخاب نشانه بر اساس درس‌های اول دبستان'
+                : 'انتخاب نشانه به ترتیب الفبا',
             style: AppFonts.balooBhaijaan2(
               color: Colors.white70,
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            children: List.generate(_lessons.length, (index) {
-              final selected = index == _lessonIndex;
-              return ChoiceChip(
-                label: Text(_lessons[index].letter),
-                selected: selected,
-                onSelected: (_) => _selectLesson(index),
-                selectedColor: AppColors.primary,
-                backgroundColor: Colors.white.withOpacity(0.1),
-                labelStyle: AppFonts.balooBhaijaan2(
-                  color: selected ? Colors.white : Colors.white70,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 16,
+          const SizedBox(height: 12),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _currentLessons.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 6,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 0.95,
+            ),
+            itemBuilder: (context, index) {
+              final item = _currentLessons[index];
+              final isSelected = index == _lessonIndex;
+
+              return ChildTouchTarget(
+                onTap: () => _selectLesson(index),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  decoration: BoxDecoration(
+                    color: isSelected ? Colors.white : Colors.white.withOpacity(0.14),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isSelected ? AppColors.candy1 : Colors.white.withOpacity(0.2),
+                      width: isSelected ? 2.5 : 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: AppColors.candy1.withOpacity(0.4),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Center(
+                    child: Text(
+                      item.letter,
+                      style: AppFonts.vazirmatn(
+                        color: isSelected ? AppColors.primaryDark : Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
                 ),
-                side: BorderSide(color: Colors.white.withOpacity(0.1)),
               );
-            }),
+            },
           ),
         ],
       ),
@@ -347,9 +560,8 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   }
 }
 
-/// صفحه‌ی تمام‌عرض نوشتن. هیچ ScrollView و لیست عمودی‌ای ندارد، پس
-/// وقتی بچه انگشتش را به هر سمتی (به‌ویژه بالا و پایین) می‌کشد،
-/// صفحه بالا و پایین نمی‌رود و فقط روی حرف کشیده می‌شود.
+// ─────────────────────────── صفحه تمرین ردیابی و نوشتن ───────────────────────────
+
 class _TraceScreen extends StatefulWidget {
   final List<_LetterLesson> lessons;
   final int initialIndex;
@@ -389,7 +601,7 @@ class _TraceScreenState extends State<_TraceScreen> {
       _lastResult = null;
     });
     FandoghiCoach.instruction(
-      'حرف «${widget.lessons[index].letter}» را نگاه کن؛ اسمش ${widget.lessons[index].word} است. حالا با انگشت بنویس ✍️',
+      'نشانه «${widget.lessons[index].letter}» را نگاه کن؛ با انگشت روی خط کرسی بنویس ✍️',
     );
   }
 
@@ -413,7 +625,8 @@ class _TraceScreenState extends State<_TraceScreen> {
       _lastResult = null;
     });
     FandoghiCoach.instruction(
-        'اشکالی ندارد؛ صفحه را تمیز کردیم. دوباره با آرامش بنویس 🌰');
+      'اشکالی ندارد؛ صفحه را تمیز کردیم. دوباره با آرامش بنویس 🌰',
+    );
   }
 
   void _undoTrace() {
@@ -455,68 +668,46 @@ class _TraceScreenState extends State<_TraceScreen> {
               stageNumber: widget.stageNumber);
         }
         FandoghiCoach.correct(
-          'آفرین! فندقی دید که حرف «${_lesson.letter}» را با دقت نوشتی ✨',
+          'آفرین! نشانه «${_lesson.letter}» را با دقت نوشتی ✨',
         );
-        // فاز ۲۱: مرحله «بگو» — فندقی تلفظ را می‌گوید و کودک تکرار می‌کند
-        Future<void>.delayed(const Duration(milliseconds: 1500), () {
-          if (!mounted) return;
-          FandoghiCoach.say(
-            'حالا اسم حرف را با من بگو: ${_lesson.letter}… حالا نوبت توست! 🗣️',
-            mood: FandoghiMood.excited,
-            duration: const Duration(seconds: 4),
-          );
-          unawaited(AudioService.pronounceLetter(_lesson.letter));
-        });
       } else {
         AudioService.wrong();
-        FandoghiCoach.say(
-          'هنوز کمی بیرون راهنما رفتی. از نقطه‌های کم‌رنگ آرام‌تر رد شو و دوباره امتحان کن 💪',
-          mood: FandoghiMood.thinking,
-          tone: FandoghiCoachTone.encouragement,
-          duration: const Duration(seconds: 4),
+        FandoghiCoach.instruction(
+          'نزدیک شدی! دوباره روی خط کم‌رنگ بکش 🌱',
         );
       }
     } catch (_) {
-      if (!mounted) return;
-      setState(() => _checking = false);
-      FandoghiCoach.judge('فندقی نتوانست این تمرین را بررسی کند؛ دوباره امتحان کن.');
+      if (mounted) setState(() => _checking = false);
     }
   }
 
   Future<_TraceResult> _evaluateTrace(Size size) async {
-    final points = _strokes.expand((stroke) => stroke).toList();
-    if (points.length < 8) return const _TraceResult(score: 0, passed: false);
-
-    var totalLength = 0.0;
+    if (_strokes.isEmpty) {
+      return const _TraceResult(score: 0.0, passed: false);
+    }
+    final points = <Offset>[];
     for (final stroke in _strokes) {
-      for (var i = 1; i < stroke.length; i++) {
-        totalLength += (stroke[i] - stroke[i - 1]).distance;
+      for (final p in stroke) {
+        points.add(p);
       }
     }
+    if (points.length < 5) {
+      return const _TraceResult(score: 0.2, passed: false);
+    }
 
-    final guide = Rect.fromCenter(
-      center: Offset(size.width / 2, size.height * 0.53),
-      width: size.width * 0.58,
-      height: size.height * 0.73,
-    );
-    final inside =
-        points.where((point) => guide.inflate(28).contains(point)).length;
-    final guideCoverage = inside / points.length;
-    final glyphCoverage = await _glyphCoverage(size, points);
-    final movement =
-        (totalLength / (size.shortestSide * 1.35)).clamp(0.0, 1.0);
-    final score = (glyphCoverage * 0.55 +
-            guideCoverage * 0.25 +
-            movement * 0.2)
-        .clamp(0.0, 1.0)
-        .toDouble();
-    return _TraceResult(score: score, passed: score >= 0.5);
+    final coverage = await _computeGuideCoverage(size, points);
+    final passed = coverage >= 0.35;
+    return _TraceResult(score: coverage, passed: passed);
   }
 
-  Future<double> _glyphCoverage(Size size, List<Offset> points) async {
+  Future<double> _computeGuideCoverage(Size size, List<Offset> points) async {
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
-    final painter = _guideTextPainter(_lesson.letter, size, Colors.white);
+    final painter = _guideTextPainter(
+      _lesson.letter,
+      size,
+      const Color(0xFF000000),
+    );
     painter.paint(canvas, _guideTextOffset(size, painter));
     final picture = recorder.endRecording();
     final image = await picture.toImage(size.width.ceil(), size.height.ceil());
@@ -560,8 +751,6 @@ class _TraceScreenState extends State<_TraceScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFFFFCF4),
       body: SafeArea(
-        // یک لایه‌ی GestureDetector تمام‌صفحه که بچه بتواند آزادانه
-        // با انگشت در همه‌ی جهت‌ها بکشد، بدون اینکه صفحه اسکرول شود.
         child: Stack(
           children: [
             Positioned.fill(
@@ -582,21 +771,18 @@ class _TraceScreenState extends State<_TraceScreen> {
                 ),
               ),
             ),
-            // نوار بالا
             Positioned(
               top: 0,
               left: 0,
               right: 0,
               child: _traceTopBar(),
             ),
-            // نوار پایین (ابزارها)
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
               child: _traceBottomBar(),
             ),
-            // پیام امتیاز پریمیوم — overlay ستاره‌دار ML-like (پیشنهاد ۲۱)
             if (_lastResult != null)
               Positioned.fill(
                 child: Container(
@@ -614,7 +800,6 @@ class _TraceScreenState extends State<_TraceScreen> {
                       }),
                       onNext: () {
                         if (_lastResult!.passed) {
-                          // حرف بعدی
                           final next = (_lessonIndex + 1) % widget.lessons.length;
                           setState(() {
                             _lessonIndex = next;
@@ -629,7 +814,6 @@ class _TraceScreenState extends State<_TraceScreen> {
                   ),
                 ),
               ),
-            // پیش‌نمایش کوچک حرف
             Positioned(
               top: 70,
               left: 12,
@@ -672,7 +856,6 @@ class _TraceScreenState extends State<_TraceScreen> {
             ),
           ),
           const Spacer(),
-          // انتخاب‌گر سریع حرف
           PopupMenuButton<int>(
             tooltip: 'تغییر حرف',
             icon: const Icon(Icons.menu_book_rounded, size: 24),
@@ -741,45 +924,6 @@ class _TraceScreenState extends State<_TraceScreen> {
     );
   }
 
-  Widget _resultBadge(_TraceResult r) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: r.passed ? AppColors.success : AppColors.primary.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.18),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            r.passed ? Icons.celebration_rounded : Icons.refresh_rounded,
-            color: Colors.white,
-            size: 20,
-          ),
-          const SizedBox(width: 7),
-          Text(
-            r.passed
-                ? 'آفرین! امتیاز: ${(r.score * 100).round()}٪'
-                : 'امتیاز: ${(r.score * 100).round()}٪ — دوباره تلاش کن',
-            style: AppFonts.balooBhaijaan2(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-              fontSize: 17,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _traceBottomBar() {
     return Container(
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
@@ -828,48 +972,24 @@ class _TraceScreenState extends State<_TraceScreen> {
   }
 }
 
-const _lessons = <_LetterLesson>[
-  _LetterLesson('آ', 'آب', '💧'),
-  _LetterLesson('ا', 'ابر', '☁️'),
-  _LetterLesson('ب', 'بابا', '👨'),
-  _LetterLesson('پ', 'پا', '🦶'),
-  _LetterLesson('ت', 'توت', '🍓'),
-  _LetterLesson('ث', 'ثانیه', '⏱️'),
-  _LetterLesson('ج', 'جوجه', '🐥'),
-  _LetterLesson('چ', 'چتر', '☂️'),
-  _LetterLesson('ح', 'حباب', '🫧'),
-  _LetterLesson('خ', 'خرس', '🐻'),
-  _LetterLesson('د', 'دست', '✋'),
-  _LetterLesson('ذ', 'ذرت', '🌽'),
-  _LetterLesson('ر', 'رنگ', '🎨'),
-  _LetterLesson('ز', 'زرد', '💛'),
-  _LetterLesson('ژ', 'ژله', '🍮'),
-  _LetterLesson('س', 'سیب', '🍎'),
-  _LetterLesson('ش', 'شیر', '🦁'),
-  _LetterLesson('ص', 'صابون', '🧼'),
-  _LetterLesson('ض', 'ضبط', '🎙️'),
-  _LetterLesson('ط', 'طبل', '🥁'),
-  _LetterLesson('ظ', 'ظرف', '🥣'),
-  _LetterLesson('ع', 'عسل', '🍯'),
-  _LetterLesson('غ', 'غاز', '🪿'),
-  _LetterLesson('ف', 'فیل', '🐘'),
-  _LetterLesson('ق', 'قاشق', '🥄'),
-  _LetterLesson('ک', 'کفش', '👟'),
-  _LetterLesson('گ', 'گل', '🌷'),
-  _LetterLesson('ل', 'لب', '👄'),
-  _LetterLesson('م', 'ماه', '🌙'),
-  _LetterLesson('ن', 'نان', '🍞'),
-  _LetterLesson('و', 'وان', '🛁'),
-  _LetterLesson('ه', 'هلو', '🍑'),
-  _LetterLesson('ی', 'یخ', '🧊'),
-];
+// ─────────────────────────── مدل‌های داده الفبایی ───────────────────────────
 
 class _LetterLesson {
   final String letter;
   final String word;
   final String emoji;
+  final List<String> allographs;
+  final List<String> allographNames;
+  final List<String> allographWords;
 
-  const _LetterLesson(this.letter, this.word, this.emoji);
+  const _LetterLesson(
+    this.letter,
+    this.word,
+    this.emoji, {
+    this.allographs = const ['اول', 'وسط', 'آخر'],
+    this.allographNames = const ['اول', 'وسط', 'آخر'],
+    this.allographWords = const ['', '', ''],
+  });
 }
 
 class _TraceResult {
@@ -896,7 +1016,7 @@ TextPainter _guideTextPainter(String letter, Size size, Color color) {
 Offset _guideTextOffset(Size size, TextPainter painter) {
   return Offset(
     (size.width - painter.width) / 2,
-    (size.height - painter.height) * 0.45,
+    (size.height - painter.height) * 0.42,
   );
 }
 
@@ -908,25 +1028,45 @@ class _TracePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // راهنمای کم‌رنگ پشت خطوط کشیده‌شده
+    // رسم خط زمینه اصلی (خط کرسی آبی/قرمز اول دبستان)
+    final baselineY = size.height * 0.74;
+    final baselinePaint = Paint()
+      ..color = Colors.blue.withOpacity(0.35)
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawLine(
+      Offset(size.width * 0.1, baselineY),
+      Offset(size.width * 0.9, baselineY),
+      baselinePaint,
+    );
+
+    // خط کمکی بالایی (نقطه‌چین)
+    final topGuidePaint = Paint()
+      ..color = Colors.red.withOpacity(0.20)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+    for (var x = size.width * 0.15; x < size.width * 0.85; x += 12) {
+      canvas.drawCircle(Offset(x, size.height * 0.30), 1.0, topGuidePaint);
+    }
+
+    // راهنمای کم‌رنگ نشانه
     final guidePainter = _guideTextPainter(
       letter,
       size,
       AppColors.primary.withOpacity(0.16),
     );
-    guidePainter.paint(canvas, _guideTextOffset(size, guidePainter));
+    final offset = _guideTextOffset(size, guidePainter);
+    guidePainter.paint(canvas, offset);
 
-    // خط پایه‌ی نقطه‌چین
-    final guidePaint = Paint()
-      ..color = AppColors.primary.withOpacity(0.22)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
-      ..strokeCap = StrokeCap.round;
-    for (var x = size.width * 0.2; x < size.width * 0.8; x += 14) {
-      canvas.drawCircle(Offset(x, size.height * 0.88), 1.2, guidePaint);
-    }
+    // نقطه شروع سبز (Start Dot) و جهت قلم
+    final startDotPaint = Paint()
+      ..color = const Color(0xFF2ECC71)
+      ..style = PaintingStyle.fill;
+    final startDotPos = Offset(offset.dx + guidePainter.width * 0.75, offset.dy + 20);
+    canvas.drawCircle(startDotPos, 6, startDotPaint);
 
-    // خطوطی که بچه کشیده
+    // خطوطی که کودک کشیده
     final strokePaint = Paint()
       ..color = AppColors.primaryDark
       ..style = PaintingStyle.stroke
@@ -951,3 +1091,84 @@ class _TracePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _TracePainter oldDelegate) => true;
 }
+
+// ─────────────────────────── فهرست‌های آموزشی ───────────────────────────
+
+/// چیدمان بر اساس کتاب فارسی اول دبستان (نشانه‌های ۱ و ۲)
+const _grade1Lessons = <_LetterLesson>[
+  _LetterLesson('آ ا', 'آب', '💧', allographs: ['آ', 'ا'], allographNames: ['اول', 'غیر اول'], allographWords: ['آب', 'بابا']),
+  _LetterLesson('ب', 'بابا', '👨', allographs: ['بـ', 'ـبـ', 'ـب', 'ب'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['باران', 'ابر', 'سیب', 'آب']),
+  _LetterLesson('اَ َ', 'انار', '🍎', allographs: ['اَ', 'ـَ'], allographNames: ['اول', 'غیر اول'], allographWords: ['انار', 'دست']),
+  _LetterLesson('د', 'دست', '✋', allographs: ['د', 'ـد'], allographNames: ['تنها', 'چسبان'], allographWords: ['داس', 'باد']),
+  _LetterLesson('م', 'مادر', '👩', allographs: ['مـ', 'ـمـ', 'ـم', 'م'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['مادر', 'نمد', 'پرچم', 'بادام']),
+  _LetterLesson('س', 'سیب', '🍏', allographs: ['سـ', 'ـسـ', 'ـس', 'س'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['سیب', 'پسته', 'نرگس', 'داس']),
+  _LetterLesson('او و', 'توت', '🍓', allographs: ['او', 'و'], allographNames: ['اول', 'غیر اول'], allographWords: ['او', 'توت']),
+  _LetterLesson('ت', 'تاب', '🪑', allographs: ['تـ', 'ـتـ', 'ـت', 'ت'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['تاب', 'دفتر', 'دست', 'سوت']),
+  _LetterLesson('ر', 'رنگ', '🎨', allographs: ['ر', 'ـر'], allographNames: ['تنها', 'چسبان'], allographWords: ['رنگ', 'ابر']),
+  _LetterLesson('ن', 'نان', '🍞', allographs: ['نـ', 'ـنـ', 'ـن', 'ن'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['نان', 'قند', 'دامن', 'باران']),
+  _LetterLesson('ایـ ی', 'ایران', '🇮🇷', allographs: ['ایـ', 'ـیـ', 'ـی', 'ای'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['ایران', 'سیب', 'آبی', 'سینی']),
+  _LetterLesson('ز', 'زرد', '💛', allographs: ['ز', 'ـز'], allographNames: ['تنها', 'چسبان'], allographWords: ['زرد', 'سبز']),
+  _LetterLesson('اِ ِ ـه ه', 'استخر', '🏊', allographs: ['اِ', 'ـِ', 'ـه', 'ه'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['امروز', 'نرده', 'نامه', 'کوه']),
+  _LetterLesson('ش', 'شیر', '🦁', allographs: ['شـ', 'ـشـ', 'ـش', 'ش'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['شیر', 'گوشت', 'آتش', 'کفش']),
+  _LetterLesson('ی', 'یاس', '🌸', allographs: ['یـ', 'ـیـ', 'ـی', 'ی'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['یاس', 'سایه', 'چای', 'موی']),
+  _LetterLesson('اُ ُ', 'اردک', '🦆', allographs: ['اُ', 'ـُ'], allographNames: ['اول', 'غیر اول'], allographWords: ['اردک', 'بلبل']),
+  _LetterLesson('ک', 'کفش', '👟', allographs: ['کـ', 'ـکـ', 'ـک', 'ک'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['کفش', 'شکلات', 'نمک', 'پاک']),
+  _LetterLesson('و', 'ورزش', '⚽', allographs: ['و', 'ـو'], allographNames: ['تنها', 'چسبان'], allographWords: ['ورزش', 'گاو']),
+  _LetterLesson('پ', 'پا', '🦶', allographs: ['پـ', 'ـپـ', 'ـپ', 'پ'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['پا', 'سوپ', 'توپ', 'چپ']),
+  _LetterLesson('گ', 'گل', '🌷', allographs: ['گـ', 'ـگـ', 'ـگ', 'گ'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['گل', 'نرگس', 'سگ', 'برگ']),
+  _LetterLesson('ف', 'فیل', '🐘', allographs: ['فـ', 'ـفـ', 'ـف', 'ف'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['فیل', 'دفتر', 'برف', 'سفید']),
+  _LetterLesson('خ', 'خرس', '🐻', allographs: ['خـ', 'ـخـ', 'ـخ', 'خ'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['خرس', 'درخت', 'میخ', 'کاخ']),
+  _LetterLesson('ق', 'قاشق', '🥄', allographs: ['قـ', 'ـقـ', 'ـق', 'ق'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['قاشق', 'سقف', 'بوق', 'اتاق']),
+  _LetterLesson('ل', 'لب', '👄', allographs: ['لـ', 'ـلـ', 'ـل', 'ل'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['لب', 'بلبل', 'فیل', 'گل']),
+  _LetterLesson('ج', 'جوجه', '🐥', allographs: ['جـ', 'ـجـ', 'ـج', 'ج'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['جوجه', 'مسجد', 'پنج', 'کاج']),
+  _LetterLesson('چ', 'چتر', '☂️', allographs: ['چـ', 'ـچـ', 'ـچ', 'چ'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['چتر', 'قیچی', 'هیچ', 'کوچ']),
+  _LetterLesson('هـ', 'هواپیما', '✈️', allographs: ['هـ', 'ـهـ', 'ـه', 'ه'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['هوا', 'بهار', 'نامه', 'ماه']),
+  _LetterLesson('ژ', 'ژاله', '🍮', allographs: ['ژ', 'ـژ'], allographNames: ['تنها', 'چسبان'], allographWords: ['ژاله', 'مژده']),
+  // نشانه‌های ۲
+  _LetterLesson('ص', 'صابون', '🧼', allographs: ['صـ', 'ـصـ', 'ـص', 'ص'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['صابون', 'تصویر', 'شخص', 'قرص']),
+  _LetterLesson('ذ', 'ذرت', '🌽', allographs: ['ذ', 'ـذ'], allographNames: ['تنها', 'چسبان'], allographWords: ['ذرت', 'کاغذ']),
+  _LetterLesson('ع', 'عسل', '🍯', allographs: ['عـ', 'ـعـ', 'ـع', 'ع'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['عسل', 'جعبه', 'مربع', 'شروع']),
+  _LetterLesson('ث', 'ثانیه', '⏱️', allographs: ['ثـ', 'ـثـ', 'ـث', 'ث'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['ثانیه', 'مثلث', 'کثیف', 'ارث']),
+  _LetterLesson('ح', 'حباب', '🫧', allographs: ['حـ', 'ـحـ', 'ـح', 'ح'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['حباب', 'صحرا', 'صبح', 'نوح']),
+  _LetterLesson('ض', 'ضبط', '🎙️', allographs: ['ضـ', 'ـضـ', 'ـض', 'ض'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['ضربه', 'حاضر', 'مریض', 'حوض']),
+  _LetterLesson('ط', 'طبل', '🥁', allographs: ['ط', 'ـط'], allographNames: ['تنها', 'چسبان'], allographWords: ['طبل', 'طوطی']),
+  _LetterLesson('غ', 'غاز', '🪿', allographs: ['غـ', 'ـغـ', 'ـغ', 'غ'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['غاز', 'چراغ', 'جیغ', 'مرغ']),
+  _LetterLesson('ظ', 'ظرف', '🥣', allographs: ['ظ', 'ـظ'], allographNames: ['تنها', 'چسبان'], allographWords: ['ظرف', 'ناظم']),
+];
+
+/// چیدمان سنتی الفبایی
+const _alphabeticalLessons = <_LetterLesson>[
+  _LetterLesson('آ', 'آب', '💧', allographs: ['آ', 'ا'], allographNames: ['اول', 'غیر اول'], allographWords: ['آب', 'بابا']),
+  _LetterLesson('ا', 'ابر', '☁️', allographs: ['اَ', 'ـَ'], allographNames: ['اول', 'غیر اول'], allographWords: ['ابر', 'سبز']),
+  _LetterLesson('ب', 'بابا', '👨', allographs: ['بـ', 'ـبـ', 'ـب', 'ب'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['باران', 'ابر', 'سیب', 'آب']),
+  _LetterLesson('پ', 'پا', '🦶', allographs: ['پـ', 'ـپـ', 'ـپ', 'پ'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['پا', 'سوپ', 'توپ', 'چپ']),
+  _LetterLesson('ت', 'توت', '🍓', allographs: ['تـ', 'ـتـ', 'ـت', 'ت'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['توت', 'دفتر', 'دست', 'سوت']),
+  _LetterLesson('ث', 'ثانیه', '⏱️', allographs: ['ثـ', 'ـثـ', 'ـث', 'ث'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['ثانیه', 'مثلث', 'کثیف', 'ارث']),
+  _LetterLesson('ج', 'جوجه', '🐥', allographs: ['جـ', 'ـجـ', 'ـج', 'ج'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['جوجه', 'مسجد', 'پنج', 'کاج']),
+  _LetterLesson('چ', 'چتر', '☂️', allographs: ['چـ', 'ـچـ', 'ـچ', 'چ'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['چتر', 'قیچی', 'هیچ', 'کوچ']),
+  _LetterLesson('ح', 'حباب', '🫧', allographs: ['حـ', 'ـحـ', 'ـح', 'ح'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['حباب', 'صحرا', 'صبح', 'نوح']),
+  _LetterLesson('خ', 'خرس', '🐻', allographs: ['خـ', 'ـخـ', 'ـخ', 'خ'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['خرس', 'درخت', 'میخ', 'کاخ']),
+  _LetterLesson('د', 'دست', '✋', allographs: ['د', 'ـد'], allographNames: ['تنها', 'چسبان'], allographWords: ['داس', 'باد']),
+  _LetterLesson('ذ', 'ذرت', '🌽', allographs: ['ذ', 'ـذ'], allographNames: ['تنها', 'چسبان'], allographWords: ['ذرت', 'کاغذ']),
+  _LetterLesson('ر', 'رنگ', '🎨', allographs: ['ر', 'ـر'], allographNames: ['تنها', 'چسبان'], allographWords: ['رنگ', 'ابر']),
+  _LetterLesson('ز', 'زرد', '💛', allographs: ['ز', 'ـز'], allographNames: ['تنها', 'چسبان'], allographWords: ['زرد', 'سبز']),
+  _LetterLesson('ژ', 'ژله', '🍮', allographs: ['ژ', 'ـژ'], allographNames: ['تنها', 'چسبان'], allographWords: ['ژاله', 'مژده']),
+  _LetterLesson('س', 'سیب', '🍎', allographs: ['سـ', 'ـسـ', 'ـس', 'س'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['سیب', 'پسته', 'نرگس', 'داس']),
+  _LetterLesson('ش', 'شیر', '🦁', allographs: ['شـ', 'ـشـ', 'ـش', 'ش'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['شیر', 'گوشت', 'آتش', 'کفش']),
+  _LetterLesson('ص', 'صابون', '🧼', allographs: ['صـ', 'ـصـ', 'ـص', 'ص'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['صابون', 'تصویر', 'شخص', 'قرص']),
+  _LetterLesson('ض', 'ضبط', '🎙️', allographs: ['ضـ', 'ـضـ', 'ـض', 'ض'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['ضربه', 'حاضر', 'مریض', 'حوض']),
+  _LetterLesson('ط', 'طبل', '🥁', allographs: ['ط', 'ـط'], allographNames: ['تنها', 'چسبان'], allographWords: ['طبل', 'طوطی']),
+  _LetterLesson('ظ', 'ظرف', '🥣', allographs: ['ظ', 'ـظ'], allographNames: ['تنها', 'چسبان'], allographWords: ['ظرف', 'ناظم']),
+  _LetterLesson('ع', 'عسل', '🍯', allographs: ['عـ', 'ـعـ', 'ـع', 'ع'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['عسل', 'جعبه', 'مربع', 'شروع']),
+  _LetterLesson('غ', 'غاز', '🪿', allographs: ['غـ', 'ـغـ', 'ـغ', 'غ'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['غاز', 'چراغ', 'جیغ', 'مرغ']),
+  _LetterLesson('ف', 'فیل', '🐘', allographs: ['فـ', 'ـفـ', 'ـف', 'ف'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['فیل', 'دفتر', 'برف', 'سفید']),
+  _LetterLesson('ق', 'قاشق', '🥄', allographs: ['قـ', 'ـقـ', 'ـق', 'ق'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['قاشق', 'سقف', 'بوق', 'اتاق']),
+  _LetterLesson('ک', 'کفش', '👟', allographs: ['کـ', 'ـکـ', 'ـک', 'ک'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['کفش', 'شکلات', 'نمک', 'پاک']),
+  _LetterLesson('گ', 'گل', '🌷', allographs: ['گـ', 'ـگـ', 'ـگ', 'گ'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['گل', 'نرگس', 'سگ', 'برگ']),
+  _LetterLesson('ل', 'لب', '👄', allographs: ['لـ', 'ـلـ', 'ـل', 'ل'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['لب', 'بلبل', 'فیل', 'گل']),
+  _LetterLesson('م', 'ماه', '🌙', allographs: ['مـ', 'ـمـ', 'ـم', 'م'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['مادر', 'نمد', 'پرچم', 'بادام']),
+  _LetterLesson('ن', 'نان', '🍞', allographs: ['نـ', 'ـنـ', 'ـن', 'ن'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['نان', 'قند', 'دامن', 'باران']),
+  _LetterLesson('و', 'وان', '🛁', allographs: ['و', 'ـو'], allographNames: ['تنها', 'چسبان'], allographWords: ['ورزش', 'گاو']),
+  _LetterLesson('ه', 'هلو', '🍑', allographs: ['هـ', 'ـهـ', 'ـه', 'ه'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['هوا', 'بهار', 'نامه', 'ماه']),
+  _LetterLesson('ی', 'یخ', '🧊', allographs: ['یـ', 'ـیـ', 'ـی', 'ی'], allographNames: ['اول', 'وسط', 'آخر چسبان', 'تنها'], allographWords: ['یاس', 'سایه', 'چای', 'موی']),
+];
