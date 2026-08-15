@@ -74,6 +74,7 @@ flutter:
   assets:
     - assets/icons/app_icon.png
     - assets/icons/app_icon_foreground.png
+    - assets/parsa-apps-gold-1024.png
     - assets/hero_kids.webp
     - assets/learn_world.webp
     - assets/play_world.webp
