@@ -48,7 +48,6 @@ import 'features/lullabies/lullaby_player_screen.dart';
 import 'core/learning_content/lullabies_data.dart';
 import 'features/home/home_screen.dart';
 import 'features/profile/sticker_album_screen.dart';
-import 'features/onboarding/onboarding_screen.dart';
 import 'features/animals/animal_encyclopedia_screen.dart';
 import 'features/concepts/concepts_hub_screen.dart';
 import 'features/jobs/jobs_hub_screen.dart';
@@ -216,7 +215,6 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
       routes: {
         '/': (context) => const SplashScreen(),
         '/security-blocked': (context) => const TamperBlockScreen(),
-        '/onboarding': (context) => const OnboardingScreen(),
         '/tutorial': (context) => const AppTutorialScreen(),
         '/gateway': (context) => const AppGatewayScreen(),
         '/learning-library': (context) => const LearningLibraryScreen(),

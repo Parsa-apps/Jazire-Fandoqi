@@ -1137,19 +1137,29 @@ class GameData {
     unawaited(save());
   }
 
-  /// Persists the final tutorial choice. Keeping this false intentionally
-  /// replays the walkthrough on every app entry.
-  static Future<void> setTutorialDoNotShow(bool value) async {
-    tutorialDoNotShow = value;
+  /// Completes the first guide without asking the child any assessment
+  /// questions. [onboardingSeen] also ensures the optional profile offer is
+  /// made only once, while the tutorial can still replay on future launches.
+  static Future<void> completeInitialGuide({
+    required bool doNotShowTutorialAgain,
+  }) async {
+    onboardingSeen = true;
+    tutorialDoNotShow = doNotShowTutorialAgain;
     _notify();
     await save();
   }
 
-  static void updateProfile({required String name, String? photoPath, String? avatarIcon}) {
+  static void updateProfile({
+    required String name,
+    String? photoPath,
+    String? avatarIcon,
+    int? age,
+  }) {
     final trimmed = name.trim();
     childName = trimmed.substring(0, trimmed.length.clamp(0, 24).toInt());
     if (photoPath != null) profilePhotoPath = photoPath;
     if (avatarIcon != null && avatarIcon.isNotEmpty) avatar = avatarIcon;
+    if (age != null) childAge = age.clamp(3, 12).toInt();
     _notify();
     unawaited(save());
   }

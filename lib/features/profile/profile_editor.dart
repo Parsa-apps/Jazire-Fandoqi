@@ -12,6 +12,7 @@ Future<void> showProfileEditor(BuildContext context) async {
   String? photo =
       GameData.profilePhotoPath.isEmpty ? null : GameData.profilePhotoPath;
   String selectedAvatar = GameData.avatar;
+  int selectedAge = GameData.childAge;
 
   Future<void> pickPhoto(StateSetter setState) async {
     try {
@@ -251,6 +252,41 @@ Future<void> showProfileEditor(BuildContext context) async {
                   border: OutlineInputBorder(),
                 ),
               ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.cake_rounded,
+                    color: Color(0xFF6C43D9),
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'سن کودک',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Text(
+                    '$selectedAge سال',
+                    style: const TextStyle(
+                      color: Color(0xFF6C43D9),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              Slider(
+                value: selectedAge.toDouble(),
+                min: 3,
+                max: 12,
+                divisions: 9,
+                activeColor: const Color(0xFF6C43D9),
+                label: '$selectedAge سال',
+                onChanged: (value) => setState(
+                  () => selectedAge = value.round(),
+                ),
+              ),
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
@@ -260,6 +296,7 @@ Future<void> showProfileEditor(BuildContext context) async {
                       name: name.text,
                       photoPath: photo ?? '',
                       avatarIcon: selectedAvatar,
+                      age: selectedAge,
                     );
                     Navigator.pop(sheetContext);
                   },

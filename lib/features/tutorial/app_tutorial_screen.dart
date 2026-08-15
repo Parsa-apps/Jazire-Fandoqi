@@ -184,9 +184,17 @@ class _AppTutorialScreenState extends State<AppTutorialScreen>
     if (_finishing) return;
     setState(() => _finishing = true);
     HapticFeedback.mediumImpact();
-    await GameData.setTutorialDoNotShow(_doNotShowAgain);
+    final shouldOfferProfile = !GameData.onboardingSeen;
+    await GameData.completeInitialGuide(
+      doNotShowTutorialAgain: _doNotShowAgain,
+    );
     if (!mounted) return;
-    Navigator.pushNamedAndRemoveUntil(context, '/gateway', (_) => false);
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/gateway',
+      (_) => false,
+      arguments: shouldOfferProfile,
+    );
   }
 
   @override
