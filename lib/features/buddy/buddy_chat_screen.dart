@@ -30,7 +30,7 @@ class _BuddyChatScreenState extends State<BuddyChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final List<_ChatMessage> _messages = <_ChatMessage>[];
 
-  static const List<(_MoodChip)> _moods = [
+  static const List<_MoodChip> _moods = [
     _MoodChip('🌟 خوشحالم', 'خیلی خوشحالم! امروز روز خوبی برام بود.', 'خیلی عالیه! خنده‌هات مثل خورشید می‌درخشه و من از خوشحالی تو شادم! 🌟', Color(0xFFFFD700)),
     _MoodChip('😴 خسته‌ام', 'امروز خیلی بازی کردم و خسته‌ام.', 'کمی استراحت کن دوست خوبم، یه لیوان آب خنک بخور و چشم‌هات رو ببند 😴', Color(0xFF636E72)),
     _MoodChip('😠 عصبانیم', 'خیلی عصبانی هستم!', 'می‌فهمم! گاهی چیزها اونطور که می‌خوایم نمیشه. بیا ۳ تا نفس عمیق بکشیم تا آروم بشیم 🧘', Color(0xFFFF6B6B)),

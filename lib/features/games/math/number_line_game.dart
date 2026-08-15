@@ -316,7 +316,11 @@ class _NumberLineGameState extends State<NumberLineGame> {
                           child: isCurrent
                               ? const Text('🐸', style: TextStyle(fontSize: 26))
                                   .animate()
-                                  .bounce(duration: 400.ms)
+                                  .scale(
+                                    begin: const Offset(0.8, 0.8),
+                                    end: const Offset(1.2, 1.2),
+                                    duration: 300.ms,
+                                  )
                               : (isStart ? const Text('🚩', style: TextStyle(fontSize: 18)) : const SizedBox.shrink()),
                         ),
                         const SizedBox(height: 4),
