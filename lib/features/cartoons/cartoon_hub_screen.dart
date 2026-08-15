@@ -3,24 +3,24 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:jazireh_fandoghi/app/app_colors.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
-import 'package:jazireh_fandoghi/core/ai_system.dart';
+import 'package:jazireh_fandoghi/app/design_tokens.dart';
+import 'package:jazireh_fandoghi/core/audio_service.dart';
 import 'package:jazireh_fandoghi/core/cartoons/aparat_service.dart';
 import 'package:jazireh_fandoghi/core/cartoons/cartoon_data.dart';
-import 'package:jazireh_fandoghi/core/audio_service.dart';
 import 'package:jazireh_fandoghi/core/content_access_policy.dart';
 import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
 import 'package:jazireh_fandoghi/core/game_data.dart';
 import 'package:jazireh_fandoghi/core/monetization.dart';
 import 'package:jazireh_fandoghi/features/cartoons/cartoon_player_screen.dart';
-import 'package:jazireh_fandoghi/features/shop/full_version_paywall.dart';
 import 'package:jazireh_fandoghi/features/cartoons/widgets/cartoon_cover.dart';
-import 'package:jazireh_fandoghi/features/cartoons/widgets/cartoon_rating_dialog.dart';
-import 'package:jazireh_fandoghi/features/profile/sticker_album_screen.dart';
+import 'package:jazireh_fandoghi/features/shop/full_version_paywall.dart';
+import 'package:jazireh_fandoghi/shared/widgets/child_touch_target.dart';
 import 'package:jazireh_fandoghi/shared/widgets/fandoghi_v2.dart';
 import 'package:jazireh_fandoghi/shared/widgets/premium_lock_overlay.dart';
 
 /// ═══════════════════════════════════════════════════════════════
-/// 🎬 CARTOON HUB SCREEN — کارتون‌کده و سینما کودک فوق پیشرفته
+/// 🎬 CARTOON HUB SCREEN — جزیره سکوهای کارتون فندقی
+/// طراحی خلوت، یکدست با تم جزیره اصلی با سکوهای شناور اختصاصی برای هر کارتون
 /// ═══════════════════════════════════════════════════════════════
 class CartoonHubScreen extends StatefulWidget {
   const CartoonHubScreen({super.key});
@@ -31,22 +31,15 @@ class CartoonHubScreen extends StatefulWidget {
 
 class _CartoonHubScreenState extends State<CartoonHubScreen> {
   CartoonCategoryType _selectedCategory = CartoonCategoryType.all;
-  String _searchQuery = '';
-  final TextEditingController _searchCtrl = TextEditingController();
-  int _featuredIndex = 0;
-  bool _onlyFavorites = false;
   bool _hasFullVersion = false;
-  late String _suggestedCartoonId;
 
   @override
   void initState() {
     super.initState();
-    // فندقی فقط در بخش بازی/یادگیری حضور دارد؛ در سینما کارتون نمایش داده نمی‌شود.
     FandoghiCoach.disablePersistentPresence();
-    _suggestedCartoonId = AI.suggestCartoon();
     _refreshEntitlement();
 
-    // 🖼️ پیش‌بارگیری پوستر کارتون‌ها (قاب واقعی شخصیت‌ها) در پس‌زمینه
+    // پیش‌بارگیری پوستر کارتون‌ها
     final ordered = <Cartoon>[
       ...CartoonData.getFeatured(),
       ...CartoonData.allCartoons.where((c) => !c.isFeatured),
@@ -64,7 +57,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
       if (mounted) {
         _maybeShowParentDisclosure();
         FandoghiCoach.say(
-          'به کارتون‌کده فندقی خوش اومدی! روی هر کارتون که دوست داری بزن تا تماشا کنیم 🍿🎬',
+          'به سینمای جزیره فندقی خوش اومدی! 🍿 روی سکوی هر کارتون که دوست داری بزن تا تماشا کنیم!',
           mood: FandoghiMood.excited,
           duration: const Duration(seconds: 4),
         );
@@ -72,8 +65,6 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
     });
   }
 
-  /// ▶️ دیالوگ اطلاع‌رسانی یک‌باره برای والدین در اولین ورود به بخش کارتون
-  /// تا کافه‌بازار ببیند شفاف‌سازی درون‌اپ هم انجام شده است.
   Future<void> _maybeShowParentDisclosure() async {
     final shown = GameData.getBool('cartoon_parent_disclosure_shown') ?? false;
     if (shown) return;
@@ -111,15 +102,6 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
             const SizedBox(height: 10),
             _disclosureRow(Icons.shield_rounded, Colors.amberAccent,
                 'هیچ‌گونه جستجوی آزاد، تبلیغ، لینک خروجی به سایت‌های ثالث، یا ارسال اطلاعات کودک به سرور وجود ندارد.'),
-            const SizedBox(height: 10),
-            _disclosureRow(Icons.offline_bolt_rounded, Colors.pinkAccent,
-                'سایر بخش‌های اپ (آموزش حروف، بازی‌ها، لالایی‌ها، داستان‌ها، فلش‌کارت‌ها) کاملاً آفلاین هستند.'),
-            const SizedBox(height: 12),
-            const Text(
-              'در صورت اعتراض به محتوای هر قسمت، از پشتیبانی درون‌اپ گزارش دهید تا در نسخهٔ بعدی جایگزین شود.',
-              style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.5),
-              textAlign: TextAlign.justify,
-            ),
           ],
         ),
         actions: [
@@ -158,21 +140,8 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
     );
   }
 
-  @override
-  void dispose() {
-    _searchCtrl.dispose();
-    super.dispose();
-  }
-
   List<Cartoon> get _filteredCartoons {
-    var list = CartoonData.getByCategory(_selectedCategory);
-    if (_searchQuery.isNotEmpty) {
-      list = CartoonData.search(_searchQuery);
-    }
-    if (_onlyFavorites) {
-      list = list.where((c) => GameData.isCartoonFavorite(c.id)).toList();
-    }
-    return list;
+    return CartoonData.getByCategory(_selectedCategory);
   }
 
   bool _isLocked(Cartoon cartoon) =>
@@ -186,7 +155,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
     return hasFullVersion;
   }
 
-  Future<void> _openCartoon(Cartoon cartoon, {int episodeIndex = 0}) async {
+  Future<void> _openCartoon(Cartoon cartoon) async {
     HapticFeedback.lightImpact();
     AudioService.select();
     if (!ContentAccessPolicy.isCartoonFree(cartoon.id) &&
@@ -196,547 +165,70 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
       if (!mounted || !await _refreshEntitlement()) return;
     }
     if (!mounted) return;
-    Navigator.of(context)
-        .push(
-          MaterialPageRoute(
-            settings: RouteSettings(name: '/cartoon/${cartoon.id}'),
-            builder: (_) => CartoonPlayerScreen(
-              cartoon: cartoon,
-              initialEpisodeIndex: episodeIndex,
-            ),
-          ),
-        )
-        .then((_) {
-          if (mounted) setState(() {});
-        });
-  }
-
-  void _goToGames() {
-    HapticFeedback.mediumImpact();
-    Navigator.of(context).pushReplacementNamed('/gateway');
-  }
-
-  void _openStickerAlbum() {
-    HapticFeedback.lightImpact();
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const StickerAlbumScreen()),
+      MaterialPageRoute(
+        settings: RouteSettings(name: '/cartoon/${cartoon.id}'),
+        builder: (_) => CartoonPlayerScreen(
+          cartoon: cartoon,
+          initialEpisodeIndex: 0,
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final featuredCartoons = CartoonData.getFeatured();
-    final suggestedCartoon = CartoonData.getCartoonById(_suggestedCartoonId);
-    final watchedMins = (GameData.cartoonWatchSeconds / 60).round();
-    final currentRank = CartoonRank.currentRank(watchedMins);
+    final list = _filteredCartoons;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF131127),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Top Bar
-            _buildTopBar(currentRank),
-
-            // Main Scrollable Area
-            Expanded(
-              child: CustomScrollView(
-                physics: const BouncingScrollPhysics(),
-                slivers: [
-                  // 5-Star Rating Incentive Banner
-                  SliverToBoxAdapter(child: _buildRatingBanner()),
-
-                  // VIP Rank Progress Pill
-                  SliverToBoxAdapter(child: _buildRankProgressCard(currentRank, watchedMins)),
-
-                  // Featured Carousel (if no active search)
-                  if (_searchQuery.isEmpty && !_onlyFavorites)
-                    SliverToBoxAdapter(
-                      child: _buildFeaturedCarousel(featuredCartoons),
-                    ),
-
-                  // AI Recommendation Banner (if exists and no search)
-                  if (_searchQuery.isEmpty && !_onlyFavorites && suggestedCartoon != null)
-                    SliverToBoxAdapter(
-                      child: _buildAiSuggestionCard(suggestedCartoon),
-                    ),
-
-                  // Search & Quick Filter Bar
-                  SliverToBoxAdapter(child: _buildSearchBar()),
-
-                  // 📢 اطلاعیه شفاف برای والدین (مورد تأیید کافه‌بازار برای ردهٔ سنی خردسال)
-                  SliverToBoxAdapter(child: _buildOnlineDisclosureBanner()),
-
-                  // Category Chips
-                  SliverToBoxAdapter(child: _buildCategoryChips()),
-
-                  // Cartoon Grid / List
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
-                    sliver: _buildCartoonGrid(),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      // Floating switch to Games button
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: _buildSwitchToGamesFab(),
-    );
-  }
-
-  Widget _buildTopBar(CartoonRank rank) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Row(
-        children: [
-          // Back to gateway
-          GestureDetector(
-            onTap: () {
-              if (Navigator.of(context).canPop()) {
-                Navigator.of(context).pop();
-              } else {
-                Navigator.of(context).pushReplacementNamed('/gateway');
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white12),
-              ),
-              child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-            ),
-          ),
-          const SizedBox(width: 12),
-
-          // Title & Mascot
-          Expanded(
-            child: Row(
-              children: [
-                const Text('🍿', style: TextStyle(fontSize: 24)),
-                const SizedBox(width: 8),
-                Text(
-                  'کارتون‌کده فندقی',
-                  style: AppFonts.vazirmatn(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Sticker Album Button
-          GestureDetector(
-            onTap: _openStickerAlbum,
-            child: Container(
-              margin: const EdgeInsets.only(left: 8),
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.pinkAccent.withOpacity(0.18),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.pinkAccent.withOpacity(0.4)),
-              ),
-              child: const Icon(Icons.auto_awesome_motion_rounded, color: Colors.pinkAccent, size: 20),
-            ),
-          ),
-
-          // Coins Pill
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.amber.withOpacity(0.18),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.amber.withOpacity(0.4)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.monetization_on_rounded, color: Colors.amber, size: 18),
-                const SizedBox(width: 4),
-                Text(
-                  '${GameData.coins}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRankProgressCard(CartoonRank rank, int mins) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: rank.color.withOpacity(0.4)),
-        ),
-        child: Row(
-          children: [
-            Text(rank.emoji, style: const TextStyle(fontSize: 22)),
-            const SizedBox(width: 8),
-            Text(
-              'رتبه شما: ${rank.title}',
-              style: TextStyle(color: rank.color, fontWeight: FontWeight.bold, fontSize: 12),
-            ),
-            const Spacer(),
-            Text(
-              '$mins دقیقه تماشا ⏱️',
-              style: const TextStyle(color: Colors.white70, fontSize: 11),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRatingBanner() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
-      child: GestureDetector(
-        onTap: () => CartoonRatingDialog.show(context),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFF9F43), Color(0xFFFF5252)],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.orange.withOpacity(0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
+      body: DecoratedBox(
+        decoration: const BoxDecoration(gradient: AppGradients.nightSky),
+        child: SafeArea(
+          child: Column(
             children: [
-              const Text('⭐', style: TextStyle(fontSize: 32))
-                  .animate(onPlay: (c) => c.repeat(reverse: true))
-                  .scale(begin: const Offset(0.9, 0.9), end: const Offset(1.15, 1.15), duration: 800.ms),
-              const SizedBox(width: 12),
+              _buildTopBar(),
+              _buildCategoriesPill(),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'کارتون‌ها رو دوست داری؟',
-                      style: AppFonts.vazirmatn(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const Text(
-                      'با ثبت ۵ ستاره، ۵۰ سکه هدیه بگیر! 🎁',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Text(
-                  'ثبت رای ⭐',
-                  style: AppFonts.vazirmatn(
-                    color: Colors.deepOrange,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAiSuggestionCard(Cartoon cartoon) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 2, 16, 12),
-      child: GestureDetector(
-        onTap: () => _openCartoon(cartoon),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: cartoon.themeColor.withOpacity(0.5)),
-          ),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: SizedBox(
-                  width: 52,
-                  height: 52,
-                  child: CartoonCoverImage(
-                    videoHash: cartoon.episodes.isNotEmpty
-                        ? cartoon.episodes.first.aparatHash
-                        : null,
-                    coverAsset: cartoon.coverAsset,
-                    fallbackEmoji: cartoon.coverEmoji,
-                    fallbackGradient: cartoon.gradient,
-                    emojiSize: 24,
-                    cacheWidth: 160,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Text('🤖', style: TextStyle(fontSize: 14)),
-                        const SizedBox(width: 4),
-                        Text(
-                          'پیشنهاد هوشمند فندقی برای شما',
-                          style: TextStyle(
-                            color: cartoon.themeColor,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 30),
+                  child: Column(
+                    children: [
+                      _buildHeroIslandBanner(),
+                      const SizedBox(height: 18),
+                      // سکوهای شناور کارتون‌ها
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: list.length,
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 22,
+                          crossAxisSpacing: 16,
+                          childAspectRatio: 0.76,
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      cartoon.title,
-                      style: AppFonts.vazirmatn(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: cartoon.themeColor.withOpacity(0.25),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  _isLocked(cartoon) ? 'قفل 🔒' : 'تماشا ▶',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+                        itemBuilder: (context, index) {
+                          final cartoon = list[index];
+                          final locked = _isLocked(cartoon);
+                          final isFav = GameData.isCartoonFavorite(cartoon.id);
 
-  Widget _buildFeaturedCarousel(List<Cartoon> featured) {
-    if (featured.isEmpty) return const SizedBox.shrink();
-    final cartoon = featured[_featuredIndex % featured.length];
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-      child: GestureDetector(
-        onTap: () => _openCartoon(cartoon),
-        child: Container(
-          // The Persian badge/title/description needs more than 175px when
-          // the bundled font has taller metrics (notably on Android and CI).
-          height: 215,
-          decoration: BoxDecoration(
-            gradient: cartoon.gradient,
-            borderRadius: BorderRadius.circular(26),
-            boxShadow: [
-              BoxShadow(
-                color: cartoon.themeColor.withOpacity(0.4),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.25),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '🔥 ویژه امروز • ${cartoon.badgeText}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            cartoon.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppFonts.vazirmatn(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            cartoon.description,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withOpacity(0.9),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.play_arrow_rounded, color: Colors.black87, size: 18),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'تماشا کن',
-                                      style: AppFonts.vazirmatn(
-                                        color: Colors.black87,
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Text(
-                                '${cartoon.episodes.length} قسمت',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Center(
-                        child: Container(
-                          height: 132,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(22),
-                            border: Border.all(color: Colors.white.withOpacity(0.55), width: 2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.25),
-                                blurRadius: 10,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: CartoonCoverImage(
-                              videoHash: cartoon.episodes.isNotEmpty
-                                  ? cartoon.episodes.first.aparatHash
-                                  : null,
-                              coverAsset: cartoon.coverAsset,
-                              fallbackEmoji: cartoon.coverEmoji,
-                              fallbackGradient: cartoon.gradient,
-                              emojiSize: 64,
-                              cacheWidth: 640,
-                            ),
-                          ),
-                        )
-                            .animate(onPlay: (c) => c.repeat(reverse: true))
-                            .moveY(begin: 0, end: -5, duration: 1800.ms, curve: Curves.easeInOut),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Slide Dots
-              Positioned(
-                bottom: 10,
-                left: 0,
-                right: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(featured.length, (i) {
-                    final isSel = i == (_featuredIndex % featured.length);
-                    return GestureDetector(
-                            onTap: () {
-                              AudioService.tap();
-                              setState(() => _featuredIndex = i);
+                          return _CartoonPlatformItem(
+                            cartoon: cartoon,
+                            isLocked: locked,
+                            isFav: isFav,
+                            onTap: () => _openCartoon(cartoon),
+                            onToggleFav: () {
+                              HapticFeedback.selectionClick();
+                              GameData.toggleCartoonFavorite(cartoon.id);
+                              setState(() {});
                             },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: isSel ? 20 : 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: isSel ? Colors.white : Colors.white38,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
+                          ).animate(delay: (index * 40).ms).fadeIn(duration: 350.ms).scale(begin: const Offset(0.9, 0.9), curve: Curves.easeOutBack);
+                        },
                       ),
-                    );
-                  }),
+                    ],
+                  ),
                 ),
               ),
-              if (_isLocked(cartoon)) const PremiumLockOverlay(),
             ],
           ),
         ),
@@ -744,81 +236,53 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildTopBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
       child: Row(
         children: [
-          // Search Field
-          Expanded(
+          ChildTouchTarget(
+            onTap: () => Navigator.pop(context),
             child: Container(
-              height: 48,
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white12),
+                color: Colors.white.withOpacity(0.14),
+                borderRadius: BorderRadius.circular(AppRadii.md),
+                border: Border.all(color: Colors.white30),
               ),
-              child: TextField(
-                controller: _searchCtrl,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-                onChanged: (val) => setState(() => _searchQuery = val),
-                decoration: InputDecoration(
-                  hintText: 'جستجوی کارتون، شخصیت و موضوع...',
-                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 13),
-                  prefixIcon: const Icon(Icons.search_rounded, color: Colors.white54, size: 22),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear_rounded, color: Colors.white54, size: 18),
-                          onPressed: () {
-                            _searchCtrl.clear();
-                            setState(() => _searchQuery = '');
-                          },
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-              ),
+              child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
             ),
           ),
           const SizedBox(width: 10),
-
-          // Favorite Filter Toggle
-          GestureDetector(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              AudioService.tap();
-              setState(() => _onlyFavorites = !_onlyFavorites);
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              height: 48,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
-                color: _onlyFavorites ? Colors.redAccent.withOpacity(0.25) : Colors.white.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: _onlyFavorites ? Colors.redAccent : Colors.white12,
+          Expanded(
+            child: Text(
+              'کارتون‌کده فندقی 🎬',
+              style: AppFonts.balooBhaijaan2(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: Colors.amber,
+              borderRadius: BorderRadius.circular(AppRadii.pill),
+            ),
+            child: Row(
+              children: [
+                const Text('🍿', style: TextStyle(fontSize: 14)),
+                const SizedBox(width: 4),
+                Text(
+                  'سینما',
+                  style: AppFonts.balooBhaijaan2(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.black87,
+                  ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    _onlyFavorites ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                    color: _onlyFavorites ? Colors.redAccent : Colors.white70,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'علاقه‌ها',
-                    style: TextStyle(
-                      color: _onlyFavorites ? Colors.redAccent : Colors.white70,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
+              ],
             ),
           ),
         ],
@@ -826,263 +290,58 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
     );
   }
 
-  Widget _buildCategoryChips() {
-    return Container(
-      height: 52,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: CartoonData.categories.length,
-        itemBuilder: (context, index) {
-          final cat = CartoonData.categories[index];
-          final isSelected = _selectedCategory == cat.type;
+  Widget _buildCategoriesPill() {
+    final categories = [
+      (CartoonCategoryType.all, 'همه کارتون‌ها', '🌟'),
+      (CartoonCategoryType.iranian, 'کارتون‌های ایرانی', '🇮🇷'),
+      (CartoonCategoryType.educational, 'آموزشی و هوش', '🧠'),
+      (CartoonCategoryType.comedy, 'خنده‌دار و شاد', '😄'),
+      (CartoonCategoryType.action, 'ماجراجویی', '🚀'),
+    ];
 
-          return GestureDetector(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              AudioService.tap();
-              setState(() {
-                _selectedCategory = cat.type;
-              });
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              margin: const EdgeInsets.only(left: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected ? cat.color : Colors.white.withOpacity(0.07),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: isSelected ? Colors.white38 : Colors.white12,
-                ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: cat.color.withOpacity(0.4),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Row(
-                children: [
-                  Text(cat.emoji, style: const TextStyle(fontSize: 18)),
-                  const SizedBox(width: 6),
-                  Text(
-                    cat.title,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.white70,
-                      fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
-                      fontSize: 13,
-                    ),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Row(
+        children: categories.map((cat) {
+          final isSelected = _selectedCategory == cat.$1;
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                setState(() => _selectedCategory = cat.$1);
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.primary : Colors.white.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
+                  border: Border.all(
+                    color: isSelected ? Colors.white : Colors.white24,
+                    width: isSelected ? 1.8 : 1,
                   ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildCartoonGrid() {
-    final list = _filteredCartoons;
-
-    if (list.isEmpty) {
-      return SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 40),
-          child: Column(
-            children: [
-              const Text('🔍', style: TextStyle(fontSize: 50)),
-              const SizedBox(height: 12),
-              Text(
-                'کارتونی با این مشخصات پیدا نشد!',
-                style: AppFonts.vazirmatn(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white70,
-                ),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'می‌تونی دسته‌بندی دیگه‌ای رو انتخاب کنی 🌈',
-                style: TextStyle(color: Colors.white38, fontSize: 13),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return SliverGrid(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 14,
-        crossAxisSpacing: 14,
-        childAspectRatio: 0.76,
-      ),
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final cartoon = list[index];
-          final isFav = GameData.isCartoonFavorite(cartoon.id);
-
-          return GestureDetector(
-            onTap: () => _openCartoon(cartoon),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E1B38),
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(
-                  color: cartoon.themeColor.withOpacity(0.3),
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: cartoon.themeColor.withOpacity(0.15),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header Cover Box — قاب واقعی کارتون (شخصیت‌ها)
-                    Expanded(
-                      flex: 3,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          CartoonCoverImage(
-                            videoHash: cartoon.episodes.isNotEmpty
-                                ? cartoon.episodes.first.aparatHash
-                                : null,
-                            coverAsset: cartoon.coverAsset,
-                            fallbackEmoji: cartoon.coverEmoji,
-                            fallbackGradient: cartoon.gradient,
-                            emojiSize: 48,
-                            cacheWidth: 420,
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
                           ),
-                          // Favorite Button
-                            Positioned(
-                              top: 8,
-                              right: 8,
-                              child: GestureDetector(
-                                onTap: () {
-                                  HapticFeedback.lightImpact();
-                                  final wasFav = isFav;
-                                  GameData.toggleCartoonFavorite(cartoon.id);
-                                  if (!wasFav) AudioService.coin();
-                                  setState(() {});
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.35),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                                    color: isFav ? Colors.redAccent : Colors.white,
-                                    size: 18,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            // Episode Count Badge
-                            Positioned(
-                              bottom: 8,
-                              left: 8,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.55),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  '${cartoon.episodes.length} قسمت',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            if (_isLocked(cartoon))
-                              const PremiumLockOverlay(),
-                        ],
-                      ),
-                    ),
-
-                    // Info Details
-                    Expanded(
-                      flex: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              cartoon.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppFonts.vazirmatn(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 14,
-                              ),
-                            ),
-                            Text(
-                              cartoon.categoryLabel,
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.6),
-                                fontSize: 11,
-                              ),
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
-                                    const SizedBox(width: 2),
-                                    Text(
-                                      '${cartoon.rating}',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: cartoon.themeColor.withOpacity(0.25),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Text(
-                                    'تماشا ▶',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  children: [
+                    Text(cat.$3, style: const TextStyle(fontSize: 14)),
+                    const SizedBox(width: 5),
+                    Text(
+                      cat.$2,
+                      style: AppFonts.balooBhaijaan2(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
                       ),
                     ),
                   ],
@@ -1090,121 +349,281 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
               ),
             ),
           );
-        },
-        childCount: list.length,
+        }).toList(),
       ),
     );
   }
 
-  Widget _buildOnlineDisclosureBanner() {
+  Widget _buildHeroIslandBanner() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 2, 16, 10),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF0F4C75), Color(0xFF3282B8)],
+          colors: [Color(0xFF2C3E50), Color(0xFF3498DB)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.lightBlueAccent.withOpacity(0.5)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.lightBlueAccent.withOpacity(0.18),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: Colors.white24),
+        boxShadow: AppShadows.medium,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.cloud_done_rounded,
-                    color: Colors.lightBlueAccent, size: 18),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'این بخش آنلاین است — پخش از آپارات',
-                  style: AppFonts.vazirmatn(
+          const FandoghiV2(size: 48),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'جزیره کارتون‌های محبوب 🍿',
+                  style: AppFonts.balooBhaijaan2(
                     color: Colors.white,
-                    fontSize: 12,
+                    fontSize: 16,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-              ),
-              GestureDetector(
-                onTap: _maybeShowParentDisclosure,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    'جزئیات',
-                    style: AppFonts.vazirmatn(
-                      color: const Color(0xFF0F4C75),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                    ),
+                Text(
+                  'روی هر سکو بزن تا کارتون موردعلاقه‌ات پخش شود.',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.85),
+                    fontSize: 11,
+                    height: 1.4,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'ویدیوهای این بخش فقط از سرویس ویدیوی ایرانی آپارات (aparat.com) و از طریق فهرست سفید (هش‌های تأییدشده) پخش می‌شوند — بدون جستجوی آزاد، بدون تبلیغ و بدون ارسال اطلاعات. بقیهٔ بخش‌های اپ (بازی، آموزش، لالایی، داستان) کاملاً آفلاین هستند.',
-            style: TextStyle(color: Colors.white70, fontSize: 10.5, height: 1.5),
-            textAlign: TextAlign.justify,
+              ],
+            ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildSwitchToGamesFab() {
+/// ═══════════════════════════════════════════════════════════════
+/// 🏝️ CARTOON PLATFORM ITEM — سکوی شناور اختصاصی برای هر کارتون
+/// ═══════════════════════════════════════════════════════════════
+class _CartoonPlatformItem extends StatelessWidget {
+  final Cartoon cartoon;
+  final bool isLocked;
+  final bool isFav;
+  final VoidCallback onTap;
+  final VoidCallback onToggleFav;
+
+  const _CartoonPlatformItem({
+    required this.cartoon,
+    required this.isLocked,
+    required this.isFav,
+    required this.onTap,
+    required this.onToggleFav,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: _goToGames,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        decoration: BoxDecoration(
-          gradient: AppGradients.primary,
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withOpacity(0.5),
-              blurRadius: 20,
-              offset: const Offset(0, 6),
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // قاب اصلی کارتون با هاله نور و گوشه‌های گرد
+          Expanded(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // هاله نور زیر سکو
+                Positioned(
+                  bottom: -6,
+                  left: 12,
+                  right: 12,
+                  height: 20,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: cartoon.themeColor.withOpacity(0.55),
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: cartoon.themeColor.withOpacity(0.6),
+                          blurRadius: 16,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // بدنه کارت / پوستر کارتون
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E1B38),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: cartoon.themeColor.withOpacity(0.8),
+                      width: 2.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      CartoonCoverImage(
+                        videoHash: cartoon.episodes.isNotEmpty
+                            ? cartoon.episodes.first.aparatHash
+                            : null,
+                        coverAsset: cartoon.coverAsset,
+                        fallbackEmoji: cartoon.iconEmoji,
+                        fallbackGradient: cartoon.gradient,
+                        emojiSize: 42,
+                        cacheWidth: 320,
+                      ),
+                      // گرادیان ملایم پایین قاب
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.65),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // نشانگر تعداد قسمت‌ها
+                      Positioned(
+                        bottom: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.white30),
+                          ),
+                          child: Text(
+                            '${cartoon.episodes.length} قسمت',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // دکمه علاقه‌مندی
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: GestureDetector(
+                          onTap: onToggleFav,
+                          child: Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.4),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isFav
+                                  ? Icons.favorite_rounded
+                                  : Icons.favorite_border_rounded,
+                              color: isFav ? Colors.redAccent : Colors.white70,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // نشان قفل در صورت عدم خرید نسخه کامل
+                      if (isLocked) const PremiumLockOverlay(),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-          border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.videogame_asset_rounded, color: Colors.white, size: 24),
-            const SizedBox(width: 10),
-            Text(
-              'ورود به دنیای بازی و آموزش 🎮',
-              style: AppFonts.vazirmatn(
-                fontSize: 15,
+          ),
+          const SizedBox(height: 6),
+          // پایه سکوی سنگی زیر کارتون (Stone / Grass Platform Base)
+          CustomPaint(
+            size: const Size(90, 10),
+            painter: _PlatformBasePainter(cartoon.themeColor),
+          ),
+          const SizedBox(height: 4),
+          // بنر نام کارتون
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.92),
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: AppShadows.soft,
+            ),
+            child: Text(
+              cartoon.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: AppFonts.balooBhaijaan2(
+                color: const Color(0xFF2D3436),
+                fontSize: 13,
                 fontWeight: FontWeight.w900,
-                color: Colors.white,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    ).animate(onPlay: (c) => c.repeat(reverse: true)).moveY(begin: 0, end: -4, duration: 1500.ms);
+    );
   }
+}
+
+/// نقاش سکوی سنگی زیر هر کارتون (مطابق سکوهای جزیره اصلی)
+class _PlatformBasePainter extends CustomPainter {
+  final Color color;
+
+  _PlatformBasePainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    // سکوی سنگی لوزی‌شکل
+    final path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(w, 0)
+      ..lineTo(w - 8, h)
+      ..lineTo(8, h)
+      ..close();
+
+    canvas.drawPath(
+      path,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF7F8C8D),
+            Color(0xFF34495E),
+          ],
+        ).createShader(Rect.fromLTWH(0, 0, w, h)),
+    );
+
+    // خط براق لبه بالا
+    canvas.drawLine(
+      Offset(4, 1),
+      Offset(w - 4, 1),
+      Paint()
+        ..color = Colors.white.withOpacity(0.4)
+        ..strokeWidth = 1.5,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
