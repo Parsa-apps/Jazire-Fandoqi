@@ -34,4 +34,5 @@ run_check() {
 run_check 'Flutter analyzer failed' \
   flutter analyze --no-fatal-warnings --no-fatal-infos
 run_check 'Flutter automated tests failed' \
+  timeout --signal=TERM --kill-after=30s 12m \
   flutter test --reporter expanded --timeout 2m

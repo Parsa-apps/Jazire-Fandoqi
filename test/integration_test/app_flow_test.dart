@@ -1,20 +1,28 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:integration_test/integration_test.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-import 'package:jazireh_fandoghi/features/gateway/app_gateway_screen.dart';
+import 'package:jazireh_fandoghi/core/game_data.dart';
 import 'package:jazireh_fandoghi/features/onboarding/onboarding_screen.dart';
 import 'package:jazireh_fandoghi/features/splash/splash_screen.dart';
-import 'package:jazireh_fandoghi/main.dart' as app;
+import 'package:jazireh_fandoghi/main.dart';
 
-/// تست راه‌اندازی برنامه و عبور از اسپلش روی دستگاه/شبیه‌ساز.
+/// تست میزبان برای رندر پوستهٔ برنامه و عبور زمان‌بندی‌شده از اسپلش.
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    GoogleFonts.config.allowRuntimeFetching = false;
+    GameData.resetForTesting();
+  });
 
-  testWidgets('app starts and survives the splash transition', (tester) async {
-    await app.main();
+  testWidgets('app shell starts and reaches onboarding after splash',
+      (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: JazirehFandoghiApp()),
+    );
     await tester.pump();
 
-    expect(find.byType(app.JazirehFandoghiApp), findsOneWidget);
+    expect(find.byType(JazirehFandoghiApp), findsOneWidget);
     expect(find.byType(SplashScreen), findsOneWidget);
 
     // SplashScreen intentionally owns repeating premium animations, so
@@ -23,10 +31,10 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pump(const Duration(milliseconds: 500));
 
-    final reachedStartupDestination =
-        find.byType(OnboardingScreen).evaluate().isNotEmpty ||
-            find.byType(AppGatewayScreen).evaluate().isNotEmpty;
-    expect(reachedStartupDestination, isTrue);
+    expect(find.byType(OnboardingScreen), findsOneWidget);
     expect(tester.takeException(), isNull);
+
+    // Dispose app-level periodic timers before the host test exits.
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 }
