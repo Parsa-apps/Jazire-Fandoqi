@@ -46,5 +46,8 @@ void main() {
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
+    FandoghiCoach.clear();
+    FandoghiCoach.cancelSmartHint();
+    FandoghiCoach.disablePersistentPresence();
   });
 }

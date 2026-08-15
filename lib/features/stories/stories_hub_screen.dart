@@ -9,7 +9,6 @@ import '../../app/app_theme.dart';
 import '../../core/audio_service.dart';
 import '../../core/content_access_policy.dart';
 import '../../core/fandoghi_coach.dart';
-import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';
 import '../../core/learning_content/children_stories_data.dart';
 import '../../core/monetization.dart';
@@ -47,15 +46,9 @@ class _StoriesHubScreenState extends State<StoriesHubScreen>
     _scrollController.addListener(_onScroll);
     _refreshEntitlement();
 
+    // خود فندقی در هدر حضور دارد؛ حباب سراسری عمداً خاموش می‌ماند تا
+    // صفحه برای کودک خردسال خلوت و متمرکز باشد.
     FandoghiCoach.disablePersistentPresence();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      FandoghiCoach.say(
-        'هر قصه روی یک سکوی جادویی منتظر توست! یکی را لمس کن 📖',
-        mood: FandoghiMood.excited,
-        duration: const Duration(seconds: 4),
-      );
-    });
   }
 
   @override
