@@ -22,13 +22,8 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        child: MaterialApp(
-          onGenerateInitialRoutes: (_) => [
-            MaterialPageRoute<void>(
-              settings: const RouteSettings(arguments: true),
-              builder: (_) => const AppGatewayScreen(),
-            ),
-          ],
+        child: const MaterialApp(
+          home: AppGatewayScreen(offerProfileSetup: true),
         ),
       ),
     );

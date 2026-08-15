@@ -217,6 +217,8 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
         '/security-blocked': (context) => const TamperBlockScreen(),
         '/tutorial': (context) => const AppTutorialScreen(),
         '/gateway': (context) => const AppGatewayScreen(),
+        '/gateway-first-entry': (context) =>
+            const AppGatewayScreen(offerProfileSetup: true),
         '/learning-library': (context) => const LearningLibraryScreen(),
         '/animals': (context) => GameAccessGate(
               gameName: 'حیوانات',

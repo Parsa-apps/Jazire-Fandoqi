@@ -7,7 +7,12 @@ import '../profile/profile_editor.dart';
 /// 🏝️ دروازه و صفحه اصلی جزیره فندقی
 /// مستقیماً دنیای ۳بعدی جزیره و هاب‌های بازی و یادگیری را نمایش می‌دهد.
 class AppGatewayScreen extends StatefulWidget {
-  const AppGatewayScreen({super.key});
+  const AppGatewayScreen({
+    super.key,
+    this.offerProfileSetup = false,
+  });
+
+  final bool offerProfileSetup;
 
   @override
   State<AppGatewayScreen> createState() => _AppGatewayScreenState();
@@ -22,9 +27,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
     if (_launchArgumentsHandled) return;
     _launchArgumentsHandled = true;
 
-    final shouldOfferProfile =
-        ModalRoute.of(context)?.settings.arguments == true;
-    if (shouldOfferProfile) {
+    if (widget.offerProfileSetup) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _offerProfileSetup();
       });

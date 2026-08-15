@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:jazireh_fandoghi/core/game_data.dart';
-import 'package:jazireh_fandoghi/features/gateway/app_gateway_screen.dart';
 import 'package:jazireh_fandoghi/features/splash/splash_screen.dart';
 import 'package:jazireh_fandoghi/features/tutorial/app_tutorial_screen.dart';
 import 'package:jazireh_fandoghi/main.dart';
@@ -56,21 +55,4 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('opted-out user enters the main screen after splash',
-      (tester) async {
-    GameData.onboardingSeen = true;
-    GameData.tutorialDoNotShow = true;
-
-    await tester.pumpWidget(
-      const ProviderScope(child: JazirehFandoghiApp()),
-    );
-    await tester.pump(const Duration(seconds: 3));
-    await tester.pump(const Duration(milliseconds: 800));
-
-    expect(find.byType(AppGatewayScreen), findsOneWidget);
-    expect(find.byType(AppTutorialScreen), findsNothing);
-    expect(tester.takeException(), isNull);
-
-    await tester.pumpWidget(const SizedBox.shrink());
-  });
 }

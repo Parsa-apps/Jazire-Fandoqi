@@ -191,9 +191,8 @@ class _AppTutorialScreenState extends State<AppTutorialScreen>
     if (!mounted) return;
     Navigator.pushNamedAndRemoveUntil(
       context,
-      '/gateway',
+      shouldOfferProfile ? '/gateway-first-entry' : '/gateway',
       (_) => false,
-      arguments: shouldOfferProfile,
     );
   }
 

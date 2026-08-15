@@ -16,7 +16,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: const AppTutorialScreen(),
-        routes: {'/gateway': (_) => const Scaffold(body: Text('جزیره'))},
+        routes: {
+          '/gateway': (_) => const Scaffold(body: Text('جزیره')),
+          '/gateway-first-entry': (_) =>
+              const Scaffold(body: Text('جزیره')),
+        },
       ),
     );
 
@@ -42,7 +46,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: const AppTutorialScreen(),
-        routes: {'/gateway': (_) => const Scaffold(body: Text('جزیره'))},
+        routes: {
+          '/gateway': (_) => const Scaffold(body: Text('جزیره')),
+          '/gateway-first-entry': (_) =>
+              const Scaffold(body: Text('جزیره')),
+        },
       ),
     );
 
@@ -61,7 +69,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: const AppTutorialScreen(),
-        routes: {'/gateway': (_) => const Scaffold(body: Text('جزیره'))},
+        routes: {
+          '/gateway': (_) => const Scaffold(body: Text('جزیره')),
+          '/gateway-first-entry': (_) =>
+              const Scaffold(body: Text('جزیره')),
+        },
       ),
     );
 
