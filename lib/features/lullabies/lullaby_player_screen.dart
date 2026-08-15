@@ -46,6 +46,7 @@ class _LullabyPlayerScreenState extends State<LullabyPlayerScreen> {
     try {
       await _player.setAsset(widget.lullaby.audioAsset);
       GameData.addSkill('lullaby');
+      GameData.markLullabyListened(widget.lullaby.id);
       _duration = _player.duration ?? const Duration(seconds: 150);
       _player.setLoopMode(_isLooping ? LoopMode.one : LoopMode.off);
       _player.positionStream.listen((pos) {

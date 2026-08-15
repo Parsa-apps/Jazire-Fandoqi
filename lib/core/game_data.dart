@@ -159,6 +159,9 @@ class GameData {
   static int cartoonWatchSeconds = 0;
   static bool appRated = false;
 
+  // 🌙 لالایی‌ها — تاریخچه گوش دادن
+  static List<String> listenedLullabies = <String>[];
+
   // ✅ فیکس عمیق فاز ۳۰: achievement_system به playedGames نیاز داشت ولی نبود — باعث بیلد فیل خاموش
   static List<String> playedGames = <String>[];
   static final Set<String> _playedGamesSet = <String>{};
@@ -269,6 +272,7 @@ class GameData {
       cartoonFavorites = _readList('cfav');
       watchedCartoons = _readList('cw');
       cartoonWatchSeconds = _readInt('cws', 0);
+      listenedLullabies = _readList('llb');
       appRated = prefs.getBool('appRated') ?? false;
       // ✅ فیکس: بارگذاری playedGames برای achievement
       playedGames = _readList('pg');
@@ -482,6 +486,7 @@ class GameData {
     cartoonFavorites = asList('cfav');
     watchedCartoons = asList('cw');
     cartoonWatchSeconds = asInt('cws', 0).clamp(0, _maxStoredCounter);
+    listenedLullabies = asList('llb');
     appRated = asBool('appRated', false);
     islandDecorations = <String, String>{};
     final idc = d['idc'];
@@ -555,6 +560,7 @@ class GameData {
         'cfav': cartoonFavorites,
         'cw': watchedCartoons,
         'cws': cartoonWatchSeconds,
+        'llb': listenedLullabies,
         'appRated': appRated,
         'idc': islandDecorations,
         'pg': playedGames,
@@ -706,6 +712,7 @@ class GameData {
     await prefs.setStringList('cfav', List<String>.from(cartoonFavorites));
     await prefs.setStringList('cw', List<String>.from(watchedCartoons));
     await prefs.setInt('cws', cartoonWatchSeconds);
+    await prefs.setStringList('llb', List<String>.from(listenedLullabies));
     await prefs.setBool('appRated', appRated);
     await prefs.setStringList(
       'idc',
@@ -973,6 +980,20 @@ class GameData {
     unawaited(save());
   }
 
+  // ==================== LULLABIES (لالایی‌ها) ====================
+  static bool hasListenedLullaby(String id) => listenedLullabies.contains(id);
+
+  /// ثبت لالایی شنیده‌شده؛ خروجی false یعنی قبلاً پخش شده (ضد farming).
+  static bool markLullabyListened(String id) {
+    if (!_isLoaded || id.isEmpty || listenedLullabies.contains(id)) return false;
+    listenedLullabies.add(id);
+    coins = min(_maxStoredCounter, coins + 5);
+    _autoAchieve();
+    _notify();
+    unawaited(save());
+    return true;
+  }
+
   static bool claimRatingReward() {
     if (!_isLoaded || appRated) return false;
     appRated = true;
@@ -1211,7 +1232,7 @@ class GameData {
     'childAge', 'dm', 'missionDay', 'mp', 'ss', 'wpm', 'tps', 'ach', 'st',
     'ownedItems', 'hs', 'mrhs', 'qhs', 'lld', 'lscd', 'aiBuddy', 'currentStage',
     'currentIsland', 'cs', 'pbt', 'op', 'stories', 'sfav', 'lastStoryId',
-    'lastStoryPage', 'cfav', 'cw', 'cws', 'appRated', 'idc', 'pg', 'skills',
+    'lastStoryPage', 'cfav', 'cw', 'cws', 'llb', 'appRated', 'idc', 'pg', 'skills',
   ];
 
   /// پیشرفت کودک بدون تنظیمات والد (پین، محدودیت، تم).
@@ -1276,6 +1297,7 @@ class GameData {
     cartoonFavorites = <String>[];
     watchedCartoons = <String>[];
     cartoonWatchSeconds = 0;
+    listenedLullabies = <String>[];
     playedGames = <String>[];
     _playedGamesSet.clear();
     _notify();
@@ -1564,6 +1586,7 @@ class GameData {
     cartoonFavorites = <String>[];
     watchedCartoons = <String>[];
     cartoonWatchSeconds = 0;
+    listenedLullabies = <String>[];
     appRated = false;
     playedGames = <String>[];
     _playedGamesSet.clear();
