@@ -320,7 +320,7 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
     );
   }
 
-  /// 🛡️ شفاف‌سازی محتوای آنلاین (برای کافه‌بازار — رده سنی خردسال).
+  /// 🛡️ شفاف‌سازی محتوای آنلاین (الزام فروشگاه‌ها — رده سنی خردسال).
   /// توضیح می‌دهد این اپ بیشترش آفلاین است، فقط بخش کارتون از آپارات پخش می‌شود.
   Widget _buildOnlineContentCard() {
     return Container(

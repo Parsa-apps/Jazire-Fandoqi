@@ -24,6 +24,7 @@ class AudioService {
   static const String _lettersPath = 'assets/audio/letters/';
   static const String _numbersPath = 'assets/audio/numbers/';
   static const String _learningPath = 'assets/audio/learning/';
+  static const String _wordsPath = 'assets/audio/words/';
   static const String _bgmPath = 'assets/audio/bgm/';
 
   /// فهرست افکت‌های بسته‌بندی‌شده — برای تست و بازتولید.
@@ -115,6 +116,9 @@ class AudioService {
 
   static final List<String> _speechQueue = <String>[];
   static bool _speaking = false;
+
+  /// شمارندهٔ نشست هجی‌کردن؛ هر درخواست تازه، هجی قبلی را باطل می‌کند.
+  static int _spellSession = 0;
 
   static bool _initialized = false;
   static bool _ttsAvailable = false;
@@ -424,6 +428,240 @@ class AudioService {
     await playVoiceAsset(asset, volume: voiceVolume);
   }
 
+  /// متن را برای خوانده‌شدن تمیز می‌کند: ایموجی، اعراب، نویسه‌های نامرئی و
+  /// گیومه‌ها حذف می‌شوند ولی خود واژه (با نیم‌فاصله) دست‌نخورده می‌ماند.
+  static String cleanSpokenText(String input) {
+    final withoutEmoji = input
+        .replaceAll(RegExp(r'[\p{Extended_Pictographic}]', unicode: true), ' ')
+        // پرچم‌ها (🇮🇷) از دو Regional Indicator ساخته می‌شوند و در ردهٔ
+        // Extended_Pictographic نیستند؛ باید جداگانه حذف شوند.
+        .replaceAll(RegExp(r'[\u{1F1E6}-\u{1F1FF}]', unicode: true), ' ')
+        .replaceAll(RegExp(r'[\uFE0E\uFE0F\u200D]'), ' ')
+        .replaceAll(RegExp(r'[«»"“”:•]'), ' ');
+    final buffer = StringBuffer();
+    for (final rune in withoutEmoji.runes) {
+      if (rune >= 0x064B && rune <= 0x065F) continue; // اعراب
+      if (rune == 0x0670) continue;
+      if (rune == 0x0640) continue; // ـ (کشیده/تطویل) خوانده نمی‌شود
+      if (rune == 0x200B || rune == 0x200E || rune == 0x200F) continue;
+      if (rune == 0xFEFF) continue;
+      // ZWNJ (0x200C) عمداً حفظ می‌شود: بخشی از املای درست فارسی است.
+      buffer.writeCharCode(rune);
+    }
+    return buffer.toString().replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+
+  /// ─────────────── واژه‌های کارگاه واژه‌سازی (آفلاین) ───────────────
+  ///
+  /// گوشیِ کودک معمولاً اینترنت و موتور TTS فارسی ندارد، پس کلمه‌های
+  /// کارگاه واژه‌سازیِ آکادمی الفبا با صدای ضبط‌شده داخل خود اپ می‌آیند.
+  /// کلید نگاشت، شکلِ **تمیزشدهٔ** کلمه است (بدون ایموجی/اعراب) تا با
+  /// خروجی `cleanSpokenText` بخواند.
+  static const Map<String, String> wordAudioKeys = <String, String>{
+    'آب': 'w01',
+    'بابا': 'w02',
+    'باد': 'w03',
+    'داد': 'w04',
+    'آباد': 'w05',
+    'مادر': 'w06',
+    'توت': 'w07',
+    'دوست': 'w08',
+    'دست': 'w09',
+    'سوت': 'w10',
+    'باران': 'w11',
+    'ایران': 'w12',
+    'سبز': 'w13',
+    'نان': 'w14',
+    'زرد': 'w15',
+    'شیر': 'w16',
+    'یاس': 'w17',
+    'اردک': 'w18',
+    'ستاره': 'w19',
+    'دریا': 'w20',
+    'کفش': 'w21',
+    'ورزش': 'w22',
+    'پا': 'w23',
+    'گل': 'w24',
+    'کودک': 'w25',
+    'فیل': 'w26',
+    'خرس': 'w27',
+    'قاشق': 'w28',
+    'بلبل': 'w29',
+    'برف': 'w30',
+    'جوجه': 'w31',
+    'خورشید': 'w32',
+    'چتر': 'w33',
+    'هواپیما': 'w34',
+    'ژاله': 'w35',
+    'صابون': 'w36',
+    'عسل': 'w37',
+    'حباب': 'w38',
+    'طبل': 'w39',
+    'غاز': 'w40',
+    'ظرف': 'w41',
+    // کلمه‌های نمونهٔ کارت درس (که در کارگاه تکرار نشده‌اند)
+    'انار': 'w42',
+    'سیب': 'w43',
+    'تاب': 'w44',
+    'رنگ': 'w45',
+    'استخر': 'w46',
+    'لب': 'w47',
+    'ذرت': 'w48',
+    'ثانیه': 'w49',
+    'ضبط': 'w50',
+    'ابر': 'w51',
+    'ژله': 'w52',
+    'ماه': 'w53',
+    'وان': 'w54',
+    'هلو': 'w55',
+    'یخ': 'w56',
+    // کلمه‌های کارت «اشکال چهارگانه» (شکل نشانه در آغاز/میان/پایان کلمه)
+    'داس': 'w57',
+    'نمد': 'w58',
+    'پرچم': 'w59',
+    'بادام': 'w60',
+    'پسته': 'w61',
+    'نرگس': 'w62',
+    'او': 'w63',
+    'دفتر': 'w64',
+    'قند': 'w65',
+    'دامن': 'w66',
+    'آبی': 'w67',
+    'سینی': 'w68',
+    'امروز': 'w69',
+    'نرده': 'w70',
+    'نامه': 'w71',
+    'کوه': 'w72',
+    'گوشت': 'w73',
+    'آتش': 'w74',
+    'سایه': 'w75',
+    'چای': 'w76',
+    'موی': 'w77',
+    'شکلات': 'w78',
+    'نمک': 'w79',
+    'پاک': 'w80',
+    'گاو': 'w81',
+    'سوپ': 'w82',
+    'توپ': 'w83',
+    'چپ': 'w84',
+    'سگ': 'w85',
+    'برگ': 'w86',
+    'سفید': 'w87',
+    'درخت': 'w88',
+    'میخ': 'w89',
+    'کاخ': 'w90',
+    'سقف': 'w91',
+    'بوق': 'w92',
+    'اتاق': 'w93',
+    'مسجد': 'w94',
+    'پنج': 'w95',
+    'کاج': 'w96',
+    'خواب': 'w97',
+    'خواهر': 'w98',
+    'قیچی': 'w99',
+    'هیچ': 'w100',
+    'کوچ': 'w101',
+    'هوا': 'w102',
+    'بهار': 'w103',
+    'مژده': 'w104',
+    'تصویر': 'w105',
+    'شخص': 'w106',
+    'قرص': 'w107',
+    'کاغذ': 'w108',
+    'جعبه': 'w109',
+    'مربع': 'w110',
+    'شروع': 'w111',
+    'مثلث': 'w112',
+    'کثیف': 'w113',
+    'ارث': 'w114',
+    'صحرا': 'w115',
+    'صبح': 'w116',
+    'نوح': 'w117',
+    'ضربه': 'w118',
+    'حاضر': 'w119',
+    'مریض': 'w120',
+    'حوض': 'w121',
+    'طوطی': 'w122',
+    'چراغ': 'w123',
+    'جیغ': 'w124',
+    'مرغ': 'w125',
+    'ناظم': 'w126',
+  };
+
+  /// مسیر فایل ضبط‌شدهٔ یک کلمه، یا `null` اگر ضبط نشده باشد.
+  static String? wordAssetFor(String word) {
+    final key = wordAudioKeys[cleanSpokenText(word)];
+    if (key == null) return null;
+    return '$_wordsPath$key.wav';
+  }
+
+  /// آیا موتور فارسی دستگاه آمادهٔ خواندن واژه است؟
+  /// (راه‌اندازی صوت را در صورت نیاز کامل می‌کند.)
+  static Future<bool> canSpeakPersian() async {
+    await _ensureInitialized();
+    return _ttsAvailable;
+  }
+
+  /// 🗣️ خواندن یک «واژهٔ کامل» — نه هجی‌کردن حرف‌به‌حرف.
+  ///
+  /// کارگاه واژه‌سازی و کارت‌های نمونهٔ الفبا از این متد استفاده می‌کنند؛
+  /// قبلاً حلقهٔ `pronounceLetter` روی تک‌تک نویسه‌ها اجرا می‌شد و نتیجه‌اش
+  /// «الف… ب… ر…» (آن هم روی هم) بود، نه خواندن خود کلمه.
+  ///
+  /// ترتیب اولویت:
+  ///   ۱. صدای ضبط‌شدهٔ داخل اپ (کاملاً آفلاین) — مسیر عادی.
+  ///   ۲. اگر آن کلمه ضبط نشده باشد و موتور فارسی دستگاه موجود باشد، TTS.
+  ///   ۳. در غیر این صورت `false` تا رابط کاربری تصمیم بگیرد (مثلاً هجی).
+  ///
+  /// هرگز به TTSِ غیرفارسی نمی‌افتد؛ روی گوشی‌های بدون فارسی این کار
+  /// باعث خوانده‌شدن متن با لهجهٔ عربی می‌شد.
+  static Future<bool> speakWord(String word) async {
+    if (_muted) return false;
+    final clean = cleanSpokenText(word);
+    if (clean.isEmpty) return false;
+
+    // لمس سریع چند کلمه نباید صداها را روی هم بیندازد: گفتار و هجیِ قبلی
+    // قطع می‌شوند و فقط آخرین کلمه خوانده می‌شود.
+    _spellSession++;
+    _interruptSpeech();
+
+    final asset = wordAssetFor(clean);
+    if (asset != null) {
+      await playVoiceAsset(asset, volume: voiceVolume);
+      return true;
+    }
+
+    await _ensureInitialized();
+    if (_muted || !_ttsAvailable) return false;
+    await speak(clean);
+    return true;
+  }
+
+  /// 🔡 هجی‌کردن آگاهانهٔ یک واژه: حرف‌ها **پشت سر هم** (نه هم‌زمان) با
+  /// صدای ضبط‌شدهٔ فارسی خوانده می‌شوند. فقط وقتی صدا زده می‌شود که کودک
+  /// عمداً هجی خواسته باشد.
+  static Future<void> spellOut(
+    String word, {
+    Duration gap = const Duration(milliseconds: 90),
+  }) async {
+    if (_muted) return;
+    final clean = cleanSpokenText(word);
+    if (clean.isEmpty) return;
+    // اگر کودک وسط هجی، کلمهٔ دیگری را لمس کند، هجی قبلی باید بمیرد؛
+    // وگرنه دو رشتهٔ حرف روی هم پخش می‌شوند (همان باگ «تکرار حروف»).
+    final int session = ++_spellSession;
+    _interruptSpeech();
+    for (final rune in clean.runes) {
+      if (_muted || session != _spellSession) return;
+      final ch = String.fromCharCode(rune);
+      final asset = letterAssetFor(ch);
+      if (asset == null) continue; // فاصله، نیم‌فاصله و نویسه‌های ناشناخته
+      await playVoiceAsset(asset, volume: voiceVolume);
+      if (session != _spellSession) return;
+      await Future<void>.delayed(gap);
+    }
+  }
+
   // ─────────────────────────── اعداد (آفلاین) ───────────────────────────
 
   static String? numberAssetFor(int number) {
@@ -615,6 +853,18 @@ class AudioService {
   }
 
   static bool get isSpeaking => _speaking;
+
+  /// قطع گفتار در حال پخش، **بدون** دست‌زدن به پرچم `_speaking`.
+  ///
+  /// اگر حلقهٔ `_drainQueue` در حال اجرا باشد، `_tts.stop()` باعث می‌شود
+  /// همان حلقه فوراً سراغ متن بعدی برود. صفر کردن `_speaking` اینجا یک
+  /// حلقهٔ موازیِ دوم می‌ساخت و شمارندهٔ ducking را نامتوازن می‌کرد.
+  static void _interruptSpeech() {
+    _speechQueue.clear();
+    try {
+      _tts.stop();
+    } catch (_) {}
+  }
 
   static void stopSpeaking() {
     _speechQueue.clear();

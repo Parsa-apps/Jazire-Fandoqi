@@ -24,7 +24,9 @@ String normalizePaywallDigits(String input) {
 }
 
 /// A parent-facing, one-time purchase surface — PREMIUM V2
-/// پیشنهاد ۴۱ — پرداخت امن کافه‌بازار + اعتماد والد
+/// پیشنهاد ۴۱ — پرداخت امن درون‌برنامه‌ای + اعتماد والد
+/// نام فروشگاه عمداً در UI نمی‌آید: اپ روی چند فروشگاه منتشر می‌شود و
+/// درگاه درست هنگام اجرا از روی بستهٔ نصب‌کننده انتخاب می‌شود.
 Future<void> showFullVersionPaywall(BuildContext context, {String? featureName}) async {
   final bought = await showModalBottomSheet<bool>(
     context: context,
@@ -259,9 +261,9 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadii.lg)),
                           child: Column(
                             children: [
-                              Text('قیمت در کافه‌بازار', style: TextStyle(fontSize: 10, color: Colors.black54, fontWeight: FontWeight.w700)),
+                              Text('قیمت نسخه کامل', style: TextStyle(fontSize: 10, color: Colors.black54, fontWeight: FontWeight.w700)),
                               const SizedBox(height: 2),
-                              Text('مشاهده در بازار', style: AppFonts.vazirmatn(fontSize: 13, fontWeight: FontWeight.w900, color: AppColors.primary)),
+                              Text('مشاهده قیمت', style: AppFonts.vazirmatn(fontSize: 13, fontWeight: FontWeight.w900, color: AppColors.primary)),
                               const Icon(Icons.storefront_rounded, size: 16, color: AppColors.primary),
                             ],
                           ),
@@ -282,7 +284,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                   // نشان اعتماد
                   Row(
                     children: [
-                      _TrustBadge(icon: Icons.security_rounded, label: 'پرداخت امن', sub: 'کافه‌بازار'),
+                      _TrustBadge(icon: Icons.security_rounded, label: 'پرداخت امن', sub: 'درگاه رسمی'),
                       const SizedBox(width: 8),
                       _TrustBadge(icon: Icons.block_rounded, label: 'بدون تبلیغ', sub: '۱۰۰٪'),
                       const SizedBox(width: 8),
@@ -299,7 +301,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                       icon: _loading
                           ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                           : const Icon(Icons.lock_open_rounded, color: Colors.white, size: 20),
-                      label: Text(_loading ? 'در حال اتصال امن...' : 'خرید امن از کافه‌بازار', style: AppFonts.vazirmatn(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
+                      label: Text(_loading ? 'در حال اتصال امن...' : 'خرید نسخه کامل', style: AppFonts.vazirmatn(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
@@ -331,7 +333,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Text('با خرید، قوانین کافه‌بازار و حریم خصوصی آفلاین اپ را می‌پذیری.', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: Colors.black38, height: 1.4)),
+                  Text('با خرید، قوانین فروشگاه و حریم خصوصی آفلاین اپ را می‌پذیری.', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: Colors.black38, height: 1.4)),
                 ],
               ),
             ),

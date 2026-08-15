@@ -124,7 +124,7 @@ void main() {
     await _disposeAnimatedTree(tester);
   });
 
-  testWidgets('cartoon hub screen renders cartoon sections and categories', (tester) async {
+  testWidgets('cartoon hub screen renders one island platform per cartoon', (tester) async {
     GameData.resetForTesting();
 
     await tester.pumpWidget(
@@ -136,19 +136,17 @@ void main() {
 
     expect(find.text('کارتون‌کده فندقی'), findsOneWidget);
 
-    // First launch has a required parent disclosure. Dismiss it, then scroll
-    // the sliver list until the lazily-built category row is on screen.
+    // First launch has a required parent disclosure. Dismiss it, then the
+    // island map with one floating platform per cartoon must be visible.
     final disclosureButton = find.text('مطّلع شدم ✅');
     if (disclosureButton.evaluate().isNotEmpty) {
       await tester.tap(disclosureButton);
       await tester.pump(const Duration(milliseconds: 250));
     }
-    await tester.scrollUntilVisible(
-      find.text('همه کارتون‌ها'),
-      250,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('همه کارتون‌ها'), findsOneWidget);
+    expect(find.byKey(const ValueKey('cartoon_island_scroll')), findsOneWidget);
+    expect(find.byKey(const ValueKey('cartoon_platform_0')), findsOneWidget);
+    expect(find.byType(GridView), findsNothing);
+    expect(tester.takeException(), isNull);
 
     await _disposeAnimatedTree(tester);
   });

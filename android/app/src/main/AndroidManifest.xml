@@ -53,5 +53,12 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- 🏪 Package visibility (Android 11+): the app asks the OS which of
+             the supported stores is installed so it can pick the right billing
+             gateway and open the right review page. Without these entries
+             getApplicationInfo() throws NameNotFound on API 30+.
+             No data is read from the stores; only their presence. -->
+        <package android:name="com.farsitel.bazaar" />
+        <package android:name="ir.mservices.market" />
     </queries>
 </manifest>

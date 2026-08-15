@@ -131,6 +131,33 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     unawaited(AudioService.pronounceLetter(lesson.letter));
   }
 
+  /// 🗣️ خواندن یک کلمهٔ کامل (کارگاه واژه‌سازی و کلمه‌های نمونه).
+  ///
+  /// باگ قبلی: روی هر کلمه حلقه‌ای از `pronounceLetter` اجرا می‌شد، پس
+  /// به‌جای «باران» صدای «ب، الف، ر، الف، ن» — آن هم روی هم — پخش می‌شد.
+  ///
+  /// حالا کلمه‌های کارگاه صدای **ضبط‌شدهٔ آفلاین** دارند (گوشی کودک اغلب
+  /// اینترنت و موتور فارسی ندارد). اگر کلمه‌ای هنوز ضبط نشده باشد و TTS
+  /// فارسی هم نباشد، به‌جای سکوت شمرده‌شمرده هجی می‌شود.
+  Future<void> _readWord(String word) async {
+    HapticFeedback.lightImpact();
+    final spoken = await AudioService.speakWord(word);
+    if (spoken || !mounted) return;
+    final clean = AudioService.cleanSpokenText(word);
+    FandoghiCoach.say(
+      'صدای «$clean» را هنوز ندارم، پس حرف‌به‌حرف برایت می‌خوانم 🔤',
+      mood: FandoghiMood.thinking,
+      duration: const Duration(seconds: 4),
+    );
+    await AudioService.spellOut(word);
+  }
+
+  /// 🔡 هجی خواستهٔ کودک: حرف‌ها پشت سر هم، نه هم‌زمان.
+  Future<void> _spellWord(String word) async {
+    HapticFeedback.selectionClick();
+    await AudioService.spellOut(word);
+  }
+
   void _selectBundle(int idx) {
     HapticFeedback.selectionClick();
     setState(() {
@@ -473,10 +500,10 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
               ),
               const Spacer(),
               Text(
-                'لمس کن تا بشنوی',
+                'لمس = خواندن کلمه • نگه‌داشتن = هجی',
                 style: AppFonts.balooBhaijaan2(
                   color: Colors.white60,
-                  fontSize: 11,
+                  fontSize: 10,
                 ),
               ),
             ],
@@ -497,13 +524,9 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
             runSpacing: 8,
             children: b.createdWords.map((word) {
               return GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  final clean = word.replaceAll(RegExp(r'[\p{Extended_Pictographic}]', unicode: true), '').trim();
-                  for (final ch in clean.runes.map((r) => String.fromCharCode(r)).toList()) {
-                    unawaited(AudioService.pronounceLetter(ch));
-                  }
-                },
+                // لمس کوتاه = خواندن خودِ کلمه، نگه‌داشتن = هجی حرف‌به‌حرف
+                onTap: () => _readWord(word),
+                onLongPress: () => _spellWord(word),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
@@ -634,31 +657,56 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      '${_lesson.emoji} مثلِ «${_lesson.word}»',
-                      style: AppFonts.balooBhaijaan2(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
+                    GestureDetector(
+                      // خودِ کلمهٔ نمونه خوانده می‌شود، نه حرف‌های داخلش
+                      onTap: () => _readWord(_lesson.word),
+                      onLongPress: () => _spellWord(_lesson.word),
+                      child: Text(
+                        '${_lesson.emoji} مثلِ «${_lesson.word}»',
+                        style: AppFonts.balooBhaijaan2(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 6),
                     Row(
                       children: [
                         IconButton.filledTonal(
-                          tooltip: 'تلفظ نشانه',
+                          tooltip: 'تلفظ نشانه «${_lesson.letter}»',
                           onPressed: () {
                             HapticFeedback.lightImpact();
-                            AudioService.pronounceLetter(_lesson.letter);
+                            unawaited(
+                              AudioService.pronounceLetter(_lesson.letter),
+                            );
                           },
                           icon: const Icon(Icons.volume_up_rounded, size: 18),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 4),
                         Text(
-                          'تلفظ صوتی',
+                          'صدای نشانه',
                           style: AppFonts.balooBhaijaan2(
                             color: Colors.white70,
-                            fontSize: 13,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton.filledTonal(
+                          tooltip: 'خواندن کلمهٔ «${_lesson.word}»',
+                          onPressed: () => _readWord(_lesson.word),
+                          icon: const Icon(Icons.record_voice_over_rounded,
+                              size: 18),
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            'خواندن کلمه',
+                            overflow: TextOverflow.ellipsis,
+                            style: AppFonts.balooBhaijaan2(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                       ],
@@ -731,12 +779,9 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
 
               return Expanded(
                 child: GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    for (final char in (shape + label + sample).runes.map((r) => String.fromCharCode(r)).toList()) {
-                      unawaited(AudioService.pronounceLetter(char));
-                    }
-                  },
+                  // کلمهٔ نمونهٔ همین شکل خوانده می‌شود (نه هجی نویسه‌ها)
+                  onTap: () => _readWord(sample),
+                  onLongPress: () => _spellWord(sample),
                   child: Container(
                     margin: const EdgeInsets.symmetric(horizontal: 3),
                     padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),

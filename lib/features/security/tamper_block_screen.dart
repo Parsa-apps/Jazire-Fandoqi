@@ -36,7 +36,7 @@ class TamperBlockScreen extends StatelessWidget {
                 Text(
                   'برنامهٔ نصب‌شده با نسخهٔ رسمی «جزیره فندقی» تفاوت دارد و ممکن است دستکاری شده باشد. '
                   'برای امنیت کودک، اجرای برنامه متوقف شد.\n\n'
-                  'لطفاً نسخهٔ رسمی را فقط از کافه‌بازار نصب کنید.',
+                  'لطفاً نسخهٔ رسمی را فقط از فروشگاه‌های معتبر نصب کنید.',
                   textAlign: TextAlign.center,
                   style: AppFonts.vazirmatn(
                     fontSize: 15,

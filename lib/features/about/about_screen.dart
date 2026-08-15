@@ -315,7 +315,7 @@ void _showRatingDialog(BuildContext context) {
             ],
           ),
           SizedBox(height: 6),
-          Text('می‌توانید در کافه‌بازار/مایکت هم امتیاز بدهید 💚',
+          Text('می‌توانید در فروشگاه هم به ما امتیاز بدهید 💚',
               style: TextStyle(fontSize: 12, color: Colors.grey)),
         ],
       ),
@@ -328,10 +328,10 @@ void _showRatingDialog(BuildContext context) {
           onPressed: () async {
             await StoreRatingService.markPrompted();
             await StoreRatingService.markRated();
-            await BillingService.openBazaarReview();
+            await BillingService.openStoreReview();
             if (dialogContext.mounted) Navigator.pop(dialogContext);
           },
-          child: const Text('ثبت در کافه‌بازار ⭐'),
+          child: const Text('ثبت امتیاز ⭐'),
         ),
       ],
     ),

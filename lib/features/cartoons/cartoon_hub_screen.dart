@@ -1,9 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+
 import 'package:jazireh_fandoghi/app/app_colors.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
-import 'package:jazireh_fandoghi/app/design_tokens.dart';
+import 'package:jazireh_fandoghi/app/app_theme.dart';
 import 'package:jazireh_fandoghi/core/audio_service.dart';
 import 'package:jazireh_fandoghi/core/cartoons/aparat_service.dart';
 import 'package:jazireh_fandoghi/core/cartoons/cartoon_data.dart';
@@ -13,14 +15,16 @@ import 'package:jazireh_fandoghi/core/game_data.dart';
 import 'package:jazireh_fandoghi/core/monetization.dart';
 import 'package:jazireh_fandoghi/features/cartoons/cartoon_player_screen.dart';
 import 'package:jazireh_fandoghi/features/cartoons/widgets/cartoon_cover.dart';
+import 'package:jazireh_fandoghi/features/home/widgets/island_map/island_map_background.dart';
 import 'package:jazireh_fandoghi/features/shop/full_version_paywall.dart';
-import 'package:jazireh_fandoghi/shared/widgets/child_touch_target.dart';
-import 'package:jazireh_fandoghi/shared/widgets/fandoghi_v2.dart';
-import 'package:jazireh_fandoghi/shared/widgets/premium_lock_overlay.dart';
 
 /// ═══════════════════════════════════════════════════════════════
-/// 🎬 CARTOON HUB SCREEN — جزیره سکوهای کارتون فندقی
-/// طراحی خلوت، یکدست با تم جزیره اصلی با سکوهای شناور اختصاصی برای هر کارتون
+/// 🎬 CARTOON HUB SCREEN — کارتون‌کدهٔ جزیره‌ای
+///
+/// دقیقاً هم‌زبان با «قصه‌خانه»: هر کارتون روی سکوی جزیره‌ایِ مستقل
+/// خودش می‌نشیند، پس‌زمینه همان آسمان/اقیانوس نقشهٔ اصلی است و خبری
+/// از گرید تیره، فیلترِ دسته‌بندی و بنرهای شلوغ نیست. کودک خردسال
+/// فقط یک تصمیم دارد: لمس سکوی کارتونی که دوست دارد.
 /// ═══════════════════════════════════════════════════════════════
 class CartoonHubScreen extends StatefulWidget {
   const CartoonHubScreen({super.key});
@@ -29,23 +33,31 @@ class CartoonHubScreen extends StatefulWidget {
   State<CartoonHubScreen> createState() => _CartoonHubScreenState();
 }
 
-class _CartoonHubScreenState extends State<CartoonHubScreen> {
-  CartoonCategoryType _selectedCategory = CartoonCategoryType.all;
+class _CartoonHubScreenState extends State<CartoonHubScreen>
+    with SingleTickerProviderStateMixin {
+  final ScrollController _scrollController = ScrollController();
+  late final AnimationController _floatController;
+
+  double _scrollOffset = 0;
   bool _hasFullVersion = false;
 
   @override
   void initState() {
     super.initState();
-    FandoghiCoach.disablePersistentPresence();
+    _floatController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 5),
+    )..repeat();
+    _scrollController.addListener(_onScroll);
     _refreshEntitlement();
 
-    // پیش‌بارگیری پوستر کارتون‌ها
-    final ordered = <Cartoon>[
-      ...CartoonData.getFeatured(),
-      ...CartoonData.allCartoons.where((c) => !c.isFeatured),
-    ];
+    // خود فندقی در هدر حضور دارد؛ حباب سراسری خاموش می‌ماند تا صفحه
+    // برای کودک خردسال خلوت و متمرکز بماند (مثل قصه‌خانه).
+    FandoghiCoach.disablePersistentPresence();
+
+    // پیش‌بارگیری پوستر کارتون‌ها به همان ترتیبی که روی سکوها می‌آیند
     AparatService.prefetchCartoonCovers(
-      ordered.map(
+      CartoonData.allCartoons.map(
         (c) => c.episodes.isNotEmpty ? c.episodes.first.aparatHash : null,
       ),
       onProgress: () {
@@ -54,15 +66,31 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _maybeShowParentDisclosure();
-        FandoghiCoach.say(
-          'به سینمای جزیره فندقی خوش اومدی! 🍿 روی سکوی هر کارتون که دوست داری بزن تا تماشا کنیم!',
-          mood: FandoghiMood.excited,
-          duration: const Duration(seconds: 4),
-        );
-      }
+      if (mounted) _maybeShowParentDisclosure();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    _floatController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    final next = _scrollController.hasClients ? _scrollController.offset : 0.0;
+    if ((next - _scrollOffset).abs() > 1.5) {
+      setState(() => _scrollOffset = next);
+    }
+  }
+
+  double get _scrollProgress {
+    if (!_scrollController.hasClients) return 0;
+    final max = _scrollController.position.maxScrollExtent;
+    if (max <= 0) return 0;
+    return (_scrollController.offset / max).clamp(0.0, 1.0);
   }
 
   Future<void> _maybeShowParentDisclosure() async {
@@ -72,8 +100,8 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: const Color(0xFF1E1B38),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: const Color(0xFFFFFDF7),
         title: Row(
           children: [
             const Text('👨‍👩‍👧', style: TextStyle(fontSize: 28)),
@@ -81,10 +109,9 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
             Expanded(
               child: Text(
                 'اطلاعیه به والدین عزیز',
-                style: AppFonts.vazirmatn(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 16,
+                style: AppFonts.kids(
+                  color: const Color(0xFF3B2B52),
+                  fontSize: 17,
                 ),
               ),
             ),
@@ -94,13 +121,13 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _disclosureRow(Icons.wifi_rounded, Colors.lightBlueAccent,
+            _disclosureRow(Icons.wifi_rounded, const Color(0xFF2196F3),
                 'بخش «کارتون‌کده» تنها بخش آنلاین اپ است و برای پخش به اینترنت نیاز دارد.'),
             const SizedBox(height: 10),
-            _disclosureRow(Icons.verified_rounded, Colors.greenAccent,
+            _disclosureRow(Icons.verified_rounded, const Color(0xFF43A047),
                 'ویدیوها فقط از سرویس ویدیوی ایرانی آپارات (aparat.com) و صرفاً از طریق هش‌های از پیش تأییدشده و فهرست سفید پخش می‌شوند.'),
             const SizedBox(height: 10),
-            _disclosureRow(Icons.shield_rounded, Colors.amberAccent,
+            _disclosureRow(Icons.shield_rounded, const Color(0xFFEF6C00),
                 'هیچ‌گونه جستجوی آزاد، تبلیغ، لینک خروجی به سایت‌های ثالث، یا ارسال اطلاعات کودک به سرور وجود ندارد.'),
           ],
         ),
@@ -112,9 +139,9 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
             },
             child: Text(
               'مطّلع شدم ✅',
-              style: AppFonts.vazirmatn(
-                color: Colors.lightBlueAccent,
-                fontWeight: FontWeight.w900,
+              style: AppFonts.kids(
+                color: const Color(0xFF7E57C2),
+                fontSize: 16,
               ),
             ),
           ),
@@ -132,16 +159,16 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.5),
+            style: const TextStyle(
+              color: Color(0xFF4B3565),
+              fontSize: 12,
+              height: 1.6,
+            ),
             textAlign: TextAlign.justify,
           ),
         ),
       ],
     );
-  }
-
-  List<Cartoon> get _filteredCartoons {
-    return CartoonData.getByCategory(_selectedCategory);
   }
 
   bool _isLocked(Cartoon cartoon) =>
@@ -158,6 +185,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
   Future<void> _openCartoon(Cartoon cartoon) async {
     HapticFeedback.lightImpact();
     AudioService.select();
+
     if (!ContentAccessPolicy.isCartoonFree(cartoon.id) &&
         !await Monetization.hasFullVersion()) {
       if (!mounted) return;
@@ -165,7 +193,8 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
       if (!mounted || !await _refreshEntitlement()) return;
     }
     if (!mounted) return;
-    Navigator.of(context).push(
+
+    await Navigator.of(context).push(
       MaterialPageRoute(
         settings: RouteSettings(name: '/cartoon/${cartoon.id}'),
         builder: (_) => CartoonPlayerScreen(
@@ -174,227 +203,82 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
         ),
       ),
     );
+    if (mounted) setState(() {});
+  }
+
+  void _goBack() {
+    HapticFeedback.selectionClick();
+    AudioService.tap();
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).pushReplacementNamed('/home');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final list = _filteredCartoons;
+    final cartoons = CartoonData.allCartoons;
+    final watchedCount = cartoons
+        .where((cartoon) => GameData.watchedCartoons.contains(cartoon.id))
+        .length;
+    final cycle = AppTheme.currentCycle;
 
     return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: AppGradients.nightSky),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildTopBar(),
-              _buildCategoriesPill(),
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 30),
-                  child: Column(
-                    children: [
-                      _buildHeroIslandBanner(),
-                      const SizedBox(height: 18),
-                      // سکوهای شناور کارتون‌ها
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: list.length,
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 22,
-                          crossAxisSpacing: 16,
-                          childAspectRatio: 0.76,
-                        ),
-                        itemBuilder: (context, index) {
-                          final cartoon = list[index];
-                          final locked = _isLocked(cartoon);
-                          final isFav = GameData.isCartoonFavorite(cartoon.id);
-
-                          return _CartoonPlatformItem(
-                            cartoon: cartoon,
-                            isLocked: locked,
-                            isFav: isFav,
-                            onTap: () => _openCartoon(cartoon),
-                            onToggleFav: () {
-                              HapticFeedback.selectionClick();
-                              GameData.toggleCartoonFavorite(cartoon.id);
-                              setState(() {});
-                            },
-                          ).animate(delay: (index * 40).ms).fadeIn(duration: 350.ms).scale(begin: const Offset(0.9, 0.9), curve: Curves.easeOutBack);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
-      child: Row(
+      backgroundColor: AppColors.mapBackground,
+      body: Stack(
         children: [
-          ChildTouchTarget(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.14),
-                borderRadius: BorderRadius.circular(AppRadii.md),
-                border: Border.all(color: Colors.white30),
-              ),
-              child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+          Positioned.fill(
+            child: IslandMapBackground(
+              scrollOffset: _scrollOffset,
+              cycle: cycle,
+              progress: _scrollProgress * 0.62,
             ),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'کارتون‌کده فندقی',
-              style: AppFonts.balooBhaijaan2(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: Colors.amber,
-              borderRadius: BorderRadius.circular(AppRadii.pill),
-            ),
-            child: Row(
-              children: [
-                const Text('🍿', style: TextStyle(fontSize: 14)),
-                const SizedBox(width: 4),
-                Text(
-                  'سینما',
-                  style: AppFonts.balooBhaijaan2(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.black87,
+          Positioned.fill(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final topInset = MediaQuery.paddingOf(context).top + 82;
+                return SingleChildScrollView(
+                  key: const ValueKey('cartoon_island_scroll'),
+                  controller: _scrollController,
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
                   ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoriesPill() {
-    final categories = [
-      (CartoonCategoryType.all, 'همه کارتون‌ها', '🌟'),
-      (CartoonCategoryType.iranian, 'کارتون‌های ایرانی', '🇮🇷'),
-      (CartoonCategoryType.adventure, 'ماجراجویی', '🚀'),
-      (CartoonCategoryType.comedy, 'خنده‌دار و شاد', '😄'),
-      (CartoonCategoryType.preschool, 'خردسال و آموزش', '🐣'),
-      (CartoonCategoryType.musical, 'موزیکال', '🎵'),
-    ];
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Row(
-        children: categories.map((cat) {
-          final isSelected = _selectedCategory == cat.$1;
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                setState(() => _selectedCategory = cat.$1);
+                  padding: EdgeInsets.only(
+                    top: topInset,
+                    bottom: MediaQuery.paddingOf(context).bottom + 34,
+                  ),
+                  child: _CartoonIslandMap(
+                    width: constraints.maxWidth,
+                    cartoons: cartoons,
+                    floatAnimation: _floatController,
+                    isLocked: _isLocked,
+                    onCartoonTap: _openCartoon,
+                    onToggleFavorite: (cartoon) {
+                      HapticFeedback.selectionClick();
+                      GameData.toggleCartoonFavorite(cartoon.id);
+                      setState(() {});
+                    },
+                  ),
+                );
               },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primary : Colors.white.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(AppRadii.pill),
-                  border: Border.all(
-                    color: isSelected ? Colors.white : Colors.white24,
-                    width: isSelected ? 1.8 : 1,
-                  ),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.4),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Row(
-                  children: [
-                    Text(cat.$3, style: const TextStyle(fontSize: 14)),
-                    const SizedBox(width: 5),
-                    Text(
-                      cat.$2,
-                      style: AppFonts.balooBhaijaan2(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
-                      ),
-                    ),
-                  ],
+            ),
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                child: _CartoonTopBar(
+                  watchedCount: watchedCount,
+                  totalCount: cartoons.length,
+                  onBack: _goBack,
                 ),
               ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildHeroIslandBanner() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2C3E50), Color(0xFF3498DB)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white24),
-        boxShadow: AppShadows.medium,
-      ),
-      child: Row(
-        children: [
-          const FandoghiV2(size: 48),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'جزیره کارتون‌های محبوب 🍿',
-                  style: AppFonts.balooBhaijaan2(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                Text(
-                  'روی هر سکو بزن تا کارتون موردعلاقه‌ات پخش شود.',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.85),
-                    fontSize: 11,
-                    height: 1.4,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
             ),
           ),
         ],
@@ -403,228 +287,572 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
   }
 }
 
-/// ═══════════════════════════════════════════════════════════════
-/// 🏝️ CARTOON PLATFORM ITEM — سکوی شناور اختصاصی برای هر کارتون
-/// ═══════════════════════════════════════════════════════════════
-class _CartoonPlatformItem extends StatelessWidget {
-  final Cartoon cartoon;
-  final bool isLocked;
-  final bool isFav;
-  final VoidCallback onTap;
-  final VoidCallback onToggleFav;
-
-  const _CartoonPlatformItem({
-    required this.cartoon,
-    required this.isLocked,
-    required this.isFav,
-    required this.onTap,
-    required this.onToggleFav,
+class _CartoonTopBar extends StatelessWidget {
+  const _CartoonTopBar({
+    required this.watchedCount,
+    required this.totalCount,
+    required this.onBack,
   });
+
+  final int watchedCount;
+  final int totalCount;
+  final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    return Semantics(
+      container: true,
+      label:
+          'کارتون‌کده فندقی، $watchedCount کارتون از $totalCount کارتون تماشا شده',
+      child: Container(
+        height: 64,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFDF8EA).withOpacity(0.94),
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(color: const Color(0xFFFFC857), width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF5B3B1E).withOpacity(0.2),
+              blurRadius: 15,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            IconButton(
+              key: const ValueKey('cartoons_back'),
+              onPressed: onBack,
+              tooltip: 'بازگشت',
+              style: IconButton.styleFrom(
+                backgroundColor: const Color(0xFF7E57C2),
+                foregroundColor: Colors.white,
+                minimumSize: const Size(48, 48),
+              ),
+              icon: const Icon(Icons.arrow_forward_rounded, size: 25),
+            ),
+            const SizedBox(width: 9),
+            ClipOval(
+              child: Image.asset(
+                'assets/mascot/fandoghi_baby.webp',
+                width: 45,
+                height: 45,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'کارتون‌کده فندقی',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppFonts.kids(
+                  color: const Color(0xFF3B2B52),
+                  fontSize: 21,
+                ),
+              ),
+            ),
+            Container(
+              constraints: const BoxConstraints(minWidth: 66),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE6F7DF),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF8BC34A)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.movie_rounded,
+                    color: Color(0xFF558B2F),
+                    size: 19,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '$watchedCount/$totalCount',
+                    style: AppFonts.kids(
+                      color: const Color(0xFF3E6D21),
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CartoonIslandMap extends StatelessWidget {
+  const _CartoonIslandMap({
+    required this.width,
+    required this.cartoons,
+    required this.floatAnimation,
+    required this.isLocked,
+    required this.onCartoonTap,
+    required this.onToggleFavorite,
+  });
+
+  static const double _stepHeight = 238;
+  static const double _introHeight = 92;
+
+  final double width;
+  final List<Cartoon> cartoons;
+  final Animation<double> floatAnimation;
+  final bool Function(Cartoon cartoon) isLocked;
+  final ValueChanged<Cartoon> onCartoonTap;
+  final ValueChanged<Cartoon> onToggleFavorite;
+
+  @override
+  Widget build(BuildContext context) {
+    final mapHeight = _introHeight + cartoons.length * _stepHeight + 32;
+    final platformWidth = (width * 0.60).clamp(196.0, 270.0);
+
+    return SizedBox(
+      width: width,
+      height: mapHeight,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          // قاب اصلی کارتون با هاله نور و گوشه‌های گرد
-          Expanded(
+          Positioned.fill(
+            child: IgnorePointer(
+              child: CustomPaint(
+                painter: _CartoonTrailPainter(
+                  cartoonCount: cartoons.length,
+                  stepHeight: _stepHeight,
+                  introHeight: _introHeight,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 2,
+            left: 20,
+            right: 20,
+            child: _GuideBubble(cartoonCount: cartoons.length),
+          ),
+          for (var index = 0; index < cartoons.length; index++)
+            Positioned(
+              key: ValueKey('cartoon_platform_$index'),
+              top: _introHeight + index * _stepHeight,
+              left: index.isEven ? 8 : null,
+              right: index.isOdd ? 8 : null,
+              child: _CartoonPlatform(
+                index: index,
+                cartoon: cartoons[index],
+                width: platformWidth,
+                floatAnimation: floatAnimation,
+                locked: isLocked(cartoons[index]),
+                watched:
+                    GameData.watchedCartoons.contains(cartoons[index].id),
+                isFavorite: GameData.isCartoonFavorite(cartoons[index].id),
+                onTap: () => onCartoonTap(cartoons[index]),
+                onToggleFavorite: () => onToggleFavorite(cartoons[index]),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GuideBubble extends StatelessWidget {
+  const _GuideBubble({required this.cartoonCount});
+
+  final int cartoonCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.92),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFFFFC857), width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.13),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Text(
+          'یکی از $cartoonCount سکوی کارتون را لمس کن! 🍿',
+          textAlign: TextAlign.center,
+          style: AppFonts.kids(
+            color: const Color(0xFF4B3565),
+            fontSize: 17,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CartoonPlatform extends StatefulWidget {
+  const _CartoonPlatform({
+    required this.index,
+    required this.cartoon,
+    required this.width,
+    required this.floatAnimation,
+    required this.locked,
+    required this.watched,
+    required this.isFavorite,
+    required this.onTap,
+    required this.onToggleFavorite,
+  });
+
+  final int index;
+  final Cartoon cartoon;
+  final double width;
+  final Animation<double> floatAnimation;
+  final bool locked;
+  final bool watched;
+  final bool isFavorite;
+  final VoidCallback onTap;
+  final VoidCallback onToggleFavorite;
+
+  @override
+  State<_CartoonPlatform> createState() => _CartoonPlatformState();
+}
+
+class _CartoonPlatformState extends State<_CartoonPlatform>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pressController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pressController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 120),
+      reverseDuration: const Duration(milliseconds: 260),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pressController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final height = widget.width * 0.84;
+    final coverSize = widget.width * 0.39;
+    final phaseOffset = widget.index * 0.13;
+
+    return Semantics(
+      button: true,
+      label:
+          '${widget.cartoon.title}${widget.locked ? '، قفل' : ''}${widget.watched ? '، تماشا شده' : ''}',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => _pressController.forward(),
+        onTapCancel: () => _pressController.reverse(),
+        onTapUp: (_) => _pressController.reverse(),
+        onTap: widget.onTap,
+        child: AnimatedBuilder(
+          animation: Listenable.merge([
+            widget.floatAnimation,
+            _pressController,
+          ]),
+          builder: (context, child) {
+            final phase = (widget.floatAnimation.value + phaseOffset) % 1.0;
+            final bob = math.sin(phase * math.pi * 2);
+            return Transform.translate(
+              offset: Offset(0, bob * 6),
+              child: Transform.rotate(
+                angle: bob * 0.01 * (widget.index.isEven ? 1 : -1),
+                child: Transform.scale(
+                  scale: 1 - _pressController.value * 0.07,
+                  child: child,
+                ),
+              ),
+            );
+          },
+          child: SizedBox(
+            width: widget.width,
+            height: height,
             child: Stack(
               clipBehavior: Clip.none,
+              alignment: Alignment.topCenter,
               children: [
-                // هاله نور زیر سکو
                 Positioned(
-                  bottom: -6,
-                  left: 12,
-                  right: 12,
-                  height: 20,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Image.asset(
+                    'assets/theme_map/island_blank.png',
+                    width: widget.width,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.medium,
+                  ),
+                ),
+                Positioned(
+                  top: 4,
                   child: Container(
+                    width: coverSize,
+                    height: coverSize,
+                    padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: cartoon.themeColor.withOpacity(0.55),
-                      borderRadius: BorderRadius.circular(30),
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      border: Border.all(
+                        color: widget.watched
+                            ? const Color(0xFF6FCF67)
+                            : const Color(0xFFFFC857),
+                        width: 4,
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: cartoon.themeColor.withOpacity(0.6),
-                          blurRadius: 16,
-                          spreadRadius: 2,
+                          color: widget.cartoon.themeColor.withOpacity(0.35),
+                          blurRadius: 13,
+                          offset: const Offset(0, 5),
                         ),
                       ],
                     ),
+                    child: ClipOval(child: _cover(coverSize)),
                   ),
                 ),
-                // بدنه کارت / پوستر کارتون
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E1B38),
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(
-                      color: cartoon.themeColor.withOpacity(0.8),
-                      width: 2.5,
+                Positioned(
+                  top: 4,
+                  right: widget.width * 0.09,
+                  child: _numberBadge(),
+                ),
+                Positioned(
+                  top: 4,
+                  left: widget.width * 0.09,
+                  child: _favoriteButton(),
+                ),
+                if (widget.watched)
+                  Positioned(
+                    top: coverSize * 0.72,
+                    left: widget.width * 0.25,
+                    child: _statusBadge(
+                      icon: Icons.check_rounded,
+                      color: const Color(0xFF43A047),
+                      label: 'دیدم',
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
                   ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      CartoonCoverImage(
-                        videoHash: cartoon.episodes.isNotEmpty
-                            ? cartoon.episodes.first.aparatHash
-                            : null,
-                        coverAsset: cartoon.coverAsset,
-                        fallbackEmoji: cartoon.coverEmoji,
-                        fallbackGradient: cartoon.gradient,
-                        emojiSize: 42,
-                        cacheWidth: 320,
-                      ),
-                      // گرادیان ملایم پایین قاب
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withOpacity(0.65),
-                            ],
-                          ),
-                        ),
-                      ),
-                      // نشانگر تعداد قسمت‌ها
-                      Positioned(
-                        bottom: 8,
-                        left: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.6),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.white30),
-                          ),
-                          child: Text(
-                            '${cartoon.episodes.length} قسمت',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                      // دکمه علاقه‌مندی
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: GestureDetector(
-                          onTap: onToggleFav,
-                          child: Container(
-                            padding: const EdgeInsets.all(5),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.4),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              isFav
-                                  ? Icons.favorite_rounded
-                                  : Icons.favorite_border_rounded,
-                              color: isFav ? Colors.redAccent : Colors.white70,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                      ),
-                      // نشان قفل در صورت عدم خرید نسخه کامل
-                      if (isLocked) const PremiumLockOverlay(),
-                    ],
+                if (widget.locked)
+                  Positioned(
+                    top: coverSize * 0.73,
+                    right: widget.width * 0.23,
+                    child: _statusBadge(
+                      icon: Icons.lock_rounded,
+                      color: const Color(0xFF7E57C2),
+                      label: 'قفل',
+                    ),
                   ),
+                Positioned(
+                  left: -18,
+                  right: -18,
+                  bottom: height * 0.03,
+                  child: Center(child: _titlePlate()),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 6),
-          // پایه سکوی سنگی زیر کارتون (Stone / Grass Platform Base)
-          CustomPaint(
-            size: const Size(90, 10),
-            painter: _PlatformBasePainter(cartoon.themeColor),
-          ),
-          const SizedBox(height: 4),
-          // بنر نام کارتون
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.92),
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: AppShadows.soft,
-            ),
-            child: Text(
-              cartoon.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: AppFonts.balooBhaijaan2(
-                color: const Color(0xFF2D3436),
-                fontSize: 13,
-                fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+
+  Widget _cover(double size) {
+    return CartoonCoverImage(
+      videoHash: widget.cartoon.episodes.isNotEmpty
+          ? widget.cartoon.episodes.first.aparatHash
+          : null,
+      coverAsset: widget.cartoon.coverAsset,
+      fallbackEmoji: widget.cartoon.coverEmoji,
+      fallbackGradient: widget.cartoon.gradient,
+      emojiSize: size * 0.46,
+      cacheWidth: 320,
+    );
+  }
+
+  Widget _numberBadge() {
+    return Container(
+      width: 38,
+      height: 38,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFDF7),
+        shape: BoxShape.circle,
+        border: Border.all(color: const Color(0xFFFFB300), width: 2.5),
+        boxShadow: const [
+          BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3)),
+        ],
+      ),
+      child: Text(
+        '${widget.index + 1}',
+        style: AppFonts.kids(
+          color: const Color(0xFF5D4037),
+          fontSize: 17,
+        ),
+      ),
+    );
+  }
+
+  Widget _favoriteButton() {
+    return Semantics(
+      button: true,
+      label: widget.isFavorite
+          ? '${widget.cartoon.title}، حذف از علاقه‌مندی‌ها'
+          : '${widget.cartoon.title}، افزودن به علاقه‌مندی‌ها',
+      child: GestureDetector(
+        onTap: widget.onToggleFavorite,
+        child: Container(
+          width: 38,
+          height: 38,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFFDF7),
+            shape: BoxShape.circle,
+            border: Border.all(color: const Color(0xFFFFB300), width: 2.5),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 6,
+                offset: Offset(0, 3),
               ),
-            ),
+            ],
+          ),
+          child: Icon(
+            widget.isFavorite
+                ? Icons.favorite_rounded
+                : Icons.favorite_border_rounded,
+            size: 19,
+            color: widget.isFavorite
+                ? const Color(0xFFE53935)
+                : const Color(0xFFBCAAA4),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _statusBadge({
+    required IconData icon,
+    required Color color,
+    required String label,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 5)],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white, size: 15),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: AppFonts.kids(color: Colors.white, fontSize: 11),
           ),
         ],
       ),
     );
   }
+
+  Widget _titlePlate() {
+    return Container(
+      constraints: BoxConstraints(maxWidth: widget.width + 32),
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFDF7),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFFFB300), width: 2.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.24),
+            blurRadius: 7,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Text(
+        widget.cartoon.title,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        style: AppFonts.kids(
+          color: const Color(0xFF3E3150),
+          fontSize: 16,
+          height: 1.15,
+        ),
+      ),
+    );
+  }
 }
 
-/// نقاش سکوی سنگی زیر هر کارتون (مطابق سکوهای جزیره اصلی)
-class _PlatformBasePainter extends CustomPainter {
-  final Color color;
+class _CartoonTrailPainter extends CustomPainter {
+  const _CartoonTrailPainter({
+    required this.cartoonCount,
+    required this.stepHeight,
+    required this.introHeight,
+  });
 
-  _PlatformBasePainter(this.color);
+  final int cartoonCount;
+  final double stepHeight;
+  final double introHeight;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
+    if (cartoonCount < 2) return;
 
-    // سکوی سنگی لوزی‌شکل
-    final path = Path()
-      ..moveTo(0, 0)
-      ..lineTo(w, 0)
-      ..lineTo(w - 8, h)
-      ..lineTo(8, h)
-      ..close();
+    final path = Path();
+    for (var index = 0; index < cartoonCount; index++) {
+      final x = index.isEven ? size.width * 0.35 : size.width * 0.65;
+      final y = introHeight + index * stepHeight + stepHeight * 0.50;
+      if (index == 0) {
+        path.moveTo(x, y);
+      } else {
+        final previousX = index.isEven ? size.width * 0.65 : size.width * 0.35;
+        final previousY = y - stepHeight;
+        path.cubicTo(
+          previousX,
+          previousY + stepHeight * 0.46,
+          x,
+          y - stepHeight * 0.46,
+          x,
+          y,
+        );
+      }
+    }
 
     canvas.drawPath(
       path,
       Paint()
-        ..shader = const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF7F8C8D),
-            Color(0xFF34495E),
-          ],
-        ).createShader(Rect.fromLTWH(0, 0, w, h)),
+        ..color = Colors.white.withOpacity(0.52)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 8
+        ..strokeCap = StrokeCap.round,
     );
-
-    // خط براق لبه بالا
-    canvas.drawLine(
-      Offset(4, 1),
-      Offset(w - 4, 1),
+    canvas.drawPath(
+      path,
       Paint()
-        ..color = Colors.white.withOpacity(0.4)
-        ..strokeWidth = 1.5,
+        ..color = const Color(0xFFFFD166).withOpacity(0.85)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3
+        ..strokeCap = StrokeCap.round,
     );
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _CartoonTrailPainter oldDelegate) =>
+      oldDelegate.cartoonCount != cartoonCount ||
+      oldDelegate.stepHeight != stepHeight ||
+      oldDelegate.introHeight != introHeight;
 }

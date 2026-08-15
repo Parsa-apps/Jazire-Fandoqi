@@ -96,6 +96,7 @@ flutter:
     - assets/audio/sound_match/
     - assets/audio/letters/
     - assets/audio/numbers/
+    - assets/audio/words/
     - assets/audio/learning/colors/
     - assets/audio/learning/shapes/
 

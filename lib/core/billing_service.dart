@@ -1,11 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import 'store_vendor.dart';
+
 /// نتیجه یک عملیات پرداخت
 ///
-/// [success] فقط زمانی true است که استور (کافه‌بازار/مایکت) خرید را
-/// تایید کرده باشد. تا وقتی [success] true نشده، نباید هیچ دسترسی
-/// ویژه‌ای در اپ فعال شود.
+/// [success] فقط زمانی true است که فروشگاه خرید را تایید کرده باشد.
+/// تا وقتی [success] true نشده، نباید هیچ دسترسی ویژه‌ای در اپ فعال شود.
 class BillingResult {
   final bool success;
   final String? purchaseToken;
@@ -31,10 +32,15 @@ class BillingResult {
         message = 'خرید آزمایشی (حالت سندباکس)';
 }
 
-/// پل ارتباطی با سیستم پرداخت درون‌برنامه‌ای کافه‌بازار و مایکت
+/// پل ارتباطی با سیستم پرداخت درون‌برنامه‌ای فروشگاه‌های ایرانی
+///
+/// 🏪 چند-فروشگاهی: اپ هنگام اجرا تشخیص می‌دهد از کدام فروشگاه نصب شده
+/// (`StoreDetector`) و لایهٔ نیتیو همان درگاه را صدا می‌زند — کافه‌بازار
+/// با Poolakey و مایکت با Myket Billing Client. کاربر هیچ‌وقت نام
+/// فروشگاه را نمی‌بیند و چیزی انتخاب نمی‌کند.
 ///
 /// ارتباط از طریق MethodChannel با نام `kudake_iran/billing` انجام می‌شود.
-/// ماژول نیتیو اندروید باید سه متود را پیاده‌سازی کند:
+/// ماژول نیتیو اندروید باید این متودها را پیاده‌سازی کند:
 ///
 /// 1. `purchase`: ورودی `{productId: String, consumable: bool}`
 ///    خروجی: `{success: bool, purchaseToken: String?, orderId: String?, message: String?}`
@@ -111,6 +117,15 @@ class BillingService {
     if (method != 'restore' && productId.trim().isEmpty) {
       return const BillingResult.failure('شناسه محصول نامعتبر است');
     }
+    // اگر اپ از فروشگاه پشتیبانی‌شده نصب نشده باشد (نصب مستقیم APK)،
+    // هیچ درگاه پرداختی وجود ندارد. به‌جای خطای مبهم استور، پیام روشن
+    // می‌دهیم. در debug این بررسی رد می‌شود تا سندباکس کار کند.
+    if (kReleaseMode && !(await StoreDetector.detect()).supportsBilling) {
+      return const BillingResult.failure(
+        'این نسخه از فروشگاه رسمی نصب نشده است؛ برای خرید، برنامه را از '
+        'فروشگاهی که آن را دریافت کرده‌اید نصب کنید.',
+      );
+    }
     try {
       final arguments = method == 'restore'
           ? null
@@ -132,14 +147,26 @@ class BillingService {
     }
   }
 
-  /// باز کردن صفحه ثبت نظر و امتیاز در کافه‌بازار
-  static Future<void> openBazaarReview() async {
+  /// باز کردن صفحهٔ ثبت نظر و امتیاز در **همان فروشگاهی که اپ از آن نصب
+  /// شده** است. لایهٔ نیتیو خودش intent مناسب را می‌سازد؛ اگر فروشگاه
+  /// ناشناخته باشد کاری انجام نمی‌شود.
+  static Future<bool> openStoreReview() async {
     try {
-      await _channel.invokeMethod('openBazaarReview');
+      final result = await _channel.invokeMethod<bool>('openStoreReview');
+      return result == true;
     } catch (_) {
-      // نادیده گرفتن خطا در محیط‌های فاقد بازار
+      // نادیده گرفتن خطا در محیط‌های فاقد فروشگاه
+      return false;
     }
   }
+
+  /// نام قدیمی؛ برای سازگاری با کدهای قبلی نگه داشته شده است.
+  @Deprecated('Use openStoreReview')
+  static Future<void> openBazaarReview() => openStoreReview();
+
+  /// فروشگاهی که اپ از آن نصب شده است (برای تصمیم‌های UI مثل
+  /// نمایش/پنهان‌کردن دکمهٔ امتیازدهی).
+  static Future<StoreVendor> currentVendor() => StoreDetector.detect();
 
   static BillingResult _parse(dynamic raw, {bool requireReceipt = true}) {
     if (raw is Map) {

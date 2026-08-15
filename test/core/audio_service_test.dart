@@ -86,6 +86,179 @@ void main() {
     });
   });
 
+  group('word reading vs. letter spelling', () {
+    test('cleanSpokenText keeps the word but drops emoji and quotes', () {
+      expect(AudioService.cleanSpokenText('باران 🌧️'), 'باران');
+      expect(AudioService.cleanSpokenText('«سیب»'), 'سیب');
+      expect(AudioService.cleanSpokenText('  دوست 🤝  '), 'دوست');
+      expect(AudioService.cleanSpokenText('🇮🇷 ایران'), 'ایران');
+      expect(AudioService.cleanSpokenText('🍿'), '');
+    });
+
+    test('cleanSpokenText preserves ZWNJ so Persian spelling stays intact', () {
+      const withZwnj = 'می\u200Cخوانم';
+      expect(AudioService.cleanSpokenText(withZwnj), withZwnj);
+    });
+
+    test('cleanSpokenText strips harakat but never the base letters', () {
+      expect(AudioService.cleanSpokenText('اَنار'), 'انار');
+      // کشیده (تطویل) حرف نیست و نباید خوانده شود
+      expect(AudioService.cleanSpokenText('کـتاب'), 'کتاب');
+    });
+
+    test('every workshop word maps to real letter recordings when spelled', () {
+      // هجی‌کردن باید برای همهٔ نویسه‌های کلمه‌های آموزشی فایل داشته باشد،
+      // وگرنه کودک یک حرف را نمی‌شنود.
+      const words = <String>[
+        'آب',
+        'بابا',
+        'باران',
+        'مادر',
+        'دوست',
+        'ایران',
+        'خورشید',
+        'صابون',
+      ];
+      for (final word in words) {
+        final clean = AudioService.cleanSpokenText(word);
+        for (final rune in clean.runes) {
+          final ch = String.fromCharCode(rune);
+          if (ch.trim().isEmpty || ch == '\u200C') continue;
+          expect(
+            AudioService.letterAssetFor(ch),
+            isNotNull,
+            reason: 'حرف «$ch» از کلمهٔ «$word» فایل صوتی ندارد',
+          );
+        }
+      }
+    });
+  });
+
+  group('offline word bank (کارگاه واژه‌سازی)', () {
+    test('every workshop word in the game has a bundled recording', () {
+      // منبع حقیقت: همان کلمه‌هایی که روی صفحه لمس می‌شوند.
+      final source =
+          File('lib/features/games/alphabet_academy/alphabet_academy_game.dart')
+              .readAsStringSync();
+      final blocks = RegExp(r'createdWords: \[(.*?)\]', dotAll: true)
+          .allMatches(source);
+      final words = <String>{};
+      for (final block in blocks) {
+        for (final m
+            in RegExp(r"'([^']*)'").allMatches(block.group(1)!)) {
+          words.add(AudioService.cleanSpokenText(m.group(1)!));
+        }
+      }
+
+      expect(words, isNotEmpty);
+      for (final word in words) {
+        final path = AudioService.wordAssetFor(word);
+        expect(path, isNotNull, reason: 'کلمهٔ «$word» ضبط نشده است');
+        expect(File(path!).existsSync(), isTrue, reason: '$word → $path');
+        expect(File(path).lengthSync(), greaterThan(4000), reason: word);
+      }
+    });
+
+    test('every lesson example word also has a bundled recording', () {
+      // کلمهٔ نمونهٔ هر نشانه («ب مثلِ بابا») هم روی صفحه لمس‌شدنی است.
+      final source =
+          File('lib/features/games/alphabet_academy/alphabet_academy_game.dart')
+              .readAsStringSync();
+      final words = <String>{};
+      for (final m in RegExp(r"_LetterLesson\('[^']*', '([^']*)'")
+          .allMatches(source)) {
+        words.add(AudioService.cleanSpokenText(m.group(1)!));
+      }
+
+      expect(words, isNotEmpty);
+      for (final word in words) {
+        final path = AudioService.wordAssetFor(word);
+        expect(path, isNotNull, reason: 'کلمهٔ نمونهٔ «$word» ضبط نشده است');
+        expect(File(path!).existsSync(), isTrue, reason: '$word → $path');
+      }
+    });
+
+    test('all 126 recordings are distinct files that exist on disk', () {
+      expect(AudioService.wordAudioKeys, hasLength(126));
+      final paths = AudioService.wordAudioKeys.keys
+          .map(AudioService.wordAssetFor)
+          .toSet();
+      expect(paths, hasLength(126));
+      for (final path in paths) {
+        expect(File(path!).existsSync(), isTrue, reason: path);
+      }
+    });
+
+    test('every allograph sample word has a bundled recording', () {
+      // کارت «اشکال چهارگانه»: هر خانه یک کلمهٔ لمس‌شدنی دارد. اگر یکی
+      // صدا نداشته باشد کودک به‌جای کلمه، هجی می‌شنود.
+      final source =
+          File('lib/features/games/alphabet_academy/alphabet_academy_game.dart')
+              .readAsStringSync();
+      final words = <String>{};
+      for (final block in RegExp(r'allographWords: \[(.*?)\]', dotAll: true)
+          .allMatches(source)) {
+        for (final m in RegExp(r"'([^']*)'").allMatches(block.group(1)!)) {
+          words.add(AudioService.cleanSpokenText(m.group(1)!));
+        }
+      }
+
+      expect(words, isNotEmpty);
+      for (final word in words) {
+        final path = AudioService.wordAssetFor(word);
+        expect(path, isNotNull, reason: 'کلمهٔ «$word» ضبط نشده است');
+        expect(File(path!).existsSync(), isTrue, reason: '$word → $path');
+      }
+    });
+
+    test('no two words share the same recording file', () {
+      final files = AudioService.wordAudioKeys.values.toList();
+      expect(files.toSet(), hasLength(files.length));
+    });
+
+    test('recorded allograph sample words resolve to their own clip', () {
+      // این‌ها روی کارت «اشکال چهارگانه» لمس می‌شوند.
+      expect(AudioService.wordAssetFor('بادام'), isNotNull);
+      expect(AudioService.wordAssetFor('پرچم'), isNotNull);
+      expect(AudioService.wordAssetFor('گاو'), isNotNull);
+      expect(
+        AudioService.wordAssetFor('توپ'),
+        isNot(AudioService.wordAssetFor('سوپ')),
+      );
+    });
+
+    test('lookup tolerates emoji and stray spaces around the word', () {
+      expect(
+        AudioService.wordAssetFor('باران 🌧️'),
+        'assets/audio/words/w11.wav',
+      );
+      expect(
+        AudioService.wordAssetFor('  ایران 🇮🇷 '),
+        'assets/audio/words/w12.wav',
+      );
+      expect(AudioService.wordAssetFor('یک‌کلمهٔ‌نبوده'), isNull);
+    });
+
+    test('recordings are mono 22.05 kHz so the bundle stays small', () {
+      var total = 0;
+      for (final key in AudioService.wordAudioKeys.values) {
+        final file = File('assets/audio/words/$key.wav');
+        total += file.lengthSync();
+        final header = file.openSync().readSync(32);
+        // WAV header: channels @22, sample-rate @24 (little endian)
+        final channels = header[22] | (header[23] << 8);
+        final rate = header[24] |
+            (header[25] << 8) |
+            (header[26] << 16) |
+            (header[27] << 24);
+        expect(channels, 1, reason: key);
+        expect(rate, 22050, reason: key);
+      }
+      // کل بستهٔ کلمات باید زیر ۸ مگابایت بماند.
+      expect(total, lessThan(8 * 1024 * 1024));
+    });
+  });
+
   group('letter and number assets', () {
     test('gives آ and ا their own separate recordings', () {
       expect(AudioService.letterAssetFor('آ'), 'assets/audio/letters/l01.mp3');

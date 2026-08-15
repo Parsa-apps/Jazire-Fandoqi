@@ -25,7 +25,7 @@ class SmartConversion {
   static String shareAppText() {
     final name =
         GameData.childName.isNotEmpty ? GameData.childName : 'فرزندتان';
-    return 'ما با $name جزیره فندقی بازی می‌کنیم — آموزش الفبا و بازی آفلاین بدون تبلیغ. در کافه‌بازار جستجو کنید: جزیره فندقی';
+    return 'ما با $name جزیره فندقی بازی می‌کنیم — آموزش الفبا و بازی آفلاین بدون تبلیغ. در فروشگاه برنامه‌ها جستجو کنید: جزیره فندقی';
   }
 
   static bool claimReferralCoins({int reward = 20}) {

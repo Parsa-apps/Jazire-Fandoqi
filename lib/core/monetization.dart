@@ -9,8 +9,8 @@ import 'security/secure_store.dart';
 /// plaintext file edit unable to forge premium access.
 ///
 /// 🔐 مدل امنیتی (v6.3):
-///  - در release، مرجع واقعی کافه‌بازار است (بازیابی خرید با تأیید امضای
-///    RSA توسط Poolakey).
+///  - در release، مرجع واقعی همان فروشگاهی است که اپ از آن نصب شده
+///    (کافه‌بازار یا مایکت) — بازیابی خرید با تأیید امضای RSA رسید.
 ///  - بعد از تأیید استور، گرنت + توکن رسید در SecureStore (Android Keystore)
 ///    ذخیره می‌شود؛ دستکاری فایل Hive دیگر نمی‌تواند پریمیوم جعل کند.
 ///  - در حالت آفلاین، فقط گرنت Keystore معتبر است (فلگ متنی قدیمی در
@@ -96,7 +96,7 @@ class Monetization {
   }
 
   /// مهاجرت از فلگ متنی قدیمی (قبل از ۶.۳). فقط وقتی هر دو شرط برقرار
-  /// باشد: فلگ true و توکن رسیدی که شبیه توکن واقعی کافه‌بازار است.
+  /// باشد: فلگ true و توکن رسیدی که شبیه توکن واقعی فروشگاه است.
   /// فلگ تنها (بدون توکن) جعلی است و پاک می‌شود.
   static Future<bool> _migrateLegacyGrant() async {
     final flag = await HivePlayerStore.readValue(_fullVersionKey);
@@ -117,7 +117,7 @@ class Monetization {
   static bool _looksLikeReceipt(String? token) {
     if (token == null) return false;
     if (token.length < 24 || token.length > 512) return false;
-    // توکن‌های خرید کافه‌بازار رشته‌های بلند base64-مانند هستند.
+    // توکن‌های خرید فروشگاه‌ها رشته‌های بلند base64-مانند هستند.
     return RegExp(r'^[A-Za-z0-9\-_=.:]+$').hasMatch(token);
   }
 
