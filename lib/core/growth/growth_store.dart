@@ -17,6 +17,7 @@ class GrowthStore {
   static final ValueNotifierLike changes = ValueNotifierLike();
 
   static bool _loaded = false;
+  static bool _persistenceAvailable = false;
   static bool get isLoaded => _loaded;
 
   // ── کنترل والدین ────────────────────────────────────────
@@ -92,17 +93,19 @@ class GrowthStore {
     _ensureDefaultSibling();
     _rolloverWeek();
     _loaded = true;
+    _persistenceAvailable = true;
     changes.bump();
   }
 
   static void useMemoryFallback() {
     _loaded = true;
+    _persistenceAvailable = false;
     _ensureDefaultSibling();
     changes.bump();
   }
 
   static Future<void> save() async {
-    if (!_loaded) return;
+    if (!_loaded || !_persistenceAvailable) return;
     try {
       await HivePlayerStore.writeValue(hiveKey, _snapshot());
     } catch (_) {}
@@ -358,6 +361,7 @@ class GrowthStore {
 
   static void resetForTesting() {
     _loaded = true;
+    _persistenceAvailable = false;
     bedtimeEnabled = false;
     bedtimeHour = 21;
     wakeHour = 7;

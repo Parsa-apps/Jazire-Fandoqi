@@ -20,8 +20,23 @@ void main() {
     expect(find.text('کتابخانه یادگیری 📚'), findsOneWidget);
     expect(find.text('دانشنامه حیوانات ایران'), findsOneWidget);
     expect(find.text('دنیای اعداد'), findsOneWidget);
+
+    // GridView builds cards lazily, so verify the lower entries after actually
+    // scrolling them into the viewport rather than assuming off-screen cards
+    // already exist in the element tree.
+    await tester.scrollUntilVisible(
+      find.text('شغل‌های قهرمانانه'),
+      180,
+      scrollable: find.byType(Scrollable).last,
+    );
     expect(find.text('شغل‌های قهرمانانه'), findsOneWidget);
     expect(find.text('مفاهیم اولیه'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('دنیای احساسات'),
+      180,
+      scrollable: find.byType(Scrollable).last,
+    );
     expect(find.text('دنیای احساسات'), findsOneWidget);
   });
 }

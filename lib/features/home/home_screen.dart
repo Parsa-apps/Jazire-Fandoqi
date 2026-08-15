@@ -176,7 +176,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       value: '$percent درصد',
       child: Container(
         key: const Key('music-volume-control'),
-        width: 224,
+        // Material's Slider keeps a minimum gesture width. At 224px the two
+        // step buttons left too little room and overflowed even on a normal
+        // phone; 248px still fits a 320px viewport beside the map shortcuts.
+        width: 248,
         padding: const EdgeInsets.fromLTRB(8, 7, 8, 6),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.96),

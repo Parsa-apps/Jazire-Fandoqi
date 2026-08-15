@@ -568,7 +568,9 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
       child: GestureDetector(
         onTap: () => _openCartoon(cartoon),
         child: Container(
-          height: 175,
+          // The Persian badge/title/description needs more than 175px when
+          // the bundled font has taller metrics (notably on Android and CI).
+          height: 215,
           decoration: BoxDecoration(
             gradient: cartoon.gradient,
             borderRadius: BorderRadius.circular(26),
@@ -600,6 +602,8 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                             ),
                             child: Text(
                               '🔥 ویژه امروز • ${cartoon.badgeText}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 11,
@@ -610,6 +614,8 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
                           const SizedBox(height: 8),
                           Text(
                             cartoon.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: AppFonts.vazirmatn(
                               fontSize: 22,
                               fontWeight: FontWeight.w900,

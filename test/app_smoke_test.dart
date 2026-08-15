@@ -29,10 +29,11 @@ void main() {
     // ۶ هاب اصلی جزیره فندقی
     expect(find.text('فارسی'), findsOneWidget);
     expect(find.text('ریاضی'), findsOneWidget);
-    expect(find.text('حروف و صداها'), findsOneWidget);
+    // Bubble labels intentionally stay short enough for the underwater map.
+    expect(find.text('حروف'), findsOneWidget);
     expect(find.text('علوم'), findsOneWidget);
     expect(find.text('بازی‌ها'), findsOneWidget);
-    expect(find.text('هنر و خلاقیت'), findsOneWidget);
+    expect(find.text('هنر'), findsOneWidget);
     expect(find.text('پروفایل من'), findsOneWidget);
 
     // نوار ناوبری پایینی
@@ -47,9 +48,9 @@ void main() {
     expect(find.byKey(const Key('music-volume-slider')), findsOneWidget);
     expect(find.text('صدای موسیقی'), findsOneWidget);
 
-    // دکمه‌های شناور کناری
-    expect(find.text('هدایا'), findsOneWidget);
-    expect(find.text('جزیره'), findsOneWidget);
+    // دکمه‌های شناور کناری (آیکونی، با برچسب دسترس‌پذیری)
+    expect(find.bySemanticsLabel('هدیهٔ روزانه'), findsOneWidget);
+    expect(find.bySemanticsLabel('کتابخانه'), findsOneWidget);
   });
 
   testWidgets('gateway opens the island world without overflow', (tester) async {
@@ -97,6 +98,19 @@ void main() {
     await tester.pump(const Duration(milliseconds: 250));
 
     expect(find.text('کارتون‌کده فندقی'), findsOneWidget);
+
+    // First launch has a required parent disclosure. Dismiss it, then scroll
+    // the sliver list until the lazily-built category row is on screen.
+    final disclosureButton = find.text('مطّلع شدم ✅');
+    if (disclosureButton.evaluate().isNotEmpty) {
+      await tester.tap(disclosureButton);
+      await tester.pump(const Duration(milliseconds: 250));
+    }
+    await tester.scrollUntilVisible(
+      find.text('همه کارتون‌ها'),
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('همه کارتون‌ها'), findsOneWidget);
   });
 
@@ -108,7 +122,19 @@ void main() {
     expect(find.byKey(const ValueKey('parsa_website_address')), findsNothing);
     expect(find.byKey(const ValueKey('parsa_website_link')), findsOneWidget);
     expect(find.text('ورود مستقیم به سایت'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text(AppLegal.supportEmail),
+      220,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text(AppLegal.supportEmail), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text(AppLegal.telegramHandle),
+      220,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text(AppLegal.telegramHandle), findsOneWidget);
   });
 }
