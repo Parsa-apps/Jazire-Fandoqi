@@ -13,7 +13,7 @@ import '../../core/monetization.dart';
 import '../../core/security/privacy_protection.dart';
 import '../../shared/widgets/fandoghi_premium.dart';
 
-String _normalizeDigits(String input) {
+String normalizePaywallDigits(String input) {
   const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
   const englishDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
   String result = input;
@@ -98,7 +98,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                   focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.lg), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
                 ),
                 onSubmitted: (_) {
-                  final normalized = _normalizeDigits(answer.text.trim());
+                  final normalized = normalizePaywallDigits(answer.text.trim());
                   Navigator.pop(dialogContext, normalized == correctAnswer);
                 },
               ),
@@ -107,7 +107,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                 children: [
                   Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(dialogContext, false), style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg))), child: Text('انصراف', style: AppFonts.vazirmatn(fontWeight: FontWeight.w700, color: Colors.red)))),
                   const SizedBox(width: 12),
-                  Expanded(child: FilledButton(onPressed: () { final normalized = _normalizeDigits(answer.text.trim()); Navigator.pop(dialogContext, normalized == correctAnswer); }, style: FilledButton.styleFrom(backgroundColor: AppColors.primary, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg))), child: Text('تأیید', style: AppFonts.vazirmatn(fontWeight: FontWeight.w900, color: Colors.white)))),
+                  Expanded(child: FilledButton(onPressed: () { final normalized = normalizePaywallDigits(answer.text.trim()); Navigator.pop(dialogContext, normalized == correctAnswer); }, style: FilledButton.styleFrom(backgroundColor: AppColors.primary, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg))), child: Text('تأیید', style: AppFonts.vazirmatn(fontWeight: FontWeight.w900, color: Colors.white)))),
                 ],
               ),
             ],
