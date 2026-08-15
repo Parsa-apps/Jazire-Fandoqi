@@ -116,6 +116,9 @@ class AudioService {
   static final List<String> _speechQueue = <String>[];
   static bool _speaking = false;
 
+  /// شمارندهٔ نشست هجی‌کردن؛ هر درخواست تازه، هجی قبلی را باطل می‌کند.
+  static int _spellSession = 0;
+
   static bool _initialized = false;
   static bool _ttsAvailable = false;
 
@@ -424,6 +427,83 @@ class AudioService {
     await playVoiceAsset(asset, volume: voiceVolume);
   }
 
+  /// متن را برای خوانده‌شدن تمیز می‌کند: ایموجی، اعراب، نویسه‌های نامرئی و
+  /// گیومه‌ها حذف می‌شوند ولی خود واژه (با نیم‌فاصله) دست‌نخورده می‌ماند.
+  static String cleanSpokenText(String input) {
+    final withoutEmoji = input
+        .replaceAll(RegExp(r'[\p{Extended_Pictographic}]', unicode: true), ' ')
+        // پرچم‌ها (🇮🇷) از دو Regional Indicator ساخته می‌شوند و در ردهٔ
+        // Extended_Pictographic نیستند؛ باید جداگانه حذف شوند.
+        .replaceAll(RegExp(r'[\u{1F1E6}-\u{1F1FF}]', unicode: true), ' ')
+        .replaceAll(RegExp(r'[\uFE0E\uFE0F\u200D]'), ' ')
+        .replaceAll(RegExp(r'[«»"“”:•]'), ' ');
+    final buffer = StringBuffer();
+    for (final rune in withoutEmoji.runes) {
+      if (rune >= 0x064B && rune <= 0x065F) continue; // اعراب
+      if (rune == 0x0670) continue;
+      if (rune == 0x0640) continue; // ـ (کشیده/تطویل) خوانده نمی‌شود
+      if (rune == 0x200B || rune == 0x200E || rune == 0x200F) continue;
+      if (rune == 0xFEFF) continue;
+      // ZWNJ (0x200C) عمداً حفظ می‌شود: بخشی از املای درست فارسی است.
+      buffer.writeCharCode(rune);
+    }
+    return buffer.toString().replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+
+  /// آیا موتور فارسی دستگاه آمادهٔ خواندن واژه است؟
+  /// (راه‌اندازی صوت را در صورت نیاز کامل می‌کند.)
+  static Future<bool> canSpeakPersian() async {
+    await _ensureInitialized();
+    return _ttsAvailable;
+  }
+
+  /// 🗣️ خواندن یک «واژهٔ کامل» — نه هجی‌کردن حرف‌به‌حرف.
+  ///
+  /// کارگاه واژه‌سازی و کارت‌های نمونهٔ الفبا از این متد استفاده می‌کنند؛
+  /// قبلاً حلقهٔ `pronounceLetter` روی تک‌تک نویسه‌ها اجرا می‌شد و نتیجه‌اش
+  /// «الف… ب… ر…» (آن هم روی هم) بود، نه خواندن خود کلمه.
+  ///
+  /// اگر موتور فارسی روی دستگاه نباشد `false` برمی‌گرداند تا رابط کاربری
+  /// بتواند راهنمای مناسب نشان دهد؛ هرگز به هجی‌کردن خودکار نمی‌افتد.
+  static Future<bool> speakWord(String word) async {
+    if (_muted) return false;
+    final clean = cleanSpokenText(word);
+    if (clean.isEmpty) return false;
+    await _ensureInitialized();
+    if (_muted || !_ttsAvailable) return false;
+    // لمس سریع چند کلمه نباید صداها را روی هم بیندازد: گفتار و هجیِ قبلی
+    // قطع می‌شوند و فقط آخرین کلمه خوانده می‌شود.
+    _spellSession++;
+    _interruptSpeech();
+    await speak(clean);
+    return true;
+  }
+
+  /// 🔡 هجی‌کردن آگاهانهٔ یک واژه: حرف‌ها **پشت سر هم** (نه هم‌زمان) با
+  /// صدای ضبط‌شدهٔ فارسی خوانده می‌شوند. فقط وقتی صدا زده می‌شود که کودک
+  /// عمداً هجی خواسته باشد.
+  static Future<void> spellOut(
+    String word, {
+    Duration gap = const Duration(milliseconds: 90),
+  }) async {
+    if (_muted) return;
+    final clean = cleanSpokenText(word);
+    if (clean.isEmpty) return;
+    // اگر کودک وسط هجی، کلمهٔ دیگری را لمس کند، هجی قبلی باید بمیرد؛
+    // وگرنه دو رشتهٔ حرف روی هم پخش می‌شوند (همان باگ «تکرار حروف»).
+    final int session = ++_spellSession;
+    _interruptSpeech();
+    for (final rune in clean.runes) {
+      if (_muted || session != _spellSession) return;
+      final ch = String.fromCharCode(rune);
+      final asset = letterAssetFor(ch);
+      if (asset == null) continue; // فاصله، نیم‌فاصله و نویسه‌های ناشناخته
+      await playVoiceAsset(asset, volume: voiceVolume);
+      if (session != _spellSession) return;
+      await Future<void>.delayed(gap);
+    }
+  }
+
   // ─────────────────────────── اعداد (آفلاین) ───────────────────────────
 
   static String? numberAssetFor(int number) {
@@ -615,6 +695,18 @@ class AudioService {
   }
 
   static bool get isSpeaking => _speaking;
+
+  /// قطع گفتار در حال پخش، **بدون** دست‌زدن به پرچم `_speaking`.
+  ///
+  /// اگر حلقهٔ `_drainQueue` در حال اجرا باشد، `_tts.stop()` باعث می‌شود
+  /// همان حلقه فوراً سراغ متن بعدی برود. صفر کردن `_speaking` اینجا یک
+  /// حلقهٔ موازیِ دوم می‌ساخت و شمارندهٔ ducking را نامتوازن می‌کرد.
+  static void _interruptSpeech() {
+    _speechQueue.clear();
+    try {
+      _tts.stop();
+    } catch (_) {}
+  }
 
   static void stopSpeaking() {
     _speechQueue.clear();

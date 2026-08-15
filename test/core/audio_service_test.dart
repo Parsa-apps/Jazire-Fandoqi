@@ -86,6 +86,54 @@ void main() {
     });
   });
 
+  group('word reading vs. letter spelling', () {
+    test('cleanSpokenText keeps the word but drops emoji and quotes', () {
+      expect(AudioService.cleanSpokenText('باران 🌧️'), 'باران');
+      expect(AudioService.cleanSpokenText('«سیب»'), 'سیب');
+      expect(AudioService.cleanSpokenText('  دوست 🤝  '), 'دوست');
+      expect(AudioService.cleanSpokenText('🇮🇷 ایران'), 'ایران');
+      expect(AudioService.cleanSpokenText('🍿'), '');
+    });
+
+    test('cleanSpokenText preserves ZWNJ so Persian spelling stays intact', () {
+      const withZwnj = 'می\u200Cخوانم';
+      expect(AudioService.cleanSpokenText(withZwnj), withZwnj);
+    });
+
+    test('cleanSpokenText strips harakat but never the base letters', () {
+      expect(AudioService.cleanSpokenText('اَنار'), 'انار');
+      // کشیده (تطویل) حرف نیست و نباید خوانده شود
+      expect(AudioService.cleanSpokenText('کـتاب'), 'کتاب');
+    });
+
+    test('every workshop word maps to real letter recordings when spelled', () {
+      // هجی‌کردن باید برای همهٔ نویسه‌های کلمه‌های آموزشی فایل داشته باشد،
+      // وگرنه کودک یک حرف را نمی‌شنود.
+      const words = <String>[
+        'آب',
+        'بابا',
+        'باران',
+        'مادر',
+        'دوست',
+        'ایران',
+        'خورشید',
+        'صابون',
+      ];
+      for (final word in words) {
+        final clean = AudioService.cleanSpokenText(word);
+        for (final rune in clean.runes) {
+          final ch = String.fromCharCode(rune);
+          if (ch.trim().isEmpty || ch == '\u200C') continue;
+          expect(
+            AudioService.letterAssetFor(ch),
+            isNotNull,
+            reason: 'حرف «$ch» از کلمهٔ «$word» فایل صوتی ندارد',
+          );
+        }
+      }
+    });
+  });
+
   group('letter and number assets', () {
     test('gives آ and ا their own separate recordings', () {
       expect(AudioService.letterAssetFor('آ'), 'assets/audio/letters/l01.mp3');
