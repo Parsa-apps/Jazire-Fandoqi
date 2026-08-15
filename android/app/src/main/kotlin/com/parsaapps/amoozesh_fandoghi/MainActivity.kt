@@ -9,17 +9,17 @@ import java.io.File
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
-import ir.cafebazaar.poolakey.Connection
-import ir.cafebazaar.poolakey.ConnectionState
-import ir.cafebazaar.poolakey.Payment
-import ir.cafebazaar.poolakey.callback.PurchaseQueryCallback
-import ir.cafebazaar.poolakey.config.PaymentConfiguration
-import ir.cafebazaar.poolakey.config.SecurityCheck
-import ir.cafebazaar.poolakey.request.PurchaseRequest
 import java.util.UUID
 
-/** Native Cafe Bazaar billing bridge. Product IDs are owned by the store dashboard.
- * A release purchase is accepted only after Poolakey's RSA signature validation.
+/** Native multi-store billing bridge (Cafe Bazaar + Myket).
+ *
+ * The app ships to several Iranian stores. At runtime it asks the OS which
+ * store installed it ([StoreVendor.resolve]) and routes every billing call to
+ * that store's gateway — Poolakey for Bazaar, Myket Billing Client for Myket.
+ * The store name is never shown to the user and is never chosen by hand.
+ *
+ * A release purchase is accepted only after the store SDK validates the RSA
+ * signature of the receipt.
  *
  * This must stay a [FlutterFragmentActivity]: plain FlutterActivity extends
  * android.app.Activity and has no ActivityResultRegistry, which Poolakey needs
@@ -29,9 +29,21 @@ class MainActivity : FlutterFragmentActivity() {
     private val channelName = "kudake_iran/billing"
     private val backupChannelName = "kudake_iran/backup"
     private val fullVersionProductId = "full_version"
-    private var paymentConnection: Connection? = null
     private var purchaseInProgress = false
     private var pendingBackupResult: MethodChannel.Result? = null
+
+    /** فروشگاه نصب‌کننده؛ یک‌بار محاسبه و کش می‌شود. */
+    private val vendor: StoreVendor by lazy(LazyThreadSafetyMode.NONE) {
+        StoreVendor.resolve(applicationContext)
+    }
+
+    private val bazaar: BazaarBilling by lazy(LazyThreadSafetyMode.NONE) {
+        BazaarBilling(this, BuildConfig.BAZAAR_RSA_PUBLIC_KEY)
+    }
+
+    private val myket: MyketBilling by lazy(LazyThreadSafetyMode.NONE) {
+        MyketBilling(applicationContext, BuildConfig.MYKET_RSA_PUBLIC_KEY)
+    }
 
     private val backupPicker = registerForActivityResult(
         ActivityResultContracts.OpenDocument(),
@@ -57,22 +69,21 @@ class MainActivity : FlutterFragmentActivity() {
         }
     }
 
-    private val payment: Payment? by lazy(LazyThreadSafetyMode.NONE) {
-        BuildConfig.BAZAAR_RSA_PUBLIC_KEY.takeIf { it.isNotBlank() }?.let { publicKey ->
-            Payment(this, PaymentConfiguration(localSecurityCheck = SecurityCheck.Enable(publicKey)))
-        }
-    }
-
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        connectBazaar()
+        connectStore()
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "purchase" -> purchase(call.arguments as? Map<*, *>, result)
                     "consume" -> consume(call.arguments as? Map<*, *>, result)
                     "restore" -> restore(result)
-                    "openBazaarReview" -> openBazaarReview(result)
+                    // Flutter از این برای انتخاب متن/رفتار مناسب استفاده می‌کند.
+                    "installerPackage" -> result.success(StoreVendor.installerPackage(applicationContext))
+                    "storeVendor" -> result.success(vendor.name.lowercase())
+                    "openStoreReview" -> openStoreReview(result)
+                    // نام قدیمی، برای سازگاری با نسخه‌های قبلی Dart.
+                    "openBazaarReview" -> openStoreReview(result)
                     else -> result.notImplemented()
                 }
             }
@@ -143,14 +154,19 @@ class MainActivity : FlutterFragmentActivity() {
             }
     }
 
-    private fun connectBazaar() {
-        paymentConnection?.disconnect()
-        paymentConnection = payment?.connect { /* callbacks expose connection state when needed */ }
+    /** فقط درگاهِ فروشگاهِ نصب‌کننده متصل می‌شود، نه هر دو. */
+    private fun connectStore() {
+        if (vendor == StoreVendor.BAZAAR) bazaar.connect()
+        // مایکت اتصال تنبل دارد و هنگام اولین خرید setup می‌شود.
     }
+
+    /** پیام یکسان وقتی اپ از هیچ فروشگاه پشتیبانی‌شده‌ای نصب نشده است. */
+    private fun noStoreFailure() = failure(
+        "این نسخه از فروشگاه رسمی نصب نشده است؛ برای خرید، برنامه را از فروشگاهی که آن را دریافت کرده‌اید نصب کنید."
+    )
 
     private fun purchase(arguments: Map<*, *>?, result: MethodChannel.Result) {
         val productId = arguments?.get("productId") as? String
-        val consumable = arguments?.get("consumable") as? Boolean ?: false
         if (productId.isNullOrBlank()) {
             result.success(failure("شناسه محصول نامعتبر است"))
             return
@@ -159,39 +175,26 @@ class MainActivity : FlutterFragmentActivity() {
             result.success(success("sandbox-token", "sandbox-order", "خرید آزمایشی"))
             return
         }
-        val client = availablePayment(result) ?: return
         if (purchaseInProgress) {
             result.success(failure("یک پرداخت دیگر در حال انجام است"))
             return
         }
+        // نکته: پرچم `consumable` عمداً روی نوع آیتم اثر ندارد. در هر دو
+        // فروشگاه، آیتم مصرف‌شدنی هم با همان ITEM_TYPE_INAPP خریداری و بعداً
+        // با فراخوانی جداگانهٔ `consume` مصرف می‌شود. (رفتار قبلی هم همین بود.)
+        val payload = UUID.randomUUID().toString()
         purchaseInProgress = true
-        val request = PurchaseRequest(productId = productId, payload = UUID.randomUUID().toString())
-        val callback: ir.cafebazaar.poolakey.callback.PurchaseCallback.() -> Unit = {
-            purchaseSucceed { info ->
+        // پاسخ فقط یک‌بار به Flutter برمی‌گردد، حتی اگر SDK دوبار callback بزند.
+        val reply = singleReply(result) { purchaseInProgress = false }
+        when (vendor) {
+            StoreVendor.BAZAAR ->
+                bazaar.purchase(activityResultRegistry, productId, payload, reply)
+            StoreVendor.MYKET ->
+                myket.purchase(this, productId, payload, reply)
+            StoreVendor.UNKNOWN -> {
                 purchaseInProgress = false
-                if (info.productId != productId) {
-                    result.success(failure("شناسه محصول با رسید استور هم‌خوان نیست"))
-                } else {
-                    result.success(success(info.purchaseToken, info.orderId, "پرداخت تأیید شد"))
-                }
+                result.success(noStoreFailure())
             }
-            purchaseCanceled {
-                purchaseInProgress = false
-                result.success(failure("پرداخت لغو شد"))
-            }
-            purchaseFailed {
-                purchaseInProgress = false
-                result.success(failure("پرداخت توسط استور تأیید نشد"))
-            }
-            failedToBeginFlow {
-                purchaseInProgress = false
-                result.success(failure("شروع پرداخت ممکن نیست"))
-            }
-        }
-        if (consumable) {
-            client.purchaseProduct(activityResultRegistry, request, callback)
-        } else {
-            client.purchaseProduct(activityResultRegistry, request, callback)
         }
     }
 
@@ -205,10 +208,11 @@ class MainActivity : FlutterFragmentActivity() {
             result.success(success(message = "مصرف آزمایشی انجام شد"))
             return
         }
-        val client = availablePayment(result) ?: return
-        client.consumeProduct(token) {
-            consumeSucceed { result.success(success(message = "خرید مصرف شد")) }
-            consumeFailed { result.success(failure("مصرف خرید تأیید نشد")) }
+        val reply = singleReply(result)
+        when (vendor) {
+            StoreVendor.BAZAAR -> bazaar.consume(token, reply)
+            StoreVendor.MYKET -> myket.consume(token, reply)
+            StoreVendor.UNKNOWN -> result.success(noStoreFailure())
         }
     }
 
@@ -217,47 +221,71 @@ class MainActivity : FlutterFragmentActivity() {
             result.success(failure("خرید فعالی در سندباکس نیست"))
             return
         }
-        val client = availablePayment(result) ?: return
-        client.getPurchasedProducts(queryCallback(result))
+        val reply = singleReply(result)
+        when (vendor) {
+            StoreVendor.BAZAAR -> bazaar.restore(fullVersionProductId, reply)
+            StoreVendor.MYKET -> myket.restore(fullVersionProductId, reply)
+            StoreVendor.UNKNOWN -> result.success(noStoreFailure())
+        }
     }
 
-    private fun queryCallback(result: MethodChannel.Result): PurchaseQueryCallback.() -> Unit = {
-        querySucceed { purchases ->
-            val active = purchases.firstOrNull { it.productId == fullVersionProductId }
-            if (active == null) result.success(failure("خرید نسخه کامل یافت نشد"))
-            else result.success(success(active.purchaseToken, active.orderId, "خرید بازیابی شد"))
+    /**
+     * SDKهای فروشگاه گاهی بیش از یک callback می‌زنند (مثلاً cancel بعد از
+     * failure). MethodChannel.Result دوبار پاسخ‌دادن را با استثنا رد می‌کند،
+     * پس فقط اولین پاسخ عبور داده می‌شود.
+     */
+    private fun singleReply(
+        result: MethodChannel.Result,
+        onFirst: () -> Unit = {},
+    ): (BillingOutcome) -> Unit {
+        var replied = false
+        return { outcome ->
+            if (!replied) {
+                replied = true
+                onFirst()
+                runOnUiThread { result.success(outcome.toMap()) }
+            }
         }
-        queryFailed { result.success(failure("بازیابی خرید از استور انجام نشد")) }
     }
 
-    private fun availablePayment(result: MethodChannel.Result): Payment? {
-        val client = payment
-        if (client == null) {
-            result.success(failure("کلید عمومی کافه‌بازار پیکربندی نشده است"))
-            return null
+    /** صفحهٔ امتیازدهی همان فروشگاهی که اپ از آن نصب شده است. */
+    private fun openStoreReview(result: MethodChannel.Result) {
+        val opened = when (vendor) {
+            StoreVendor.BAZAAR -> openStoreIntent(
+                deepLink = "bazaar://details?id=$packageName",
+                storePackage = StoreVendor.BAZAAR_PACKAGE,
+                webUrl = "https://cafebazaar.ir/app/$packageName",
+            )
+            StoreVendor.MYKET -> openStoreIntent(
+                deepLink = "myket://comment?id=$packageName",
+                storePackage = StoreVendor.MYKET_PACKAGE,
+                webUrl = "https://myket.ir/app/$packageName",
+            )
+            StoreVendor.UNKNOWN -> false
         }
-        if (paymentConnection?.getState() != ConnectionState.Connected) {
-            connectBazaar()
-            result.success(failure("اتصال به کافه‌بازار برقرار نیست؛ دوباره تلاش کنید"))
-            return null
-        }
-        return client
+        result.success(opened)
     }
 
-    private fun openBazaarReview(result: MethodChannel.Result) {
-        try {
-            startActivity(Intent(Intent.ACTION_EDIT, Uri.parse("bazaar://details?id=$packageName")).apply {
-                setPackage("com.farsitel.bazaar")
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            })
-            result.success(true)
+    private fun openStoreIntent(deepLink: String, storePackage: String, webUrl: String): Boolean {
+        return try {
+            startActivity(
+                Intent(Intent.ACTION_EDIT, Uri.parse(deepLink)).apply {
+                    setPackage(storePackage)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            )
+            true
         } catch (_: Exception) {
             try {
-                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://cafebazaar.ir/app/$packageName")).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                })
-                result.success(true)
-            } catch (_: Exception) { result.success(false) }
+                startActivity(
+                    Intent(Intent.ACTION_VIEW, Uri.parse(webUrl)).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                )
+                true
+            } catch (_: Exception) {
+                false
+            }
         }
     }
 
@@ -268,7 +296,8 @@ class MainActivity : FlutterFragmentActivity() {
     private fun failure(message: String) = mapOf("success" to false, "message" to message)
 
     override fun onDestroy() {
-        paymentConnection?.disconnect()
+        bazaar.dispose()
+        myket.dispose()
         super.onDestroy()
     }
 }

@@ -53,10 +53,9 @@ class StoreRatingService {
   static Future<bool> tryPromptIfEligible() async {
     if (!await shouldPrompt()) return false;
     await markPrompted();
-    // باز کردن صفحه کافه‌بازار
+    // باز کردن صفحهٔ امتیازدهی همان فروشگاهی که اپ از آن نصب شده است
     try {
-      await BillingService.openBazaarReview();
-      return true;
+      return await BillingService.openStoreReview();
     } catch (_) {
       return false;
     }

@@ -9,7 +9,7 @@ import 'package:jazireh_fandoghi/core/game_data.dart';
 import 'package:jazireh_fandoghi/shared/widgets/fandoghi_v2.dart';
 
 /// ═══════════════════════════════════════════════════════════════
-/// ⭐ CARTOON RATING DIALOG — سیستم پیشرفته دریافت ۵ ستاره بازار
+/// ⭐ CARTOON RATING DIALOG — سیستم پیشرفته دریافت ۵ ستاره از فروشگاه
 /// ═══════════════════════════════════════════════════════════════
 class CartoonRatingDialog extends StatefulWidget {
   const CartoonRatingDialog({super.key});
@@ -49,8 +49,8 @@ class _CartoonRatingDialogState extends State<CartoonRatingDialog> {
     HapticFeedback.heavyImpact();
     setState(() => _submitted = true);
 
-    // 1️⃣ باز کردن واقعی صفحهٔ ثبت نظر و امتیاز در اپلیکیشن کافه‌بازار
-    BillingService.openBazaarReview();
+    // 1️⃣ باز کردن صفحهٔ ثبت نظر و امتیاز در همان فروشگاه نصب‌کننده
+    BillingService.openStoreReview();
 
     final claimed = GameData.claimRatingReward();
     if (claimed) {
@@ -243,7 +243,7 @@ class _CartoonRatingDialogState extends State<CartoonRatingDialog> {
                       const Icon(Icons.favorite_rounded, size: 20, color: Colors.pinkAccent),
                       const SizedBox(width: 8),
                       Text(
-                        'ثبت در کافه‌بازار 🌟',
+                        'ثبت امتیاز 🌟',
                         style: AppFonts.vazirmatn(
                           fontSize: 14,
                           fontWeight: FontWeight.w900,

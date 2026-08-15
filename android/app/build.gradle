@@ -19,15 +19,17 @@ if (hasReleaseSigning) {
     keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
 }
 
-// Bazaar's RSA public key identifies and protects purchase responses. It is
-// public by design, but kept out of source so each release can be configured
-// from the store dashboard without a code change.
+// Each store's RSA public key identifies and protects that store's purchase
+// responses. They are public by design, but kept out of source so a release
+// can be configured from the store dashboards without a code change.
+// A single APK carries both keys and picks the right gateway at runtime.
 def billingProperties = new Properties()
 def billingPropertiesFile = rootProject.file("billing.properties")
 if (billingPropertiesFile.exists()) {
     billingPropertiesFile.withInputStream { billingProperties.load(it) }
 }
 def bazaarRsaPublicKey = billingProperties.getProperty("bazaarRsaPublicKey", "")
+def myketRsaPublicKey = billingProperties.getProperty("myketRsaPublicKey", "")
 
 // 🛡️ Anti-tamper: embed the SHA-256 digest of the release signing certificate
 // into BuildConfig. At runtime the app compares the installed APK's own
@@ -89,13 +91,15 @@ android {
         buildConfig = true
     }
 
+    // Java 17: the Myket billing AAR is compiled with Java 17 bytecode, so the
+    // app module must be able to consume it. CI runs on temurin JDK 17.
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
 
     // Flutter plugins and the minSdk 21 / Keystore API 23 mix trip AGP's
@@ -121,7 +125,16 @@ android {
         // حجم: فقط زبان فارسی/انگلیسی نگه داشته شود (حذف localeهای اضافی google_fonts و ...)
         resConfigs "en", "fa"
         buildConfigField "String", "BAZAAR_RSA_PUBLIC_KEY", "\"${bazaarRsaPublicKey.replace('\\', '\\\\').replace('\"', '\\\"')}\""
+        buildConfigField "String", "MYKET_RSA_PUBLIC_KEY", "\"${myketRsaPublicKey.replace('\\', '\\\\').replace('\"', '\\\"')}\""
         buildConfigField "String", "EXPECTED_SIGNING_SHA256", "\"${releaseSigningSha256}\""
+
+        // Myket Billing Client reads these from the merged manifest to find the
+        // store service. They are plain identifiers, not secrets.
+        manifestPlaceholders += [
+            marketApplicationId: "ir.mservices.market",
+            marketBindAddress  : "ir.mservices.market.InAppBillingService.BIND",
+            marketPermission   : "ir.mservices.market.BILLING",
+        ]
     }
 
     signingConfigs {
@@ -214,6 +227,13 @@ if (System.getenv("GITHUB_ACTIONS") == "true") {
 dependencies {
     // Poolakey is the official open-source Cafe Bazaar billing client.
     implementation "com.github.cafebazaar.Poolakey:poolakey:2.2.0"
+    // Myket's official open-source billing client (same JitPack repo).
+    // The ads-identifier transitive dependency is excluded: this is a kids app
+    // with a "no advertising ID, no tracking" privacy promise, and the billing
+    // flow does not need it.
+    implementation("com.github.myketstore:myket-billing-client:1.19") {
+        exclude group: "com.google.android.gms", module: "play-services-ads-identifier"
+    }
     // AppCompat for uCrop Activity & theme support
     implementation "androidx.appcompat:appcompat:1.7.0"
     implementation "androidx.annotation:annotation:1.7.1"
