@@ -294,9 +294,10 @@ class _CartoonHubScreenState extends State<CartoonHubScreen> {
     final categories = [
       (CartoonCategoryType.all, 'همه کارتون‌ها', '🌟'),
       (CartoonCategoryType.iranian, 'کارتون‌های ایرانی', '🇮🇷'),
-      (CartoonCategoryType.educational, 'آموزشی و هوش', '🧠'),
+      (CartoonCategoryType.adventure, 'ماجراجویی', '🚀'),
       (CartoonCategoryType.comedy, 'خنده‌دار و شاد', '😄'),
-      (CartoonCategoryType.action, 'ماجراجویی', '🚀'),
+      (CartoonCategoryType.preschool, 'خردسال و آموزش', '🐣'),
+      (CartoonCategoryType.musical, 'موزیکال', '🎵'),
     ];
 
     return SingleChildScrollView(
@@ -479,7 +480,7 @@ class _CartoonPlatformItem extends StatelessWidget {
                             ? cartoon.episodes.first.aparatHash
                             : null,
                         coverAsset: cartoon.coverAsset,
-                        fallbackEmoji: cartoon.iconEmoji,
+                        fallbackEmoji: cartoon.coverEmoji,
                         fallbackGradient: cartoon.gradient,
                         emojiSize: 42,
                         cacheWidth: 320,
