@@ -1,109 +1,39 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:image_cropper/image_cropper.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 
+import '../../app/app_fonts.dart';
 import '../../core/game_data.dart';
 
+const List<String> _avatarNames = [
+  'روباه کوچولو',
+  'پاندای مهربان',
+  'خرگوش ناز',
+  'کوآلای خندان',
+  'شیر شجاع',
+  'قورباغهٔ شاد',
+  'پنگوئن بازیگوش',
+  'جغد دانا',
+  'گربهٔ پشمالو',
+  'توله‌سگ بامزه',
+  'دختر هنرمند',
+  'پسر خندان',
+  'دختر گل‌به‌سر',
+  'پسر عینکی',
+  'دختر مو‌بافته',
+  'پسر ماجراجو',
+  'خرگوش نقاش',
+  'دایناسور ریاضی‌دان',
+  'جغد استاد',
+  'پنگوئن کتاب‌خوان',
+];
+
+/// Opens the local-only profile editor.
+///
+/// Profile imagery is deliberately limited to bundled avatars. This screen
+/// never requests gallery, camera or media permissions.
 Future<void> showProfileEditor(BuildContext context) async {
   final name = TextEditingController(text: GameData.childName);
-  String? photo =
-      GameData.profilePhotoPath.isEmpty ? null : GameData.profilePhotoPath;
   String selectedAvatar = GameData.avatar;
   int selectedAge = GameData.childAge;
-
-  Future<void> pickPhoto(StateSetter setState) async {
-    try {
-      final picker = ImagePicker();
-      final image = await picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1600,
-        imageQuality: 92,
-      );
-      if (image == null) return;
-
-      String selectedPath = image.path;
-
-      // برش تصویر با مدیریت خطا و fallback امن
-      try {
-        final cropped = await ImageCropper().cropImage(
-          sourcePath: image.path,
-          compressFormat: ImageCompressFormat.jpg,
-          compressQuality: 90,
-          maxWidth: 800,
-          maxHeight: 800,
-          aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
-          uiSettings: [
-            AndroidUiSettings(
-              toolbarTitle: 'برش عکس پروفایل',
-              toolbarColor: const Color(0xFF6C43D9),
-              toolbarWidgetColor: Colors.white,
-              activeControlsWidgetColor: const Color(0xFF6C43D9),
-              initAspectRatio: CropAspectRatioPreset.square,
-              lockAspectRatio: true,
-              cropStyle: CropStyle.circle,
-            ),
-            IOSUiSettings(
-              title: 'برش عکس پروفایل',
-              cropStyle: CropStyle.circle,
-              aspectRatioLockEnabled: true,
-            ),
-          ],
-        );
-        if (cropped != null) {
-          selectedPath = cropped.path;
-        }
-      } catch (cropError) {
-        debugPrint('Crop error (fallback to picked image): $cropError');
-      }
-
-      final file = File(selectedPath);
-      if (!await file.exists()) return;
-
-      final docs = await getApplicationDocumentsDirectory();
-      final profileDir = Directory('${docs.path}/profile');
-      if (!await profileDir.exists()) {
-        await profileDir.create(recursive: true);
-      }
-
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final destination =
-          File('${profileDir.path}/profile_photo_$timestamp.jpg');
-      final saved = await file.copy(destination.path);
-
-      // پاک کردن عکس‌های قبلی پروفایل
-      try {
-        final entries = profileDir.listSync();
-        for (final entry in entries) {
-          if (entry is File && entry.path != saved.path) {
-            try {
-              entry.deleteSync();
-            } catch (_) {}
-          }
-        }
-      } catch (_) {}
-
-      PaintingBinding.instance.imageCache.clear();
-      PaintingBinding.instance.imageCache.clearLiveImages();
-
-      if (context.mounted) {
-        setState(() {
-          photo = saved.path;
-        });
-      }
-    } catch (e) {
-      debugPrint('Profile photo pick error: $e');
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('خطا در انتخاب عکس؛ لطفاً دوباره تلاش کنید.'),
-          ),
-        );
-      }
-    }
-  }
 
   await showModalBottomSheet<void>(
     context: context,
@@ -114,10 +44,10 @@ Future<void> showProfileEditor(BuildContext context) async {
     builder: (sheetContext) => StatefulBuilder(
       builder: (context, setState) => Padding(
         padding: EdgeInsets.fromLTRB(
-          24,
           20,
-          24,
-          MediaQuery.viewInsetsOf(context).bottom + 28,
+          16,
+          20,
+          MediaQuery.viewInsetsOf(context).bottom + 24,
         ),
         child: SingleChildScrollView(
           child: Column(
@@ -132,123 +62,116 @@ Future<void> showProfileEditor(BuildContext context) async {
                 ),
               ),
               const SizedBox(height: 14),
-              const Text(
-                'ویرایش پروفایل',
-                style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold),
+              Text(
+                'پروفایل قهرمان کوچولو',
+                style: AppFonts.kids(
+                  color: const Color(0xFF4A2875),
+                  fontSize: 24,
+                ),
               ),
-              const SizedBox(height: 18),
-              GestureDetector(
-                onTap: () => pickPhoto(setState),
-                child: Stack(
-                  alignment: Alignment.bottomRight,
-                  children: [
-                    Container(
-                      width: 92,
-                      height: 92,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFF6C43D9),
-                          width: 2.5,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF6C43D9).withOpacity(0.2),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: photo != null && File(photo!).existsSync()
-                            ? Image.file(
-                                File(photo!),
-                                fit: BoxFit.cover,
-                                width: 92,
-                                height: 92,
-                              )
-                            : selectedAvatar.startsWith('assets/')
-                                ? Image.asset(
-                                    selectedAvatar,
-                                    fit: BoxFit.cover,
-                                    width: 92,
-                                    height: 92,
-                                  )
-                                : Center(
-                                    child: Text(
-                                      selectedAvatar,
-                                      style: const TextStyle(fontSize: 42),
-                                    ),
-                                  ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF6C43D9),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.camera_alt_rounded,
-                        color: Colors.white,
-                        size: 18,
-                      ),
+              const SizedBox(height: 6),
+              Text(
+                'یکی از ۲۰ آواتار بامزه را انتخاب کنید',
+                style: AppFonts.vazirmatn(
+                  color: const Color(0xFF776A80),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                width: 100,
+                height: 100,
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF8B5CF6), Color(0xFFF472B6)],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF8B5CF6).withOpacity(0.24),
+                      blurRadius: 18,
+                      offset: const Offset(0, 7),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'برای انتخاب یا تغییر عکس ضربه بزنید',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
-              ),
-              const SizedBox(height: 18),
-              const Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  'یا یک آواتار آماده انتخاب کن',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                child: ClipOval(
+                  child: selectedAvatar.startsWith('assets/')
+                      ? Image.asset(selectedAvatar, fit: BoxFit.cover)
+                      : ColoredBox(
+                          color: const Color(0xFFF2ECFF),
+                          child: Center(
+                            child: Text(
+                              selectedAvatar,
+                              style: const TextStyle(fontSize: 44),
+                            ),
+                          ),
+                        ),
                 ),
               ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: List.generate(6, (index) {
+              const SizedBox(height: 18),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: 20,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 5,
+                  mainAxisSpacing: 9,
+                  crossAxisSpacing: 9,
+                ),
+                itemBuilder: (context, index) {
                   final asset = 'assets/avatars/avatar_$index.webp';
-                  final active = selectedAvatar == asset && photo == null;
-                  return GestureDetector(
-                    onTap: () => setState(() {
-                      selectedAvatar = asset;
-                      photo = null;
-                    }),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      width: 54,
-                      height: 54,
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: active
-                              ? const Color(0xFF6C43D9)
-                              : Colors.transparent,
-                          width: 3,
+                  final active = selectedAvatar == asset;
+                  return Semantics(
+                    button: true,
+                    selected: active,
+                    label: 'انتخاب آواتار ${_avatarNames[index]}',
+                    child: Tooltip(
+                      message: _avatarNames[index],
+                      child: GestureDetector(
+                        key: ValueKey('profile_avatar_$index'),
+                        onTap: () => setState(() => selectedAvatar = asset),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: active
+                                ? const Color(0xFFEDE4FF)
+                                : Colors.transparent,
+                            border: Border.all(
+                              color: active
+                                  ? const Color(0xFF6C43D9)
+                                  : const Color(0xFFE2D9EA),
+                              width: active ? 3 : 1,
+                            ),
+                            boxShadow: active
+                                ? [
+                                    BoxShadow(
+                                      color: const Color(0xFF6C43D9)
+                                          .withOpacity(0.25),
+                                      blurRadius: 9,
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: ClipOval(
+                            child: Image.asset(asset, fit: BoxFit.cover),
+                          ),
                         ),
-                      ),
-                      child: ClipOval(
-                        child: Image.asset(asset, fit: BoxFit.cover),
                       ),
                     ),
                   );
-                }),
+                },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               TextField(
                 controller: name,
                 maxLength: 24,
                 decoration: const InputDecoration(
                   labelText: 'نام کودک',
+                  prefixIcon: Icon(Icons.badge_rounded),
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -290,17 +213,25 @@ Future<void> showProfileEditor(BuildContext context) async {
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
-                child: FilledButton(
+                height: 52,
+                child: FilledButton.icon(
                   onPressed: () {
                     GameData.updateProfile(
                       name: name.text,
-                      photoPath: photo ?? '',
                       avatarIcon: selectedAvatar,
                       age: selectedAge,
                     );
                     Navigator.pop(sheetContext);
                   },
-                  child: const Text('ذخیره تغییرات'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF6C43D9),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    textStyle: AppFonts.kids(fontSize: 18),
+                  ),
+                  icon: const Icon(Icons.check_circle_rounded),
+                  label: const Text('ذخیره پروفایل'),
                 ),
               ),
             ],

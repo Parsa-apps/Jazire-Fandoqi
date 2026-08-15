@@ -63,7 +63,6 @@ class GameData {
   static String lastLogin = '';
   static String avatar = '😊';
   static String childName = '';
-  static String profilePhotoPath = '';
   static int childAge = 5;
   static bool onboardingSeen = false;
 
@@ -212,7 +211,6 @@ class GameData {
       lastLogin = prefs.getString('ll') ?? '';
       avatar = _readString('av', '😊', maxLength: 128);
       childName = _readString('childName', '', maxLength: 24).trim();
-      profilePhotoPath = _readString('profilePhotoPath', '', maxLength: 512);
       childAge = _readInt('childAge', 5, min: 3, max: 12);
       // A missing flag means a fresh install. Existing installs that already
       // wrote the flag keep their previous onboarding decision.
@@ -425,7 +423,6 @@ class GameData {
     avatar = asString('av', '😊');
     if (avatar.length > 128) avatar = avatar.substring(0, 128);
     childName = asString('childName', '');
-    profilePhotoPath = asString('profilePhotoPath', '');
     if (childName.length > 24) childName = childName.substring(0, 24);
     childAge = asInt('childAge', 5).clamp(3, 12);
     onboardingSeen = asBool('onboardingSeen', true);
@@ -518,7 +515,6 @@ class GameData {
         'll': lastLogin,
         'av': avatar,
         'childName': childName,
-        'profilePhotoPath': profilePhotoPath,
         'childAge': childAge,
         'onboardingSeen': onboardingSeen,
         'tutorialDoNotShow': tutorialDoNotShow,
@@ -665,7 +661,6 @@ class GameData {
     await prefs.setString('ll', lastLogin);
     await prefs.setString('av', avatar);
     await prefs.setString('childName', childName);
-    await prefs.setString('profilePhotoPath', profilePhotoPath);
     await prefs.setInt('childAge', childAge);
     await prefs.setBool('onboardingSeen', onboardingSeen);
     await prefs.setBool('tutorialDoNotShow', tutorialDoNotShow);
@@ -1151,13 +1146,11 @@ class GameData {
 
   static void updateProfile({
     required String name,
-    String? photoPath,
     String? avatarIcon,
     int? age,
   }) {
     final trimmed = name.trim();
     childName = trimmed.substring(0, trimmed.length.clamp(0, 24).toInt());
-    if (photoPath != null) profilePhotoPath = photoPath;
     if (avatarIcon != null && avatarIcon.isNotEmpty) avatar = avatarIcon;
     if (age != null) childAge = age.clamp(3, 12).toInt();
     _notify();
@@ -1214,7 +1207,7 @@ class GameData {
 
   // ==================== SIBLING / GROWTH EXPORT ====================
   static const List<String> _childProgressKeys = <String>[
-    'stars', 'c', 'l', 's', 'tc', 'tw', 'av', 'childName', 'profilePhotoPath',
+    'stars', 'c', 'l', 's', 'tc', 'tw', 'av', 'childName',
     'childAge', 'dm', 'missionDay', 'mp', 'ss', 'wpm', 'tps', 'ach', 'st',
     'ownedItems', 'hs', 'mrhs', 'qhs', 'lld', 'lscd', 'aiBuddy', 'currentStage',
     'currentIsland', 'cs', 'pbt', 'op', 'stories', 'sfav', 'lastStoryId',
@@ -1255,7 +1248,6 @@ class GameData {
     quizHighScore = 0;
     avatar = '🧒';
     childName = '';
-    profilePhotoPath = '';
     childAge = 5;
     achievements = <String>[];
     stickers = <String>[];

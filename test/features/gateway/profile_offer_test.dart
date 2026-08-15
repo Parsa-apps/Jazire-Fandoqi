@@ -43,4 +43,26 @@ void main() {
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  testWidgets('profile setup contains 20 bundled avatars and no gallery action',
+      (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: const MaterialApp(
+          home: AppGatewayScreen(offerProfileSetup: true),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.byKey(const ValueKey('profile_offer_accept')));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('یکی از ۲۰ آواتار بامزه را انتخاب کنید'), findsOneWidget);
+    expect(find.byKey(const ValueKey('profile_avatar_0')), findsOneWidget);
+    expect(find.byKey(const ValueKey('profile_avatar_19')), findsOneWidget);
+    expect(find.byIcon(Icons.camera_alt_rounded), findsNothing);
+    expect(find.textContaining('گالری'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }
