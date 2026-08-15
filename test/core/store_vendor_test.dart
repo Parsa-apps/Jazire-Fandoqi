@@ -57,7 +57,8 @@ void main() {
   group('billing availability', () {
     test('only known stores can take a payment', () {
       expect(StoreVendor.bazaar.supportsBilling, isTrue);
-      expect(StoreVendor.myket.supportsBilling, isTrue);
+      // Myket purchases stay disabled until the RSA key is configured.
+      expect(StoreVendor.myket.supportsBilling, isFalse);
       // بدون فروشگاه، خرید باید محترمانه رد شود نه اینکه خطای مبهم بدهد.
       expect(StoreVendor.unknown.supportsBilling, isFalse);
     });

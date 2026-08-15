@@ -207,13 +207,6 @@ flutter {
 dependencies {
     // Poolakey is the official open-source Cafe Bazaar billing client.
     implementation "com.github.cafebazaar.Poolakey:poolakey:2.2.0"
-    // Myket's official open-source billing client (same JitPack repo).
-    // The ads-identifier transitive dependency is excluded: this is a kids app
-    // with a "no advertising ID, no tracking" privacy promise, and the billing
-    // flow does not need it.
-    implementation("com.github.myketstore:myket-billing-client:1.19") {
-        exclude group: "com.google.android.gms", module: "play-services-ads-identifier"
-    }
     // AppCompat for uCrop Activity & theme support
     implementation "androidx.appcompat:appcompat:1.7.0"
     implementation "androidx.annotation:annotation:1.7.1"

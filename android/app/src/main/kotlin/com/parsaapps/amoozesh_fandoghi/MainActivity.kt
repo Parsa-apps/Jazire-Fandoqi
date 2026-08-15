@@ -41,10 +41,6 @@ class MainActivity : FlutterFragmentActivity() {
         BazaarBilling(this, BuildConfig.BAZAAR_RSA_PUBLIC_KEY)
     }
 
-    private val myket: MyketBilling by lazy(LazyThreadSafetyMode.NONE) {
-        MyketBilling(applicationContext, BuildConfig.MYKET_RSA_PUBLIC_KEY)
-    }
-
     private val backupPicker = registerForActivityResult(
         ActivityResultContracts.OpenDocument(),
     ) { uri ->
@@ -189,9 +185,9 @@ class MainActivity : FlutterFragmentActivity() {
         when (vendor) {
             StoreVendor.BAZAAR ->
                 bazaar.purchase(activityResultRegistry, productId, payload, reply)
-            StoreVendor.MYKET ->
-                myket.purchase(this, productId, payload, reply)
-            StoreVendor.UNKNOWN -> {
+            // مایکت تا وقتی کلید عمومی RSA در billing.properties تنظیم نشده
+            // پشتیبانی نمی‌شود؛ رفتارش همان فروشگاه ناشناخته است.
+            StoreVendor.MYKET, StoreVendor.UNKNOWN -> {
                 purchaseInProgress = false
                 result.success(noStoreFailure())
             }
@@ -211,8 +207,7 @@ class MainActivity : FlutterFragmentActivity() {
         val reply = singleReply(result)
         when (vendor) {
             StoreVendor.BAZAAR -> bazaar.consume(token, reply)
-            StoreVendor.MYKET -> myket.consume(token, reply)
-            StoreVendor.UNKNOWN -> result.success(noStoreFailure())
+            StoreVendor.MYKET, StoreVendor.UNKNOWN -> result.success(noStoreFailure())
         }
     }
 
@@ -224,8 +219,7 @@ class MainActivity : FlutterFragmentActivity() {
         val reply = singleReply(result)
         when (vendor) {
             StoreVendor.BAZAAR -> bazaar.restore(fullVersionProductId, reply)
-            StoreVendor.MYKET -> myket.restore(fullVersionProductId, reply)
-            StoreVendor.UNKNOWN -> result.success(noStoreFailure())
+            StoreVendor.MYKET, StoreVendor.UNKNOWN -> result.success(noStoreFailure())
         }
     }
 
@@ -297,7 +291,6 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun onDestroy() {
         bazaar.dispose()
-        myket.dispose()
         super.onDestroy()
     }
 }

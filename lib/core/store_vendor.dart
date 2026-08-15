@@ -19,7 +19,14 @@ enum StoreVendor {
   unknown;
 
   /// آیا برای این حالت درگاه پرداخت فعالی داریم؟
-  bool get supportsBilling => this != StoreVendor.unknown;
+  ///
+  /// مایکت تا وقتی کلید عمومی RSA در `android/billing.properties` تنظیم
+  /// نشود پشتیبانی نمی‌شود (خرید با پیام روشن رد می‌شود)؛ فقط کافه‌بازار
+  /// فعال است. با تنظیم کلید، پشتیبانی مایکت دوباره فعال می‌شود.
+  bool get supportsBilling {
+    if (this == StoreVendor.unknown || this == StoreVendor.myket) return false;
+    return true;
+  }
 }
 
 /// تشخیص فروشگاه نصب‌کننده و انتخاب خودکار درگاه پرداخت.
