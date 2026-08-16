@@ -7,6 +7,12 @@ import 'package:flutter/services.dart';
 /// درون‌برنامه‌ای خودش را دارد. کاربر نباید نام فروشگاه را جایی ببیند یا
 /// انتخاب کند؛ خودِ اپ هنگام اجرا تشخیص می‌دهد از کجا نصب شده و همان
 /// درگاه را صدا می‌زند.
+///
+/// از نسخهٔ 6.2.1+2 هر بیلد release مخصوص یک فروشگاه ساخته می‌شود
+/// (flavor بیلد: `bazaar` / `myket`) — بیلد مایکت کتابخانهٔ پرداخت بازار
+/// را ندارد تا permission اختصاصی آن در APK نباشد. در بیلد release، flavor
+/// ملاک قطعی تشخیص است؛ تشخیص نصب‌کننده فقط برای بیلدهای بدون flavor
+/// (راستی‌آزمایی) باقی مانده است.
 enum StoreVendor {
   /// کافه‌بازار (`com.farsitel.bazaar`) → پرداخت با Poolakey.
   bazaar,
@@ -24,8 +30,11 @@ enum StoreVendor {
 
 /// تشخیص فروشگاه نصب‌کننده و انتخاب خودکار درگاه پرداخت.
 ///
-/// منبع حقیقت، `PackageManager.getInstallSourceInfo()` در سمت اندروید است
-/// (روی اندروید ۱۱+، و `getInstallerPackageName()` روی نسخه‌های قدیمی‌تر).
+/// در بیلد release منبع حقیقت، flavor بیلد است که لایهٔ نیتیو از طریق
+/// `storeFlavor` گزارش می‌دهد (هر APK فقط برای همان فروشگاه ساخته و امضا
+/// می‌شود). در بیلدهای بدون flavor، منبع حقیقت
+/// `PackageManager.getInstallSourceInfo()` در سمت اندروید است (روی اندروید
+/// ۱۱+، و `getInstallerPackageName()` روی نسخه‌های قدیمی‌تر).
 /// نتیجه یک‌بار کش می‌شود چون در طول اجرای اپ تغییر نمی‌کند.
 ///
 /// ⚠️ نکتهٔ امنیتی: بستهٔ نصب‌کننده را نمی‌توان جعل کرد (سیستم‌عامل آن را
@@ -56,6 +65,16 @@ class StoreDetector {
       _cached = StoreVendor.bazaar;
       return _cached!;
     }
+    // 🏪 بیلد release مخصوص یک فروشگاه ساخته می‌شود (flavor). اگر flavor
+    // معلوم باشد همان فروشگاه قطعی است و نیازی به تشخیص نصب‌کننده نیست —
+    // این کار تضمین می‌کند بیلد مایکت (که Poolakey را ندارد) هرگز به
+    // درگاه بازار مسیردهی نشود.
+    final flavorVendor = fromFlavor(await _nativeFlavor());
+    if (flavorVendor != null) {
+      _cached = flavorVendor;
+      return _cached!;
+    }
+    // بیلد بدون flavor (مثل خروجی راستی‌آزمایی CI): مثل قبل از نصب‌کننده.
     String installer = '';
     try {
       installer = (await _channel
@@ -69,6 +88,31 @@ class StoreDetector {
     }
     _cached = fromInstallerPackage(installer);
     return _cached!;
+  }
+
+  /// نگاشت خالصِ «flavor بیلد → فروشگاه». بیلدهای release با دو flavor جدا
+  /// ساخته می‌شوند تا APK مایکت حاوی permission اختصاصی پرداخت کافه‌بازار
+  /// نباشد (مایکت چنین APKهایی را رد می‌کند). مقدار null یعنی بیلد بدون
+  /// flavor و باید مثل قبل از نصب‌کننده تشخیص داد.
+  static StoreVendor? fromFlavor(String? flavor) {
+    final id = (flavor ?? '').trim().toLowerCase();
+    if (id == 'bazaar') return StoreVendor.bazaar;
+    if (id == 'myket') return StoreVendor.myket;
+    return null;
+  }
+
+  /// flavor بیلد از سمت نیتیو؛ خالی یعنی بیلد بدون flavor (یا کانال در
+  /// دسترس نبود). هر خطایی نادیده گرفته می‌شود چون تشخیص نصب‌کننده
+  /// fallback قابل قبولی است.
+  static Future<String> _nativeFlavor() async {
+    try {
+      final value = await _channel
+          .invokeMethod<String>('storeFlavor')
+          .timeout(const Duration(seconds: 4));
+      return (value ?? '').trim().toLowerCase();
+    } catch (_) {
+      return '';
+    }
   }
 
   /// نگاشت خالصِ «بستهٔ نصب‌کننده → فروشگاه». جدا نگه داشته شده تا بدون
