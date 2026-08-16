@@ -11,7 +11,6 @@ import 'package:jazireh_fandoghi/features/games/math/ten_frame_game.dart';
 import 'package:jazireh_fandoghi/features/games/math/compare_crocodile_game.dart';
 import 'package:jazireh_fandoghi/features/games/math/clock_hour_game.dart';
 import 'package:jazireh_fandoghi/features/games/math/add_subtract_game.dart';
-import 'package:jazireh_fandoghi/features/games/drawing/drawing_album_screen.dart';
 import 'package:jazireh_fandoghi/features/games/alphabet_academy/dictation_game.dart';
 import 'package:jazireh_fandoghi/shared/widgets/handwriting_score_overlay.dart';
 
