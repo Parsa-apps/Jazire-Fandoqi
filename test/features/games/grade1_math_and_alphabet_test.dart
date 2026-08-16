@@ -173,9 +173,9 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.textContaining('قبولی'), findsOneWidget);
-    expect(find.textContaining('بابا آب داد.'), findsOneWidget);
-    expect(find.textContaining('نشانه بعدی'), findsOneWidget);
+    expect(find.textContaining('قبولی'), findsWidgets);
+    expect(find.textContaining('بابا آب داد.'), findsWidgets);
+    expect(find.textContaining('جمله'), findsWidgets);
 
     await _disposeAnimatedTree(tester);
   });

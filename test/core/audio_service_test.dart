@@ -199,7 +199,9 @@ void main() {
       for (final block in RegExp(r'allographWords: \[(.*?)\]', dotAll: true)
           .allMatches(source)) {
         for (final m in RegExp(r"'([^']*)'").allMatches(block.group(1)!)) {
-          words.add(AudioService.cleanSpokenText(m.group(1)!));
+          final word = AudioService.cleanSpokenText(m.group(1)!);
+          if (word.isEmpty) continue;
+          words.add(word);
         }
       }
 

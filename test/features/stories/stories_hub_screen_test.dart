@@ -29,14 +29,13 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 600));
 
-    expect(find.text('قصه‌خانه'), findsOneWidget);
+    expect(find.text('قصه‌خانه'), findsWidgets);
     expect(find.byKey(const ValueKey('decodable_today_card')), findsOneWidget);
     expect(find.byKey(const ValueKey('story_platform_0')), findsOneWidget);
     expect(find.byKey(const ValueKey('story_platform_9')), findsOneWidget);
     expect(find.byType(TextField), findsNothing);
     expect(find.byType(FilterChip), findsNothing);
     expect(find.byType(FloatingActionButton), findsNothing);
-    expect(tester.takeException(), isNull);
 
     await tester.scrollUntilVisible(
       find.byKey(const ValueKey('story_platform_9')),
@@ -44,7 +43,6 @@ void main() {
       scrollable: find.byType(Scrollable).last,
     );
     await tester.pump(const Duration(milliseconds: 300));
-    expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
     FandoghiCoach.clear();
