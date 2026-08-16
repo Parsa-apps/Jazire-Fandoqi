@@ -27,7 +27,14 @@ if (hasReleaseSigning) {
 // Each store's RSA public key identifies and protects that store's purchase
 // responses. They are public by design, but kept out of source so a release
 // can be configured from the store dashboards without a code change.
-// A single APK carries both keys and picks the right gateway at runtime.
+//
+// 🏪 از نسخهٔ 6.2.1+2 هر فروشگاه بیلد جداگانهٔ خودش را دارد (product flavor):
+//   • `bazaar` → شامل Poolakey است و برای کافه‌بازار منتشر می‌شود.
+//   • `myket`  → Poolakey را ندارد تا APK حاوی permission اختصاصی پرداخت
+//     بازار (com.farsitel.bazaar.permission.PAY_THROUGH_BAZAAR) نباشد؛
+//     مایکت APKهای دارای این دسترسی را رد می‌کند.
+// هر دو flavor همان applicationId و همان کلید امضا را دارند، پس ارتقا در
+// هر دو فروشگاه مثل هم انجام می‌شود.
 def billingProperties = new Properties()
 def billingPropertiesFile = rootProject.file("billing.properties")
 if (billingPropertiesFile.exists()) {
@@ -142,6 +149,24 @@ android {
         ]
     }
 
+    // 🏪 هر فروشگاه بیلد release جداگانه دارد تا APK مایکت حاوی permission
+    // اختصاصی پرداخت کافه‌بازار نباشد (مایکت چنین فایل‌هایی را رد می‌کند).
+    // Poolakey فقط در flavor بازار وارد بیلد می‌شود (bazaarImplementation).
+    // در debug هم flavor وجود دارد ولی مسیر پرداخت سندباکس تغییری نمی‌کند.
+    flavorDimensions "store"
+    productFlavors {
+        bazaar {
+            dimension "store"
+            buildConfigField "String", "STORE_FLAVOR", "\"bazaar\""
+            buildConfigField "boolean", "IS_BAZAAR_FLAVOR", "true"
+        }
+        myket {
+            dimension "store"
+            buildConfigField "String", "STORE_FLAVOR", "\"myket\""
+            buildConfigField "boolean", "IS_BAZAAR_FLAVOR", "false"
+        }
+    }
+
     signingConfigs {
         release {
             if (hasReleaseSigning) {
@@ -186,8 +211,11 @@ android {
 }
 
 gradle.taskGraph.whenReady { taskGraph ->
+    // با flavor، taskهای release به شکل assembleBazaarRelease /
+    // assembleMyketRelease هستند؛ هر task با پسوند Release پوشش داده می‌شود.
     def releaseRequested = taskGraph.allTasks.any { task ->
-        task.path == ":app:assembleRelease" || task.path == ":app:bundleRelease"
+        task.name == "assembleRelease" || task.name == "bundleRelease" ||
+            task.name.matches("assemble.*Release") || task.name.matches("bundle.*Release")
     }
     if (releaseRequested && !hasReleaseSigning && !allowVerificationSigning) {
         throw new GradleException(
@@ -199,6 +227,64 @@ gradle.taskGraph.whenReady { taskGraph ->
 
 flutter {
     source = "../.."
+}
+
+// ---------------------------------------------------------------------
+// Backward-compatible release entry points
+// ---------------------------------------------------------------------
+// The active GitHub workflow predates the store flavors and still invokes
+// `flutter build apk --release` / `flutter build appbundle --release` without
+// `--flavor`. AGP's aggregate release tasks build the flavored variants, but
+// Flutter then looks for the old unflavored app-release.apk/app-release.aab
+// and exits with "failed to produce" because only app-<flavor>-release.* exists.
+// Attach compatibility copies to the aggregate tasks instead of registering
+// duplicate task names (AGP already owns assembleRelease and bundleRelease):
+//   * generic APK -> Myket (the store that accepts an APK)
+//   * generic AAB -> Bazaar (the store release distributed as an AAB)
+//
+// The copies deliberately use the legacy names expected by both Flutter and
+// `.github/workflows/build-apk.yml`. Explicit flavored builds remain available
+// and keep their normal app-<flavor>-release.* output names.
+tasks.matching { it.name == "assembleRelease" }.configureEach {
+    doLast {
+        def sourceApk = layout.buildDirectory
+            .file("outputs/flutter-apk/app-myket-release.apk").get().asFile
+        def legacyApk = layout.buildDirectory
+            .file("outputs/flutter-apk/app-release.apk").get().asFile
+        if (!sourceApk.exists()) {
+            throw new GradleException("Expected Myket APK was not produced: ${sourceApk}")
+        }
+        copy {
+            from sourceApk
+            into legacyApk.parentFile
+            rename { legacyApk.name }
+        }
+        logger.lifecycle("Compatibility APK: ${legacyApk}")
+    }
+}
+
+tasks.matching { it.name == "bundleRelease" }.configureEach {
+    doLast {
+        // AGP puts flavored bundles under bazaarRelease/. Keep the fallback
+        // name for compatibility across the AGP versions supported by Flutter.
+        def bundleDir = layout.buildDirectory.dir("outputs/bundle/bazaarRelease")
+            .get().asFile
+        def sourceAab = [
+            new File(bundleDir, "app-bazaar-release.aab"),
+            new File(bundleDir, "app.aab"),
+        ].find { it.exists() }
+        def legacyAab = layout.buildDirectory
+            .file("outputs/bundle/release/app-release.aab").get().asFile
+        if (sourceAab == null) {
+            throw new GradleException("Expected Bazaar AAB was not produced under: ${bundleDir}")
+        }
+        copy {
+            from sourceAab
+            into legacyAab.parentFile
+            rename { legacyAab.name }
+        }
+        logger.lifecycle("Compatibility AAB: ${legacyAab}")
+    }
 }
 
 // GitHub release builds are also the project's automated QA runner. Keeping
@@ -225,7 +311,7 @@ if (System.getenv("GITHUB_ACTIONS") == "true") {
             qualityMarker.text = "passed\n"
         }
     }
-    tasks.matching { it.name == "assembleRelease" || it.name == "bundleRelease" }
+    tasks.matching { it.name.matches("assemble.*Release") || it.name.matches("bundle.*Release") }
         .configureEach { dependsOn(ciQualityGate) }
 }
 
@@ -344,20 +430,26 @@ def repackMyketAar = tasks.register("repackMyketAar") {
     }
 }
 
-// در مسیر runtime به‌جای AAR اصلی مایکت، نسخهٔ بازبسته‌بندی‌شده قرار
-// می‌گیرد تا تداخل کلاس‌های AIDL با Poolakey پیش نیاید.
-configurations {
-    debugRuntimeClasspath {
-        exclude group: myketBillingModule.group, module: myketBillingModule.module
-    }
-    releaseRuntimeClasspath {
-        exclude group: myketBillingModule.group, module: myketBillingModule.module
+// در flavor بازار، AAR اصلی مایکت از runtime حذف و نسخهٔ بازبسته‌بندی‌شده
+// جایگزین می‌شود تا تداخل کلاس‌های AIDL با Poolakey پیش نیاید.
+// ⚠️ فقط در flavor بازار! بیلد مایکت Poolakey را ندارد، پس باید همان AAR
+// اصلی را نگه دارد؛ نسخهٔ بازبسته‌بندی‌شده کلاس‌های com.android.vending.
+// billing.* را حذف کرده (کپی Poolakey جایش بود) و بدون Poolakey باعث
+// NoClassDefFoundError هنگام پرداخت مایکت می‌شد.
+configurations.configureEach { conf ->
+    def confName = conf.name
+    if (confName == "bazaarDebugRuntimeClasspath" ||
+        confName == "bazaarReleaseRuntimeClasspath") {
+        conf.exclude group: myketBillingModule.group, module: myketBillingModule.module
     }
 }
 
 dependencies {
     // Poolakey is the official open-source Cafe Bazaar billing client.
-    implementation "com.github.cafebazaar.Poolakey:poolakey:2.2.0"
+    // فقط در flavor بازار (bazaarImplementation): AAR آن permission اختصاصی
+    // بازار را به مانیفست نهایی اضافه می‌کند و مایکت APKهای دارای آن را رد
+    // می‌کند؛ بنابراین بیلد مایکت اصلاً این کتابخانه را ندارد.
+    bazaarImplementation "com.github.cafebazaar.Poolakey:poolakey:2.2.0"
     // Myket's official open-source billing client (same JitPack repo).
     // The ads-identifier transitive dependency is excluded: this is a kids app
     // with a "no advertising ID, no tracking" privacy promise, and the billing
@@ -365,8 +457,8 @@ dependencies {
     implementation("com.github.myketstore:myket-billing-client:${myketBillingVersion}") {
         exclude group: "com.google.android.gms", module: "play-services-ads-identifier"
     }
-    // نسخهٔ بازبسته‌بندی‌شدهٔ AAR مایکت برای runtime (توضیح بالا).
-    runtimeOnly files(repackMyketAar)
+    // نسخهٔ بازبسته‌بندی‌شدهٔ AAR مایکت فقط برای runtime در flavor بازار.
+    bazaarRuntimeOnly files(repackMyketAar)
     // دیالوگ نصب مایکت در SDK از BottomSheet متریال استفاده می‌کند؛ چون
     // AAR بازبسته‌بندی‌شده POM ندارد، متریال باید صریحاً اینجا بیاید.
     implementation "com.google.android.material:material:1.12.0"

@@ -13,6 +13,10 @@ import ir.cafebazaar.poolakey.request.PurchaseRequest
 /**
  * 🏪 درگاه پرداخت کافه‌بازار (Poolakey).
  *
+ * ⚠️ این فایل فقط در flavor بازار (`src/bazaar/kotlin`) کامپایل می‌شود تا
+ * APK مایکت permission اختصاصی پرداخت بازار را نداشته باشد. در flavor
+ * مایکت، کلاس هم‌نامِ stub در `src/myket/kotlin` جایگزین می‌شود.
+ *
  * هم‌شکلِ [MyketBilling] عمل می‌کند تا [MainActivity] بدون دانستن نام
  * فروشگاه فقط یکی از این دو را صدا بزند. رفتار قبلی اپ عیناً حفظ شده:
  * خرید release فقط بعد از تأیید امضای RSA توسط Poolakey پذیرفته می‌شود.
