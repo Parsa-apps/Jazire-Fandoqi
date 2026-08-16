@@ -78,13 +78,28 @@ enum class StoreVendor(val packageName: String) {
         /**
          * فروشگاه مؤثر برای پرداخت.
          *
-         * اول بستهٔ نصب‌کننده ملاک است. اگر ناشناخته بود (نصب مستقیم APK یا
-         * فروشگاهی که پشتیبانی نمی‌کنیم) و فقط **یکی** از دو فروشگاه روی
-         * دستگاه نصب باشد، همان انتخاب می‌شود تا کاربری که APK را دستی
-         * نصب کرده ولی فروشگاه را دارد بتواند خرید کند. اگر هیچ‌کدام یا
-         * هر دو نصب باشند، مبهم است و UNKNOWN برمی‌گردد.
+         * 🏪 از نسخهٔ 6.2.1+2 هر بیلد release مخصوص یک فروشگاه ساخته می‌شود
+         * (flavor). در این حالت flavor ملاک قطعی است: بیلد مایکت اصلاً
+         * Poolakey را ندارد و هرگز نباید به درگاه بازار مسیردهی شود — حتی
+         * اگر کاربر بازار را هم نصب داشته باشد (در غیر این صورت به کلاس‌هایی
+         * می‌رسد که در این بیلد وجود ندارند).
+         *
+         * در debug و بیلدهای بدون flavor (راستی‌آزمایی)، مثل قبل: اول بستهٔ
+         * نصب‌کننده ملاک است؛ اگر ناشناخته بود (نصب مستقیم APK) و فقط یکی از
+         * دو فروشگاه روی دستگاه نصب باشد، همان انتخاب می‌شود.
          */
         fun resolve(context: Context): StoreVendor {
+            if (!BuildConfig.DEBUG) {
+                return when (BuildConfig.STORE_FLAVOR) {
+                    "bazaar" -> BAZAAR
+                    "myket" -> MYKET
+                    else -> fallbackResolve(context)
+                }
+            }
+            return fallbackResolve(context)
+        }
+
+        private fun fallbackResolve(context: Context): StoreVendor {
             val fromInstaller = fromInstaller(installerPackage(context))
             if (fromInstaller != UNKNOWN) return fromInstaller
             val hasBazaar = isInstalled(context, BAZAAR_PACKAGE)
