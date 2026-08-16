@@ -58,8 +58,8 @@ SLIDES = (
     Slide(
         "1_home.png",
         "Screenshot_20260816_100515_com.parsaapps.amoozesh_fandoghi.jpg",
-        "دنیایی از بازی و یادگیری",
-        "همراه فندقی در یک ماجراجویی تازه",
+        "یادگیری فارسی با بازی و قصه",
+        "ویژه کودکان ۳ تا ۸ سال",
         "#0875D1",
         "#24C7D9",
         "#FFCD58",
@@ -67,9 +67,9 @@ SLIDES = (
     ),
     Slide(
         "2_learning.png",
-        "Screenshot_20260816_101453_com.parsaapps.amoozesh_fandoghi.jpg",
+        "Screenshot_20260816_114013_com.parsaapps.amoozesh_fandoghi.jpg",
         "آموزش فارسی، قدم‌به‌قدم",
-        "الفبا، املا، داستان، واژگان و صدا",
+        "تمرین شنیداری، املا، واژگان و صدا",
         "#F06A3C",
         "#FFB84E",
         "#FFF0A7",
@@ -87,9 +87,9 @@ SLIDES = (
     ),
     Slide(
         "4_stories.png",
-        "Screenshot_20260816_101039_com.parsaapps.amoozesh_fandoghi.jpg",
-        "قصه‌های شنیدنی کودکانه",
-        "داستان‌های جذاب در یک مسیر مرحله‌ای",
+        "Screenshot_20260816_114047_com.parsaapps.amoozesh_fandoghi.jpg",
+        "قصه‌های تعاملی و شنیدنی",
+        "با صدا، واژه‌های طلایی و جایزه",
         "#E84E82",
         "#FF8A76",
         "#FFD46C",
@@ -97,9 +97,9 @@ SLIDES = (
     ),
     Slide(
         "5_progress.png",
-        "Screenshot_20260816_100543_com.parsaapps.amoozesh_fandoghi.jpg",
+        "Screenshot_20260816_114150_com.parsaapps.amoozesh_fandoghi.jpg",
         "رشد کودک را دنبال کنید",
-        "گزارش روشن از یادگیری و زمان استفاده",
+        "کارنامه روشن از یادگیری و پیشرفت",
         "#078B87",
         "#35C7B1",
         "#C9F76F",
@@ -247,11 +247,12 @@ def add_edge_decor(canvas: Image.Image, index: int, accent: str) -> None:
     canvas.alpha_composite(layer)
 
 
-def add_brand_badge(canvas: Image.Image, index: int) -> None:
+def add_brand_badge(canvas: Image.Image) -> None:
+    """Add a compact brand mark that stays legible at store-thumbnail size."""
     layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(layer)
 
-    badge_w, badge_h = 380, 92
+    badge_w, badge_h = 330, 92
     x, y = (WIDTH - badge_w) // 2, 52
     shadow = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
     shadow_draw = ImageDraw.Draw(shadow)
@@ -271,20 +272,6 @@ def add_brand_badge(canvas: Image.Image, index: int) -> None:
     text_y = y + (badge_h - (box[3] - box[1])) // 2 - box[1]
     draw.text((x + badge_w - 98, text_y), badge_text, font=badge_font, fill="#17304F", anchor="ra")
 
-    # Persian numerals read more naturally in the ordered upload strip.
-    numerals = ("۰۱", "۰۲", "۰۳", "۰۴", "۰۵", "۰۶", "۰۷", "۰۸")
-    count_font = font(FONT_BOLD, 24)
-    draw.ellipse((x + 15, y + 17, x + 73, y + 75), fill=(23, 48, 79, 22))
-    count_text = numerals[index - 1]
-    count_box = draw.textbbox((0, 0), count_text, font=count_font)
-    draw.text(
-        (x + 44, y + 46 - (count_box[3] - count_box[1]) / 2 - count_box[1]),
-        count_text,
-        font=count_font,
-        fill="#17304F",
-        anchor="ma",
-    )
-
     canvas.alpha_composite(layer)
 
 
@@ -292,7 +279,7 @@ def add_headline(canvas: Image.Image, slide: Slide) -> None:
     layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(layer)
 
-    title_font, title = fitted_font(draw, slide.title, FONT_BOLD, 73, 940, 55)
+    title_font, title = fitted_font(draw, slide.title, FONT_BOLD, 82, 940, 58)
     title_box = draw.textbbox((0, 0), title, font=title_font)
     title_h = title_box[3] - title_box[1]
     title_y = 223 - title_box[1]
@@ -301,7 +288,7 @@ def add_headline(canvas: Image.Image, slide: Slide) -> None:
     draw.text((WIDTH / 2 + 2, title_y + 5), title, font=title_font, fill=(8, 25, 57, 78), anchor="ma")
     draw.text((WIDTH / 2, title_y), title, font=title_font, fill=(255, 255, 255, 255), anchor="ma")
 
-    subtitle_font, subtitle = fitted_font(draw, slide.subtitle, FONT_REGULAR, 35, 880, 28)
+    subtitle_font, subtitle = fitted_font(draw, slide.subtitle, FONT_REGULAR, 40, 880, 32)
     subtitle_box = draw.textbbox((0, 0), subtitle, font=subtitle_font)
     subtitle_y = 338 - subtitle_box[1]
     draw.text((WIDTH / 2, subtitle_y), subtitle, font=subtitle_font, fill=(255, 255, 255, 225), anchor="ma")
@@ -317,6 +304,13 @@ def build_phone(capture_path: Path, rotation: float) -> Image.Image:
     screen_w = 754
     frame = 18
     screenshot = Image.open(capture_path).convert("RGB")
+
+    # Device captures include an Android status bar. It is system chrome rather
+    # than part of the product story, and its clock/icons become visual noise in
+    # a marketing frame. All current captures share the same 1080 px baseline.
+    status_bar_h = round(96 * screenshot.width / 1080)
+    screenshot = screenshot.crop((0, status_bar_h, screenshot.width, screenshot.height))
+
     screen_h = round(screenshot.height * screen_w / screenshot.width)
     screenshot = screenshot.resize((screen_w, screen_h), Image.Resampling.LANCZOS).convert("RGBA")
 
@@ -385,7 +379,7 @@ def build_slide(slide: Slide, index: int) -> Path:
     canvas = vertical_gradient(slide.top, slide.bottom)
     add_glows(canvas, slide)
     add_edge_decor(canvas, index, slide.accent)
-    add_brand_badge(canvas, index)
+    add_brand_badge(canvas)
     add_headline(canvas, slide)
     add_phone(canvas, slide)
 
@@ -414,9 +408,14 @@ def main() -> None:
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     expected = {slide.output for slide in SLIDES}
-    # Prevent stale screenshots from accidentally being uploaded with the set.
-    for old in OUTPUT_DIR.glob("*.png"):
-        if old.name not in expected:
+    # Prevent raw captures or stale exports from accidentally being uploaded
+    # with the final set. Source captures belong in assets/screeen, never here.
+    for old in OUTPUT_DIR.iterdir():
+        if (
+            old.is_file()
+            and old.suffix.lower() in {".png", ".jpg", ".jpeg"}
+            and old.name not in expected
+        ):
             old.unlink()
 
     print(f"Building {len(SLIDES)} store screenshots...")
