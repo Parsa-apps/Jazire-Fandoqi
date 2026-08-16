@@ -13,10 +13,15 @@ import java.util.UUID
 
 /** Native multi-store billing bridge (Cafe Bazaar + Myket).
  *
- * The app ships to several Iranian stores. At runtime it asks the OS which
- * store installed it ([StoreVendor.resolve]) and routes every billing call to
- * that store's gateway — Poolakey for Bazaar, Myket Billing Client for Myket.
- * The store name is never shown to the user and is never chosen by hand.
+ * The app ships to several Iranian stores. Each release build targets exactly
+ * one store (Gradle flavor `bazaar` / `myket`): the Myket build contains no
+ * Poolakey at all so its APK does not carry Cafe Bazaar's private payment
+ * permission (which Myket rejects). In release, [StoreVendor.resolve] returns
+ * the flavor's store; in debug it falls back to the installer package.
+ *
+ * Every billing call is routed to that store's gateway — Poolakey for Bazaar,
+ * Myket Billing Client for Myket. The store name is never shown to the user
+ * and is never chosen by hand.
  *
  * A release purchase is accepted only after the store SDK validates the RSA
  * signature of the receipt.
@@ -80,6 +85,10 @@ class MainActivity : FlutterFragmentActivity() {
                     "restore" -> restore(result)
                     // Flutter از این برای انتخاب متن/رفتار مناسب استفاده می‌کند.
                     "installerPackage" -> result.success(StoreVendor.installerPackage(applicationContext))
+                    // flavor بیلد (bazaar/myket). بیلدهای release مخصوص یک
+                    // فروشگاه ساخته می‌شوند؛ Dart مسیریابی درگاه را بر همین
+                    // مبنا قطعی می‌کند (نگاه کنید به StoreDetector.detect).
+                    "storeFlavor" -> result.success(BuildConfig.STORE_FLAVOR)
                     "storeVendor" -> result.success(vendor.name.lowercase())
                     "openStoreReview" -> openStoreReview(result)
                     // نام قدیمی، برای سازگاری با نسخه‌های قبلی Dart.

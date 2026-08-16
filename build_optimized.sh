@@ -4,11 +4,16 @@
 # Beautiful audio preserved: YES
 # Functionality preserved: FULLY
 
+# 🏪 فروشگاه هدف: bazaar (پیش‌فرض) یا myket.
+# بیلد مایکت بدون Poolakey ساخته می‌شود تا permission پرداخت بازار در APK
+# نباشد (مایکت آن را رد می‌کند): STORE_FLAVOR=myket ./build_optimized.sh
+STORE_FLAVOR="${STORE_FLAVOR:-bazaar}"
+
 echo "=== PROFESSIONAL APP SIZE REDUCTION ==="
-echo "Building optimized release APK..."
+echo "Building optimized release APK (flavor: ${STORE_FLAVOR})..."
 
 # Build with split ABI, minify, and split debug info
-flutter build apk --release --split-per-abi --obfuscate --split-debug-info=symbols/
+flutter build apk --release --flavor "$STORE_FLAVOR" --split-per-abi --obfuscate --split-debug-info=symbols/
 
 echo "=== OPTIMIZED BUILDS COMPLETE ==="
 echo "Files in build/app/outputs/flutter-apk/:"

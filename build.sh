@@ -4,6 +4,11 @@
 set -Eeuo pipefail
 
 BUILD_MODE="${BUILD_MODE:-debug}"
+# 🏪 فروشگاه هدف بیلد release: bazaar (پیش‌فرض) یا myket.
+# بیلد مایکت باید جدا ساخته شود تا permission پرداخت بازار در APK نباشد
+# (مایکت APKهای دارای com.farsitel.bazaar.permission.PAY_THROUGH_BAZAAR را رد می‌کند):
+#   STORE_FLAVOR=myket BUILD_MODE=release ./build.sh
+STORE_FLAVOR="${STORE_FLAVOR:-bazaar}"
 PROJECT_NAME="amoozesh_fandoghi"
 FAILED=0
 
@@ -84,15 +89,26 @@ if [[ "$BUILD_MODE" == "release" ]]; then
     ok 'فایل امضای انتشار پیدا شد → استفاده از کلید اصلی'
   fi
 
-  log 'ساخت APK (split per ABI + obfuscation)...'
-  if ! flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build/symbols; then
+  log "ساخت APK (flavor=${STORE_FLAVOR}, split per ABI + obfuscation)..."
+  if ! flutter build apk --release --flavor "$STORE_FLAVOR" --split-per-abi --obfuscate --split-debug-info=build/symbols; then
     fail 'ساخت APK شکست خورد'
     exit 1
   fi
   log 'ساخت AAB...'
-  if ! flutter build appbundle --release --obfuscate --split-debug-info=build/symbols; then
+  if ! flutter build appbundle --release --flavor "$STORE_FLAVOR" --obfuscate --split-debug-info=build/symbols; then
     fail 'ساخت AAB شکست خورد'
     exit 1
+  fi
+  if [[ "$STORE_FLAVOR" == "myket" ]]; then
+    # اطمینان نهایی: permission پرداخت بازار نباید در APK مایکت باشد.
+    BAD_PERM=$(for apk in build/app/outputs/flutter-apk/*.apk; do
+      unzip -p "$apk" AndroidManifest.xml 2>/dev/null | strings | grep -i "PAY_THROUGH_BAZAAR" || true
+    done)
+    if [[ -n "$BAD_PERM" ]]; then
+      fail 'دسترسی پرداخت کافه‌بازار در APK مایکت پیدا شد — این فایل در مایکت رد می‌شود!'
+      exit 1
+    fi
+    ok 'APK مایکت بدون دسترسی پرداخت بازار است'
   fi
 
   TOTAL=0

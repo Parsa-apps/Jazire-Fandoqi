@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 🏪 مانیفست مخصوص flavor مایکت.
+     در این flavor کتابخانهٔ Poolakey (پرداخت کافه‌بازار) اصلاً وارد بیلد
+     نمی‌شود؛ این خط صرفاً بیمه است: اگر روزی وابستگی‌ای به‌صورت transitive
+     این permission را به مانیفست نهایی اضافه کند، در بیلد مایکت حذف می‌شود
+     تا مایکت APK را به دلیل «دسترسی غیرمجاز» رد نکند. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission
+        android:name="com.farsitel.bazaar.permission.PAY_THROUGH_BAZAAR"
+        tools:node="remove" />
+
+</manifest>

@@ -32,6 +32,30 @@
   قرار گیرد.
 - **لینک حریم خصوصی:** اجباری است؛ از URL هاست‌شده‌ی `PRIVACY_POLICY_FA.md`.
 
+## ساخت فایل مخصوص مایکت (مهم!)
+
+⚠️ از نسخهٔ 6.2.1+2 هر فروشگاه بیلد release جداگانه دارد. فایل مایکت باید
+با flavor مخصوصش ساخته شود تا **permission پرداخت کافه‌بازار در APK نباشد**؛
+مایکت هر فایلی با دسترسی `com.farsitel.bazaar.permission.PAY_THROUGH_BAZAAR`
+را با خطای «دسترسی غیرمجاز» رد می‌کند.
+
+```bash
+flutter build apk --release --flavor myket
+# خروجی: build/app/outputs/flutter-apk/app-myket-release.apk
+```
+
+بررسی سریع قبل از آپلود:
+
+```bash
+unzip -p build/app/outputs/flutter-apk/app-myket-release.apk AndroidManifest.xml \
+  | strings | grep -i "PAY_THROUGH_BAZAAR" \
+  || echo "✅ بدون دسترسی بازار — آمادهٔ آپلود"
+```
+
+> بیلد بازار (`--flavor bazaar`) مثل قبل هر دو درگاه را همراه دارد و فقط
+> برای کافه‌بازار است؛ بیلد مایکت فقط درگاه مایکت را دارد. همان package و
+> همان کلید امضا در هر دو استفاده می‌شود، پس ارتقا و نصب مشکلی ندارد.
+
 ## ترتیب پیشنهادی تکمیل پیشخان
 
 1. عنوان + توضیح کوتاه + توضیحات کامل (از `STORE_LISTING.md`)

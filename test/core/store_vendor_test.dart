@@ -67,4 +67,28 @@ void main() {
       expect(StoreDetector.myketPackage, 'ir.mservices.market');
     });
   });
+
+  group('store mapping from the build flavor', () {
+    // از نسخهٔ 6.2.1+2 هر فروشگاه بیلد release جداگانه دارد تا APK مایکت
+    // حاوی permission پرداخت بازار نباشد و مایکت آن را رد نکند.
+    test('maps each flavor to its vendor', () {
+      expect(StoreDetector.fromFlavor('bazaar'), StoreVendor.bazaar);
+      expect(StoreDetector.fromFlavor('myket'), StoreVendor.myket);
+    });
+
+    test('is tolerant of casing and stray whitespace', () {
+      expect(StoreDetector.fromFlavor('  BAZAAR  '), StoreVendor.bazaar);
+      expect(StoreDetector.fromFlavor('MyKet'), StoreVendor.myket);
+    });
+
+    test('treats an absent or unknown flavor as unflavored', () {
+      // بیلد بدون flavor (راستی‌آزمایی CI) → تشخیص نصب‌کننده fallback می‌شود.
+      expect(StoreDetector.fromFlavor(null), isNull);
+      expect(StoreDetector.fromFlavor(''), isNull);
+      expect(StoreDetector.fromFlavor('   '), isNull);
+      // نام‌هایی که flavor نیستند نباید به درگاه اشتباه بروند.
+      expect(StoreDetector.fromFlavor('com.farsitel.bazaar'), isNull);
+      expect(StoreDetector.fromFlavor('some-other-flavor'), isNull);
+    });
+  });
 }

@@ -81,9 +81,26 @@ keystore در `.gitignore` قرار دارند.
 flutter build apk --debug
 ```
 
-برای نسخه‌ی release (بهینه‌تر، برای انتشار):
+> 🏪 از نسخهٔ 6.2.1+2 هر فروشگاه بیلد release جداگانهٔ خودش را دارد
+> (flavor). بیلد مایکت کتابخانهٔ پرداخت کافه‌بازار (Poolakey) را ندارد تا
+> APK حاوی permission اختصاصی بازار نباشد — مایکت APKهای دارای دسترسی
+> `com.farsitel.bazaar.permission.PAY_THROUGH_BAZAAR` را رد می‌کند.
+
+**برای انتشار در کافه‌بازار** (با درگاه پرداخت Poolakey):
 ```bash
-flutter build apk --release
+flutter build apk --release --flavor bazaar
+flutter build appbundle --release --flavor bazaar
+```
+
+**برای انتشار در مایکت** (بدون هیچ دسترسی/کد پرداخت بازار):
+```bash
+flutter build apk --release --flavor myket
+```
+
+اگر `--flavor` داده نشود، flavor پیش‌فرض (`bazaar`) ساخته می‌شود؛ برای
+انتشار در مایکت حتماً `--flavor myket` بدهید:
+```bash
+flutter build apk --release   # = همان --flavor bazaar
 ```
 
 ### ۶. یافتن فایل APK
@@ -91,7 +108,14 @@ flutter build apk --release
 فایل APK در این مسیرها قرار دارد:
 
 - **دیباگ**: `build/app/outputs/flutter-apk/app-debug.apk`
-- **release**: `build/app/outputs/flutter-apk/app-release.apk`
+- **release بازار**: `build/app/outputs/flutter-apk/app-bazaar-release.apk`
+- **release مایکت**: `build/app/outputs/flutter-apk/app-myket-release.apk`
+
+> فایل مایکت را می‌توانید با این دستور از نظر نبودِ دسترسی بازار بررسی کنید:
+> ```bash
+> unzip -p build/app/outputs/flutter-apk/app-myket-release.apk AndroidManifest.xml | strings | grep -i "PAY_THROUGH_BAZAAR" || echo "✅ بدون دسترسی بازار — قابل آپلود در مایکت"
+> ```
+> (خروجی درست فقط همان ✅ است؛ اگر نام دسترسی چاپ شود بیلد اشتباه است.)
 
 ## 📱 نصب روی گوشی
 
@@ -141,6 +165,23 @@ flutter clean
 flutter pub get
 flutter build apk --release
 ```
+
+### خطای مایکت: «فایل APK شامل دسترسی‌های غیرمجاز است» (`PAY_THROUGH_BAZAAR`)
+
+این خطا یعنی APK با کتابخانهٔ پرداخت کافه‌بازار (Poolakey) ساخته شده که
+permission اختصاصی بازار را به مانیفست اضافه می‌کند و مایکت آن را رد می‌کند.
+
+**راه حل:** بیلد مایکت را با flavor مخصوصش بسازید (Poolakey در آن وجود
+ندارد):
+```bash
+flutter clean
+flutter pub get
+flutter build apk --release --flavor myket
+```
+خروجی `app-myket-release.apk` را آپلود کنید. برای اطمینان، قبل از آپلود
+بررسی کنید نام دسترسی در APK نباشد (بخش ۶ همین سند). یادتان باشد
+`--flavor myket` فراموش نشود: `flutter build apk --release` بدون flavor
+خروجی **بازار** را می‌سازد و دوباره رد می‌شود.
 
 ### خطای `Java not found`:
 مطمئن شوید Java JDK 17 یا بالاتر نصب است:
