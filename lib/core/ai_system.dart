@@ -63,7 +63,12 @@ class AI {
     return 'اشکال نداره! تمرین کن! 🎯';
   }
 
+  static bool get hasAnyPractice =>
+      GameData.totalCorrect + GameData.totalWrong > 0 ||
+      GameData.skills.values.any((value) => value > 0);
+
   static String weakSkill() {
+    if (!hasAnyPractice) return 'هنوز تمرینی ثبت نشده';
     final sorted = GameData.skills.entries.toList()
       ..sort((a, b) => a.value.compareTo(b.value));
     final names = skillNames;
@@ -71,6 +76,7 @@ class AI {
   }
 
   static String weakSkillKey() {
+    if (!hasAnyPractice) return 'alphabet';
     final sorted = GameData.skills.entries.toList()
       ..sort((a, b) => a.value.compareTo(b.value));
     return sorted.first.key;
@@ -187,8 +193,8 @@ class AI {
   static Map<String, double> predictOneMonth() {
     final result = <String, double>{};
     GameData.skills.forEach((key, value) {
-      final progress = value >= 10 ? 0.9 : value / 10;
-      result[skillNames[key] ?? key] = (progress * 100).clamp(5.0, 98.0);
+      final progress = value <= 0 ? 0.0 : (value / 20.0).clamp(0.0, 1.0);
+      result[skillNames[key] ?? key] = progress * 100;
     });
     return result;
   }

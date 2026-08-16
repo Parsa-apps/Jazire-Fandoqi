@@ -12,7 +12,9 @@ import '../../core/story_audio_service.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';
+import '../../core/growth/persian_digits.dart';
 import '../../core/learning_content/children_stories_data.dart';
+import '../../core/literacy/story_read_along.dart';
 import '../../core/logger_service.dart';
 import '../../shared/widgets/child_touch_target.dart';
 import '../../shared/widgets/particle_celebration.dart';
@@ -46,8 +48,10 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
   StreamSubscription<PlayerState>? _playerStateSub;
 
   int _highlightedLineIndex = 0;
+  int _highlightedWordIndex = 0;
   double _audioProgress = 0.0;
   Duration _pageDuration = Duration.zero;
+  final Set<String> _awardedWords = <String>{};
 
   @override
   void initState() {
@@ -95,10 +99,11 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
     if (pageIndex < 0 || pageIndex >= widget.story.pages.length) return;
 
     final page = widget.story.pages[pageIndex];
-    final lines = _splitStoryLines(page.text);
+    final lines = StoryReadAlong.sentences(page.text);
 
     setState(() {
       _highlightedLineIndex = 0;
+      _highlightedWordIndex = 0;
       _audioProgress = 0.0;
       _isSpeaking = true;
     });
@@ -119,12 +124,19 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
         if (totalMs > 0) {
           final progress =
               (pos.inMilliseconds / totalMs).clamp(0.0, 1.0);
-          final activeIndex = _calculateActiveLineIndex(lines, progress);
+          final activeIndex = StoryReadAlong.activeIndex(lines, progress);
+          final local = StoryReadAlong.localProgress(lines, progress, activeIndex);
+          final words = activeIndex < lines.length
+              ? StoryReadAlong.words(lines[activeIndex])
+              : const <String>[];
+          final wordIndex = StoryReadAlong.activeIndex(words, local);
           if (activeIndex != _highlightedLineIndex ||
+              wordIndex != _highlightedWordIndex ||
               (progress - _audioProgress).abs() > 0.02) {
             setState(() {
               _audioProgress = progress;
               _highlightedLineIndex = activeIndex;
+              _highlightedWordIndex = wordIndex;
             });
           }
         }
@@ -152,16 +164,20 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
       try {
         for (int i = 0; i < lines.length; i++) {
           if (!mounted || !_isSpeaking) break;
+          final words = StoryReadAlong.words(lines[i]);
           setState(() {
             _highlightedLineIndex = i;
+            _highlightedWordIndex = 0;
             _audioProgress = lines.isEmpty ? 1.0 : (i / lines.length);
           });
-          final line = lines[i];
-          await AudioService.speak(line);
-          final wordCount = line.split(' ').length;
-          final waitDuration =
-              Duration(milliseconds: (wordCount * 450).clamp(1600, 7500));
-          await Future.delayed(waitDuration);
+          unawaited(AudioService.speak(lines[i]));
+          for (var w = 0; w < words.length; w++) {
+            if (!mounted || !_isSpeaking) break;
+            setState(() => _highlightedWordIndex = w);
+            await Future<void>.delayed(
+              Duration(milliseconds: (320 + words[w].length * 80).clamp(280, 900)),
+            );
+          }
         }
       } catch (_) {}
 
@@ -179,74 +195,6 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
         }
       }
     }
-  }
-
-  /// تفکیک تمیز متن داستان به جملات و بندهای خوانش طبیعی
-  static List<String> _splitStoryLines(String text) {
-    final clean = text.replaceAll('\r\n', '\n').replaceAll('\r', '\n').trim();
-    if (clean.contains('\n')) {
-      final explicit = clean
-          .split('\n')
-          .map((l) => l.trim())
-          .where((l) => l.isNotEmpty)
-          .toList();
-      if (explicit.isNotEmpty) return explicit;
-    }
-
-    // تفکیک بر اساس علائم نگارشی پایان جمله (. ! ؟ ?)
-    final pattern = RegExp(
-      "(?<=[.!؟?][»\"'\\s])\\s+|(?<=[.!؟?])\\s+(?=[^\\s])",
-    );
-    final rawChunks = clean
-        .split(pattern)
-        .map((c) => c.trim())
-        .where((c) => c.isNotEmpty)
-        .toList();
-
-    final merged = <String>[];
-    bool inQuote = false;
-    for (final chunk in rawChunks) {
-      if (merged.isNotEmpty && inQuote) {
-        merged[merged.length - 1] = '${merged.last} $chunk';
-        if (chunk.contains('»') || chunk.contains('"')) {
-          inQuote = false;
-        }
-      } else if (merged.isNotEmpty &&
-          chunk.length < 15 &&
-          !chunk.startsWith('«')) {
-        merged[merged.length - 1] = '${merged.last} $chunk';
-      } else {
-        merged.add(chunk);
-        final opens = RegExp(r'[«"]').allMatches(chunk).length;
-        final closes = RegExp(r'[»"]').allMatches(chunk).length;
-        if (opens > closes || opens % 2 != 0) {
-          inQuote = true;
-        } else {
-          inQuote = false;
-        }
-      }
-    }
-    return merged.isEmpty ? [clean] : merged;
-  }
-
-  /// محاسبه خط فعال بر اساس موقعیت پیشرفت صوتی
-  static int _calculateActiveLineIndex(List<String> lines, double progress) {
-    if (lines.isEmpty) return 0;
-    if (progress <= 0.0) return 0;
-    if (progress >= 0.98) return lines.length - 1;
-
-    final weights = lines.map((l) => l.length + 12).toList();
-    final totalWeight = weights.fold<int>(0, (a, b) => a + b);
-    if (totalWeight == 0) return 0;
-
-    int cumulative = 0;
-    for (int i = 0; i < lines.length; i++) {
-      cumulative += weights[i];
-      if (progress < cumulative / totalWeight) {
-        return i;
-      }
-    }
-    return lines.length - 1;
   }
 
   void _toggleAudioPlayback() {
@@ -310,11 +258,19 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
     }
   }
 
+  void _awardGoldenWord(StoryVocabularyWord word) {
+    HapticFeedback.selectionClick();
+    AudioService.speak('${word.word}. ${word.meaning}');
+    final key = '${widget.story.id}:${word.word}';
+    if (_awardedWords.add(key)) {
+      GameData.addCoins(1);
+      AudioService.coin();
+    }
+    _showWordModal(word);
+  }
+
   void _showWordModal(StoryVocabularyWord word) {
     HapticFeedback.selectionClick();
-    AudioService.coin();
-    AudioService.speak('${word.word}. ${word.meaning}');
-    GameData.addCoins(1);
 
     showDialog(
       context: context,
@@ -530,7 +486,7 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
                   ),
                 ),
                 Text(
-                  'صفحه ${_currentPageIndex + 1} از ${widget.story.pages.length} • ${_isBedtimeMode ? "حالت قصه شب 🌙" : widget.story.categoryLabel}',
+                  'صفحه ${PersianDigits.toFa(_currentPageIndex + 1)} از ${PersianDigits.toFa(widget.story.pages.length)} • ${_isBedtimeMode ? "حالت قصه شب 🌙" : widget.story.categoryLabel}',
                   style: TextStyle(
                     color:
                         _isBedtimeMode ? Colors.amberAccent : Colors.white70,
@@ -665,7 +621,7 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
   }
 
   Widget _buildPageCard(ChildrenStoryPage page) {
-    final lines = _splitStoryLines(page.text);
+    final lines = StoryReadAlong.sentences(page.text);
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(
@@ -780,13 +736,7 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
                     runSpacing: 8,
                     children: page.goldenWords.map((w) {
                       return GestureDetector(
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          AudioService.coin();
-                          AudioService.speak('${w.word}. ${w.meaning}');
-                          GameData.addCoins(1);
-                          _showWordModal(w);
-                        },
+                        onTap: () => _awardGoldenWord(w),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 6),
@@ -874,6 +824,7 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
                 _ReadingTextHighlight(
                   lines: lines,
                   activeIndex: _highlightedLineIndex,
+                  activeWordIndex: _highlightedWordIndex,
                   isSpeaking: _isSpeaking,
                 ),
               ],
@@ -1018,7 +969,7 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
-              '${_currentPageIndex + 1} / ${widget.story.pages.length}',
+              '${PersianDigits.toFa(_currentPageIndex + 1)} / ${PersianDigits.toFa(widget.story.pages.length)}',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -1080,11 +1031,13 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
 class _ReadingTextHighlight extends StatelessWidget {
   final List<String> lines;
   final int activeIndex;
+  final int activeWordIndex;
   final bool isSpeaking;
 
   const _ReadingTextHighlight({
     required this.lines,
     required this.activeIndex,
+    this.activeWordIndex = 0,
     required this.isSpeaking,
   });
 
@@ -1158,30 +1111,51 @@ class _ReadingTextHighlight extends StatelessWidget {
                           ),
                     ),
                   Expanded(
-                    child: Text(
-                      line,
-                      style: AppFonts.vazirmatn(
-                        color: isCurrent
-                            ? const Color(0xFFFFF9C4)
-                            : isPast
-                                ? Colors.white.withOpacity(0.85)
-                                : Colors.white,
-                        fontSize: fontSize,
-                        fontWeight:
-                            isCurrent ? FontWeight.w900 : FontWeight.w700,
-                        height: 1.85,
-                        shadows: isCurrent
-                            ? [
-                                Shadow(
-                                  color: const Color(0xFFFFA000)
-                                      .withOpacity(0.8),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 1),
+                    child: isCurrent
+                        ? Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: [
+                              for (final entry
+                                  in StoryReadAlong.words(line).asMap().entries)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 1,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: entry.key == activeWordIndex
+                                        ? const Color(0xFFFF8F00)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    entry.value,
+                                    style: AppFonts.vazirmatn(
+                                      color: entry.key == activeWordIndex
+                                          ? const Color(0xFFFFFDE7)
+                                          : const Color(0xFFFFF9C4),
+                                      fontSize: fontSize,
+                                      fontWeight: entry.key == activeWordIndex
+                                          ? FontWeight.w900
+                                          : FontWeight.w700,
+                                      height: 1.85,
+                                    ),
+                                  ),
                                 ),
-                              ]
-                            : null,
-                      ),
-                    ),
+                            ],
+                          )
+                        : Text(
+                            line,
+                            style: AppFonts.vazirmatn(
+                              color: isPast
+                                  ? Colors.white.withOpacity(0.85)
+                                  : Colors.white,
+                              fontSize: fontSize,
+                              fontWeight: FontWeight.w700,
+                              height: 1.85,
+                            ),
+                          ),
                   ),
                 ],
               ),

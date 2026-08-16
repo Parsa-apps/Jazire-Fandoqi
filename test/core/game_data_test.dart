@@ -109,6 +109,59 @@ void main() {
     expect(GameData.isLeftHanded, isTrue);
   });
 
+  test('alphabet fluency survives export/import and is cleared by resetForTesting', () {
+    expect(GameData.recordAlphabetPass('g1-0-0', today: '2026-08-16'), 1);
+    expect(GameData.recordAlphabetPass('g1-0-0', today: '2026-08-16'), 2);
+    final exported = GameData.exportChildProgress();
+    expect(exported.containsKey('alc'), isTrue);
+    expect(exported.containsKey('ald'), isTrue);
+    expect(exported['alc'], isA<Map>());
+    expect((exported['alc'] as Map)['g1-0-0'], 2);
+
+    GameData.resetForTesting();
+    expect(GameData.alphabetPassCounts, isEmpty);
+    expect(GameData.alphabetLastPassDay, isEmpty);
+    expect(GameData.isAlphabetMastered('g1-0-0'), isFalse);
+
+    GameData.resetForTesting();
+    GameData.importChildProgress(exported);
+    expect(GameData.alphabetPassCount('g1-0-0'), 2);
+    expect(GameData.isAlphabetMastered('g1-0-0'), isTrue);
+    expect(GameData.alphabetLastPassDay['g1-0-0'], '2026-08-16');
+  });
+
+  test('today path stations persist in child export and reset with the child', () {
+    GameData.markTodayStation('literacy', today: '2026-08-16');
+    GameData.markTodayStation('math', today: '2026-08-16');
+    final exported = GameData.exportChildProgress();
+    expect(exported['tpd'], containsAll(['literacy', 'math']));
+    expect(exported['tpk'], '2026-08-16');
+
+    GameData.resetForTesting();
+    expect(GameData.todayPathDone, isEmpty);
+    GameData.importChildProgress(exported);
+    expect(GameData.isTodayStationDone('literacy', today: '2026-08-16'), isTrue);
+    expect(GameData.isTodayStationDone('drawing', today: '2026-08-16'), isFalse);
+
+    GameData.resetChildProgressKeepingParent();
+    expect(GameData.todayPathDone, isEmpty);
+  });
+
+  test('resetting child progress clears alphabet mastery and keeps classroom mode', () {
+    GameData.markAlphabetMastered('g1-0-0');
+    GameData.markAlphabetMastered('g1-0-1');
+    GameData.setClassroomLightMode(false);
+    expect(GameData.isAlphabetMastered('g1-0-0'), isTrue);
+
+    GameData.resetChildProgressKeepingParent();
+
+    expect(GameData.isAlphabetMastered('g1-0-0'), isFalse);
+    expect(GameData.isAlphabetMastered('g1-0-1'), isFalse);
+    expect(GameData.masteredAlphabetKeys, isEmpty);
+    expect(GameData.alphabetPassCounts, isEmpty);
+    expect(GameData.classroomLightMode, isFalse);
+  });
+
   // ─────────── فاز ۸۵: استرس ذخیره‌سازی ───────────
   test('500 rapid answers never exceed caps and stay stable', () {
     for (var i = 0; i < 500; i++) {

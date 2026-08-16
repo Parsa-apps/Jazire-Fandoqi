@@ -52,7 +52,12 @@ class SkillRadarChart extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(color: const Color(0xFF00B894).withOpacity(0.12), borderRadius: BorderRadius.circular(AppRadii.pill)),
-                child: Text('پیش‌بینی +${_prediction(values)}٪ تا ماه بعد', style: AppFonts.vazirmatn(fontSize: 11, fontWeight: FontWeight.w800, color: const Color(0xFF00B894))),
+                child: Text(
+                  values.every((v) => v == 0)
+                      ? 'هنوز تمرینی نیست'
+                      : 'میانگین واقعی ${_averagePercent(values)}٪',
+                  style: AppFonts.vazirmatn(fontSize: 11, fontWeight: FontWeight.w800, color: const Color(0xFF00B894)),
+                ),
               ),
             ],
           ),
@@ -136,10 +141,10 @@ class SkillRadarChart extends StatelessWidget {
     );
   }
 
-  int _prediction(List<double> values) {
-    final avg = values.isEmpty ? 0 : values.reduce((a, b) => a + b) / values.length;
-    // اگر روزانه 10 دقیقه تمرین کند، 15٪ رشد
-    return (15 * (1 - avg)).round().clamp(5, 18);
+  int _averagePercent(List<double> values) {
+    if (values.isEmpty) return 0;
+    final avg = values.reduce((a, b) => a + b) / values.length;
+    return (avg * 100).round();
   }
 
   String _coachSuggestion(List<double> values) {

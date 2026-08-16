@@ -28,6 +28,7 @@ import 'features/gateway/app_gateway_screen.dart';
 import 'features/games/alphabet_academy/alphabet_academy_game.dart';
 import 'features/games/bubble_pop/bubble_pop_game.dart';
 import 'features/games/drawing/drawing_game.dart';
+import 'features/games/drawing/drawing_album_screen.dart';
 import 'features/games/body_parts/body_parts_game.dart';
 import 'features/games/island_builder/island_builder_game.dart';
 import 'features/games/math_race/math_race_game.dart';
@@ -43,6 +44,7 @@ import 'features/games/stories/story_screen.dart';
 import 'features/stories/stories_hub_screen.dart';
 import 'features/stories/story_reader_screen.dart';
 import 'core/learning_content/children_stories_data.dart';
+import 'core/literacy/decodable_stories.dart';
 import 'features/lullabies/lullaby_hub_screen.dart';
 import 'features/lullabies/lullaby_player_screen.dart';
 import 'core/learning_content/lullabies_data.dart';
@@ -62,6 +64,11 @@ import 'features/games/math/tally_marks_game.dart';
 import 'features/games/math/place_value_game.dart';
 import 'features/games/math/number_line_game.dart';
 import 'features/games/math/symmetry_game.dart';
+import 'features/games/math/ten_frame_game.dart';
+import 'features/games/math/compare_crocodile_game.dart';
+import 'features/games/math/clock_hour_game.dart';
+import 'features/games/math/add_subtract_game.dart';
+import 'features/games/alphabet_academy/dictation_game.dart';
 import 'features/growth/catalog_search_screen.dart';
 import 'features/growth/certificates_screen.dart';
 import 'features/growth/growth_app_shell.dart';
@@ -78,6 +85,9 @@ import 'shared/widgets/fandoghi_coach.dart';
 /// آفلاین، فارسی و طراحی‌شده برای یادگیری امن کودکان.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // گوشی ۱GB بازار هدف: سقف کش تصویر موتور را پایین بیاور تا OOM ندهد.
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 48 << 20;
+  PaintingBinding.instance.imageCache.maximumSize = 80;
 
   // فاز ۸ (+H2): ثبت خطاها *قبل* از هر کار async نصب می‌شود، وگرنه خطای
   // داخل راه‌اندازی حافظه یا صدا در هیچ لاگی ثبت نمی‌شد.
@@ -248,6 +258,26 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
               gameName: 'تقارن',
               child: const SymmetryGame(),
             ),
+        '/math/ten-frame': (context) => GameAccessGate(
+              gameName: 'قاب ده‌تایی',
+              child: const TenFrameGame(),
+            ),
+        '/math/compare': (context) => GameAccessGate(
+              gameName: 'تمساح',
+              child: const CompareCrocodileGame(),
+            ),
+        '/math/clock': (context) => GameAccessGate(
+              gameName: 'ساعت',
+              child: const ClockHourGame(),
+            ),
+        '/math/add': (context) => GameAccessGate(
+              gameName: 'جمع',
+              child: const AddSubtractGame(),
+            ),
+        '/dictation': (context) => GameAccessGate(
+              gameName: 'املا',
+              child: const AlphabetDictationGame(),
+            ),
         '/jobs': (context) => GameAccessGate(
               gameName: 'شغل‌ها',
               child: const JobsHubScreen(),
@@ -262,8 +292,12 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
             ),
         '/cartoons': (context) => const CartoonHubScreen(),
         '/stories': (context) => const StoriesHubScreen(),
+        '/stories/read': (context) => StoryReaderScreen(
+              story: DecodableStories.forToday().toChildrenStory(),
+            ),
         '/lullabies': (context) => const LullabyHubScreen(),
         '/home': (context) => const HomeScreen(),
+        '/drawing-album': (context) => const DrawingAlbumScreen(),
         '/alphabet': (context) => const AlphabetAcademyGame(),
         '/memory_match': (context) => const MemoryMatchGame(),
         '/bubble_pop': (context) => const BubblePopGame(),
@@ -316,6 +350,15 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
         // قصه‌خانه و داستان‌های کودکانه (/story/<id>)
         if (name.startsWith('/story/')) {
           final storyId = name.substring('/story/'.length);
+          final decodable = DecodableStories.byId(storyId);
+          if (decodable != null) {
+            return MaterialPageRoute(
+              settings: settings,
+              builder: (_) => StoryReaderScreen(
+                story: decodable.toChildrenStory(),
+              ),
+            );
+          }
           final childrenStory = ChildrenStoriesData.getStoryById(storyId);
           if (childrenStory != null) {
             return MaterialPageRoute(
@@ -508,6 +551,21 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
     }
     if (name.contains('تقارن') || name.contains('symmetry')) {
       return const SymmetryGame();
+    }
+    if (name.contains('قاب') || name.contains('ده‌تایی') || name.contains('ten')) {
+      return const TenFrameGame();
+    }
+    if (name.contains('تمساح') || name.contains('مقایسه') || name.contains('compare')) {
+      return const CompareCrocodileGame();
+    }
+    if (name.contains('ساعت') || name.contains('clock')) {
+      return const ClockHourGame();
+    }
+    if (name.contains('جمع') || name.contains('تفریق') || name.contains('add')) {
+      return const AddSubtractGame();
+    }
+    if (name.contains('املا') || name.contains('dictation')) {
+      return const AlphabetDictationGame();
     }
     if (name.contains('بشنو') || name.contains('صدا') || name.contains('sound')) {
       return SoundMatchGame(

@@ -3,15 +3,19 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/design_tokens.dart';
 import '../../app/app_fonts.dart';
 import '../../app/app_colors.dart';
+import '../../core/audio_service.dart';
+import '../../core/growth/persian_digits.dart';
+import '../../core/literacy/literacy_path.dart';
 
-/// ═══════════════════════════════════════════════════════════════
-/// ✍️ HANDWRITING SCORE OVERLAY — ارزیابی دقیق و مهربان معلم کلاس اول
-/// قفل بودن نشانه بعدی تا زمان تأیید رسمی معلم با مهر صدآفرین
-/// ═══════════════════════════════════════════════════════════════
-class HandwritingScoreOverlay extends StatelessWidget {
+/// ارزیابی مهربان معلم کلاس اول.
+/// بعد از قبولی، کودک باید جمله را بشنود تا به نشانهٔ بعدی برود — مثل Duolingo ABC.
+class HandwritingScoreOverlay extends StatefulWidget {
   final double score; // 0..1
   final String letter;
   final bool passed;
+  final String? failReason;
+  final int masteryCount;
+  final String? sentence;
   final VoidCallback? onNext;
   final VoidCallback? onRetry;
   final VoidCallback? onShowGuide;
@@ -21,10 +25,27 @@ class HandwritingScoreOverlay extends StatelessWidget {
     required this.score,
     required this.letter,
     required this.passed,
+    this.failReason,
+    this.masteryCount = 0,
+    this.sentence,
     this.onNext,
     this.onRetry,
     this.onShowGuide,
   });
+
+  @override
+  State<HandwritingScoreOverlay> createState() => _HandwritingScoreOverlayState();
+}
+
+class _HandwritingScoreOverlayState extends State<HandwritingScoreOverlay> {
+  bool _heardSentence = false;
+
+  double get score => widget.score;
+  String get letter => widget.letter;
+  bool get passed => widget.passed;
+  String? get failReason => widget.failReason;
+  int get masteryCount => widget.masteryCount;
+  String? get sentence => widget.sentence;
 
   int get stars {
     if (score >= 0.85) return 3;
@@ -32,6 +53,9 @@ class HandwritingScoreOverlay extends StatelessWidget {
     if (score >= 0.50) return 1;
     return 0;
   }
+
+  bool get _needsListen =>
+      passed && (sentence ?? '').trim().isNotEmpty && !_heardSentence;
 
   String get teacherFeedback {
     if (stars == 3) {
@@ -41,9 +65,13 @@ class HandwritingScoreOverlay extends StatelessWidget {
       return 'خیلی خوب نوشتی! معلم خوش‌خطی شما را تأیید کرد 🌸 می‌توانی به نشانه بعدی بروی!';
     }
     if (stars == 1) {
-      return 'نزدیک شدی اما هنوز کامل نیست! خط از نشانه بیرون رفته؛ باید یک بار دیگر با دقت تمرین کنی ✍️';
+      return failReason?.isNotEmpty == true
+          ? failReason!
+          : 'نزدیک شدی اما هنوز کامل نیست! خط از نشانه بیرون رفته؛ باید یک بار دیگر با دقت تمرین کنی ✍️';
     }
-    return 'هنوز کامل نشد! برای یادگیری بهتر، از نقطه سبز شروع کن و دقیقاً روی خط‌های کم‌رنگ بکش 🙂';
+    return failReason?.isNotEmpty == true
+        ? failReason!
+        : 'هنوز کامل نشد! برای یادگیری بهتر، از نقطه سبز شروع کن و دقیقاً روی خط‌های کم‌رنگ بکش 🙂';
   }
 
   @override
@@ -64,7 +92,6 @@ class HandwritingScoreOverlay extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // مهر کارتونی معلم
           if (passed)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -114,7 +141,6 @@ class HandwritingScoreOverlay extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 14),
-          // ستاره‌ها
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(3, (i) {
@@ -134,7 +160,6 @@ class HandwritingScoreOverlay extends StatelessWidget {
             }),
           ),
           const SizedBox(height: 12),
-          // امتیاز عددی و وضعیت
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
@@ -161,16 +186,59 @@ class HandwritingScoreOverlay extends StatelessWidget {
               color: isDark ? Colors.white70 : const Color(0xFF2D3436),
             ),
           ),
+          if (masteryCount > 0) ...[
+            const SizedBox(height: 10),
+            Text(
+              masteryCount >= AlphabetReview.fluentPassCount
+                  ? 'ستارهٔ تسلط این نشانه را گرفتی ★'
+                  : 'قبولی ${PersianDigits.toFa(masteryCount)} از ${PersianDigits.toFa(AlphabetReview.fluentPassCount)} برای ستارهٔ تسلط',
+              textAlign: TextAlign.center,
+              style: AppFonts.vazirmatn(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF6D4C41),
+              ),
+            ),
+          ],
+          if (passed && (sentence ?? '').trim().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              'حالا این جمله را بخوان:\n${sentence!.trim()}',
+              textAlign: TextAlign.center,
+              style: AppFonts.vazirmatn(
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+                height: 1.5,
+                color: const Color(0xFF1565C0),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  AudioService.speak(sentence!.trim());
+                  setState(() => _heardSentence = true);
+                },
+                icon: Icon(
+                  _heardSentence ? Icons.volume_up_rounded : Icons.hearing_rounded,
+                ),
+                label: Text(
+                  _heardSentence ? 'دوباره بشنو' : 'بشنو و با انگشتت زیر جمله برو',
+                  style: AppFonts.vazirmatn(fontWeight: FontWeight.w800),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 18),
-          // دکمه‌ها
           if (passed)
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: onNext,
+                onPressed: _needsListen ? null : widget.onNext,
                 icon: const Icon(Icons.arrow_forward_rounded, size: 20),
                 label: Text(
-                  'نشانه بعدی →',
+                  _needsListen ? 'اول جمله را بشنو' : 'نشانه بعدی →',
                   style: AppFonts.balooBhaijaan2(fontWeight: FontWeight.w900, fontSize: 17),
                 ),
                 style: FilledButton.styleFrom(
@@ -187,7 +255,7 @@ class HandwritingScoreOverlay extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton.icon(
-                    onPressed: onRetry,
+                    onPressed: widget.onRetry,
                     icon: const Icon(Icons.refresh_rounded, size: 20),
                     label: Text(
                       'تلاش دوباره با کمک معلم ✍️',
@@ -201,12 +269,12 @@ class HandwritingScoreOverlay extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (onShowGuide != null) ...[
+                if (widget.onShowGuide != null) ...[
                   const SizedBox(height: 8),
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: onShowGuide,
+                      onPressed: widget.onShowGuide,
                       icon: const Icon(Icons.auto_awesome_rounded, size: 18),
                       label: Text(
                         'قلم جادویی (نشانم بده چطور بنویسم) 🪄',

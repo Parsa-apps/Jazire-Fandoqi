@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/growth/growth.dart';
 import '../../core/monetization.dart';
+import '../../shared/widgets/parent_pin_gate.dart';
 import 'full_version_paywall.dart';
 
 /// Route-level guard so premium games cannot be opened through a deep link.
@@ -14,7 +15,23 @@ class GameAccessGate extends StatefulWidget {
 }
 
 class _GameAccessGateState extends State<GameAccessGate> {
-  static const _free = {'الفبا', 'اعداد', 'رنگ‌ها', 'ستاره‌گیری', 'حباب‌ترکان'};
+  static const _free = {
+    'الفبا',
+    'اعداد',
+    'رنگ‌ها',
+    'ستاره‌گیری',
+    'حباب‌ترکان',
+    'نقاشی',
+    'چوب‌خط',
+    'ارزش مکانی',
+    'محور اعداد',
+    'تقارن',
+    'قاب ده‌تایی',
+    'تمساح',
+    'ساعت',
+    'جمع',
+    'املا',
+  };
   bool? _allowed;
 
   @override
@@ -45,17 +62,26 @@ class _GameAccessGateState extends State<GameAccessGate> {
     if (_allowed == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     if (_allowed!) return widget.child;
     return Scaffold(
-      appBar: AppBar(title: const Text('بخش ویژه')),
+      appBar: AppBar(title: const Text('فعلاً قفل است')),
       body: Center(child: Padding(
         padding: const EdgeInsets.all(28),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           const Icon(Icons.lock_rounded, size: 76, color: Color(0xFF6C43D9)),
           const SizedBox(height: 18),
-          Text('«${widget.gameName}» در نسخه کامل باز می‌شود', textAlign: TextAlign.center, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          Text('«${widget.gameName}» را مامان یا بابا باز می‌کند', textAlign: TextAlign.center, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
-          const Text('نسخه رایگان را امتحان کرده‌اید؛ حالا همه بازی‌ها را برای همیشه باز کنید.', textAlign: TextAlign.center),
+          const Text('این بخش برای خرید است؛ کودک لازم نیست اینجا کاری بکند.', textAlign: TextAlign.center),
           const SizedBox(height: 24),
-          FilledButton.icon(onPressed: () async { await showFullVersionPaywall(context, featureName: widget.gameName); await _check(); }, icon: const Icon(Icons.lock_open_rounded), label: const Text('مشاهده نسخه کامل')),
+          FilledButton.icon(
+            onPressed: () async {
+              final allowed = await requestParentAccess(context);
+              if (!allowed || !mounted) return;
+              await showFullVersionPaywall(context, featureName: widget.gameName);
+              await _check();
+            },
+            icon: const Icon(Icons.family_restroom_rounded),
+            label: const Text('مامان / بابا بیاید'),
+          ),
         ]),
       )),
     );

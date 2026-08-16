@@ -9,7 +9,9 @@ import '../../../../core/audio_service.dart';
 import '../../../../core/fandoghi_coach.dart';
 import '../../../../core/game_data.dart';
 import '../../../../core/growth/growth.dart';
+import '../../../../core/learning/today_path.dart';
 import '../../../../presentation/providers/game_state_provider.dart';
+import '../../../../shared/widgets/today_complete_sheet.dart';
 import '../../../profile/profile_editor.dart';
 import '../../../stage_map/stage_map_screen.dart';
 import '../daily_gifts_dialog.dart';
@@ -139,6 +141,12 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
     }
   }
 
+  void _openParentPanel() {
+    HapticFeedback.lightImpact();
+    AudioService.select();
+    Navigator.pushNamed(context, '/parent');
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.watch(gameStateProvider);
@@ -165,7 +173,8 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
                 final h = constraints.maxHeight;
                 final mapH = h * _mapHeightFactor;
                 // فضای خالی بالای نقشه تا تابلو زیر نوار وضعیت پنهان نشود
-                final topInset = MediaQuery.of(context).padding.top + 58;
+                final topInset = MediaQuery.of(context).padding.top +
+                    (GameData.classroomLightMode ? 178 : 58);
 
                 return SingleChildScrollView(
                   controller: _scrollCtrl,
@@ -201,7 +210,17 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
               bottom: false,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(10, 6, 10, 0),
-                child: _buildTopBar(),
+                child: Column(
+                  children: [
+                    _buildTopBar(),
+                    if (GameData.classroomLightMode) ...[
+                      const SizedBox(height: 8),
+                      _classroomDoors(),
+                      const SizedBox(height: 6),
+                      _todayPathChip(),
+                    ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -681,9 +700,123 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
                     color: Color(0xFF00897B), size: 20),
               ),
             ),
+            SizedBox(width: compact ? 4 : 6),
+            GestureDetector(
+              onTap: _openParentPanel,
+              child: Container(
+                padding: EdgeInsets.all(compact ? 7 : 9),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.94),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.12),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.lock_outline_rounded,
+                    color: Color(0xFF6D4C41), size: 20),
+              ),
+            ),
           ],
         ),
       ],
+    );
+  }
+
+  /// چهار در بزرگ کلاس اول — کودک ۶ ساله نباید دنبال بازی بگردد.
+  Widget _classroomDoors() {
+    final doors = <(String, String, String)>[
+      ('الفبا', '🔤', '/game/الفبا'),
+      ('اعداد', '🔢', '/numbers'),
+      ('املا', '👂', '/dictation'),
+      ('نقاشی', '🖌️', '/game/نقاشی'),
+    ];
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF8E7).withOpacity(0.96),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFFFCC80), width: 2),
+      ),
+      child: Row(
+        children: [
+          for (final door in doors)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: GestureDetector(
+                  onTap: () => _go(door.$3),
+                  child: Container(
+                    height: 56,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFFFB74D)),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(door.$2, style: const TextStyle(fontSize: 20)),
+                        Text(
+                          door.$1,
+                          style: AppFonts.kids(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF4E342E),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _todayPathChip() {
+    final task = TodayPath.forChild();
+    final progress =
+        '${PersianDigits.toFa(task.doneCount)} از ${PersianDigits.toFa(task.totalCount)}';
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          if (task.allDone) {
+            showTodayCompleteSheet(context);
+            return;
+          }
+          _go(task.route);
+        },
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF8E7).withOpacity(0.96),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFFFB74D)),
+          ),
+          child: Text(
+            task.allDone
+                ? 'امروز کارت تمام شد 🌟'
+                : 'امروز $progress — ${task.title}',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppFonts.kids(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF4E342E),
+            ),
+          ),
+        ),
+      ),
     );
   }
 

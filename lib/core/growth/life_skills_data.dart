@@ -114,7 +114,7 @@ class LifeSkillsData {
       questions: [
         LifeSkillQuestion(id: 'r1', prompt: 'کدام کلمه با «ماه» هم‌قافیه است؟', emoji: '🌙', options: ['راه', 'سیب', 'میز', 'ابر'], correctIndex: 0, fact: 'ماه و راه هر دو با «اه» تمام می‌شوند.', vocab: 'قافیه'),
         LifeSkillQuestion(id: 'r2', prompt: 'کدام کلمه با «گل» هم‌قافیه است؟', emoji: '🌸', options: ['میز', 'پل', 'نان', 'آب'], correctIndex: 1, fact: 'گل و پل هم‌قافیه‌اند.', vocab: 'گل'),
-        LifeSkillQuestion(id: 'r3', prompt: 'کدام کلمه با «باران» هم‌قافیه است؟', emoji: '🌧️', options: ['بهار', 'کتاب', 'سیب', 'میز'], correctIndex: 0, fact: 'باران و بهار صدای شبیه دارند.', vocab: 'باران'),
+        LifeSkillQuestion(id: 'r3', prompt: 'کدام کلمه با «باران» هم‌قافیه است؟', emoji: '🌧️', options: ['یاران', 'کتاب', 'سیب', 'میز'], correctIndex: 0, fact: 'باران و یاران هر دو با «ان» تمام می‌شوند.', vocab: 'باران'),
         LifeSkillQuestion(id: 'r4', prompt: 'کدام کلمه با «خورشید» هم‌قافیه نیست؟', emoji: '☀️', options: ['امید', 'سفید', 'میز', 'جدید'], correctIndex: 2, fact: 'میز با بقیه هم‌قافیه نیست.', vocab: 'خورشید'),
         LifeSkillQuestion(id: 'r5', prompt: '«شب» با کدام هم‌قافیه است؟', emoji: '🌃', options: ['مهتاب', 'تب', 'صبح', 'روز'], correctIndex: 1, fact: 'شب و تب هر دو با «ب» تمام می‌شوند.', vocab: 'شب'),
         LifeSkillQuestion(id: 'r6', prompt: 'کدام جفت هم‌قافیه‌اند؟', emoji: '🎶', options: ['سیب و موز', 'نان و جان', 'میز و صندلی', 'آب و نان'], correctIndex: 1, fact: 'نان و جان هر دو با «ان» تمام می‌شوند.', vocab: 'نان'),
@@ -191,7 +191,7 @@ class LifeSkillsData {
         LifeSkillQuestion(id: 'n5', prompt: 'قبل از خرید چه کار هوشمندانه‌ای است؟', emoji: '🛒', options: ['فکر کنیم لازم است یا نه', 'هر چه دیدیم بخریم', 'پول دیگران را برداریم', 'گریه کنیم'], correctIndex: 0, fact: 'خرید با فکر یعنی بزرگ شدن.', vocab: 'خرید'),
         LifeSkillQuestion(id: 'n6', prompt: 'سکه معمولاً از چیست؟', emoji: '⚙️', options: ['فلز', 'نان', 'ابر', 'چوب نرم'], correctIndex: 0, fact: 'سکه فلزی است و اسکناس کاغذی.', vocab: 'سکه'),
         LifeSkillQuestion(id: 'n7', prompt: 'اگر چیزی گران‌تر از پولت باشد چه کنی؟', emoji: '🤔', options: ['صبر کنیم یا چیز ارزان‌تر بخریم', 'بدون پرداخت برداریم', 'قهر کنیم و بشکنیم', 'گریه تا شب'], correctIndex: 0, fact: 'صبر و انتخاب دوباره نشانه هوش است.', vocab: 'صبر'),
-        LifeSkillQuestion(id: 'n8', prompt: '۳ بستنی ۲ تومانی چند تومان می‌شود؟', emoji: '🍦', options: ['۵', '۶', '۲', '۳'], correctIndex: 1, fact: '۳×۲=۶', vocab: 'ضرب'),
+        LifeSkillQuestion(id: 'n8', prompt: '۲ تومان و ۲ تومان و ۲ تومان جمعش چند است؟', emoji: '🍦', options: ['۵', '۶', '۲', '۳'], correctIndex: 1, fact: '۲+۲+۲ می‌شود ۶. این جمع است، هنوز ضرب یاد نمی‌گیریم.', vocab: 'جمع'),
       ],
     ),
     LifeSkillTopic(

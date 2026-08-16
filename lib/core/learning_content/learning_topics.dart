@@ -46,27 +46,29 @@ class LearningTopic {
 }
 
 /// ─────────────── فاز ۲۲: اعداد ۱ تا ۲۰ ───────────────
+/// رقم فارسی خودِ عدد است — نه میوه و نه کیک. کلاس‌اولی باید «۱۱» را
+/// ببیند، نه سیب. ۱۱ تا ۲۰ با تجزیهٔ «ده و یکی» کتاب ریاضی اول هم‌خوان است.
 const List<LearningCard> _numbersCards = <LearningCard>[
-  LearningCard(id: 'n1', name: 'یک', emoji: '1️⃣', sound: 'یک'),
-  LearningCard(id: 'n2', name: 'دو', emoji: '2️⃣', sound: 'دو'),
-  LearningCard(id: 'n3', name: 'سه', emoji: '3️⃣', sound: 'سه'),
-  LearningCard(id: 'n4', name: 'چهار', emoji: '4️⃣', sound: 'چهار'),
-  LearningCard(id: 'n5', name: 'پنج', emoji: '5️⃣', sound: 'پنج'),
-  LearningCard(id: 'n6', name: 'شش', emoji: '6️⃣', sound: 'شش'),
-  LearningCard(id: 'n7', name: 'هفت', emoji: '7️⃣', sound: 'هفت'),
-  LearningCard(id: 'n8', name: 'هشت', emoji: '8️⃣', sound: 'هشت'),
-  LearningCard(id: 'n9', name: 'نه', emoji: '9️⃣', sound: 'نه'),
-  LearningCard(id: 'n10', name: 'ده', emoji: '🔟', sound: 'ده'),
-  LearningCard(id: 'n11', name: 'یازده', emoji: '🍎', sound: 'یازده'),
-  LearningCard(id: 'n12', name: 'دوازده', emoji: '🍏', sound: 'دوازده'),
-  LearningCard(id: 'n13', name: 'سیزده', emoji: '🍊', sound: 'سیزده'),
-  LearningCard(id: 'n14', name: 'چهارده', emoji: '🍇', sound: 'چهارده'),
-  LearningCard(id: 'n15', name: 'پانزده', emoji: '🍉', sound: 'پانزده'),
-  LearningCard(id: 'n16', name: 'شانزده', emoji: '🍒', sound: 'شانزده'),
-  LearningCard(id: 'n17', name: 'هفده', emoji: '🍑', sound: 'هفده'),
-  LearningCard(id: 'n18', name: 'هجده', emoji: '🍍', sound: 'هجده'),
-  LearningCard(id: 'n19', name: 'نوزده', emoji: '🥝', sound: 'نوزده'),
-  LearningCard(id: 'n20', name: 'بیست', emoji: '🎂', sound: 'بیست'),
+  LearningCard(id: 'n1', name: 'یک', emoji: '۱', sound: 'یک', fact: 'یک تا یکی'),
+  LearningCard(id: 'n2', name: 'دو', emoji: '۲', sound: 'دو', fact: 'دو تا یکی'),
+  LearningCard(id: 'n3', name: 'سه', emoji: '۳', sound: 'سه', fact: 'سه تا یکی'),
+  LearningCard(id: 'n4', name: 'چهار', emoji: '۴', sound: 'چهار', fact: 'چهار تا یکی'),
+  LearningCard(id: 'n5', name: 'پنج', emoji: '۵', sound: 'پنج', fact: 'یک دست انگشت'),
+  LearningCard(id: 'n6', name: 'شش', emoji: '۶', sound: 'شش', fact: 'شش تا یکی'),
+  LearningCard(id: 'n7', name: 'هفت', emoji: '۷', sound: 'هفت', fact: 'هفت تا یکی'),
+  LearningCard(id: 'n8', name: 'هشت', emoji: '۸', sound: 'هشت', fact: 'هشت تا یکی'),
+  LearningCard(id: 'n9', name: 'نه', emoji: '۹', sound: 'نه', fact: 'نه تا یکی'),
+  LearningCard(id: 'n10', name: 'ده', emoji: '۱۰', sound: 'ده', fact: 'یک بسته ده‌تایی'),
+  LearningCard(id: 'n11', name: 'یازده', emoji: '۱۱', sound: 'یازده', fact: 'ده و یک'),
+  LearningCard(id: 'n12', name: 'دوازده', emoji: '۱۲', sound: 'دوازده', fact: 'ده و دو'),
+  LearningCard(id: 'n13', name: 'سیزده', emoji: '۱۳', sound: 'سیزده', fact: 'ده و سه'),
+  LearningCard(id: 'n14', name: 'چهارده', emoji: '۱۴', sound: 'چهارده', fact: 'ده و چهار'),
+  LearningCard(id: 'n15', name: 'پانزده', emoji: '۱۵', sound: 'پانزده', fact: 'ده و پنج'),
+  LearningCard(id: 'n16', name: 'شانزده', emoji: '۱۶', sound: 'شانزده', fact: 'ده و شش'),
+  LearningCard(id: 'n17', name: 'هفده', emoji: '۱۷', sound: 'هفده', fact: 'ده و هفت'),
+  LearningCard(id: 'n18', name: 'هجده', emoji: '۱۸', sound: 'هجده', fact: 'ده و هشت'),
+  LearningCard(id: 'n19', name: 'نوزده', emoji: '۱۹', sound: 'نوزده', fact: 'ده و نه'),
+  LearningCard(id: 'n20', name: 'بیست', emoji: '۲۰', sound: 'بیست', fact: 'دو بسته ده‌تایی'),
 ];
 
 /// ─────────────── فاز ۲۳: ۱۲ رنگ + ترکیب ───────────────
@@ -82,7 +84,7 @@ const List<LearningCard> _colorsCards = <LearningCard>[
   LearningCard(id: 'c9', name: 'سفید', emoji: '⚪', sound: 'سفید'),
   LearningCard(id: 'c10', name: 'سیاه', emoji: '⚫', sound: 'سیاه'),
   LearningCard(id: 'c11', name: 'خاکستری', emoji: '🩶', sound: 'خاکستری'),
-  LearningCard(id: 'c12', name: 'طلایی', emoji: '🟨', sound: 'طلایی'),
+  LearningCard(id: 'c12', name: 'طلایی', emoji: '🥇', sound: 'طلایی'),
 ];
 
 /// قوانین آزمایشگاه رنگ: رنگ اول + رنگ دوم = نتیجه.
@@ -98,15 +100,15 @@ const Map<String, String> colorMixingRules = <String, String>{
 /// ─────────────── فاز ۲۴: ۱۰ شکل ───────────────
 const List<LearningCard> _shapesCards = <LearningCard>[
   LearningCard(id: 's1', name: 'دایره', emoji: '⭕', sound: 'دایره'),
-  LearningCard(id: 's2', name: 'مربع', emoji: '🟨', sound: 'مربع'),
-  LearningCard(id: 's3', name: 'مثلث', emoji: '🔺', sound: 'مثلث'),
-  LearningCard(id: 's4', name: 'مستطیل', emoji: '📏', sound: 'مستطیل'),
+  LearningCard(id: 's2', name: 'مربع', emoji: '⬜', sound: 'مربع', fact: 'چهار ضلع برابر دارد'),
+  LearningCard(id: 's3', name: 'مثلث', emoji: '🔺', sound: 'مثلث', fact: 'سه ضلع دارد'),
+  LearningCard(id: 's4', name: 'مستطیل', emoji: '▬', sound: 'مستطیل', fact: 'دو ضلع بلند و دو ضلع کوتاه'),
   LearningCard(id: 's5', name: 'بیضی', emoji: '🥚', sound: 'بیضی'),
   LearningCard(id: 's6', name: 'ستاره', emoji: '⭐', sound: 'ستاره'),
   LearningCard(id: 's7', name: 'قلب', emoji: '❤️', sound: 'قلب'),
-  LearningCard(id: 's8', name: 'لوزی', emoji: '💎', sound: 'لوزی'),
+  LearningCard(id: 's8', name: 'لوزی', emoji: '🔶', sound: 'لوزی', fact: 'چهار ضلع برابر و کج'),
   LearningCard(id: 's9', name: 'هلال', emoji: '🌙', sound: 'هلال'),
-  LearningCard(id: 's10', name: 'پنج‌ضلعی', emoji: '🛑', sound: 'پنج ضلعی'),
+  LearningCard(id: 's10', name: 'پنج‌ضلعی', emoji: '⬠', sound: 'پنج ضلعی', fact: 'پنج ضلع دارد؛ تابلو ایست هشت‌ضلعی است'),
 ];
 
 /// ─────────────── فاز ۲۵: ۳۰ حیوان بومی ایران ───────────────
@@ -115,7 +117,7 @@ const List<LearningCard> _animalsCards = <LearningCard>[
   LearningCard(id: 'a2', name: 'خرس قهوه‌ای', emoji: '🐻', sound: 'خرس قهوه‌ای', fact: 'زمستان را می‌خوابد'),
   LearningCard(id: 'a3', name: 'روباه', emoji: '🦊', sound: 'روباه', fact: 'دم پرپشتی دارد'),
   LearningCard(id: 'a4', name: 'گرگ', emoji: '🐺', sound: 'گرگ'),
-  LearningCard(id: 'a5', name: 'پلنگ', emoji: '🐅', sound: 'پلنگ'),
+  LearningCard(id: 'a5', name: 'پلنگ', emoji: '🐆', sound: 'پلنگ', fact: 'خال‌های گرد دارد و از درخت بالا می‌رود'),
   LearningCard(id: 'a6', name: 'آهو', emoji: '🦌', sound: 'آهو', fact: 'خیلی تند می‌دود'),
   LearningCard(id: 'a7', name: 'قوچ', emoji: '🐏', sound: 'قوچ', fact: 'شاخ‌های خمیده دارد'),
   LearningCard(id: 'a8', name: 'بز کوهی', emoji: '🐐', sound: 'بز کوهی'),
@@ -124,7 +126,7 @@ const List<LearningCard> _animalsCards = <LearningCard>[
   LearningCard(id: 'a11', name: 'جوجه‌تیغی', emoji: '🦔', sound: 'جوجه تیغی', fact: 'بدنش خار دارد'),
   LearningCard(id: 'a12', name: 'سنجاب', emoji: '🐿️', sound: 'سنجاب', fact: 'گردو جمع می‌کند'),
   LearningCard(id: 'a13', name: 'موش', emoji: '🐭', sound: 'موش'),
-  LearningCard(id: 'a14', name: 'گربه', emoji: '🐱', sound: 'گربه', fact: 'میشا می‌گوید'),
+  LearningCard(id: 'a14', name: 'گربه', emoji: '🐱', sound: 'گربه', fact: 'میو می‌گوید'),
   LearningCard(id: 'a15', name: 'سگ', emoji: '🐶', sound: 'سگ', fact: 'وفادار است'),
   LearningCard(id: 'a16', name: 'اسب', emoji: '🐴', sound: 'اسب'),
   LearningCard(id: 'a17', name: 'الاغ', emoji: '🫏', sound: 'الاغ'),

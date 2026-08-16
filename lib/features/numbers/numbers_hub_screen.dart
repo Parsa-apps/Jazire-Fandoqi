@@ -9,6 +9,7 @@ import '../../core/content_access_policy.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';
+import '../../core/growth/persian_digits.dart';
 import '../../core/monetization.dart';
 import '../../shared/widgets/child_touch_target.dart';
 import '../../shared/widgets/fandoghi_premium.dart';
@@ -32,7 +33,7 @@ class _NumbersHubState extends State<NumbersHubScreen> {
     _refreshEntitlement();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FandoghiCoach.say(
-        'به دنیای اعداد و ریاضی اول دبستان خوش اومدی! 🔢 با سیب و گردو می‌شمریم یا بازی‌های چوب‌خط و جدول ارزش مکانی رو امتحان کن!',
+        'به دنیای اعداد و ریاضی اول دبستان خوش اومدی! عدد را ببین، نقطه‌ها را بشمار، از یازده به بعد با ده و یکی می‌سازیم 🔢',
         mood: FandoghiMood.excited,
         duration: const Duration(seconds: 4),
       );
@@ -60,22 +61,14 @@ class _NumbersHubState extends State<NumbersHubScreen> {
     }
     if (!mounted) return;
     setState(() => _selectedNumber = number);
-    GameData.recordAnswer(correct: true, skill: 'counting');
   }
 
-  String _emojiOf(int n) {
-    const map = {
-      1: '🍎',
-      2: '🍎🍎',
-      3: '🍎🍎🍎',
-      4: '🍏🍏🍏🍏',
-      5: '🍎🍎🍎🍎🍎',
-      10: '🎂',
-      15: '🍉',
-      20: '🎉'
-    };
-    if (map.containsKey(n)) return map[n]!;
-    return '🔢';
+  /// نمایش آموزشی عدد: تا ۱۰ با شیء قابل شمارش، از ۱۱ با تجزیهٔ «ده و یکی».
+  String _countLabel(int n) {
+    if (n <= 0) return '';
+    if (n <= 10) return List<String>.filled(n, '●').join(' ');
+    if (n < 20) return 'یک ده و ${PersianDigits.toFa(n - 10)} یکی';
+    return 'دو ده';
   }
 
   @override
@@ -98,7 +91,7 @@ class _NumbersHubState extends State<NumbersHubScreen> {
                 size: 52,
                 mood: FandoghiMood.happy,
                 showParticles: false,
-                message: 'عدد $_selectedNumber — ${_emojiOf(_selectedNumber)}',
+                message: 'عدد ${PersianDigits.toFa(_selectedNumber)} — ${_countLabel(_selectedNumber)}',
               ),
               const SizedBox(height: 6),
               _buildMathActivitiesRow(),
@@ -165,6 +158,10 @@ class _NumbersHubState extends State<NumbersHubScreen> {
 
   Widget _buildMathActivitiesRow() {
     final activities = [
+      ('جمع و تفریق', '➕', const Color(0xFFD84315), '/math/add'),
+      ('قاب ده‌تایی', '🟥', const Color(0xFFC0392B), '/math/ten-frame'),
+      ('تمساح', '🐊', const Color(0xFF2E7D32), '/math/compare'),
+      ('ساعت', '🕐', const Color(0xFF1565C0), '/math/clock'),
       ('چوب‌خط', '🥢', const Color(0xFF2980B9), '/math/tally'),
       ('ارزش مکانی', '🧮', const Color(0xFF8E44AD), '/math/place-value'),
       ('محور اعداد', '🐸', const Color(0xFF16A085), '/math/number-line'),
@@ -236,7 +233,7 @@ class _NumbersHubState extends State<NumbersHubScreen> {
             ),
             child: Center(
               child: Text(
-                '$_selectedNumber',
+                PersianDigits.toFa(_selectedNumber),
                 style: AppFonts.vazirmatn(
                   color: Colors.white,
                   fontSize: 32,
@@ -251,7 +248,7 @@ class _NumbersHubState extends State<NumbersHubScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'عدد $_selectedNumber',
+                  'عدد ${PersianDigits.toFa(_selectedNumber)}',
                   style: AppFonts.vazirmatn(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
@@ -260,7 +257,7 @@ class _NumbersHubState extends State<NumbersHubScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  _selectedNumber <= 10 ? '${'🍎 ' * _selectedNumber}' : 'بشمار: $_selectedNumber تا',
+                  _countLabel(_selectedNumber),
                   style: const TextStyle(fontSize: 13),
                 ),
                 const SizedBox(height: 4),
@@ -269,7 +266,7 @@ class _NumbersHubState extends State<NumbersHubScreen> {
                     HapticFeedback.lightImpact();
                     AudioService.speakNumber(_selectedNumber);
                     FandoghiCoach.say(
-                      '$_selectedNumber — ${_emojiOf(_selectedNumber)}',
+                      '${PersianDigits.toFa(_selectedNumber)} — ${_countLabel(_selectedNumber)}',
                       mood: FandoghiMood.excited,
                       duration: const Duration(seconds: 2),
                     );
@@ -352,7 +349,7 @@ class _NumbersHubState extends State<NumbersHubScreen> {
               alignment: Alignment.center,
               children: [
                 Text(
-                  '$n',
+                  PersianDigits.toFa(n),
                   style: AppFonts.vazirmatn(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,

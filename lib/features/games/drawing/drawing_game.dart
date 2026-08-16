@@ -1,18 +1,23 @@
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app/app_colors.dart';
 import '../../../app/design_tokens.dart';
 import '../../../app/app_fonts.dart';
 import '../../../core/audio_service.dart';
+import '../../../core/drawing/drawing_album.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
-import '../../../shared/widgets/child_touch_target.dart';
+import '../../../shared/widgets/next_today_button.dart';
 import '../../../shared/widgets/fandoghi_premium.dart';
 import '../../../shared/widgets/illustration_tile.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'drawing_album_screen.dart';
 
 /// An offline creative studio with brush, eraser, undo/redo and generated
 /// sticker stamps. Everything is local and the canvas never leaves the device.
@@ -46,7 +51,8 @@ class _DrawingGameState extends State<DrawingGame> {
   double _strokeWidth = 8;
   _DrawingTool _tool = _DrawingTool.brush;
   int _stickerIndex = 0;
-  bool _saved = false;
+  bool _saving = false;
+  final GlobalKey _canvasKey = GlobalKey();
 
   static const _colors = <Color>[
     Color(0xFFE74C3C),
@@ -168,26 +174,90 @@ class _DrawingGameState extends State<DrawingGame> {
     FandoghiCoach.instruction(message);
   }
 
+  void _openAlbum() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const DrawingAlbumScreen()),
+    );
+  }
+
   Future<void> _finish() async {
+    if (_saving || !_hasArtwork) return;
     if (GameData.isDailyLimitReached) {
       await showPlayLimitDialog(context);
       if (mounted) Navigator.pop(context);
       return;
     }
-    if (!_saved) {
-      _saved = true;
+    setState(() => _saving = true);
+    try {
+      final bytes = await _capturePng();
+      if (bytes == null || bytes.isEmpty) {
+        if (mounted) {
+          FandoghiCoach.instruction('نقاشی ذخیره نشد؛ یک‌بار دیگر بکش و ذخیره کن.');
+          setState(() => _saving = false);
+        }
+        return;
+      }
+      final saved = await DrawingAlbum.savePng(bytes);
+      if (!mounted) return;
+      if (saved == null) {
+        FandoghiCoach.instruction('حافظه پر بود؛ یکی از نقاشی‌های قدیمی را پاک کن.');
+        setState(() => _saving = false);
+        return;
+      }
       GameData.progressMission('drawing');
       GameData.addCoins(10);
       GameData.addStars(1);
       if (widget.stageId != null) {
         GameData.completeStage(widget.stageId!, stageNumber: widget.stageNumber);
       }
-      FandoghiCoach.reward(
-        'نقاشی‌ات ثبت شد! فندقی به خلاقیتت امتیاز کامل می‌دهد 🎨🏆',
-      );
       AudioService.unlock();
+      FandoghiCoach.reward('نقاشی در آلبوم خودت ذخیره شد 🎨');
+      setState(() => _saving = false);
+      await _afterSave();
+    } catch (_) {
+      if (mounted) setState(() => _saving = false);
     }
-    Navigator.pop(context);
+  }
+
+  Future<Uint8List?> _capturePng() async {
+    final object = _canvasKey.currentContext?.findRenderObject();
+    if (object is! RenderRepaintBoundary) return null;
+    final image = await object.toImage(pixelRatio: 2);
+    try {
+      final data = await image.toByteData(format: ui.ImageByteFormat.png);
+      return data?.buffer.asUint8List();
+    } finally {
+      image.dispose();
+    }
+  }
+
+  Future<void> _afterSave() async {
+    if (!mounted) return;
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text('ذخیره شد', style: AppFonts.vazirmatn(fontWeight: FontWeight.w900)),
+        content: const Text('نقاشی در آلبوم همین برنامه ماند؛ به گالری گوشی نرفت.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'stay'),
+            child: const Text('ادامه نقاشی'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'next'),
+            child: const Text('کار بعدی امروز'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, 'album'),
+            child: const Text('آلبوم من'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (choice == 'album') _openAlbum();
+    if (choice == 'next') NextTodayButton.go(context, justFinished: 'drawing');
   }
 
   @override
@@ -219,6 +289,18 @@ class _DrawingGameState extends State<DrawingGame> {
         ),
         actions: [
           IconButton(
+            tooltip: 'آلبوم نقاشی',
+            onPressed: _openAlbum,
+            icon: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(AppRadii.md),
+              ),
+              child: const Icon(Icons.photo_library_outlined, size: 20, color: Colors.white),
+            ),
+          ),
+          IconButton(
             tooltip: 'پاک کردن همه',
             onPressed: _clear,
             icon: Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: Colors.red.withOpacity(0.15), borderRadius: BorderRadius.circular(AppRadii.md)), child: const Icon(Icons.delete_outline_rounded, size: 20, color: Colors.redAccent)),
@@ -230,79 +312,81 @@ class _DrawingGameState extends State<DrawingGame> {
         child: Column(
           children: [
             _toolbar(),
-            Expanded(
-              child: Container(
-                margin: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(26),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onPanStart: _startStroke,
-                  onPanUpdate: _continueStroke,
-                  onTapUp: _addSticker,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // Keep the canvas in its own layer. Each stroke owns a
-                      // Path that is extended while drawing, so repainting no
-                      // longer rebuilds a Path from every historical point.
-                      RepaintBoundary(
-                        child: CustomPaint(
-                          painter: _DrawingPainter(_strokes),
-                        ),
-                      ),
-                      ..._stickers.map(
-                        (sticker) => Positioned(
-                          left: sticker.position.dx - 30,
-                          top: sticker.position.dy - 30,
-                          width: 60,
-                          height: 60,
-                          child: IllustrationTile(
-                            asset: _stickerAsset,
-                            index: sticker.imageIndex,
-                            semanticLabel: 'استیکر نقاشی',
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton.icon(
-                  onPressed: _hasArtwork ? _finish : null,
-                  icon: const Icon(Icons.check_rounded),
-                  label: const Text('تمام شد! ذخیره کن 🌟'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.success,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ),
-            ),
+            Expanded(child: _canvas()),
+            _saveBar(),
           ],
         ),
       ),
     );
   }
 
-  Widget _toolbar() {
+  Widget _canvas() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onPanStart: _startStroke,
+        onPanUpdate: _continueStroke,
+        onTapUp: _addSticker,
+        child: RepaintBoundary(
+          key: _canvasKey,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              CustomPaint(painter: _DrawingPainter(_strokes)),
+              ..._stickers.map(
+                (sticker) => Positioned(
+                  left: sticker.position.dx - 30,
+                  top: sticker.position.dy - 30,
+                  width: 60,
+                  height: 60,
+                  child: IllustrationTile(
+                    asset: _stickerAsset,
+                    index: sticker.imageIndex,
+                    semanticLabel: 'استیکر نقاشی',
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _saveBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: SizedBox(
+        width: double.infinity,
+        height: 52,
+        child: ElevatedButton.icon(
+          onPressed: _hasArtwork && !_saving ? _finish : null,
+          icon: const Icon(Icons.check_rounded),
+          label: Text(_saving ? 'در حال ذخیره…' : 'تمام شد! ذخیره کن 🌟'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.success,
+            foregroundColor: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _toolbar({bool vertical = false}) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 4, 14, 10),
       child: Column(

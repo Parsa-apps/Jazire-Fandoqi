@@ -22,6 +22,7 @@ void main() {
       expect(ContentAccessPolicy.isStoryFree(stories[1].id), isTrue);
       expect(ContentAccessPolicy.isStoryFree(stories[2].id), isFalse);
       expect(ContentAccessPolicy.isStoryFree('missing-story'), isFalse);
+      expect(ContentAccessPolicy.isStoryFree('decodable-baba-ab'), isTrue);
     });
 
     test('only the first two canonical lullabies are free', () {
@@ -33,15 +34,15 @@ void main() {
       expect(ContentAccessPolicy.isLullabyFree('missing-lullaby'), isFalse);
     });
 
-    test('only the alphabet top row and numbers one and two are free', () {
+    test('alphabet top row and first-grade numbers 1-10 stay free', () {
       expect(ContentAccessPolicy.isAlphabetLessonFree(0), isTrue);
       expect(ContentAccessPolicy.isAlphabetLessonFree(7), isTrue);
       expect(ContentAccessPolicy.isAlphabetLessonFree(8), isFalse);
       expect(ContentAccessPolicy.isAlphabetLessonFree(-1), isFalse);
 
       expect(ContentAccessPolicy.isNumberFree(1), isTrue);
-      expect(ContentAccessPolicy.isNumberFree(2), isTrue);
-      expect(ContentAccessPolicy.isNumberFree(3), isFalse);
+      expect(ContentAccessPolicy.isNumberFree(10), isTrue);
+      expect(ContentAccessPolicy.isNumberFree(11), isFalse);
       expect(ContentAccessPolicy.isNumberFree(0), isFalse);
     });
   });

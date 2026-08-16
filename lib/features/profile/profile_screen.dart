@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -736,11 +735,12 @@ class _ProfileState extends ConsumerState<ProfileScreen>
 
   // ─── ACTIVITY HEATMAP ────────────────────────
   Widget _buildActivityHeatmap() {
-    // Generate fake activity data based on streak
-    final rng = Random(42);
-    final activity = List.generate(28, (i) {
-      if (i < GameData.streak && i < 28) return rng.nextInt(3) + 1;
-      return rng.nextInt(2);
+    // فقط روزهای پیاپی واقعی — بدون عدد ساختگی.
+    final streak = GameData.streak.clamp(0, 28);
+    final activity = List<int>.generate(28, (i) {
+      final dayFromEnd = 27 - i;
+      if (dayFromEnd < streak) return 2;
+      return 0;
     });
 
     return Padding(
