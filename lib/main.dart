@@ -54,7 +54,7 @@ import 'features/jobs/jobs_hub_screen.dart';
 import 'features/numbers/numbers_hub_screen.dart';
 import 'features/sel/sel_hub_screen.dart';
 import 'features/gateway/learning_library_screen.dart';
-import 'features/parent/parent_panel.dart';
+import 'features/parent/parent_hub.dart';
 import 'features/splash/splash_screen.dart';
 import 'features/tutorial/app_tutorial_screen.dart';
 import 'features/shop/game_access_gate.dart';
@@ -283,7 +283,7 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
         '/island_builder': (context) => const IslandBuilderGame(),
         '/buddy_chat': (context) => const BuddyChatScreen(),
         '/stickers': (context) => const StickerAlbumScreen(),
-        '/parent': (context) => const ParentPanel(),
+        '/parent': (context) => const ParentHub(),
         '/about': (context) => const AboutScreen(),
         '/privacy': (context) => const PrivacyPolicyScreen(),
         '/life-skills': (context) => GameAccessGate(
