@@ -1296,12 +1296,14 @@ class GameData {
   }
 
   static void updateProfile({
-    required String name,
+    String? name,
     String? avatarIcon,
     int? age,
   }) {
-    final trimmed = name.trim();
-    childName = trimmed.substring(0, trimmed.length.clamp(0, 24).toInt());
+    if (name != null) {
+      final trimmed = name.trim();
+      childName = trimmed.substring(0, trimmed.length.clamp(0, 24).toInt());
+    }
     if (avatarIcon != null && avatarIcon.isNotEmpty) avatar = avatarIcon;
     if (age != null) childAge = age.clamp(3, 12).toInt();
     _notify();
