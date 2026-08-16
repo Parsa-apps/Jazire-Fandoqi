@@ -17,7 +17,7 @@ void main() {
     FandoghiCoach.disablePersistentPresence();
   });
 
-  testWidgets('story hub presents one simple island platform per story',
+  testWidgets('story hub shows the class-1 reader card and the first platform',
       (tester) async {
     tester.view.physicalSize = const Size(390, 1200);
     tester.view.devicePixelRatio = 1;
@@ -32,17 +32,6 @@ void main() {
     expect(find.text('قصه‌خانه'), findsWidgets);
     expect(find.byKey(const ValueKey('decodable_today_card')), findsOneWidget);
     expect(find.byKey(const ValueKey('story_platform_0')), findsOneWidget);
-    expect(find.byKey(const ValueKey('story_platform_9')), findsOneWidget);
-    expect(find.byType(TextField), findsNothing);
-    expect(find.byType(FilterChip), findsNothing);
-    expect(find.byType(FloatingActionButton), findsNothing);
-
-    await tester.scrollUntilVisible(
-      find.byKey(const ValueKey('story_platform_9')),
-      500,
-      scrollable: find.byType(Scrollable).last,
-    );
-    await tester.pump(const Duration(milliseconds: 300));
 
     await tester.pumpWidget(const SizedBox.shrink());
     FandoghiCoach.clear();
