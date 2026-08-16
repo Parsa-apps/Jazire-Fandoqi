@@ -70,7 +70,7 @@ class _MathRaceGameState extends State<MathRaceGame> {
     final rng = Random();
     _questions.clear();
     for (var i = 0; i < _questionCount; i++) {
-      final problem = Grade1Math.nextAddOrSubtract(rng);
+      final problem = Grade1Math.nextAddOrSubtract(random: rng);
       _questions.add(problem);
     }
   }

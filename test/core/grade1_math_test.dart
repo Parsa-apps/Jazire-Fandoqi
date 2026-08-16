@@ -30,7 +30,7 @@ void main() {
   test('generated add/subtract stays in first grade and level 1 stays to 10', () {
     final rng = Random(7);
     for (var i = 0; i < 40; i++) {
-      final easy = Grade1Math.nextAddOrSubtract(rng, level: 1);
+      final easy = Grade1Math.nextAddOrSubtract(random: rng, level: 1);
       final sum = easy.$3 == '+' ? easy.$1 + easy.$2 : easy.$1 - easy.$2;
       expect(sum, lessThanOrEqualTo(10));
       if (easy.$3 == '+') {
@@ -38,7 +38,7 @@ void main() {
       } else {
         expect(Grade1Math.isValidSubtract(easy.$1, easy.$2), isTrue);
       }
-      final hard = Grade1Math.nextAddOrSubtract(rng, level: 3);
+      final hard = Grade1Math.nextAddOrSubtract(random: rng, level: 3);
       if (hard.$3 == '+') {
         expect(Grade1Math.isValidAdd(hard.$1, hard.$2), isTrue);
       } else {

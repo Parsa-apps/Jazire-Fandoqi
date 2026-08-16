@@ -116,7 +116,7 @@ class HandwritingEval {
       );
     }
 
-    final started = points.first.distanceTo(start) <= startRadius;
+    final started = (points.first - start).distance <= startRadius;
     final guide = guideFor(letter);
     final probe = math.min(18, points.length - 1);
     final delta = points[probe] - points.first;
@@ -179,7 +179,7 @@ class HandwritingEval {
     for (final p in points) {
       var best = double.infinity;
       if (demo.length == 1) {
-        best = p.distanceTo(demo.first);
+        best = (p - demo.first).distance;
       } else {
         for (var i = 0; i < demo.length - 1; i++) {
           final d = _distanceToSegment(p, demo[i], demo[i + 1]);
@@ -195,11 +195,11 @@ class HandwritingEval {
   static double _distanceToSegment(Offset p, Offset a, Offset b) {
     final ab = b - a;
     final len2 = ab.dx * ab.dx + ab.dy * ab.dy;
-    if (len2 == 0) return p.distanceTo(a);
+    if (len2 == 0) return (p - a).distance;
     var t = ((p.dx - a.dx) * ab.dx + (p.dy - a.dy) * ab.dy) / len2;
     t = t.clamp(0.0, 1.0);
     final proj = Offset(a.dx + ab.dx * t, a.dy + ab.dy * t);
-    return p.distanceTo(proj);
+    return (p - proj).distance;
   }
 
   /// خانوادهٔ شکل حرف برای راهنمای قلم. «او و» باید و باشد نه الف.

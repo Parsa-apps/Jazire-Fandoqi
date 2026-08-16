@@ -51,7 +51,7 @@ class _AddSubtractGameState extends State<AddSubtractGame> {
     final rng = Random();
     _items.clear();
     for (var i = 0; i < _rounds; i++) {
-      final problem = Grade1Math.nextAddOrSubtract(rng, level: _level);
+      final problem = Grade1Math.nextAddOrSubtract(random: rng, level: _level);
       _items.add(_AddSubtractItem(problem.$1, problem.$2, problem.$3 == '+'));
     }
   }
@@ -60,7 +60,7 @@ class _AddSubtractGameState extends State<AddSubtractGame> {
   void _rewriteRemaining() {
     final rng = Random();
     for (var i = _index + 1; i < _items.length; i++) {
-      final problem = Grade1Math.nextAddOrSubtract(rng, level: _level);
+      final problem = Grade1Math.nextAddOrSubtract(random: rng, level: _level);
       _items[i] = _AddSubtractItem(problem.$1, problem.$2, problem.$3 == '+');
     }
   }

@@ -27,10 +27,10 @@ class Grade1Math {
   static String number(int value) => PersianDigits.toFa(value);
 
   /// سطح ۱ تا ۱۰، سطح ۲ تا ۲۰، سطح ۳ نزدیک بیست — هرگز ضرب و هرگز بالای ۲۰.
-  static (int, int, String) nextAddOrSubtract([
-    Random? random, {
+  static (int, int, String) nextAddOrSubtract({
+    Random? random,
     int level = 2,
-  }]) {
+  }) {
     final rng = random ?? Random();
     final cap = level <= 1 ? 10 : maxNumber;
     for (var i = 0; i < 48; i++) {
