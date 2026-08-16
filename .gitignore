@@ -33,6 +33,7 @@ Thumbs.db
 # The finished renders in promo/ ARE committed — see tools/promo_video/README.md.
 .tmp_build/
 .tmp_preview/
+.venv/
 .venv_promo/
 
 # Python bytecode
