@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 🏪 مانیفست مخصوص flavor بازار (کافه‌بازار).
+     Query پکیج بازار فقط در این flavor به مانیفست نهایی اضافه می‌شود؛ بیلد
+     مایکت هیچ ارجاعی به بازار ندارد (مایکت اپ‌هایی را که از اینتنت‌های
+     مارکت‌های دیگر استفاده می‌کنند تأیید نمی‌کند). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <queries>
+        <package android:name="com.farsitel.bazaar" />
+    </queries>
+
+</manifest>

@@ -92,26 +92,41 @@ jobs:
           echo "Release signing configured from GitHub Secrets."
 
       # ==================== بیلدهای Release ====================
-      # ۱) APK یونیورسال — فقط برای تست دستی/نصب مستقیم روی هر دستگاه.
-      #    سمبل‌های دیباگ جدا می‌شوند تا stack trace قابل رمزگشایی بماند.
-      - name: Build universal APK (Release, obfuscated)
+      # 🏪 از نسخهٔ 6.2.1+2 هر فروشگاه بیلد جداگانه دارد (flavor):
+      #   • myket → بدون Poolakey، بدون permission پرداخت بازار (مایکت APKهای
+      #     دارای com.farsitel.bazaar.permission.PAY_THROUGH_BAZAAR را رد می‌کند)
+      #   • bazaar → با Poolakey، برای کافه‌بازار (AAB رسمی آنجاست)
+      #
+      # ۱) APK مایکت (یونیورسال) — خروجی قابل آپلود در مایکت.
+      - name: Build Myket universal APK (Release, obfuscated)
         run: |
-          flutter build apk --release \
+          flutter build apk --release --flavor myket \
             --obfuscate \
-            --split-debug-info=build/symbols/apk-universal
+            --split-debug-info=build/symbols/apk-myket-universal
           mkdir -p build/dist
-          cp build/app/outputs/flutter-apk/app-release.apk \
-             build/dist/app-universal-release.apk
+          cp build/app/outputs/flutter-apk/app-myket-release.apk \
+             build/dist/app-myket-universal-release.apk
 
-      # ۲) APK های تفکیک‌شده بر اساس ABI — خروجی قابل انتشار، حجم بسیار کمتر.
-      #    این مرحله app-release.apk را بازنویسی نمی‌کند اما نسخه‌ی یونیورسال
-      #    از قبل در build/dist کپی شده تا از هر تداخلی مصون بماند.
-      - name: Build split-per-ABI APKs (Release, obfuscated)
+      # ۲) APKهای مایکت تفکیک‌شده بر اساس ABI — حجم کمتر برای نصب مستقیم.
+      #    این مرحله app-myket-release.apk را بازنویسی نمی‌کند اما نسخهٔ
+      #    یونیورسال از قبل در build/dist کپی شده تا مصون بماند.
+      - name: Build Myket split-per-ABI APKs (Release, obfuscated)
         run: |
-          flutter build apk --release \
+          flutter build apk --release --flavor myket \
             --split-per-abi \
             --obfuscate \
-            --split-debug-info=build/symbols/apk-split
+            --split-debug-info=build/symbols/apk-myket-split
+
+      # ۳) APK بازار (یونیورسال) — فقط برای تست دستی/نصب مستقیم؛ خروجی
+      #    رسمی کافه‌بازار AAB است (مرحلهٔ بعد).
+      - name: Build Bazaar universal APK (Release, obfuscated)
+        run: |
+          flutter build apk --release --flavor bazaar \
+            --obfuscate \
+            --split-debug-info=build/symbols/apk-bazaar-universal
+          mkdir -p build/dist
+          cp build/app/outputs/flutter-apk/app-bazaar-release.apk \
+             build/dist/app-bazaar-universal-release.apk
 
       - name: Verify release signing (all APKs)
         if: ${{ env.KEYSTORE_B64 != '' }}
@@ -120,24 +135,37 @@ jobs:
           APS="$(ls "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)"
           test -n "$APS" || { echo "apksigner not found under $ANDROID_HOME/build-tools"; exit 1; }
 
-          # همه‌ی APK های تولیدشده (یونیورسال + هر ABI) باید با گواهی release
-          # امضا شده باشند؛ اگر حتی یکی رد شود کل مرحله fail می‌شود.
+          # همه‌ی APK های تولیدشده (یونیورسال هر flavor + هر ABI) باید با
+          # گواهی release امضا شده باشند؛ اگر حتی یکی رد شود مرحله fail می‌شود.
           COUNT=0
-          for APK in build/dist/app-universal-release.apk \
+          for APK in build/dist/app-*-universal-release.apk \
                      build/app/outputs/flutter-apk/app-*-release.apk; do
             [ -f "$APK" ] || continue
             echo "──────── verifying: $APK"
             "$APS" verify --print-certs "$APK"
             COUNT=$((COUNT + 1))
           done
-          test "$COUNT" -ge 2 || { echo "expected at least 2 APKs to verify, found $COUNT"; exit 1; }
+          test "$COUNT" -ge 3 || { echo "expected at least 3 APKs to verify, found $COUNT"; exit 1; }
           echo "All $COUNT APKs verified: signed with the release certificate."
 
-      # ۳) AAB — خروجی رسمی فروشگاه. تفکیک ABI/زبان/چگالی از قبل در
-      #    android/app/build.gradle فعال است، پس اینجا فقط obfuscate اضافه می‌شود.
-      - name: Build AAB (Release, obfuscated)
+      # 🛡️ اطمینان نهایی مایکت: permission پرداخت کافه‌بازار نباید در هیچ
+      # APK مایکت وجود داشته باشد، وگرنه آپلود در پنل مایکت رد می‌شود.
+      - name: Verify Myket APKs carry no Cafe Bazaar payment permission
         run: |
-          flutter build appbundle --release \
+          set -euo pipefail
+          for APK in build/app/outputs/flutter-apk/app-myket-*-release.apk; do
+            [ -f "$APK" ] || continue
+            if unzip -p "$APK" AndroidManifest.xml | strings | grep -qi "PAY_THROUGH_BAZAAR"; then
+              echo "❌ forbidden Bazaar permission found in $APK"; exit 1
+            fi
+            echo "✅ clean: $(basename "$APK")"
+          done
+
+      # ۴) AAB بازار — خروجی رسمی کافه‌بازار. تفکیک ABI/زبان/چگالی از قبل در
+      #    android/app/build.gradle فعال است، پس اینجا فقط obfuscate اضافه می‌شود.
+      - name: Build Bazaar AAB (Release, obfuscated)
+        run: |
+          flutter build appbundle --release --flavor bazaar \
             --obfuscate \
             --split-debug-info=build/symbols/aab
 
@@ -150,9 +178,9 @@ jobs:
             echo ""
             echo "| فایل | بایت | مگابایت |"
             echo "|---|---:|---:|"
-            for F in build/dist/app-universal-release.apk \
+            for F in build/dist/app-*-universal-release.apk \
                      build/app/outputs/flutter-apk/app-*-release.apk \
-                     build/app/outputs/bundle/release/app-release.aab; do
+                     build/app/outputs/bundle/release/app-bazaar-release.aab; do
               [ -f "$F" ] || continue
               B=$(stat -c%s "$F")
               M=$(awk -v b="$B" 'BEGIN{printf "%.2f", b/1048576}')
@@ -164,25 +192,25 @@ jobs:
           cat "$GITHUB_STEP_SUMMARY"
 
       # ==================== آپلود آرتیفکت‌ها ====================
-      - name: Upload split APKs
+      - name: Upload Myket split APKs (for Myket submission)
         uses: actions/upload-artifact@v4
         with:
-          name: kudake_iran_v3.0.0_apk
-          path: build/app/outputs/flutter-apk/app-*-release.apk
+          name: jazireh_fandoghi_myket_apk
+          path: build/app/outputs/flutter-apk/app-myket-*-release.apk
           if-no-files-found: error
 
-      - name: Upload universal APK (testing only)
+      - name: Upload universal APKs (testing only, both flavors)
         uses: actions/upload-artifact@v4
         with:
-          name: kudake_iran_v3.0.0_apk_universal
-          path: build/dist/app-universal-release.apk
+          name: jazireh_fandoghi_apk_universal
+          path: build/dist/app-*-universal-release.apk
           if-no-files-found: error
 
-      - name: Upload AAB
+      - name: Upload Bazaar AAB (for Cafe Bazaar submission)
         uses: actions/upload-artifact@v4
         with:
-          name: kudake_iran_v3.0.0_aab
-          path: build/app/outputs/bundle/release/app-release.aab
+          name: jazireh_fandoghi_bazaar_aab
+          path: build/app/outputs/bundle/release/app-bazaar-release.aab
           if-no-files-found: error
 
       # سمبل‌های دیباگ برای رمزگشایی stack trace نسخه‌ی obfuscate‌شده.
