@@ -99,7 +99,9 @@ class _SplashState extends State<SplashScreen>
               child: Image.asset(
                 'assets/gateway/coral_island_bg.webp',
                 fit: BoxFit.cover,
-                alignment: Alignment.center,
+                // فندقی و وسایل یادگیری‌اش پایین قاب هستند؛ با لنگر پایین
+                // روی نمایشگرهای کوتاه‌تر یا پهن‌تر هم بریده نمی‌شوند.
+                alignment: Alignment.bottomCenter,
               ),
             ),
             Positioned.fill(
@@ -113,6 +115,27 @@ class _SplashState extends State<SplashScreen>
                       Colors.transparent,
                       const Color(0xFF023E8A).withOpacity(0.45),
                     ],
+                  ),
+                ),
+              ),
+            ),
+            // هالهٔ نرم پشت عنوان: آبِ فیروزه‌ای روشن است و متن سفید روی آن
+            // گم می‌شد. این لایه فقط مرکز قاب را کمی عمق می‌دهد و لبه‌ها و
+            // خودِ فندقی را دست‌نخورده می‌گذارد.
+            Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: const Alignment(0, -0.22),
+                      radius: 0.95,
+                      colors: [
+                        const Color(0xFF012A5E).withOpacity(0.42),
+                        const Color(0xFF012A5E).withOpacity(0.18),
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 0.55, 1.0],
+                    ),
                   ),
                 ),
               ),
@@ -142,7 +165,7 @@ class _SplashState extends State<SplashScreen>
                         fontSize: 18,
                         color: Colors.white,
                         fontWeight: FontWeight.w800,
-                      ),
+                      ).copyWith(shadows: _textShadows),
                     ),
                   ),
                   const SizedBox(height: 18),
@@ -170,10 +193,11 @@ class _SplashState extends State<SplashScreen>
                         'دنیای یادگیری و بازی',
                         style: AppFonts.vazirmatn(
                           fontSize: 18,
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w500,
+                          // روی آبِ روشن، white70 تقریباً محو می‌شد.
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
                           letterSpacing: 1.5,
-                        ),
+                        ).copyWith(shadows: _textShadows),
                       ),
                     ),
                   ),
@@ -294,36 +318,68 @@ class _SplashState extends State<SplashScreen>
     );
   }
 
+  /// سایهٔ مشترک متن‌های اسپلش — پس‌زمینه آبِ فیروزه‌ای روشن است و متن سفید
+  /// بدون سایه روی آن گم می‌شود.
+  static const List<Shadow> _textShadows = [
+    Shadow(color: Color(0x99012A5E), blurRadius: 12, offset: Offset(0, 2)),
+    Shadow(color: Color(0x66012A5E), blurRadius: 26),
+  ];
+
   Widget _buildShimmerText() {
     return AnimatedBuilder(
       animation: _glowCtrl,
       builder: (_, __) {
-        return ShaderMask(
-          shaderCallback: (bounds) {
-            return LinearGradient(
-              colors: const [
-                Color(0xFFFFFFFF),
-                Color(0xFFFFD700),
-                Color(0xFFFFFFFF),
-              ],
-              stops: [
-                (_glowCtrl.value - 0.3).clamp(0.0, 1.0).toDouble(),
-                _glowCtrl.value,
-                (_glowCtrl.value + 0.3).clamp(0.0, 1.0).toDouble(),
-              ],
-            ).createShader(bounds);
-          },
-          child: Text(
-            'جزیره فندقی',
-            style: AppFonts.vazirmatn(
-              fontSize: 48,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-              letterSpacing: 2,
+        // ShaderMask رنگ متن را بازنویسی می‌کند و سایهٔ داخل TextStyle را
+        // می‌بلعد؛ پس سایه را زیر آن به‌صورت یک لایهٔ جدا می‌گذاریم.
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            Text(
+              'جزیره فندقی',
+              style: AppFonts.vazirmatn(
+                fontSize: 48,
+                fontWeight: FontWeight.w900,
+                color: Colors.transparent,
+                letterSpacing: 2,
+              ).copyWith(shadows: _titleShadows),
             ),
-          ),
+            _buildShimmerLayer(),
+          ],
         );
       },
+    );
+  }
+
+  static const List<Shadow> _titleShadows = [
+    Shadow(color: Color(0xB3012A5E), blurRadius: 18, offset: Offset(0, 3)),
+    Shadow(color: Color(0x80012A5E), blurRadius: 38),
+  ];
+
+  Widget _buildShimmerLayer() {
+    return ShaderMask(
+      shaderCallback: (bounds) {
+        return LinearGradient(
+          colors: const [
+            Color(0xFFFFFFFF),
+            Color(0xFFFFD700),
+            Color(0xFFFFFFFF),
+          ],
+          stops: [
+            (_glowCtrl.value - 0.3).clamp(0.0, 1.0).toDouble(),
+            _glowCtrl.value,
+            (_glowCtrl.value + 0.3).clamp(0.0, 1.0).toDouble(),
+          ],
+        ).createShader(bounds);
+      },
+      child: Text(
+        'جزیره فندقی',
+        style: AppFonts.vazirmatn(
+          fontSize: 48,
+          fontWeight: FontWeight.w900,
+          color: Colors.white,
+          letterSpacing: 2,
+        ),
+      ),
     );
   }
 
