@@ -158,10 +158,12 @@ android {
         bazaar {
             dimension "store"
             buildConfigField "String", "STORE_FLAVOR", "\"bazaar\""
+            buildConfigField "boolean", "IS_BAZAAR_FLAVOR", "true"
         }
         myket {
             dimension "store"
             buildConfigField "String", "STORE_FLAVOR", "\"myket\""
+            buildConfigField "boolean", "IS_BAZAAR_FLAVOR", "false"
         }
     }
 

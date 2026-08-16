@@ -6,7 +6,8 @@
   - `--flavor bazaar` → مخصوص کافه‌بازار (با Poolakey).
   - `--flavor myket` → مخصوص مایکت (**بدون Poolakey و بدون دسترسی بازار**)؛ پرداخت مایکت با `Myket Billing Client` مثل قبل کار می‌کند.
 - در بیلد release، flavor ملاک قطعی انتخاب درگاه است (هم در Kotlin هم در Dart)؛ تشخیص نصب‌کننده فقط برای بیلدهای بدون flavor باقی مانده.
-- خروجی مایکت: `flutter build apk --release --flavor myket` → `app-myket-release.apk`. اسکریپت `build.sh` هم متغیر `STORE_FLAVOR` (پیش‌فرض `bazaar`) را می‌پذیرد و برای بیلد مایکت نبودِ دسترسی بازار را خودش چک می‌کند.
+- query پکیج بازار در مانیفست هم flavor-scoped شد (فقط در بیلد بازار) تا بیلد مایکت هیچ ارجاعی به مارکت دیگر نداشته باشد (سیاست «اینتنت‌های مارکت‌های دیگر» مایکت).
+- خروجی مایکت: `flutter build apk --release --flavor myket` → `app-myket-release.apk`. اسکریپت `build.sh` هم متغیر `STORE_FLAVOR` (پیش‌فرض `bazaar`) را می‌پذیرد و `tool/verify_store_apk.sh` پیش از آپلود، دقیقاً روی همان فایل، نبودِ دسترسی و ارجاع بازار را چک می‌کند.
 - جزئیات کامل: `BUILD_INSTRUCTIONS.md` (بخش ۵ و رفع مشکلات) و `store/myket/README.md`.
 
 ---

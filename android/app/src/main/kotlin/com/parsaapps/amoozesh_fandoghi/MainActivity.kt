@@ -260,11 +260,20 @@ class MainActivity : FlutterFragmentActivity() {
     /** صفحهٔ امتیازدهی همان فروشگاهی که اپ از آن نصب شده است. */
     private fun openStoreReview(result: MethodChannel.Result) {
         val opened = when (vendor) {
-            StoreVendor.BAZAAR -> openStoreIntent(
-                deepLink = "bazaar://details?id=$packageName",
-                storePackage = StoreVendor.BAZAAR_PACKAGE,
-                webUrl = "https://cafebazaar.ir/app/$packageName",
-            )
+            StoreVendor.BAZAAR ->
+                // 🏪 بیلد مایکت اصلاً نباید حاوی اینتنت بازار باشد (سیاست
+                // مایکت: «در صورت استفاده از اینتنت‌های مارکت‌های دیگر تأیید
+                // نمی‌شوید»). IS_BAZAAR_FLAVOR ثابت compile-time است، پس در
+                // بیلد مایکت این شاخه و رشتهٔ bazaar:// کلاً حذف می‌شود.
+                if (BuildConfig.IS_BAZAAR_FLAVOR) {
+                    openStoreIntent(
+                        deepLink = "bazaar://details?id=$packageName",
+                        storePackage = StoreVendor.BAZAAR_PACKAGE,
+                        webUrl = "https://cafebazaar.ir/app/$packageName",
+                    )
+                } else {
+                    false
+                }
             StoreVendor.MYKET -> openStoreIntent(
                 deepLink = "myket://comment?id=$packageName",
                 storePackage = StoreVendor.MYKET_PACKAGE,
