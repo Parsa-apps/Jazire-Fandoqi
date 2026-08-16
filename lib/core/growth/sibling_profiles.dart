@@ -71,7 +71,11 @@ class SiblingProfiles {
     return true;
   }
 
-  static void _syncMetaFromGame() {
+  static void _syncMetaFromGame() => syncActiveMeta();
+
+  /// به‌روزرسانی فراداده‌ی کودک فعال (نام، سن، آواتار) از GameData.
+  /// وقتی والد مستقیماً پروفایل را ویرایش می‌کند صدا زده می‌شود.
+  static void syncActiveMeta() {
     GrowthStore.siblings = GrowthStore.siblings.map((s) {
       if (s['id'] != GrowthStore.activeSiblingId) return s;
       return <String, Object?>{
@@ -81,5 +85,7 @@ class SiblingProfiles {
         'avatar': GameData.avatar,
       };
     }).toList();
+    GrowthStore.save();
+    GrowthStore.changes.bump();
   }
 }
