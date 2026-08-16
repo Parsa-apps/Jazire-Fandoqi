@@ -23,7 +23,7 @@ class ReportCardTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(gameStateProvider);
     final total = GameData.totalCorrect + GameData.totalWrong;
-    final rate = total == 0 ? 100 : (GameData.totalCorrect / total * 100).toInt();
+    final rate = total == 0 ? 0 : (GameData.totalCorrect / total * 100).toInt();
     final minutes = GameData.todayPlayMinutes;
 
     return Scaffold(
@@ -243,11 +243,11 @@ class ReportCardTab extends ConsumerWidget {
 
   Widget _buildSubjectsProgress() {
     final subjects = [
-      ('فارسی و الفبا', '🔤', (GameData.skills['alphabet'] ?? 5) / 20.0, const Color(0xFFD35400)),
-      ('ریاضی و شمارش', '🔢', (GameData.skills['math'] ?? 8) / 20.0, const Color(0xFF8E44AD)),
-      ('علوم و حیوانات', '🦁', (GameData.skills['animals'] ?? 6) / 20.0, const Color(0xFF27AE60)),
-      ('هنر و نقاشی', '🎨', (GameData.skills['colors'] ?? 10) / 20.0, const Color(0xFFE74C3C)),
-      ('مهارت‌های زندگی', '🧭', (GameData.skills['concepts'] ?? 4) / 20.0, const Color(0xFF00897B)),
+      ('فارسی و الفبا', '🔤', (GameData.skills['alphabet'] ?? 0) / 20.0, const Color(0xFFD35400)),
+      ('ریاضی و شمارش', '🔢', (GameData.skills['math'] ?? 0) / 20.0, const Color(0xFF8E44AD)),
+      ('علوم و حیوانات', '🦁', (GameData.skills['animals'] ?? 0) / 20.0, const Color(0xFF27AE60)),
+      ('هنر و نقاشی', '🎨', (GameData.skills['colors'] ?? 0) / 20.0, const Color(0xFFE74C3C)),
+      ('مهارت‌های زندگی', '🧭', (GameData.skills['concepts'] ?? 0) / 20.0, const Color(0xFF00897B)),
     ];
 
     return Container(
@@ -265,7 +265,7 @@ class ReportCardTab extends ConsumerWidget {
       ),
       child: Column(
         children: subjects.map((s) {
-          final progress = s.$3.clamp(0.1, 1.0);
+          final progress = s.$3.clamp(0.0, 1.0);
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Column(

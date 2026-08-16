@@ -12,6 +12,7 @@ import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
+import '../../../core/growth/persian_digits.dart';
 import '../../../core/play_limit.dart';
 import '../../../shared/widgets/child_touch_target.dart';
 import '../../../shared/widgets/fandoghi_premium.dart';
@@ -47,7 +48,7 @@ class _TallyMarksGameState extends State<TallyMarksGame> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       FandoghiCoach.say(
-        'با ضربه زدن، چوب‌خط‌ها را بکش تا به عدد $_targetNumber برسیم! هر ۵ تا یه بسته میشه 🥢',
+        'با ضربه زدن، چوب‌خط‌ها را بکش تا به عدد ${PersianDigits.toFa(_targetNumber)} برسیم! هر ۵ تا یه بسته میشه 🥢',
         mood: FandoghiMood.excited,
         duration: const Duration(seconds: 4),
       );
@@ -107,7 +108,7 @@ class _TallyMarksGameState extends State<TallyMarksGame> {
     GameData.addCoins(10);
     GameData.addStars(1);
     AudioService.win();
-    FandoghiCoach.celebrate('عالی بود! عدد $_targetNumber چوب‌خط با دقت کشیده شد 🎉');
+    FandoghiCoach.celebrate('عالی بود! عدد ${PersianDigits.toFa(_targetNumber)} چوب‌خط با دقت کشیده شد 🎉');
 
     Future.delayed(const Duration(milliseconds: 1800), () {
       if (!mounted) return;
@@ -119,7 +120,7 @@ class _TallyMarksGameState extends State<TallyMarksGame> {
           _won = false;
         });
         FandoghiCoach.say(
-          'مرحله $_round: حالا عدد $_targetNumber چوب‌خط بکش 🥢',
+          'مرحله ${PersianDigits.toFa(_round)}: حالا عدد ${PersianDigits.toFa(_targetNumber)} چوب‌خط بکش 🥢',
           mood: FandoghiMood.happy,
         );
         unawaited(AudioService.speak('مرحله $_round: عدد $_targetNumber'));
@@ -221,7 +222,7 @@ class _TallyMarksGameState extends State<TallyMarksGame> {
                 const Icon(Icons.star_rounded, size: 16, color: Colors.black87),
                 const SizedBox(width: 4),
                 Text(
-                  '$_score',
+                  PersianDigits.toFa(_score),
                   style: AppFonts.vazirmatn(
                     fontSize: 13,
                     fontWeight: FontWeight.w900,
@@ -254,7 +255,7 @@ class _TallyMarksGameState extends State<TallyMarksGame> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'هدف: عدد $_targetNumber',
+                  'هدف: عدد ${PersianDigits.toFa(_targetNumber)}',
                   style: AppFonts.vazirmatn(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
@@ -262,7 +263,7 @@ class _TallyMarksGameState extends State<TallyMarksGame> {
                   ),
                 ),
                 Text(
-                  'تا حالا کشیدی: $_currentSticks چوب‌خط',
+                  'تا حالا کشیدی: ${PersianDigits.toFa(_currentSticks)} چوب‌خط',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,

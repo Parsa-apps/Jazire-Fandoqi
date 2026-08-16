@@ -1,6 +1,7 @@
 import 'cartoons/cartoon_data.dart';
 import 'learning_content/children_stories_data.dart';
 import 'learning_content/lullabies_data.dart';
+import 'literacy/decodable_stories.dart';
 
 /// The single source of truth for partially-free content collections.
 ///
@@ -12,7 +13,8 @@ abstract final class ContentAccessPolicy {
   static const int freeStoryCount = 2;
   static const int freeLullabyCount = 2;
   static const int freeAlphabetTopRowCount = 8;
-  static const int freeNumberCount = 2;
+  /// شمارش ۱ تا ۱۰ هستهٔ ریاضی اول دبستان است و نباید پشت پرداخت قفل شود.
+  static const int freeNumberCount = 10;
 
   static bool isCartoonFree(String id) => _isAmongFirst(
         id,
@@ -20,11 +22,14 @@ abstract final class ContentAccessPolicy {
         freeCartoonCount,
       );
 
-  static bool isStoryFree(String id) => _isAmongFirst(
-        id,
-        ChildrenStoriesData.allStories.map((item) => item.id),
-        freeStoryCount,
-      );
+  static bool isStoryFree(String id) {
+    if (DecodableStories.isDecodableId(id)) return true;
+    return _isAmongFirst(
+      id,
+      ChildrenStoriesData.allStories.map((item) => item.id),
+      freeStoryCount,
+    );
+  }
 
   static bool isLullabyFree(String id) => _isAmongFirst(
         id,

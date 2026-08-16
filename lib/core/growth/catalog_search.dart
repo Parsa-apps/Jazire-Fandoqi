@@ -28,6 +28,10 @@ class CatalogSearch {
     final items = <CatalogItem>[
       const CatalogItem(title: 'الفبا', subtitle: 'نوشتن حروف فارسی', route: '/game/الفبا', emoji: '🔤', category: 'بازی', tags: ['حرف', 'نوشتن']),
       const CatalogItem(title: 'اعداد', subtitle: 'شمارش ۱ تا ۲۰', route: '/numbers', emoji: '🔢', category: 'آموزش', tags: ['ریاضی']),
+      const CatalogItem(title: 'قاب ده‌تایی', subtitle: 'ساخت عدد در ۱۰ خانه', route: '/math/ten-frame', emoji: '🟥', category: 'آموزش', tags: ['ریاضی', 'شمارش']),
+      const CatalogItem(title: 'تمساح', subtitle: 'بزرگ‌تر و کوچک‌تر', route: '/math/compare', emoji: '🐊', category: 'آموزش', tags: ['ریاضی', 'مقایسه']),
+      const CatalogItem(title: 'ساعت کامل', subtitle: 'ساعت‌های رند اول دبستان', route: '/math/clock', emoji: '🕐', category: 'آموزش', tags: ['ریاضی', 'ساعت']),
+      const CatalogItem(title: 'املا', subtitle: 'املای شنیداری', route: '/dictation', emoji: '👂', category: 'آموزش', tags: ['الفبا', 'شنیدن']),
       const CatalogItem(title: 'رنگ‌ها', subtitle: 'آزمایشگاه رنگ', route: '/game/رنگ‌ها', emoji: '🎨', category: 'بازی', tags: ['رنگ']),
       const CatalogItem(title: 'حافظه', subtitle: 'کارت‌های حافظه', route: '/memory_match', emoji: '🧠', category: 'بازی', tags: ['فکر']),
       const CatalogItem(title: 'حباب‌ترکان', subtitle: 'بازی سرعت', route: '/bubble_pop', emoji: '🫧', category: 'بازی', tags: ['سرگرمی']),

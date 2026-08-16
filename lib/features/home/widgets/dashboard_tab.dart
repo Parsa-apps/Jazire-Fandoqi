@@ -20,6 +20,7 @@ import '../../../shared/widgets/premium_streak_calendar.dart';
 import '../../../shared/widgets/premium/particle_celebration.dart';
 import '../../profile/profile_editor.dart';
 import '../../shop/full_version_paywall.dart';
+import '../../../shared/widgets/parent_pin_gate.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// 🏝️ DASHBOARD TAB — دنیای بازی و یادگیری جزیره فندقی
@@ -66,6 +67,11 @@ class _DashboardState extends ConsumerState<DashboardTab>
     'ستاره‌گیری',
     'حباب‌ترکان',
     'نقاشی',
+    'قاب ده‌تایی',
+    'تمساح',
+    'ساعت',
+    'جمع',
+    'املا',
   };
 
   Future<void> _openGame(String route, String gameName) async {
@@ -107,81 +113,9 @@ class _DashboardState extends ConsumerState<DashboardTab>
     return 'شب بخیر 🌙';
   }
 
-  String _normalizeDigits(String input) {
-    const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-    const englishDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-    String result = input;
-    for (int i = 0; i < persianDigits.length; i++) {
-      result = result.replaceAll(persianDigits[i], englishDigits[i]);
-    }
-    return result;
-  }
-
   Future<void> _parentGate(BuildContext context) async {
-    final n1 = Random().nextInt(10) + 1;
-    final n2 = Random().nextInt(10) + 1;
-    final controller = TextEditingController();
-    var errorText = '';
-
-    final approved = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: const Text('🔒 ورود والدین'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'این بخش برای بزرگ‌ترهاست. لطفاً پاسخ دهید:',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                '$n1 + $n2 = ?',
-                style:
-                    const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                keyboardType: TextInputType.number,
-                textAlign: TextAlign.center,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: 'جواب',
-                  errorText: errorText.isEmpty ? null : errorText,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('انصراف'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final normalized = _normalizeDigits(controller.text.trim());
-                if (int.tryParse(normalized) == n1 + n2) {
-                  Navigator.pop(dialogContext, true);
-                } else {
-                  setDialogState(() => errorText = 'جواب نادرست است.');
-                }
-              },
-              child: const Text('تایید'),
-            ),
-          ],
-        ),
-      ),
-    );
-    controller.dispose();
-    if (approved == true && context.mounted) {
+    final approved = await requestParentAccess(context);
+    if (approved && context.mounted) {
       await Navigator.pushNamed(context, '/parent');
     }
   }
@@ -206,6 +140,42 @@ class _DashboardState extends ConsumerState<DashboardTab>
           glow: const Color(0xFFFF8E53),
           category: _GameCategory.base,
           subtitle: 'شمارش و ریاضی',
+        ),
+        const _GameTile(
+          title: 'قاب ده‌تایی',
+          gameName: 'قاب ده‌تایی',
+          route: '/math/ten-frame',
+          emoji: '🟥',
+          glow: Color(0xFFC0392B),
+          category: _GameCategory.base,
+          subtitle: 'ده خانه برای ساخت عدد',
+        ),
+        const _GameTile(
+          title: 'تمساح',
+          gameName: 'تمساح',
+          route: '/math/compare',
+          emoji: '🐊',
+          glow: Color(0xFF2E7D32),
+          category: _GameCategory.base,
+          subtitle: 'بزرگ‌تر و کوچک‌تر',
+        ),
+        const _GameTile(
+          title: 'ساعت',
+          gameName: 'ساعت',
+          route: '/math/clock',
+          emoji: '🕐',
+          glow: Color(0xFF1565C0),
+          category: _GameCategory.base,
+          subtitle: 'ساعت کامل اول دبستان',
+        ),
+        const _GameTile(
+          title: 'املا',
+          gameName: 'املا',
+          route: '/dictation',
+          emoji: '👂',
+          glow: Color(0xFF6C5CE7),
+          category: _GameCategory.base,
+          subtitle: 'املای شنیداری',
         ),
         _GameTile(
           title: 'رنگ‌ها',
@@ -849,13 +819,13 @@ class _DashboardState extends ConsumerState<DashboardTab>
   Widget _buildPlatformsGrid(BoxConstraints constraints) {
     final maxWidth = constraints.maxWidth > 0 ? constraints.maxWidth : 360.0;
     final gap = 12.0;
-    final tileSize = ((maxWidth - gap * 2) / 3).clamp(84.0, 125.0);
+    final tileSize = ((maxWidth - gap) / 2).clamp(120.0, 168.0);
 
     final games = _filteredGames;
     final rows = <Widget>[];
 
-    for (var i = 0; i < games.length; i += 3) {
-      final rowGames = games.skip(i).take(3).toList();
+    for (var i = 0; i < games.length; i += 2) {
+      final rowGames = games.skip(i).take(2).toList();
       rows.add(
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -872,7 +842,7 @@ class _DashboardState extends ConsumerState<DashboardTab>
           ],
         ),
       );
-      if (i + 3 < games.length) {
+      if (i + 2 < games.length) {
         rows.add(SizedBox(height: gap + 6));
       }
     }

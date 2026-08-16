@@ -19,6 +19,12 @@ void main() {
     expect(pubspec, isNot(contains('image_cropper:')));
     expect(profileEditor, isNot(contains('ImagePicker')));
     expect(profileEditor, isNot(contains('ImageCropper')));
+
+    final album =
+        File('lib/core/drawing/drawing_album.dart').readAsStringSync();
+    expect(album, contains('getApplicationDocumentsDirectory'));
+    expect(album, isNot(contains('getExternalStorageDirectory')));
+    expect(album, isNot(contains('Gal.putImage')));
   });
 
   test('all 20 bundled avatars exist', () {

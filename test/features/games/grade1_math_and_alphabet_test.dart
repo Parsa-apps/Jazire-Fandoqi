@@ -7,6 +7,13 @@ import 'package:jazireh_fandoghi/features/games/math/tally_marks_game.dart';
 import 'package:jazireh_fandoghi/features/games/math/place_value_game.dart';
 import 'package:jazireh_fandoghi/features/games/math/number_line_game.dart';
 import 'package:jazireh_fandoghi/features/games/math/symmetry_game.dart';
+import 'package:jazireh_fandoghi/features/games/math/ten_frame_game.dart';
+import 'package:jazireh_fandoghi/features/games/math/compare_crocodile_game.dart';
+import 'package:jazireh_fandoghi/features/games/math/clock_hour_game.dart';
+import 'package:jazireh_fandoghi/features/games/math/add_subtract_game.dart';
+import 'package:jazireh_fandoghi/features/games/drawing/drawing_album_screen.dart';
+import 'package:jazireh_fandoghi/features/games/alphabet_academy/dictation_game.dart';
+import 'package:jazireh_fandoghi/shared/widgets/handwriting_score_overlay.dart';
 
 Future<void> _disposeAnimatedTree(WidgetTester tester) async {
   await tester.pumpWidget(const SizedBox.shrink());
@@ -36,6 +43,8 @@ void main() {
     expect(find.text('آکادمی الفبا و اول دبستان 🔤'), findsOneWidget);
     expect(find.text('کتاب اول دبستان 📚'), findsOneWidget);
     expect(find.text('الفبایی سنتی 🔤'), findsOneWidget);
+    expect(find.textContaining('اول صدا، هجا و کلمه را بشنو'), findsOneWidget);
+    expect(find.byKey(const ValueKey('literacy_step_0')), findsOneWidget);
 
     await _disposeAnimatedTree(tester);
   });
@@ -80,6 +89,101 @@ void main() {
     expect(find.text('محور اعداد جهنده 🐸'), findsOneWidget);
     expect(find.text('جهش به جلو (+۱)'), findsOneWidget);
     expect(find.text('جهش به عقب (-۱)'), findsOneWidget);
+
+    await _disposeAnimatedTree(tester);
+  });
+
+  testWidgets('TenFrameGame renders classroom ten-frame', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: TenFrameGame(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('قاب ده‌تایی 🟥'), findsOneWidget);
+    expect(find.textContaining('هدف: عدد'), findsOneWidget);
+
+    await _disposeAnimatedTree(tester);
+  });
+
+  testWidgets('CompareCrocodileGame renders compare choices', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: CompareCrocodileGame(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('تمساح بزرگ‌تر و کوچک‌تر 🐊'), findsOneWidget);
+    expect(find.textContaining('مساوی'), findsOneWidget);
+    expect(find.textContaining('عدد سمت چپ بزرگ‌تر است'), findsOneWidget);
+    expect(find.textContaining('عدد سمت راست بزرگ‌تر است'), findsOneWidget);
+
+    await _disposeAnimatedTree(tester);
+  });
+
+  testWidgets('AddSubtractGame shows first-grade addition', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: AddSubtractGame(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('جمع و تفریق تا ۲۰ ➕'), findsOneWidget);
+    expect(find.textContaining('= ؟'), findsOneWidget);
+
+    await _disposeAnimatedTree(tester);
+  });
+
+  testWidgets('ClockHourGame asks the hour', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ClockHourGame(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('ساعت کامل 🕐'), findsOneWidget);
+    expect(find.text('ساعت چند است؟'), findsOneWidget);
+
+    await _disposeAnimatedTree(tester);
+  });
+
+  testWidgets('HandwritingScoreOverlay shows mastery count and sentence', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: HandwritingScoreOverlay(
+            score: 0.9,
+            letter: 'ب',
+            passed: true,
+            masteryCount: 2,
+            sentence: 'بابا آب داد.',
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.textContaining('قبولی'), findsOneWidget);
+    expect(find.textContaining('بابا آب داد.'), findsOneWidget);
+    expect(find.textContaining('نشانه بعدی'), findsOneWidget);
+
+    await _disposeAnimatedTree(tester);
+  });
+
+  testWidgets('AlphabetDictationGame starts with listen prompt', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: AlphabetDictationGame(words: ['آب', 'بابا', 'سیب']),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('کدام کلمه را شنیدی؟'), findsOneWidget);
+    expect(find.text('دوباره بشنو'), findsOneWidget);
 
     await _disposeAnimatedTree(tester);
   });

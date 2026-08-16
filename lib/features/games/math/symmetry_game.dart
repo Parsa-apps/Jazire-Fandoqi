@@ -330,7 +330,9 @@ class _SymmetryGameState extends State<SymmetryGame> {
     final size = MediaQuery.of(context).size.width * 0.85;
     final cellSize = (size / _pattern.cols).clamp(40.0, 56.0);
 
-    return Container(
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -389,6 +391,7 @@ class _SymmetryGameState extends State<SymmetryGame> {
           ),
         ],
       ),
+    ),
     );
   }
 

@@ -25,6 +25,9 @@ void main() {
   test('query matches title, subtitle and tags', () {
     expect(CatalogSearch.query('ترافیک'), isNotEmpty);
     expect(CatalogSearch.query('لالایی'), isNotEmpty);
+    expect(CatalogSearch.query('تمساح'), isNotEmpty);
+    expect(CatalogSearch.query('قاب'), isNotEmpty);
+    expect(CatalogSearch.query('املا'), isNotEmpty);
   });
 
   test('adaptive coach scales options and difficulty by age', () {

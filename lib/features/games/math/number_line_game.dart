@@ -11,6 +11,7 @@ import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
+import '../../../core/math/grade1_math.dart';
 import '../../../core/play_limit.dart';
 import '../../../shared/widgets/child_touch_target.dart';
 import '../../../shared/widgets/fandoghi_premium.dart';
@@ -35,7 +36,7 @@ class _Equation {
   final int step;
   final bool isAddition;
   int get answer => isAddition ? start + step : start - step;
-  String get text => isAddition ? '$start + $step = ؟' : '$start - $step = ؟';
+  String get text => Grade1Math.equation(start, isAddition ? '+' : '−', step);
 
   const _Equation(this.start, this.step, this.isAddition);
 }
@@ -71,7 +72,7 @@ class _NumberLineGameState extends State<NumberLineGame> {
 
   void _announceRound() {
     FandoghiCoach.say(
-      'فندقی روی عدد ${_eq.start} است. با دکمه‌های پرش، مسئله «${_eq.text}» را حل کن! 🐸',
+      'فندقی روی عدد ${Grade1Math.number(_eq.start)} است. با دکمه‌های پرش، مسئله «${_eq.text}» را حل کن! 🐸',
       mood: FandoghiMood.excited,
       duration: const Duration(seconds: 4),
     );
@@ -112,7 +113,7 @@ class _NumberLineGameState extends State<NumberLineGame> {
       GameData.addCoins(12);
       GameData.addStars(1);
       AudioService.win();
-      FandoghiCoach.celebrate('آفرین! فندقی دقیقاً روی عدد ${_eq.answer} فرود آمد 🎉');
+      FandoghiCoach.celebrate('آفرین! فندقی دقیقاً روی عدد ${Grade1Math.number(_eq.answer)} فرود آمد 🎉');
 
       Future.delayed(const Duration(milliseconds: 2000), () {
         if (!mounted) return;
@@ -218,7 +219,7 @@ class _NumberLineGameState extends State<NumberLineGame> {
                 const Icon(Icons.star_rounded, size: 16, color: Colors.black87),
                 const SizedBox(width: 4),
                 Text(
-                  '$_score',
+                  Grade1Math.number(_score),
                   style: AppFonts.vazirmatn(
                     fontSize: 13,
                     fontWeight: FontWeight.w900,
@@ -259,7 +260,7 @@ class _NumberLineGameState extends State<NumberLineGame> {
                   ),
                 ),
                 Text(
-                  'موقعیت فندقی: عدد $_fandoghiPos',
+                  'موقعیت فندقی: عدد ${Grade1Math.number(_fandoghiPos)}',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
@@ -295,9 +296,10 @@ class _NumberLineGameState extends State<NumberLineGame> {
       child: Column(
         children: [
           // خط محور با گره‌ها و نشانگر فندقی
-          SingleChildScrollView(
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            reverse: true, // نمایش راست به چپ مطابق ریاضی فارسی
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(
@@ -339,7 +341,7 @@ class _NumberLineGameState extends State<NumberLineGame> {
                         const SizedBox(height: 6),
                         // عدد
                         Text(
-                          '$index',
+                          Grade1Math.number(index),
                           style: AppFonts.vazirmatn(
                             fontSize: isCurrent ? 16 : 12,
                             fontWeight: isCurrent ? FontWeight.w900 : FontWeight.w700,
@@ -352,6 +354,7 @@ class _NumberLineGameState extends State<NumberLineGame> {
                 }),
               ),
             ),
+          ),
           ),
           const Divider(height: 20, thickness: 3, color: Color(0xFF1ABC9C)),
           Text(

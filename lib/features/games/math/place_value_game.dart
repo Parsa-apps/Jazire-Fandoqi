@@ -11,6 +11,8 @@ import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
+import '../../../core/growth/persian_digits.dart';
+import '../../../core/math/grade1_math.dart';
 import '../../../core/play_limit.dart';
 import '../../../shared/widgets/child_touch_target.dart';
 import '../../../shared/widgets/fandoghi_premium.dart';
@@ -36,7 +38,7 @@ class _PlaceValueGameState extends State<PlaceValueGame> {
   int _round = 1;
   int _score = 0;
   bool _won = false;
-  final List<int> _levels = [14, 23, 17, 30, 8, 25, 19, 32];
+  final List<int> _levels = List<int>.from(Grade1Math.placeValueTargets);
 
   int get _currentValue => (_tens * 10) + _ones;
 
@@ -48,7 +50,7 @@ class _PlaceValueGameState extends State<PlaceValueGame> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       FandoghiCoach.say(
-        'با مهره‌ها عدد $_target را در جدول ارزش مکانی بساز! ده‌تایی و یکی بنداز 🧮',
+        'با مهره‌ها عدد ${Grade1Math.number(_target)} را در جدول ارزش مکانی بساز! ده‌تایی و یکی بنداز 🧮',
         mood: FandoghiMood.excited,
         duration: const Duration(seconds: 4),
       );
@@ -76,6 +78,7 @@ class _PlaceValueGameState extends State<PlaceValueGame> {
     HapticFeedback.selectionClick();
     AudioService.back();
     setState(() => _tens--);
+    _checkAnswer();
   }
 
   void _addOnes() {
@@ -92,6 +95,7 @@ class _PlaceValueGameState extends State<PlaceValueGame> {
     HapticFeedback.selectionClick();
     AudioService.back();
     setState(() => _ones--);
+    _checkAnswer();
   }
 
   void _checkAnswer() {
@@ -103,7 +107,7 @@ class _PlaceValueGameState extends State<PlaceValueGame> {
       GameData.addStars(1);
       AudioService.win();
       FandoghiCoach.celebrate(
-        'آفرین! $_tens ده‌تایی و $_ones یکی دقیقاً شد عدد $_target 🎉',
+        'آفرین! ${Grade1Math.placeValuePhrase(_target)} دقیقاً شد عدد ${Grade1Math.number(_target)} 🎉',
       );
 
       Future.delayed(const Duration(milliseconds: 2000), () {
@@ -216,7 +220,7 @@ class _PlaceValueGameState extends State<PlaceValueGame> {
                 const Icon(Icons.star_rounded, size: 16, color: Colors.black87),
                 const SizedBox(width: 4),
                 Text(
-                  '$_score',
+                  PersianDigits.toFa(_score),
                   style: AppFonts.vazirmatn(
                     fontSize: 13,
                     fontWeight: FontWeight.w900,
@@ -249,7 +253,7 @@ class _PlaceValueGameState extends State<PlaceValueGame> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'عدد هدف: $_target',
+                  'عدد هدف: ${Grade1Math.number(_target)}',
                   style: AppFonts.vazirmatn(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
@@ -257,7 +261,7 @@ class _PlaceValueGameState extends State<PlaceValueGame> {
                   ),
                 ),
                 Text(
-                  'عدد ساخته‌شده: $_currentValue',
+                  'عدد ساخته‌شده: ${Grade1Math.number(_currentValue)}',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
@@ -281,7 +285,9 @@ class _PlaceValueGameState extends State<PlaceValueGame> {
   }
 
   Widget _buildPlaceValueTable() {
-    return Container(
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -315,6 +321,7 @@ class _PlaceValueGameState extends State<PlaceValueGame> {
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -421,7 +428,7 @@ class _PlaceValueGameState extends State<PlaceValueGame> {
         border: Border.all(color: Colors.white24),
       ),
       child: Text(
-        '$_tens بسته ۱۰ تایی (${_tens * 10}) + $_ones تا یکی ($_ones) = $_currentValue',
+        Grade1Math.placeValuePhrase(_currentValue),
         textAlign: TextAlign.center,
         style: AppFonts.vazirmatn(
           color: Colors.white,

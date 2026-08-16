@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../../../shared/widgets/child_touch_target.dart';
 
 import '../../../app/app_colors.dart';
@@ -14,8 +13,10 @@ import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
+import '../../../core/math/grade1_math.dart';
 import '../../../core/play_limit.dart';
 import '../../../shared/widgets/fandoghi_premium.dart';
+import '../../../shared/widgets/next_today_button.dart';
 import '../../../shared/widgets/premium_button.dart';
 
 /// ────────────────────────────────────────────────────────────
@@ -69,16 +70,8 @@ class _MathRaceGameState extends State<MathRaceGame> {
     final rng = Random();
     _questions.clear();
     for (var i = 0; i < _questionCount; i++) {
-      final useAdd = rng.nextBool();
-      if (useAdd) {
-        final a = 1 + rng.nextInt(10);
-        final b = 1 + rng.nextInt(10);
-        _questions.add((a, b, '+'));
-      } else {
-        final a = 3 + rng.nextInt(15);
-        final b = 1 + rng.nextInt(a);
-        _questions.add((a, b, '-'));
-      }
+      final problem = Grade1Math.nextAddOrSubtract(rng);
+      _questions.add(problem);
     }
   }
 
@@ -133,7 +126,8 @@ class _MathRaceGameState extends State<MathRaceGame> {
     GameData.addCoins(_correct * 2);
     GameData.addStars(_correct ~/ 2);
     GameData.updateHighScore(_correct * 10, 'math_race');
-    if (widget.stageId != null) {
+    // قبولی مرحله فقط با حداقل ۷ پاسخ درست — معلم کلاس اول بی‌دلیل مهر نمی‌زند.
+    if (widget.stageId != null && _correct >= 7) {
       GameData.completeStage(widget.stageId!, stageNumber: widget.stageNumber);
     }
     if (_correct >= 7) {
@@ -301,7 +295,7 @@ class _MathRaceGameState extends State<MathRaceGame> {
         ),
         const SizedBox(height: 34),
         Text(
-          '${q.$1} ${q.$3} ${q.$2} = ؟',
+          Grade1Math.equation(q.$1, q.$3 == '+' ? '+' : '−', q.$2),
           style: const TextStyle(
             color: Colors.white,
             fontSize: 46,
@@ -333,7 +327,7 @@ class _MathRaceGameState extends State<MathRaceGame> {
                     ),
                   ),
                   child: Text(
-                    '$option',
+                    Grade1Math.number(option),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 30,
@@ -348,7 +342,7 @@ class _MathRaceGameState extends State<MathRaceGame> {
         ],
         const Spacer(),
         Text(
-          'سوال ${_index + 1} از $_questionCount',
+          'سوال ${Grade1Math.number(_index + 1)} از ${Grade1Math.number(_questionCount)}',
           style: const TextStyle(color: Colors.white54, fontSize: 14),
         ),
         const SizedBox(height: 20),
@@ -402,6 +396,8 @@ class _MathRaceGameState extends State<MathRaceGame> {
               ),
             ),
             const SizedBox(height: 20),
+            const NextTodayButton(justFinished: 'math'),
+            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               child: PremiumButton(text: 'مسابقه دوباره 🔄', icon: Icons.replay_rounded, onPressed: () { HapticFeedback.mediumImpact(); _restart(); }),

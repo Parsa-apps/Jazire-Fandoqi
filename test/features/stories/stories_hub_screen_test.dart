@@ -30,6 +30,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 600));
 
     expect(find.text('قصه‌خانه'), findsOneWidget);
+    expect(find.byKey(const ValueKey('decodable_today_card')), findsOneWidget);
     expect(find.byKey(const ValueKey('story_platform_0')), findsOneWidget);
     expect(find.byKey(const ValueKey('story_platform_9')), findsOneWidget);
     expect(find.byType(TextField), findsNothing);

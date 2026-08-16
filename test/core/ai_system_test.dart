@@ -15,9 +15,16 @@ void main() {
     expect(AI.adaptiveLevel(recentWrong: 2), greaterThanOrEqualTo(1));
   });
 
-  test('weakSkill returns a skill name and key exists', () {
+  test('weakSkill is honest when the child has not practiced', () {
+    expect(AI.hasAnyPractice, isFalse);
+    expect(AI.weakSkill(), 'هنوز تمرینی ثبت نشده');
+    expect(AI.weakSkillKey(), 'alphabet');
+    expect(AI.predictOneMonth()['ریاضی'], 0);
+  });
+
+  test('weakSkill returns a skill name after real answers', () {
+    GameData.recordAnswer(correct: true, skill: 'math');
     expect(AI.weakSkill(), isNotEmpty);
-    expect(AI.weakSkillKey(), isNotEmpty);
     expect(AI.skillNames.containsKey(AI.weakSkillKey()), isTrue);
   });
 

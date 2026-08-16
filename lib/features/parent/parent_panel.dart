@@ -158,6 +158,7 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
     );
     if (pin == null || !mounted) return;
     if (await GameData.verifyParentPin(pin)) {
+      GameData.parentUnlockedThisSession = true;
       setState(() {
         _failedPinAttempts = 0;
         _pinLockedUntil = null;
@@ -193,6 +194,7 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
       );
       return;
     }
+    GameData.parentUnlockedThisSession = true;
     setState(() => _isUnlocked = true);
     _armLockTimer();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -802,6 +804,16 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
             value: GameData.isLeftHanded,
             onChanged: (value) => setState(() => GameData.setLeftHanded(value)),
           ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(
+              'حالت روشن کلاس',
+              style: AppFonts.vazirmatn(fontSize: 15, fontWeight: FontWeight.w700),
+            ),
+            subtitle: const Text('پس‌زمینه روشن و درهای درشت برای کلاس اول'),
+            value: GameData.classroomLightMode,
+            onChanged: (value) => setState(() => GameData.setClassroomLightMode(value)),
+          ),
         ],
       ),
     );
@@ -821,24 +833,9 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
       'ریاضی': (raw['math'] ?? raw['ریاضی'] ?? 0).clamp(0, 100),
       'هنر': (raw['drawing'] ?? raw['هنر'] ?? 0).clamp(0, 100),
     };
-    // اگر همه صفر بودند، برای دمو مقدار نمایشی بده
-    final hasData = mapped.values.any((v) => v > 0);
-    final display = hasData
-        ? mapped
-        : <String, int>{
-            'الفبا': 72,
-            'اعداد': 55,
-            'رنگ‌ها': 88,
-            'شکل‌ها': 40,
-            'حیوانات': 65,
-            'حافظه': 78,
-            'ریاضی': 35,
-            'هنر': 60,
-          };
-
     return Column(
       children: [
-        SkillRadarChart(skills: display, size: 240),
+        SkillRadarChart(skills: mapped, size: 240),
         const SizedBox(height: 16),
         // کارت پیش‌بینی قدیمی هم حفظ می‌شود برای متن کامل
         Container(
@@ -871,7 +868,9 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
               ),
               const SizedBox(height: 10),
               Text(
-                'مهارت «${AI.weakSkill()}» ضعیف‌ترین حلقه است؛ با «${AI.suggestGames().take(2).join('» و «')}» تقویت می‌شود.',
+                AI.hasAnyPractice
+                    ? 'مهارت «${AI.weakSkill()}» کمتر تمرین شده؛ با «${AI.suggestGames().take(2).join('» و «')}» ادامه بده.'
+                    : 'هنوز پاسخی ثبت نشده؛ کارنامه وقتی پر می‌شود که کودک تمرین کند.',
                 style: const TextStyle(fontSize: 13, height: 1.7),
               ),
               const SizedBox(height: 8),
@@ -884,7 +883,9 @@ class _ParentPanelState extends ConsumerState<ParentPanel>
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'پیش‌بینی فندقی: با روزی ۱۰ دقیقه بازی تا یک ماه دیگر میانگین مهارت‌ها به ۸۰٪ می‌رسد!',
+                        GameData.totalCorrect + GameData.totalWrong == 0
+                            ? 'هنوز پاسخی ثبت نشده؛ کارنامه وقتی پر می‌شود که کودک تمرین کند.'
+                            : 'الان دقت واقعی ${GameData.averageSuccessRate.toStringAsFixed(0)}٪ است. مهارت ضعیف: «${AI.weakSkill()}».',
                         style: TextStyle(fontSize: 12, color: Colors.grey.shade700, height: 1.5, fontWeight: FontWeight.w600),
                       ),
                     ),

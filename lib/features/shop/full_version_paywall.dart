@@ -8,10 +8,12 @@ import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
 import '../../app/design_tokens.dart';
 import '../../core/fandoghi_models.dart';
+import '../../core/game_data.dart';
 import '../../core/growth/smart_conversion.dart';
 import '../../core/monetization.dart';
 import '../../core/security/privacy_protection.dart';
 import '../../shared/widgets/fandoghi_premium.dart';
+import '../../shared/widgets/parent_pin_gate.dart';
 
 String normalizePaywallDigits(String input) {
   const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
@@ -55,70 +57,8 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
   bool _loading = false;
 
   Future<bool> _parentGate() async {
-    final random = Random();
-    final a = random.nextInt(6) + 4;
-    final b = random.nextInt(5) + 2;
-    final correctAnswer = '${a + b}';
-    final answer = TextEditingController();
-    final allowed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => Dialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.xl)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), shape: BoxShape.circle),
-                child: const Icon(Icons.family_restroom_rounded, color: AppColors.primary, size: 28),
-              ),
-              const SizedBox(height: 12),
-              Text('ورود والدین', style: AppFonts.vazirmatn(fontSize: 18, fontWeight: FontWeight.w900, color: const Color(0xFF2D3436))),
-              const SizedBox(height: 8),
-              const Text('برای ادامه، پاسخ این سؤال را وارد کنید:', style: TextStyle(color: Color(0xFF636E72), fontSize: 13), textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.08), borderRadius: BorderRadius.circular(AppRadii.lg), border: Border.all(color: AppColors.primary.withOpacity(0.2))),
-                child: Text('$a + $b = ؟', style: AppFonts.vazirmatn(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.primary), textAlign: TextAlign.center),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: answer,
-                keyboardType: TextInputType.number,
-                autofocus: true,
-                textAlign: TextAlign.center,
-                style: AppFonts.vazirmatn(fontSize: 22, fontWeight: FontWeight.w900, color: const Color(0xFF2D3436)),
-                decoration: InputDecoration(
-                  hintText: 'جواب را بنویس',
-                  filled: true,
-                  fillColor: const Color(0xFFF8F9FE),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.lg), borderSide: BorderSide.none),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.lg), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-                ),
-                onSubmitted: (_) {
-                  final normalized = normalizePaywallDigits(answer.text.trim());
-                  Navigator.pop(dialogContext, normalized == correctAnswer);
-                },
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(dialogContext, false), style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg))), child: Text('انصراف', style: AppFonts.vazirmatn(fontWeight: FontWeight.w700, color: Colors.red)))),
-                  const SizedBox(width: 12),
-                  Expanded(child: FilledButton(onPressed: () { final normalized = normalizePaywallDigits(answer.text.trim()); Navigator.pop(dialogContext, normalized == correctAnswer); }, style: FilledButton.styleFrom(backgroundColor: AppColors.primary, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg))), child: Text('تأیید', style: AppFonts.vazirmatn(fontWeight: FontWeight.w900, color: Colors.white)))),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    answer.dispose();
-    return allowed ?? false;
+    if (GameData.parentUnlockedThisSession) return true;
+    return requestParentAccess(context);
   }
 
   Future<void> _buy() async {

@@ -180,13 +180,17 @@ class _AcademyGameState extends State<AcademyGame> {
     GameData.addCoins(_score);
     GameData.addStars(_correct);
     GameData.progressMission('questions');
-    if (widget.stageId != null) {
+    final passed = _roundCards.isNotEmpty &&
+        _correct >= (_roundCards.length * 0.6).ceil();
+    if (widget.stageId != null && passed) {
       GameData.completeStage(widget.stageId!, stageNumber: widget.stageNumber);
     }
     FandoghiCoach.reward(
-      'آکادمی ${_topic.title} را تمام کردی! فندقی به تو افتخار می‌کند 🏆',
+      passed
+          ? 'آکادمی ${_topic.title} را تمام کردی! فندقی به تو افتخار می‌کند 🏆'
+          : 'تمرین خوبی بود؛ یک دور دیگر می‌زنیم تا مهر قبولی بگیری 💪',
     );
-    unawaited(AudioService.playWin());
+    unawaited(passed ? AudioService.playWin() : AudioService.playWrong());
   }
 
   void _restart() {

@@ -8,6 +8,8 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/datasources/hive_player_store.dart';
+import 'drawing/drawing_album.dart';
+import 'literacy/literacy_path.dart';
 import 'security/secure_store.dart';
 
 /// Single source of truth for the local player profile.
@@ -134,6 +136,27 @@ class GameData {
   /// فاز ۱۶: ترجیح دست کودک (چپ‌دست / راست‌دست)
   static bool isLeftHanded = false;
 
+  /// نشانه‌هایی که معلم خط‌شان را تأیید کرده (کلید پایدار بسته:درس).
+  static List<String> masteredAlphabetKeys = <String>[];
+
+  /// تعداد قبولی خط برای هر نشانه — تسلط واقعی بعد از ۳ بار.
+  static Map<String, int> alphabetPassCounts = <String, int>{};
+
+  /// آخرین روز قبولی هر نشانه (yyyy-MM-dd) برای مرور فاصله‌دار.
+  static Map<String, String> alphabetLastPassDay = <String, String>{};
+
+  /// حالت روشن کلاس: پس‌زمینه کرم و دکمه‌های درشت برای ۶ ساله.
+  static bool classroomLightMode = true;
+
+  /// ایستگاه‌های تمام‌شدهٔ مسیر امروز (literacy/math/drawing/story).
+  static List<String> todayPathDone = <String>[];
+
+  /// روز مسیر امروز (yyyy-MM-dd) تا ایستگاه‌ها با عوض‌شدن تاریخ صفر شوند.
+  static String todayPathDay = '';
+
+  /// پین والد در همین نشست تأیید شده — کودک نباید صفحهٔ خرید ببیند.
+  static bool parentUnlockedThisSession = false;
+
   // Stage map progress
   static int currentStage = 1;
   static int currentIsland = 0;
@@ -244,6 +267,12 @@ class GameData {
       textScale = (prefs.getDouble('tsc') ?? 1.0).clamp(0.85, 1.4).toDouble();
       activeTheme = prefs.getString('activeTheme') ?? 'island_map';
       isLeftHanded = prefs.getBool('lh') ?? false;
+      classroomLightMode = prefs.getBool('clm') ?? true;
+      masteredAlphabetKeys = _readList('alk');
+      alphabetPassCounts = _readColonIntMap('alc');
+      alphabetLastPassDay = _readColonStringMap('ald');
+      todayPathDone = _readList('tpd');
+      todayPathDay = prefs.getString('tpk') ?? '';
       lastWeekReset = prefs.getString('lwr') ?? '';
       highScore = _readInt('hs', 0);
       mathRaceHighScore = _readInt('mrhs', 0);
@@ -368,6 +397,42 @@ class GameData {
     return map;
   }
 
+  static Map<String, int> _readColonIntMap(String key) =>
+      _parseColonIntList(_readList(key));
+
+  static Map<String, String> _readColonStringMap(String key) =>
+      _parseColonStringList(_readList(key));
+
+  static Map<String, int> _parseColonIntList(List<String> raw) {
+    final map = <String, int>{};
+    for (final entry in raw) {
+      final split = entry.lastIndexOf(':');
+      if (split <= 0) continue;
+      final count = int.tryParse(entry.substring(split + 1));
+      if (count == null) continue;
+      map[entry.substring(0, split)] = count.clamp(0, 99);
+    }
+    return map;
+  }
+
+  static Map<String, String> _parseColonStringList(List<String> raw) {
+    final map = <String, String>{};
+    for (final entry in raw) {
+      final split = entry.lastIndexOf(':');
+      if (split <= 0) continue;
+      final value = entry.substring(split + 1);
+      if (value.isEmpty) continue;
+      map[entry.substring(0, split)] = value;
+    }
+    return map;
+  }
+
+  static List<String> _encodeColonIntMap(Map<String, int> map) =>
+      map.entries.map((e) => '${e.key}:${e.value}').toList();
+
+  static List<String> _encodeColonStringMap(Map<String, String> map) =>
+      map.entries.map((e) => '${e.key}:${e.value}').toList();
+
   static List<String> _readList(String key) {
     final values = _prefs?.getStringList(key) ?? <String>[];
     return values
@@ -457,6 +522,25 @@ class GameData {
     soundEnabled = asBool('sn', true);
     musicVolume = _normalizeMusicVolume(d['mv']);
     isLeftHanded = asBool('lh', false);
+    classroomLightMode = asBool('clm', true);
+    todayPathDone = asList('tpd');
+    todayPathDay = asString('tpk', '');
+    masteredAlphabetKeys = asList('alk');
+    alphabetPassCounts = asSkillMap('alc');
+    if (alphabetPassCounts.isEmpty) {
+      alphabetPassCounts = _parseColonIntList(asList('alc'));
+    }
+    alphabetLastPassDay = <String, String>{};
+    final ald = d['ald'];
+    if (ald is Map) {
+      ald.forEach((k, v) {
+        if (k is String && v is String && k.isNotEmpty && v.isNotEmpty) {
+          alphabetLastPassDay[k] = v;
+        }
+      });
+    } else {
+      alphabetLastPassDay = _parseColonStringList(asList('ald'));
+    }
     final tsc = d['tsc'];
     if (tsc is num) textScale = tsc.toDouble().clamp(0.85, 1.4).toDouble();
     activeTheme = asString('activeTheme', 'island_map');
@@ -544,6 +628,12 @@ class GameData {
         'tsc': textScale,
         'activeTheme': activeTheme,
         'lh': isLeftHanded,
+        'clm': classroomLightMode,
+        'tpd': todayPathDone,
+        'tpk': todayPathDay,
+        'alk': masteredAlphabetKeys,
+        'alc': alphabetPassCounts,
+        'ald': alphabetLastPassDay,
         'lwr': lastWeekReset,
         'hs': highScore,
         'mrhs': mathRaceHighScore,
@@ -613,11 +703,18 @@ class GameData {
       treasureOpened = false;
       todayPlaySeconds = 0;
       openedPrizes.removeWhere((id) => id.startsWith('daily_'));
+      todayPathDone = <String>[];
+      todayPathDay = today;
       _missionDay = today;
       changed = true;
     } else {
       _missionDay = today;
       _recalculateDailyMissions();
+    }
+    if (todayPathDay != today) {
+      todayPathDone = <String>[];
+      todayPathDay = today;
+      changed = true;
     }
 
     final week = _weekKey();
@@ -692,6 +789,12 @@ class GameData {
     await prefs.setDouble('tsc', textScale);
     await prefs.setString('activeTheme', activeTheme);
     await prefs.setBool('lh', isLeftHanded);
+    await prefs.setBool('clm', classroomLightMode);
+    await prefs.setStringList('tpd', List<String>.from(todayPathDone));
+    await prefs.setString('tpk', todayPathDay);
+    await prefs.setStringList('alk', List<String>.from(masteredAlphabetKeys));
+    await prefs.setStringList('alc', _encodeColonIntMap(alphabetPassCounts));
+    await prefs.setStringList('ald', _encodeColonStringMap(alphabetLastPassDay));
     await prefs.setInt('wpm', weeklyPlayMinutes);
     await prefs.setInt('tps', todayPlaySeconds);
     await prefs.setString('lwr', lastWeekReset);
@@ -839,6 +942,7 @@ class GameData {
     if (!_isLoaded || amount <= 0 || !missionTargets.containsKey(id)) return;
     _progressMissionInternal(id, amount: amount);
     _recalculateDailyMissions();
+    if (id == 'drawing') markTodayStation('drawing');
     _notify();
     unawaited(save());
   }
@@ -932,6 +1036,7 @@ class GameData {
     if (skills.containsKey('stories')) {
       skills['stories'] = min(_maxStoredCounter, (skills['stories'] ?? 0) + 1);
     }
+    markTodayStation('story');
     _notify();
     unawaited(save());
     return true;
@@ -1245,6 +1350,78 @@ class GameData {
     unawaited(save());
   }
 
+  static void setClassroomLightMode(bool value) {
+    classroomLightMode = value;
+    _notify();
+    unawaited(save());
+  }
+
+  static bool isAlphabetMastered(String key) =>
+      key.isNotEmpty && masteredAlphabetKeys.contains(key);
+
+  /// مهر معلم روی یک نشانه. خروجی false یعنی قبلاً ثبت شده.
+  static bool markAlphabetMastered(String key) {
+    if (!_isLoaded || key.isEmpty || masteredAlphabetKeys.contains(key)) {
+      return false;
+    }
+    masteredAlphabetKeys = [...masteredAlphabetKeys, key];
+    _notify();
+    unawaited(save());
+    return true;
+  }
+
+  static int alphabetPassCount(String key) => alphabetPassCounts[key] ?? 0;
+
+  static bool isAlphabetFluent(String key) =>
+      alphabetPassCount(key) >= AlphabetReview.fluentPassCount;
+
+  /// یک قبولی تازه: حرف بعدی باز می‌شود و شمارندهٔ تسلط بالا می‌رود.
+  static int recordAlphabetPass(String key, {String? today}) {
+    if (!_isLoaded || key.isEmpty) return 0;
+    final next = min(20, alphabetPassCount(key) + 1);
+    alphabetPassCounts = {...alphabetPassCounts, key: next};
+    alphabetLastPassDay = {...alphabetLastPassDay, key: today ?? _dateKey()};
+    markAlphabetMastered(key);
+    markTodayStation('literacy', today: today);
+    _notify();
+    unawaited(save());
+    return next;
+  }
+
+  static void markTodayStation(String station, {String? today}) {
+    if (!_isLoaded || station.isEmpty) return;
+    final day = today ?? _dateKey();
+    if (todayPathDay != day) {
+      todayPathDay = day;
+      todayPathDone = <String>[];
+    }
+    if (todayPathDone.contains(station)) return;
+    todayPathDone = [...todayPathDone, station];
+    _notify();
+    unawaited(save());
+  }
+
+  static bool isTodayStationDone(String station, {String? today}) {
+    final day = today ?? _dateKey();
+    if (todayPathDay != day) return false;
+    return todayPathDone.contains(station);
+  }
+
+  static bool isAlphabetDueForReview(String key, {String? today}) {
+    return AlphabetReview.isDue(
+      passCount: alphabetPassCount(key),
+      lastDay: alphabetLastPassDay[key] ?? '',
+      today: today ?? _dateKey(),
+    );
+  }
+
+  static List<String> dueAlphabetReviewKeys({String? today}) {
+    final day = today ?? _dateKey();
+    return alphabetPassCounts.keys
+        .where((key) => isAlphabetDueForReview(key, today: day))
+        .toList();
+  }
+
   static void setTimeLimitMinutes(int value) {
     timeLimitMinutes = value.clamp(15, 24 * 60).toInt();
     _notify();
@@ -1258,7 +1435,7 @@ class GameData {
     'ownedItems', 'hs', 'mrhs', 'qhs', 'lld', 'lscd', 'aiBuddy', 'currentStage',
     'currentIsland', 'cs', 'pbt', 'op', 'stories', 'sfav', 'lastStoryId',
     'lastStoryPage', 'cfav', 'cw', 'cws', 'appRated', 'idc', 'pg', 'skills',
-    'lfav', 'll_done',
+    'lfav', 'll_done', 'alk', 'alc', 'ald', 'clm', 'tpd', 'tpk',
   ];
 
   /// پیشرفت کودک بدون تنظیمات والد (پین، محدودیت، تم).
@@ -1327,6 +1504,12 @@ class GameData {
     listenedLullabies = <String>[];
     playedGames = <String>[];
     _playedGamesSet.clear();
+    masteredAlphabetKeys = <String>[];
+    alphabetPassCounts = <String, int>{};
+    alphabetLastPassDay = <String, String>{};
+    todayPathDone = <String>[];
+    todayPathDay = '';
+    unawaited(DrawingAlbum.clearAll());
     _notify();
     unawaited(save());
   }
@@ -1618,6 +1801,14 @@ class GameData {
     listenedLullabies = <String>[];
     playedGames = <String>[];
     _playedGamesSet.clear();
+    masteredAlphabetKeys = <String>[];
+    alphabetPassCounts = <String, int>{};
+    alphabetLastPassDay = <String, String>{};
+    todayPathDone = <String>[];
+    todayPathDay = '';
+    parentUnlockedThisSession = false;
+    classroomLightMode = true;
+    DrawingAlbum.useMemoryForTesting();
     _notify();
   }
 }

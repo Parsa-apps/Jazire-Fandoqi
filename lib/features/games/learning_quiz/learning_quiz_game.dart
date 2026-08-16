@@ -13,7 +13,9 @@ import '../../../core/fandoghi_coach.dart';
 import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
 import '../../../core/learning_content/learning_topics.dart';
+import '../../../core/literacy/quiz_shuffle.dart';
 import '../../../core/play_limit.dart';
+import '../../../shared/widgets/next_today_button.dart';
 import '../../../shared/widgets/fandoghi_premium.dart';
 import '../../../shared/widgets/illustration_tile.dart';
 
@@ -40,7 +42,7 @@ class LearningQuizGame extends StatefulWidget {
 }
 
 class _LearningQuizGameState extends State<LearningQuizGame> {
-  late final List<_QuizQuestion> _questions;
+  late List<_QuizQuestion> _questions;
   int _questionIndex = 0;
   int _score = 0;
   int _correctAnswers = 0;
@@ -54,7 +56,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
   void initState() {
     super.initState();
     FandoghiCoach.enablePersistentPresence();
-    _questions = _questionsFor(widget.topic);
+    _questions = _withShuffledOptions(_questionsFor(widget.topic));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         if (GameData.isDailyLimitReached) {
@@ -187,6 +189,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
     FandoghiCoach.instruction('دوباره شروع کنیم! این بار فندقی هم حواسش به جواب‌ها هست 🌰');
     _roundToken++;
     setState(() {
+      _questions = _withShuffledOptions(_questionsFor(widget.topic));
       _questionIndex = 0;
       _score = 0;
       _correctAnswers = 0;
@@ -517,7 +520,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
                 children: [
                   Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.15), borderRadius: BorderRadius.circular(AppRadii.md)), child: const Text('🤖', style: TextStyle(fontSize: 18))),
                   const SizedBox(width: 10),
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('پیشنهاد هوشمند فندقی', style: AppFonts.vazirmatn(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.white)), const SizedBox(height: 2), Text('مهارت «$weakSkill» را بیشتر تمرین کنیم؟ کوییز بعدی از همین مهارت می‌سازد!', style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.5))])),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('پیشنهاد هوشمند فندقی', style: AppFonts.vazirmatn(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.white)), const SizedBox(height: 2), Text(AI.hasAnyPractice ? 'مهارت «$weakSkill» را بیشتر تمرین کنیم؟ کوییز بعدی از همین مهارت می‌سازد!' : 'هنوز تمرینی ثبت نشده؛ اول یک بازی کوتاه بزن.', style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.5))])),
                 ],
               ),
             ),
@@ -553,6 +556,8 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
                     style: FilledButton.styleFrom(backgroundColor: const Color(0xFF00B894), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg))),
                   ),
                 ),
+                const SizedBox(height: 10),
+                const NextTodayButton(),
                 const SizedBox(height: 10),
                 Row(
                   children: [
@@ -611,6 +616,25 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
     return questions;
   }
 
+  List<_QuizQuestion> _withShuffledOptions(List<_QuizQuestion> source) {
+    return [for (final question in source) _shuffleOne(question)];
+  }
+
+  _QuizQuestion _shuffleOne(_QuizQuestion question) {
+    final shuffled = ShuffledChoices.of(question.options, question.correctIndex);
+    return _QuizQuestion(
+      question.prompt,
+      question.emoji,
+      shuffled.options,
+      shuffled.correctIndex,
+      question.skill,
+      question.missionId,
+      imageAsset: question.imageAsset,
+      imageIndex: question.imageIndex,
+      visualLabel: question.visualLabel,
+    );
+  }
+
   List<_QuizQuestion> _questionsFor(String rawTopic) {
     final topic = rawTopic.trim().toLowerCase();
     // فاز ۳۰: کوییز هوشمند بر اساس مهارت ضعیف
@@ -620,8 +644,8 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
     if (topic.contains('الفبا') || topic.contains('alphabet')) {
       return const [
         _QuizQuestion('کلمه «بابا» با چه حرفی شروع می‌شود؟', '🔤', ['ب', 'م', 'س', 'ر'], 0, 'alphabet', 'alphabet'),
-        _QuizQuestion('بعد از «ب» کدام حرف می‌آید؟', '📚', ['پ', 'ا', 'ت', 'ج'], 0, 'alphabet', 'alphabet'),
-        _QuizQuestion('کدام کلمه با «م» شروع می‌شود؟', '🐟', ['سیب', 'ماه', 'باد', 'رود'], 1, 'alphabet', 'alphabet'),
+        _QuizQuestion('کلمه «سیب» با چه حرفی شروع می‌شود؟', '🍏', ['س', 'ب', 'م', 'آ'], 0, 'alphabet', 'alphabet'),
+        _QuizQuestion('کدام کلمه با «م» شروع می‌شود؟', '🌙', ['سیب', 'ماه', 'باد', 'رود'], 1, 'alphabet', 'alphabet'),
         _QuizQuestion('حرف اول «آب» چیست؟', '💧', ['آ', 'ب', 'د', 'ا'], 0, 'alphabet', 'alphabet'),
         _QuizQuestion('کدام گزینه یک حرف است؟', '✨', ['کتاب', 'ش', 'مداد', 'خانه'], 1, 'alphabet', 'alphabet'),
       ];
@@ -638,7 +662,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
     if (topic.contains('رنگ') || topic.contains('color')) {
       return const [
         _QuizQuestion(
-          'کدام چیز آبی است؟',
+          'این چه رنگی است؟',
           '🎈',
           ['آبی', 'سبز', 'قرمز', 'زرد'],
           0,
@@ -649,7 +673,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
           visualLabel: 'بادکنک آبی',
         ),
         _QuizQuestion(
-          'کدام چیز سبز است؟',
+          'این چه رنگی است؟',
           '🌿',
           ['سبز', 'زرد', 'صورتی', 'نارنجی'],
           0,
@@ -660,7 +684,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
           visualLabel: 'برگ سبز',
         ),
         _QuizQuestion(
-          'خورشید را کدام رنگ نشان می‌دهد؟',
+          'خورشید معمولاً چه رنگی دیده می‌شود؟',
           '☀️',
           ['سیاه', 'زرد', 'آبی', 'بنفش'],
           1,
@@ -671,7 +695,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
           visualLabel: 'خورشید زرد',
         ),
         _QuizQuestion(
-          'کدام گل بنفش است؟',
+          'این گل چه رنگی است؟',
           '🌸',
           ['بنفش', 'زرد', 'آبی', 'قرمز'],
           0,
@@ -682,7 +706,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
           visualLabel: 'گل بنفش',
         ),
         _QuizQuestion(
-          'کدام چیز نارنجی است؟',
+          'این چه رنگی است؟',
           '🎃',
           ['آبی', 'نارنجی', 'سبز', 'سفید'],
           1,

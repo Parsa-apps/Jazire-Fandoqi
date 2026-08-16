@@ -6,8 +6,11 @@ import '../../../app/app_fonts.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
+import '../../../core/growth/persian_digits.dart';
 import '../../../core/learning_content/children_stories_data.dart';
+import '../../../core/literacy/quiz_shuffle.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
+import '../../../shared/widgets/next_today_button.dart';
 import '../../../shared/widgets/particle_celebration.dart';
 
 /// ═══════════════════════════════════════════════════════════════
@@ -37,9 +40,21 @@ class _StoryQuizModalState extends State<StoryQuizModal> {
   bool _answered = false;
   bool _finished = false;
   int _score = 0;
+  late List<ShuffledChoices> _shuffled;
+
+  @override
+  void initState() {
+    super.initState();
+    _shuffled = [
+      for (final q in widget.story.quizQuestions)
+        ShuffledChoices.of(q.options, q.correctIndex),
+    ];
+  }
 
   StoryQuizQuestion get _currentQuestion =>
       widget.story.quizQuestions[_currentIndex];
+
+  ShuffledChoices get _choices => _shuffled[_currentIndex];
 
   void _selectOption(int idx) {
     if (_answered) return;
@@ -47,7 +62,7 @@ class _StoryQuizModalState extends State<StoryQuizModal> {
     setState(() {
       _selectedIndex = idx;
       _answered = true;
-      if (idx == _currentQuestion.correctIndex) {
+      if (idx == _choices.correctIndex) {
         _score++;
         AudioService.correct();
         AudioService.speak('آفرین! پاسخت کاملاً درست بود');
@@ -68,13 +83,18 @@ class _StoryQuizModalState extends State<StoryQuizModal> {
         _answered = false;
       });
     } else {
-      // اتمام مسابقه
       setState(() => _finished = true);
-      AudioService.win();
-      GameData.addStars(5);
-      GameData.addCoins(25);
+      final stars = _score;
+      final coins = _score * 8;
+      if (_score > 0) {
+        GameData.addStars(stars);
+        GameData.addCoins(coins);
+        AudioService.win();
+      }
       FandoghiCoach.reward(
-        'آفرین قهرمان باهوش! مسابقه داستان «${widget.story.title}» رو عالی تموم کردی 🏆 ۵ ستاره + ۲۵ سکه هدیه گرفتی!',
+        _score == 0
+            ? 'این بار درست نشد؛ یک‌بار دیگر قصه را بخوان و دوباره بپرس.'
+            : '$_score از ${widget.story.quizQuestions.length} درست. +$stars ستاره و +$coins سکه.',
       );
     }
   }
@@ -153,7 +173,7 @@ class _StoryQuizModalState extends State<StoryQuizModal> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'سوال ${_currentIndex + 1} از ${widget.story.quizQuestions.length}',
+                    'سوال ${PersianDigits.toFa(_currentIndex + 1)} از ${PersianDigits.toFa(widget.story.quizQuestions.length)}',
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 12,
@@ -195,8 +215,8 @@ class _StoryQuizModalState extends State<StoryQuizModal> {
         const SizedBox(height: 20),
 
         // گزینه‌ها
-        for (int i = 0; i < q.options.length; i++) ...[
-          _buildOptionCard(i, q.options[i], q.correctIndex),
+        for (int i = 0; i < _choices.options.length; i++) ...[
+          _buildOptionCard(i, _choices.options[i], _choices.correctIndex),
           const SizedBox(height: 12),
         ],
 
@@ -206,12 +226,12 @@ class _StoryQuizModalState extends State<StoryQuizModal> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: _selectedIndex == q.correctIndex
+              color: _selectedIndex == _choices.correctIndex
                   ? Colors.green.withOpacity(0.2)
                   : Colors.amber.withOpacity(0.2),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: _selectedIndex == q.correctIndex
+                color: _selectedIndex == _choices.correctIndex
                     ? Colors.greenAccent
                     : Colors.amberAccent,
               ),
@@ -219,10 +239,10 @@ class _StoryQuizModalState extends State<StoryQuizModal> {
             child: Row(
               children: [
                 Icon(
-                  _selectedIndex == q.correctIndex
+                  _selectedIndex == _choices.correctIndex
                       ? Icons.check_circle_rounded
                       : Icons.lightbulb_rounded,
-                  color: _selectedIndex == q.correctIndex
+                  color: _selectedIndex == _choices.correctIndex
                       ? Colors.greenAccent
                       : Colors.amberAccent,
                   size: 22,
@@ -318,7 +338,7 @@ class _StoryQuizModalState extends State<StoryQuizModal> {
                   : _answered && isSelected
                       ? const Icon(Icons.close, color: Colors.white, size: 16)
                       : Text(
-                          '${index + 1}',
+                          PersianDigits.toFa(index + 1),
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -364,7 +384,9 @@ class _StoryQuizModalState extends State<StoryQuizModal> {
         ),
         const SizedBox(height: 8),
         Text(
-          'تو به هر $_score سوال داستان درست پاسخ دادی و پندهای شیرین رو به خوبی یاد گرفتی.',
+          _score == 0
+              ? 'این بار هیچ پاسخی درست نبود. قصه را یک‌بار دیگر بخوان.'
+              : 'از ${PersianDigits.toFa(widget.story.quizQuestions.length)} سوال، ${PersianDigits.toFa(_score)} تا درست بود.',
           textAlign: TextAlign.center,
           style: AppFonts.vazirmatn(
             color: Colors.white,
@@ -389,7 +411,7 @@ class _StoryQuizModalState extends State<StoryQuizModal> {
                   const Icon(Icons.star_rounded, color: Colors.amber, size: 24),
                   const SizedBox(width: 6),
                   Text(
-                    '+۵ ستاره',
+                    '+${PersianDigits.toFa(_score)} ستاره',
                     style: AppFonts.vazirmatn(
                       color: Colors.white,
                       fontSize: 15,
@@ -405,7 +427,7 @@ class _StoryQuizModalState extends State<StoryQuizModal> {
                       color: Colors.amberAccent, size: 24),
                   const SizedBox(width: 6),
                   Text(
-                    '+۲۵ سکه',
+                    '+${PersianDigits.toFa(_score * 8)} سکه',
                     style: AppFonts.vazirmatn(
                       color: Colors.white,
                       fontSize: 15,
@@ -420,26 +442,31 @@ class _StoryQuizModalState extends State<StoryQuizModal> {
         const SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () {
+          child: FilledButton.icon(
+            onPressed: () async {
               Navigator.pop(context);
-              Navigator.pop(context);
+              if (!context.mounted) return;
+              await NextTodayButton.go(context, justFinished: 'story');
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF43A047),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-              elevation: 6,
+            icon: const Icon(Icons.flag_rounded),
+            label: Text(
+              'کار بعدی امروز',
+              style: AppFonts.vazirmatn(fontWeight: FontWeight.w900),
             ),
-            child: Text(
-              'بازگشت به قصه‌خانه 📚',
-              style: AppFonts.vazirmatn(
-                fontSize: 16,
-                fontWeight: FontWeight.w900,
-              ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+            Navigator.pop(context);
+          },
+          child: Text(
+            'بازگشت به قصه‌خانه',
+            style: AppFonts.vazirmatn(
+              color: Colors.white70,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ),

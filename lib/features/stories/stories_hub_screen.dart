@@ -11,6 +11,7 @@ import '../../core/content_access_policy.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/game_data.dart';
 import '../../core/learning_content/children_stories_data.dart';
+import '../../core/literacy/decodable_stories.dart';
 import '../../core/monetization.dart';
 import '../home/widgets/island_map/island_map_background.dart';
 import '../shop/full_version_paywall.dart';
@@ -290,7 +291,7 @@ class _StoryIslandMap extends StatelessWidget {
   });
 
   static const double _stepHeight = 238;
-  static const double _introHeight = 92;
+  static const double _introHeight = 168;
 
   final double width;
   final List<ChildrenStory> stories;
@@ -343,6 +344,72 @@ class _StoryIslandMap extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _DecodableTodayCard extends StatelessWidget {
+  const _DecodableTodayCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final story = DecodableStories.forToday();
+    final unlocked = DecodableStories.isUnlocked(story);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: const ValueKey('decodable_today_card'),
+        borderRadius: BorderRadius.circular(22),
+        onTap: onTap,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF8E7),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: const Color(0xFFFFB300), width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.12),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Text(story.emoji, style: const TextStyle(fontSize: 28)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      unlocked ? 'امروز خودت بخوان' : 'بشنو؛ بعد از نوشتن بخوان',
+                      style: AppFonts.kids(
+                        color: const Color(0xFF6D4C41),
+                        fontSize: 13,
+                      ),
+                    ),
+                    Text(
+                      story.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppFonts.kids(
+                        color: const Color(0xFF3E3150),
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.menu_book_rounded, color: Color(0xFFE65100)),
+            ],
+          ),
+        ),
       ),
     );
   }
