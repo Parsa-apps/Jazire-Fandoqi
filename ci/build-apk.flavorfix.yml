@@ -1,0 +1,140 @@
+name: Build APK & AAB - کودک دانا v3
+
+
+on:
+  push:
+    branches: [ main, master, 'arena/**' ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # When KEYSTORE_B64 is present the release is signed with the project's
+      # release key; when absent the build still succeeds (debug-signed,
+      # non-publishable). See android/app/build.gradle + KEYSTORE_ROTATION_GUIDE.md.
+      KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.3'
+          channel: 'stable'
+          cache: true
+
+      # ==================== FIX اصلی ====================
+      - name: Ensure Android folder exists
+        run: |
+          if [ ! -d "android" ]; then
+            echo "android folder not found. Creating..."
+            flutter create . --platforms android
+          else
+            echo "android folder exists"
+          fi
+
+      - name: Create local.properties
+        run: |
+          echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
+          echo "sdk.dir=$ANDROID_HOME" >> android/local.properties
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Configure release signing
+        if: ${{ env.KEYSTORE_B64 != '' }}
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          # Restore the release keystore from the GitHub Secret.
+          printf '%s' "$KEYSTORE_B64" | base64 -d > android/release.keystore
+          chmod 600 android/release.keystore
+          # build.gradle resolves storeFile relative to android/ (rootProject),
+          # so key.properties is written there and points at release.keystore.
+          # PKCS12 uses one password for store-integrity and key encryption, so
+          # storePassword == keyPassword; alias is the fixed release-key identity.
+          {
+            echo "storeFile=release.keystore"
+            echo "storePassword=${KEYSTORE_PASSWORD}"
+            echo "keyAlias=fandoghi"
+            echo "keyPassword=${KEYSTORE_PASSWORD}"
+          } > android/key.properties
+          chmod 600 android/key.properties
+          echo "Release signing configured from GitHub Secrets."
+
+      # 🏪 پروژه از نسخهٔ 6.2.1+2 دو product flavor دارد (android/app/build.gradle):
+      #   • myket  → بدون Poolakey و بدون permission پرداخت کافه‌بازار
+      #   • bazaar → با Poolakey، خروجی رسمی کافه‌بازار (AAB)
+      # با وجود flavor، تسک assembleRelease دیگر ساخته نمی‌شود؛ بنابراین
+      # `flutter build apk --release` بدون `--flavor` شکست می‌خورد و نام
+      # خروجی‌ها هم app-<flavor>-release.* است.
+      - name: Build Myket APK (Release)
+        run: flutter build apk --release --flavor myket
+
+      - name: Build Bazaar APK (Release)
+        run: flutter build apk --release --flavor bazaar
+
+      - name: Verify release signing (APKs)
+        if: ${{ env.KEYSTORE_B64 != '' }}
+        run: |
+          set -euo pipefail
+          APS="$(ls "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)"
+          test -n "$APS" || { echo "apksigner not found under $ANDROID_HOME/build-tools"; exit 1; }
+          COUNT=0
+          for APK in build/app/outputs/flutter-apk/app-myket-release.apk \
+                     build/app/outputs/flutter-apk/app-bazaar-release.apk; do
+            [ -f "$APK" ] || { echo "missing expected artifact: $APK"; exit 1; }
+            echo "──────── verifying: $APK"
+            "$APS" verify --print-certs "$APK"
+            COUNT=$((COUNT + 1))
+          done
+          echo "All $COUNT APKs verified: signed with the release certificate."
+
+      # 🛡️ مایکت APKهای دارای دسترسی پرداخت کافه‌بازار یا ارجاع به آن را رد
+      # می‌کند؛ این گیت جلوی آپلود یک خروجی معیوب را می‌گیرد.
+      - name: Verify Myket APK carries no Cafe Bazaar reference
+        run: |
+          set -euo pipefail
+          APK="build/app/outputs/flutter-apk/app-myket-release.apk"
+          MANIFEST="$(unzip -p "$APK" AndroidManifest.xml | strings)"
+          if printf '%s' "$MANIFEST" | grep -qi "PAY_THROUGH_BAZAAR"; then
+            echo "❌ forbidden Bazaar payment permission found in $APK"; exit 1
+          fi
+          if printf '%s' "$MANIFEST" | grep -qi "com.farsitel"; then
+            echo "❌ Cafe Bazaar package reference found in $APK"; exit 1
+          fi
+          echo "✅ clean: $(basename "$APK")"
+
+      - name: Build Bazaar AAB (Release)
+        run: flutter build appbundle --release --flavor bazaar
+
+      - name: Upload Myket APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: jazireh_fandoghi_myket_apk
+          path: build/app/outputs/flutter-apk/app-myket-release.apk
+          if-no-files-found: error
+
+      - name: Upload Bazaar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: jazireh_fandoghi_bazaar_apk
+          path: build/app/outputs/flutter-apk/app-bazaar-release.apk
+          if-no-files-found: error
+
+      - name: Upload Bazaar AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: jazireh_fandoghi_bazaar_aab
+          path: build/app/outputs/bundle/release/app-bazaar-release.aab
+          if-no-files-found: error
