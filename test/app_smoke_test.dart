@@ -105,6 +105,9 @@ void main() {
   });
 
   testWidgets('gateway stays overflow-free on a narrow phone', (tester) async {
+    GameData.resetForTesting();
+    GameData.onboardingSeen = true;
+    GameData.classroomLightMode = false;
     tester.view.physicalSize = const Size(320, 568);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);

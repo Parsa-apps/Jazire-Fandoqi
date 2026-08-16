@@ -151,15 +151,22 @@ void main() {
   });
 
   testWidgets('HandwritingScoreOverlay shows mastery count and sentence', (tester) async {
+    tester.view.physicalSize = const Size(400, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
-          body: HandwritingScoreOverlay(
-            score: 0.9,
-            letter: 'ب',
-            passed: true,
-            masteryCount: 2,
-            sentence: 'بابا آب داد.',
+          body: SingleChildScrollView(
+            child: HandwritingScoreOverlay(
+              score: 0.9,
+              letter: 'ب',
+              passed: true,
+              masteryCount: 2,
+              sentence: 'بابا آب داد.',
+            ),
           ),
         ),
       ),
