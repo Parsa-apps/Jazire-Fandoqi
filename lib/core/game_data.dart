@@ -159,6 +159,10 @@ class GameData {
   static int cartoonWatchSeconds = 0;
   static bool appRated = false;
 
+  // 🌙 لالایی‌ها — علاقه‌مندی‌ها و تاریخچهٔ شنیدن (هم‌زبان با قصه/کارتون)
+  static List<String> lullabyFavorites = <String>[];
+  static List<String> listenedLullabies = <String>[];
+
   // ✅ فیکس عمیق فاز ۳۰: achievement_system به playedGames نیاز داشت ولی نبود — باعث بیلد فیل خاموش
   static List<String> playedGames = <String>[];
   static final Set<String> _playedGamesSet = <String>{};
@@ -270,6 +274,8 @@ class GameData {
       watchedCartoons = _readList('cw');
       cartoonWatchSeconds = _readInt('cws', 0);
       appRated = prefs.getBool('appRated') ?? false;
+      lullabyFavorites = _readList('lfav');
+      listenedLullabies = _readList('ll_done');
       // ✅ فیکس: بارگذاری playedGames برای achievement
       playedGames = _readList('pg');
       _playedGamesSet
@@ -483,6 +489,8 @@ class GameData {
     watchedCartoons = asList('cw');
     cartoonWatchSeconds = asInt('cws', 0).clamp(0, _maxStoredCounter);
     appRated = asBool('appRated', false);
+    lullabyFavorites = asList('lfav');
+    listenedLullabies = asList('ll_done');
     islandDecorations = <String, String>{};
     final idc = d['idc'];
     if (idc is Map) {
@@ -556,6 +564,8 @@ class GameData {
         'cw': watchedCartoons,
         'cws': cartoonWatchSeconds,
         'appRated': appRated,
+        'lfav': lullabyFavorites,
+        'll_done': listenedLullabies,
         'idc': islandDecorations,
         'pg': playedGames,
         'skills': skills,
@@ -707,6 +717,11 @@ class GameData {
     await prefs.setStringList('cw', List<String>.from(watchedCartoons));
     await prefs.setInt('cws', cartoonWatchSeconds);
     await prefs.setBool('appRated', appRated);
+    await prefs.setStringList('lfav', List<String>.from(lullabyFavorites));
+    await prefs.setStringList(
+      'll_done',
+      List<String>.from(listenedLullabies),
+    );
     await prefs.setStringList(
       'idc',
       islandDecorations.entries
@@ -973,6 +988,37 @@ class GameData {
     unawaited(save());
   }
 
+  // ==================== LULLABIES (لالایی‌ها) ====================
+  static bool hasListenedLullaby(String id) => listenedLullabies.contains(id);
+
+  static bool isLullabyFavorite(String id) => lullabyFavorites.contains(id);
+
+  static void toggleLullabyFavorite(String id) {
+    if (!_isLoaded || id.isEmpty) return;
+    if (lullabyFavorites.contains(id)) {
+      lullabyFavorites.remove(id);
+    } else {
+      lullabyFavorites.add(id);
+    }
+    _notify();
+    unawaited(save());
+  }
+
+  /// ثبت لالایی شنیده‌شده؛ خروجی false یعنی قبلاً شنیده شده
+  /// (مهارت `lullaby` فقط یک‌بار برای هر لالایی بالا می‌رود).
+  static bool markLullabyListened(String id) {
+    if (!_isLoaded || id.isEmpty || listenedLullabies.contains(id)) {
+      return false;
+    }
+    listenedLullabies.add(id);
+    if (skills.containsKey('lullaby')) {
+      skills['lullaby'] = min(_maxStoredCounter, (skills['lullaby'] ?? 0) + 1);
+    }
+    _notify();
+    unawaited(save());
+    return true;
+  }
+
   static bool claimRatingReward() {
     if (!_isLoaded || appRated) return false;
     appRated = true;
@@ -1212,6 +1258,7 @@ class GameData {
     'ownedItems', 'hs', 'mrhs', 'qhs', 'lld', 'lscd', 'aiBuddy', 'currentStage',
     'currentIsland', 'cs', 'pbt', 'op', 'stories', 'sfav', 'lastStoryId',
     'lastStoryPage', 'cfav', 'cw', 'cws', 'appRated', 'idc', 'pg', 'skills',
+    'lfav', 'll_done',
   ];
 
   /// پیشرفت کودک بدون تنظیمات والد (پین، محدودیت، تم).
@@ -1276,6 +1323,8 @@ class GameData {
     cartoonFavorites = <String>[];
     watchedCartoons = <String>[];
     cartoonWatchSeconds = 0;
+    lullabyFavorites = <String>[];
+    listenedLullabies = <String>[];
     playedGames = <String>[];
     _playedGamesSet.clear();
     _notify();
@@ -1565,6 +1614,8 @@ class GameData {
     watchedCartoons = <String>[];
     cartoonWatchSeconds = 0;
     appRated = false;
+    lullabyFavorites = <String>[];
+    listenedLullabies = <String>[];
     playedGames = <String>[];
     _playedGamesSet.clear();
     _notify();

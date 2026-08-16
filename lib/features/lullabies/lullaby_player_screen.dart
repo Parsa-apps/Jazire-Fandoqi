@@ -45,7 +45,9 @@ class _LullabyPlayerScreenState extends State<LullabyPlayerScreen> {
     }
     try {
       await _player.setAsset(widget.lullaby.audioAsset);
-      GameData.addSkill('lullaby');
+      // مهارت لالایی فقط یک‌بار برای هر لالایی بالا می‌رود و در نقشهٔ
+      // لالایی‌کده نشان «شنیدم» را روشن می‌کند.
+      GameData.markLullabyListened(widget.lullaby.id);
       _duration = _player.duration ?? const Duration(seconds: 150);
       _player.setLoopMode(_isLooping ? LoopMode.one : LoopMode.off);
       _player.positionStream.listen((pos) {
