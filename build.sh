@@ -129,8 +129,8 @@ if [[ "$BUILD_MODE" == "release" ]]; then
   done
   ok "حجم کل APKها: ${TOTAL}MB (هدف < ۳۵MB برای هر ABI)"
 else
-  log 'ساخت نسخه آزمایشی (Debug)...'
-  if ! flutter build apk --debug; then
+  log "ساخت نسخه آزمایشی (Debug, flavor=${STORE_FLAVOR})..."
+  if ! flutter build apk --debug --flavor "$STORE_FLAVOR"; then
     fail 'ساخت Debug شکست خورد'
     exit 1
   fi

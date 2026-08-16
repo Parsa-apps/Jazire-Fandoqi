@@ -57,8 +57,9 @@ keystore در `.gitignore` قرار دارند.
 
 > **امنیت امضای انتشار:** ساخت release محلی بدون `key.properties` عمداً متوقف
 > می‌شود تا خروجی امضاشده با کلید debug اشتباهاً به استور ارسال نشود. برای تست
-> روی گوشی از `flutter build apk --debug` استفاده کنید. محیط GitHub Actions فقط
-> برای راستی‌آزمایی کامپایل اجازهٔ امضای debug دارد و خروجی آن قابل انتشار نیست.
+> روی گوشی از `flutter build apk --debug --flavor bazaar` استفاده کنید. محیط
+> GitHub Actions فقط برای راستی‌آزمایی کامپایل اجازهٔ امضای debug دارد و
+> خروجی آن قابل انتشار نیست.
 
 > **🛡️ ضد دستکاری خودکار (v6.3):** هنگام ساخت release واقعی، SHA-256 گواهی
 > امضای keystore به‌طور خودکار داخل `BuildConfig.EXPECTED_SIGNING_SHA256` ثبت
@@ -78,13 +79,17 @@ keystore در `.gitignore` قرار دارند.
 
 برای نسخه‌ی دیباگ (سریع‌تر، برای تست):
 ```bash
-flutter build apk --debug
+flutter build apk --debug --flavor bazaar
 ```
 
 > 🏪 از نسخهٔ 6.2.1+2 هر فروشگاه بیلد release جداگانهٔ خودش را دارد
 > (flavor). بیلد مایکت کتابخانهٔ پرداخت کافه‌بازار (Poolakey) را ندارد تا
 > APK حاوی permission اختصاصی بازار نباشد — مایکت APKهای دارای دسترسی
 > `com.farsitel.bazaar.permission.PAY_THROUGH_BAZAAR` را رد می‌کند.
+>
+> ⚠️ بعد از افزودن flavor، دستورهای **بدون** `--flavor` دیگر خروجی
+> نمی‌سازند (Gradle خطای «task not found» می‌دهد). همیشه یکی از
+> `--flavor bazaar` یا `--flavor myket` را بدهید.
 
 **برای انتشار در کافه‌بازار** (با درگاه پرداخت Poolakey):
 ```bash
@@ -94,28 +99,29 @@ flutter build appbundle --release --flavor bazaar
 
 **برای انتشار در مایکت** (بدون هیچ دسترسی/کد پرداخت بازار):
 ```bash
+flutter clean
+flutter pub get
 flutter build apk --release --flavor myket
 ```
-
-اگر `--flavor` داده نشود، flavor پیش‌فرض (`bazaar`) ساخته می‌شود؛ برای
-انتشار در مایکت حتماً `--flavor myket` بدهید:
-```bash
-flutter build apk --release   # = همان --flavor bazaar
-```
+خروجی این دستور فقط `app-myket-release.apk` است و فقط همین فایل را در پنل
+مایکت آپلود کنید.
 
 ### ۶. یافتن فایل APK
 
 فایل APK در این مسیرها قرار دارد:
 
-- **دیباگ**: `build/app/outputs/flutter-apk/app-debug.apk`
+- **دیباگ**: `build/app/outputs/flutter-apk/app-bazaar-debug.apk`
 - **release بازار**: `build/app/outputs/flutter-apk/app-bazaar-release.apk`
 - **release مایکت**: `build/app/outputs/flutter-apk/app-myket-release.apk`
 
-> فایل مایکت را می‌توانید با این دستور از نظر نبودِ دسترسی بازار بررسی کنید:
+> ⚠️ پوشهٔ خروجی ممکن است حاوی APKهای قدیمیِ بیلدهای قبلی باشد (مثلاً
+> `app-release.apk` مربوط به قبل از flavorها که هنوز دسترسی بازار را دارد).
+> این فایل‌ها را آپلود نکنید. قبل از هر بیلد انتشار `flutter clean` بزنید و
+> بعد از بیلد، فایل مایکت را با اسکریپت تأیید بررسی کنید:
 > ```bash
-> unzip -p build/app/outputs/flutter-apk/app-myket-release.apk AndroidManifest.xml | strings | grep -i "PAY_THROUGH_BAZAAR" || echo "✅ بدون دسترسی بازار — قابل آپلود در مایکت"
+> tool/verify_store_apk.sh build/app/outputs/flutter-apk/app-myket-release.apk
 > ```
-> (خروجی درست فقط همان ✅ است؛ اگر نام دسترسی چاپ شود بیلد اشتباه است.)
+> (خروجی باید با ✅ تمام شود؛ اگر ❌ چاپ شود فایل برای مایکت قابل آپلود نیست.)
 
 ## 📱 نصب روی گوشی
 
@@ -126,7 +132,9 @@ flutter build apk --release   # = همان --flavor bazaar
 
 ### روش ۲: ADB (برای توسعه‌دهندگان)
 ```bash
-adb install build/app/outputs/flutter-apk/app-release.apk
+adb install build/app/outputs/flutter-apk/app-bazaar-debug.apk
+# یا نسخهٔ release بازار:
+# adb install build/app/outputs/flutter-apk/app-bazaar-release.apk
 ```
 
 ## 🎨 آیکون جدید
@@ -194,8 +202,8 @@ java -version
 **راه حل فوری:**
 ```bash
 # روش ۱: دیباگ بساز (همیشه قابل نصب است)
-flutter build apk --debug
-adb install build/app/outputs/flutter-apk/app-debug.apk
+flutter build apk --debug --flavor bazaar
+adb install build/app/outputs/flutter-apk/app-bazaar-debug.apk
 
 # روش ۲: فقط برای تأیید release-mode و هرگز برای انتشار:
 ALLOW_VERIFICATION_SIGNING=1 BUILD_MODE=release ./build.sh
@@ -211,7 +219,7 @@ keytool -genkey -v -keystore android/release.keystore -alias fandoghi -keyalg RS
 اگر نسخه قبلی با کلید دیگری امضا شده بود:
 ```bash
 adb uninstall com.parsaapps.amoozesh_fandoghi
-adb install build/app/outputs/flutter-apk/app-release.apk
+adb install build/app/outputs/flutter-apk/app-bazaar-release.apk
 ```
 
 ## 📞 پشتیبانی

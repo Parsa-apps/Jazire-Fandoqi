@@ -40,17 +40,24 @@
 را با خطای «دسترسی غیرمجاز» رد می‌کند.
 
 ```bash
+flutter clean
+flutter pub get
 flutter build apk --release --flavor myket
 # خروجی: build/app/outputs/flutter-apk/app-myket-release.apk
 ```
 
-بررسی سریع قبل از آپلود:
+⚠️ پوشهٔ خروجی ممکن است حاوی APKهای قدیمی بیلدهای قبلی باشد
+(مثلاً `app-release.apk` مربوط به قبل از flavorها). فقط
+`app-myket-release.apk` را آپلود کنید و قبل از آپلود، دقیقاً همین فایل را
+با اسکریپت تأیید بررسی کنید:
 
 ```bash
-unzip -p build/app/outputs/flutter-apk/app-myket-release.apk AndroidManifest.xml \
-  | strings | grep -i "PAY_THROUGH_BAZAAR" \
-  || echo "✅ بدون دسترسی بازار — آمادهٔ آپلود"
+tool/verify_store_apk.sh build/app/outputs/flutter-apk/app-myket-release.apk
 ```
+
+خروجی باید با «✅ فایل برای آپلود در پنل مایکت آماده است» تمام شود. اگر
+خط «❌ FAIL» دیدید، یعنی فایل هنوز دسترسی بازار را دارد و باید دوباره با
+`--flavor myket` بیلد بگیرید.
 
 > بیلد بازار (`--flavor bazaar`) مثل قبل هر دو درگاه را همراه دارد و فقط
 > برای کافه‌بازار است؛ بیلد مایکت فقط درگاه مایکت را دارد. همان package و
