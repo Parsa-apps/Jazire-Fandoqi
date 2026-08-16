@@ -214,36 +214,106 @@ class _SplashState extends State<SplashScreen>
               ),
             ),
             
+            // پردهٔ محو پشت برندینگ: بلوک پایین روی آب و شن می‌افتد که هر دو
+            // روشن‌اند. این لایه فقط نوار پایین را تیره می‌کند و بالای قاب را
+            // دست نمی‌زند.
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 250,
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [
+                        const Color(0xFF012A5E).withOpacity(0.72),
+                        const Color(0xFF012A5E).withOpacity(0.45),
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 0.55, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
             // Bottom branding
             Positioned(
-              bottom: 40,
+              bottom: 24,
               left: 0,
               right: 0,
               child: FadeTransition(
                 opacity: _fadeCtrl,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const ParsaAppsLogo(
-                        size: 48,
-                        borderRadius: 12,
-                        showShadow: false,
-                      ),
-                      const SizedBox(width: 12),
-                      Flexible(
-                        child: Text(
-                          'ساخته‌شده توسط فرشاد پارسا',
-                          textAlign: TextAlign.center,
-                          style: AppFonts.exo2(
-                            fontSize: 14,
-                            color: Colors.white54,
-                            fontWeight: FontWeight.w300,
-                            letterSpacing: 2,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const ParsaAppsLogo(
+                            size: 44,
+                            borderRadius: 12,
+                            showShadow: false,
                           ),
-                        ),
+                          const SizedBox(width: 12),
+                          Flexible(
+                            child: Text(
+                              'ساخته‌شده توسط فرشاد پارسا',
+                              textAlign: TextAlign.center,
+                              style: AppFonts.exo2(
+                                fontSize: 14,
+                                color: Colors.white70,
+                                fontWeight: FontWeight.w300,
+                                letterSpacing: 2,
+                              ).copyWith(shadows: _textShadows),
+                            ),
+                          ),
+                        ],
                       ),
+                      const SizedBox(height: 10),
+                      _buildStarDivider(),
+                      const SizedBox(height: 8),
+                      Text(
+                        'نسخه تابستان ۱۴۰۵',
+                        textAlign: TextAlign.center,
+                        textDirection: TextDirection.rtl,
+                        style: AppFonts.vazirmatn(
+                          fontSize: 13,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ).copyWith(shadows: _textShadows),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        'دانلود این نرم‌افزار در سایت رسمی پارسا اپس و بازار و مایکت',
+                        textAlign: TextAlign.center,
+                        textDirection: TextDirection.rtl,
+                        style: AppFonts.vazirmatn(
+                          fontSize: 11,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                          height: 1.5,
+                        ).copyWith(shadows: _textShadows),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        'Parsa-Apps™',
+                        textAlign: TextAlign.center,
+                        textDirection: TextDirection.ltr,
+                        style: AppFonts.exo2(
+                          fontSize: 13,
+                          color: const Color(0xFFFFD166),
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.5,
+                        ).copyWith(shadows: _textShadows),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildStarDivider(),
                     ],
                   ),
                 ),
@@ -315,6 +385,29 @@ class _SplashState extends State<SplashScreen>
           }),
         );
       },
+    );
+  }
+
+  /// نوار ستاره‌ای برندینگ پایین صفحه: ۶ ستارهٔ پر، ۷ ستارهٔ تهی، ۷ ستارهٔ پر.
+  /// با آیکون ساخته می‌شود نه کاراکتر ★/☆، چون رندر آن کاراکترها به فونت
+  /// نصب‌شده روی دستگاه وابسته است و ممکن است مربع خالی نشان دهد.
+  Widget _buildStarDivider() {
+    const filled = Color(0xFFFFD166);
+    const hollow = Colors.white54;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < 20; i++)
+          Icon(
+            (i < 6 || i >= 13) ? Icons.star_rounded : Icons.star_border_rounded,
+            size: 11,
+            color: (i < 6 || i >= 13) ? filled : hollow,
+            shadows: const [
+              Shadow(color: Color(0x99012A5E), blurRadius: 6),
+            ],
+          ),
+      ],
     );
   }
 
