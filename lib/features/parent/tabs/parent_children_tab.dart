@@ -119,7 +119,10 @@ class _ParentChildrenTabState extends State<ParentChildrenTab> {
                   for (final a in _avatars)
                     GestureDetector(
                       onTap: () {
-                        GameData.updateProfile(avatarIcon: a);
+                        GameData.updateProfile(
+                          name: GameData.childName,
+                          avatarIcon: a,
+                        );
                         SiblingProfiles.syncActiveMeta();
                         setState(() {});
                       },
