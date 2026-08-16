@@ -229,6 +229,68 @@ flutter {
     source = "../.."
 }
 
+// ---------------------------------------------------------------------
+// Backward-compatible release entry points
+// ---------------------------------------------------------------------
+// The active GitHub workflow predates the store flavors and still invokes
+// `flutter build apk --release` / `flutter build appbundle --release` without
+// `--flavor`. AGP does not create assembleRelease or bundleRelease once a
+// flavor dimension exists, so those commands otherwise fail before producing
+// an artifact. Keep the old entry points as deterministic aliases:
+//   * generic APK -> Myket (the store that accepts an APK)
+//   * generic AAB -> Bazaar (the store release distributed as an AAB)
+//
+// The copies deliberately use the legacy names expected by both Flutter and
+// `.github/workflows/build-apk.yml`. Explicit flavored builds remain available
+// and keep their normal app-<flavor>-release.* output names.
+tasks.register("assembleRelease") {
+    group = "build"
+    description = "Compatibility alias: builds the Myket release APK"
+    dependsOn("assembleMyketRelease")
+    doLast {
+        def sourceApk = layout.buildDirectory
+            .file("outputs/flutter-apk/app-myket-release.apk").get().asFile
+        def legacyApk = layout.buildDirectory
+            .file("outputs/flutter-apk/app-release.apk").get().asFile
+        if (!sourceApk.exists()) {
+            throw new GradleException("Expected Myket APK was not produced: ${sourceApk}")
+        }
+        copy {
+            from sourceApk
+            into legacyApk.parentFile
+            rename { legacyApk.name }
+        }
+        logger.lifecycle("Compatibility APK: ${legacyApk}")
+    }
+}
+
+tasks.register("bundleRelease") {
+    group = "build"
+    description = "Compatibility alias: builds the Bazaar release AAB"
+    dependsOn("bundleBazaarRelease")
+    doLast {
+        // AGP puts flavored bundles under bazaarRelease/. Keep the fallback
+        // name for compatibility across the AGP versions supported by Flutter.
+        def bundleDir = layout.buildDirectory.dir("outputs/bundle/bazaarRelease")
+            .get().asFile
+        def sourceAab = [
+            new File(bundleDir, "app-bazaar-release.aab"),
+            new File(bundleDir, "app.aab"),
+        ].find { it.exists() }
+        def legacyAab = layout.buildDirectory
+            .file("outputs/bundle/release/app-release.aab").get().asFile
+        if (sourceAab == null) {
+            throw new GradleException("Expected Bazaar AAB was not produced under: ${bundleDir}")
+        }
+        copy {
+            from sourceAab
+            into legacyAab.parentFile
+            rename { legacyAab.name }
+        }
+        logger.lifecycle("Compatibility AAB: ${legacyAab}")
+    }
+}
+
 // GitHub release builds are also the project's automated QA runner. Keeping
 // this dependency next to the Android release tasks ensures analyzer errors or
 // failing Flutter tests can never produce a distributable artifact, even when
