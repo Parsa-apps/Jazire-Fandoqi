@@ -6,6 +6,7 @@ import '../../app/app_colors.dart';
 import '../../app/design_tokens.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import '../../core/game_data.dart';
+import '../../core/growth/growth_store.dart';
 import '../../shared/widgets/star_field.dart';
 import '../../shared/widgets/parsa_apps_logo.dart';
 
@@ -279,7 +280,8 @@ class _SplashState extends State<SplashScreen>
                       _buildStarDivider(),
                       const SizedBox(height: 8),
                       Text(
-                        'نسخه تابستان ۱۴۰۵',
+                        'نسخه ${_toPersianDigits(GrowthStore.appVersion)}'
+                        ' — تابستان ${_toPersianDigits('1405')}',
                         textAlign: TextAlign.center,
                         textDirection: TextDirection.rtl,
                         style: AppFonts.vazirmatn(
@@ -290,7 +292,11 @@ class _SplashState extends State<SplashScreen>
                       ),
                       const SizedBox(height: 5),
                       Text(
-                        'دانلود این نرم‌افزار در سایت رسمی پارسا اپس و بازار و مایکت',
+                        // نام هیچ فروشگاهی اینجا نمی‌آید: یک APK واحد روی چند
+                        // فروشگاه منتشر می‌شود و کاربرِ هر کدام نباید نام
+                        // رقیب را ببیند. نگهبانش test/core/store_neutral_ui_test.dart است.
+                        'دانلود این نرم‌افزار در سایت رسمی پارسا اپس'
+                        ' و فروشگاه‌های معتبر',
                         textAlign: TextAlign.center,
                         textDirection: TextDirection.rtl,
                         style: AppFonts.vazirmatn(
@@ -386,6 +392,21 @@ class _SplashState extends State<SplashScreen>
         );
       },
     );
+  }
+
+  /// ارقام لاتین را به فارسی برمی‌گرداند تا «6.2.1» در متن فارسی ناهمگون
+  /// دیده نشود. نقطه و بقیهٔ کاراکترها دست‌نخورده می‌مانند.
+  static String _toPersianDigits(String input) {
+    const fa = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    final buffer = StringBuffer();
+    for (final rune in input.runes) {
+      if (rune >= 0x30 && rune <= 0x39) {
+        buffer.write(fa[rune - 0x30]);
+      } else {
+        buffer.writeCharCode(rune);
+      }
+    }
+    return buffer.toString();
   }
 
   /// نوار ستاره‌ای برندینگ پایین صفحه: ۶ ستارهٔ پر، ۷ ستارهٔ تهی، ۷ ستارهٔ پر.
