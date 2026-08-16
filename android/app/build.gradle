@@ -234,19 +234,18 @@ flutter {
 // ---------------------------------------------------------------------
 // The active GitHub workflow predates the store flavors and still invokes
 // `flutter build apk --release` / `flutter build appbundle --release` without
-// `--flavor`. AGP does not create assembleRelease or bundleRelease once a
-// flavor dimension exists, so those commands otherwise fail before producing
-// an artifact. Keep the old entry points as deterministic aliases:
+// `--flavor`. AGP's aggregate release tasks build the flavored variants, but
+// Flutter then looks for the old unflavored app-release.apk/app-release.aab
+// and exits with "failed to produce" because only app-<flavor>-release.* exists.
+// Attach compatibility copies to the aggregate tasks instead of registering
+// duplicate task names (AGP already owns assembleRelease and bundleRelease):
 //   * generic APK -> Myket (the store that accepts an APK)
 //   * generic AAB -> Bazaar (the store release distributed as an AAB)
 //
 // The copies deliberately use the legacy names expected by both Flutter and
 // `.github/workflows/build-apk.yml`. Explicit flavored builds remain available
 // and keep their normal app-<flavor>-release.* output names.
-tasks.register("assembleRelease") {
-    group = "build"
-    description = "Compatibility alias: builds the Myket release APK"
-    dependsOn("assembleMyketRelease")
+tasks.matching { it.name == "assembleRelease" }.configureEach {
     doLast {
         def sourceApk = layout.buildDirectory
             .file("outputs/flutter-apk/app-myket-release.apk").get().asFile
@@ -264,10 +263,7 @@ tasks.register("assembleRelease") {
     }
 }
 
-tasks.register("bundleRelease") {
-    group = "build"
-    description = "Compatibility alias: builds the Bazaar release AAB"
-    dependsOn("bundleBazaarRelease")
+tasks.matching { it.name == "bundleRelease" }.configureEach {
     doLast {
         // AGP puts flavored bundles under bazaarRelease/. Keep the fallback
         // name for compatibility across the AGP versions supported by Flutter.
