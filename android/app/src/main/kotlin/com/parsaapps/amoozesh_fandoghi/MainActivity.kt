@@ -154,22 +154,11 @@ class MainActivity : FlutterFragmentActivity() {
             }
     }
 
-    /**
-     * درگاه مایکت بر اساس TrivialDrive گوگل ساخته شده و نتیجهٔ صفحهٔ
-     * پرداخت را از طریق onActivityResult با یک requestCode برمی‌گرداند.
-     * باید این نتیجه به IabHelper پاس داده شود تا فلوی خرید کامل گردد؛
-     * بدون این، خرید هرگز موفق نمی‌شود و با «خطا» برمی‌گردد.
-     * (Poolakey/کافه‌بازار از ActivityResultRegistry خودش استفاده می‌کند
-     * و نیازی به این override ندارد.)
-     */
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (vendor == StoreVendor.MYKET &&
-            myket.handleActivityResult(requestCode, resultCode, data)) {
-            return
-        }
-        super.onActivityResult(requestCode, resultCode, data)
-    }
-
+    // نکته: درگاه مایکت برخلاف TrivialDrive گوگل، requestCode و
+    // handleActivityResult ندارد؛ نتیجهٔ خرید را SDK خودش با یک
+    // ResultReceiver داخلی به listener می‌رساند، پس نیازی به
+    // override کردن onActivityResult نیست. (Poolakey/کافه‌بازار هم از
+    // ActivityResultRegistry خودش استفاده می‌کند.)
     /** فقط درگاهِ فروشگاهِ نصب‌کننده متصل می‌شود، نه هر دو. */
     private fun connectStore() {
         if (vendor == StoreVendor.BAZAAR) bazaar.connect()
