@@ -72,6 +72,11 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
       HapticFeedback.heavyImpact();
       Navigator.pop(context, true);
     } else {
+      // پیام واقعی استور (انصراف، قبلاً خریده، عدم اتصال و...) را نشان می‌دهیم
+      // تا هم رفع اشکال راحت‌تر باشد هم کاربر سردرگم نشود.
+      final errorMsg = Monetization.lastPurchaseError.isNotEmpty
+          ? Monetization.lastPurchaseError
+          : 'لطفاً اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.';
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -81,7 +86,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('لطفاً اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.', style: AppFonts.vazirmatn(fontSize: 14, height: 1.6)),
+              Text(errorMsg, style: AppFonts.vazirmatn(fontSize: 14, height: 1.6)),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -262,7 +267,18 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                             ? null
                             : () async {
                                 HapticFeedback.lightImpact();
-                                if (await Monetization.restoreFullVersion() && mounted) Navigator.pop(context, true);
+                                final ok = await Monetization.restoreFullVersion();
+                                if (!mounted) return;
+                                if (ok) {
+                                  Navigator.pop(context, true);
+                                } else {
+                                  final msg = Monetization.lastPurchaseError.isNotEmpty
+                                      ? Monetization.lastPurchaseError
+                                      : 'خرید فعالی برای بازیابی یافت نشد.';
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(msg)),
+                                  );
+                                }
                               },
                         child: Text('بازیابی خرید قبلی', style: AppFonts.vazirmatn(fontWeight: FontWeight.w800, color: AppColors.primary, fontSize: 13)),
                       ),
