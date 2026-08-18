@@ -4,7 +4,31 @@ import 'package:flutter/services.dart';
 import '../../app/app_fonts.dart';
 import '../../core/game_data.dart';
 
+/// ارقام فارسی (۰-۹) و عربی (٠-٩) را به ارقام لاتین تبدیل می‌کند.
+///
+/// کیبوردهای فارسی بعضی دستگاه‌ها رقم فارسی تایپ می‌کنند؛ بدون این تبدیل،
+/// پین یا اصلاً وارد نمی‌شد یا تأیید نمی‌شد و دکمهٔ خرید «بی‌صدا» کاری
+/// نمی‌کرد. جدا نگه داشته شده تا بدون ویجت قابل تست باشد.
+String normalizePinDigits(String input) {
+  final buffer = StringBuffer();
+  for (final rune in input.runes) {
+    if (rune >= 0x06F0 && rune <= 0x06F9) {
+      // ارقام فارسی ۰-۹
+      buffer.writeCharCode(0x30 + (rune - 0x06F0));
+    } else if (rune >= 0x0660 && rune <= 0x0669) {
+      // ارقام عربی ٠-٩
+      buffer.writeCharCode(0x30 + (rune - 0x0660));
+    } else {
+      buffer.writeCharCode(rune);
+    }
+  }
+  return buffer.toString();
+}
+
 /// دروازهٔ والد: فقط پین ۴ رقمی. جمع ساده را کلاس‌اولی حل می‌کند.
+///
+/// هیچ مسیر شکستی بی‌صدا نیست: پین اشتباه پیام قابل‌مشاهده می‌گیرد تا
+/// کاربر فکر نکند دکمه‌ها کار نمی‌کنند.
 Future<bool> requestParentAccess(BuildContext context) async {
   if (!GameData.isLoaded) return false;
 
@@ -17,8 +41,33 @@ Future<bool> requestParentAccess(BuildContext context) async {
   final pin = await _askExistingPin(context);
   if (pin == null) return false;
   final ok = await GameData.verifyParentPin(pin);
-  if (ok) GameData.parentUnlockedThisSession = true;
-  return ok;
+  if (ok) {
+    GameData.parentUnlockedThisSession = true;
+    return true;
+  }
+  // پین اشتباه بود — حتماً بازخورد نشان بده؛ سکوت یعنی «دکمه کار نمی‌کند».
+  await _showWrongPinNotice(context);
+  return false;
+}
+
+Future<void> _showWrongPinNotice(BuildContext context) {
+  if (!context.mounted) return Future.value();
+  return showDialog<void>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      title: Text('پین اشتباه بود',
+          style: AppFonts.vazirmatn(fontWeight: FontWeight.w900)),
+      content: Text('پین واردشده درست نیست. دوباره تلاش کنید.',
+          style: AppFonts.vazirmatn(fontSize: 14, height: 1.6)),
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('باشه'),
+        ),
+      ],
+    ),
+  );
 }
 
 Future<String?> _askExistingPin(BuildContext context) {
@@ -56,6 +105,12 @@ Future<bool> _askNewPin(BuildContext context) async {
   return GameData.setParentPin(first);
 }
 
+/// فیلتری که هم ارقام لاتین و هم فارسی/عربی را مجاز می‌داند؛ تبدیل نهایی
+/// در [normalizePinDigits] انجام می‌شود.
+final TextInputFormatter _pinDigitFilter = FilteringTextInputFormatter.allow(
+  RegExp('[0-9\u06F0-\u06F9\u0660-\u0669]'),
+);
+
 Future<String?> _pinDialog(
   BuildContext context, {
   required String title,
@@ -82,7 +137,7 @@ Future<String?> _pinDialog(
               obscureText: true,
               autofocus: true,
               textAlign: TextAlign.center,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              inputFormatters: [_pinDigitFilter],
               style: const TextStyle(fontSize: 28, letterSpacing: 10),
               decoration: InputDecoration(
                 hintText: '••••',
@@ -101,7 +156,8 @@ Future<String?> _pinDialog(
           ),
           FilledButton(
             onPressed: () {
-              final pin = controller.text.trim();
+              // نرمال‌سازی ارقام فارسی/عربی به لاتین قبل از اعتبارسنجی.
+              final pin = normalizePinDigits(controller.text.trim());
               if (RegExp(r'^\d{4}$').hasMatch(pin)) {
                 Navigator.pop(ctx, pin);
               }

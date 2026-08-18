@@ -114,6 +114,19 @@ class BillingService {
     String productId, {
     bool consumable = false,
   }) async {
+    final result = await _run(method, productId, consumable: consumable);
+    // لاگ تشخیصی برای دیباگ روی دستگاه (logcat)؛ توکن/رسید خرید هرگز لاگ
+    // نمی‌شود. اگر خرید یا بازیابی «بی‌صدا» شکست خورد، ردپای آن این‌جاست.
+    debugPrint('[Billing] $method → success=${result.success}'
+        '${result.message.isEmpty ? '' : ' | ${result.message}'}');
+    return result;
+  }
+
+  static Future<BillingResult> _run(
+    String method,
+    String productId, {
+    bool consumable = false,
+  }) async {
     if (method != 'restore' && productId.trim().isEmpty) {
       return const BillingResult.failure('شناسه محصول نامعتبر است');
     }
@@ -133,8 +146,20 @@ class BillingService {
               'productId': productId,
               'consumable': consumable,
             };
-      final dynamic raw = await _channel.invokeMethod<Object?>(method, arguments);
+      var invocation = _channel.invokeMethod<Object?>(method, arguments);
+      // بازیابی یک کوئری خالص است و نباید هرگز بی‌پایان منتظر بماند؛
+      // اگر SDK فروشگاه callback ندهد، کاربر باید پیام بگیرد نه سکوت.
+      // (خرید timeout ندارد چون کاربر ممکن است دقیقه‌ها در صفحهٔ پرداخت
+      // فروشگاه بماند.)
+      if (method == 'restore') {
+        invocation = invocation.timeout(const Duration(seconds: 25));
+      }
+      final dynamic raw = await invocation;
       return _parse(raw);
+    } on TimeoutException {
+      return const BillingResult.failure(
+        'پاسخ فروشگاه به‌موقع نرسید؛ اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.',
+      );
     } on MissingPluginException {
       // ماژول نیتیو استور نصب نیست؛ در حالت توسعه خرید آزمایشی موفق است
       if (sandboxFallback) return const BillingResult.sandbox();
