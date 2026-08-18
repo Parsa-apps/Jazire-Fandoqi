@@ -27,6 +27,10 @@ class Monetization {
   static const String _grantTokenKey = 'entitlement.receipt_token';
   static const String _grantOrderKey = 'entitlement.receipt_order';
 
+  /// آخرین پیام خطای خرید/بازیابی برای نمایش در UI (مثلاً «پرداخت لغو شد»).
+  /// خالی یعنی خطایی نبوده. هر تلاش جدید این مقدار را بازنشانی می‌کند.
+  static String lastPurchaseError = '';
+
   static Future<bool> hasFullVersion() async {
     if (!kReleaseMode) {
       final cached = await HivePlayerStore.readValue(_fullVersionKey);
@@ -52,26 +56,40 @@ class Monetization {
   }
 
   static Future<bool> activateFullVersion(BillingResult result) async {
-    if (!result.success) return false;
+    if (!result.success) {
+      lastPurchaseError = result.message.isNotEmpty
+          ? result.message
+          : 'پرداخت توسط فروشگاه تأیید نشد';
+      return false;
+    }
     if (kReleaseMode) {
       // یک خرید release بدون رسید استور قابل قبول نیست.
       if (result.purchaseToken == null || result.purchaseToken!.isEmpty) {
+        lastPurchaseError = 'رسید خرید از فروشگاه دریافت نشد';
         return false;
       }
       await _storeGrant(token: result.purchaseToken!, orderId: result.orderId);
       await _clearLegacyKeys();
+      lastPurchaseError = '';
       return true;
     }
     // حالت توسعه/تست: فلگ محلی کافی است.
     await HivePlayerStore.writeValue(_fullVersionKey, true);
+    lastPurchaseError = '';
     return true;
   }
 
-  static Future<bool> restoreFullVersion() async =>
-      activateFullVersion(await BillingService.restorePurchases());
+  static Future<bool> restoreFullVersion() async {
+    final result = await BillingService.restorePurchases();
+    lastPurchaseError = result.success ? '' : (result.message.isNotEmpty ? result.message : '');
+    return activateFullVersion(result);
+  }
 
-  static Future<bool> purchaseFullVersion() async =>
-      activateFullVersion(await BillingService.purchaseNonConsumable(productIdFullVersion));
+  static Future<bool> purchaseFullVersion() async {
+    final result = await BillingService.purchaseNonConsumable(productIdFullVersion);
+    lastPurchaseError = result.success ? '' : (result.message.isNotEmpty ? result.message : '');
+    return activateFullVersion(result);
+  }
 
   /// Compatibility aliases kept while feature screens migrate to the permanent model.
   static Future<bool> isPremium() => hasFullVersion();

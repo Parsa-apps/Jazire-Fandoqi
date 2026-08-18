@@ -18,9 +18,17 @@ import ir.myket.billingclient.util.Purchase
  */
 class MyketBilling(context: Context, private val publicKey: String) {
 
+    companion object {
+        // کد درخواست برای فلوی خرید مایکت. نتیجهٔ این فلو در
+        // onActivityResult اکتیویتی با همین کد برمی‌گردد و باید به
+        // IabHelper.handleActivityResult پاس داده شود (رفتار TrivialDrive).
+        private const RC_REQUEST = 10001
+    }
+
     private var helper: IabHelper? = null
     private var setupDone = false
     private var setupFailed = false
+    private var purchaseCallback: ((BillingOutcome) -> Unit)? = null
 
     val isConfigured: Boolean get() = publicKey.isNotBlank()
 
@@ -70,44 +78,96 @@ class MyketBilling(context: Context, private val publicKey: String) {
                 callback(BillingOutcome.failure("اتصال به فروشگاه برقرار نیست؛ دوباره تلاش کنید"))
                 return@ensureSetup
             }
+            if (purchaseCallback != null) {
+                callback(BillingOutcome.failure("یک پرداخت دیگر در حال انجام است"))
+                return@ensureSetup
+            }
+            // شنوندهٔ نتیجه را نگه می‌داریم چون نتیجهٔ واقعی خرید از
+            // onActivityResult اکتیویتی (با کد RC_REQUEST) به دست IabHelper
+            // می‌رسد و این callback را صدا می‌زند.
+            val listener = IabHelper.OnIabPurchaseFinishedListener { result: IabResult, purchase: Purchase? ->
+                val cb = purchaseCallback
+                purchaseCallback = null
+                if (cb == null) return@OnIabPurchaseFinishedListener
+                when {
+                    result.isSuccess && purchase != null -> {
+                        if (purchase.sku != productId) {
+                            cb(BillingOutcome.failure("شناسه محصول با رسید فروشگاه هم‌خوان نیست"))
+                        } else {
+                            cb(
+                                BillingOutcome.success(
+                                    token = purchase.token,
+                                    orderId = purchase.orderId,
+                                    message = "پرداخت تأیید شد",
+                                )
+                            )
+                        }
+                    }
+                    result.response == IabHelper.IABHELPER_USER_CANCELLED ||
+                        result.response == IabHelper.BILLING_RESPONSE_RESULT_USER_CANCELED ->
+                        cb(BillingOutcome.failure("پرداخت لغو شد"))
+                    result.response == IabHelper.BILLING_RESPONSE_RESULT_ITEM_ALREADY_OWNED ->
+                        // قبلاً خریده؛ مسیر درست «بازیابی خرید» است.
+                        cb(BillingOutcome.failure("این محصول قبلاً خریداری شده؛ «بازیابی خرید قبلی» را بزنید"))
+                    result.response == IabHelper.IABHELPER_VERIFICATION_FAILED ->
+                        cb(BillingOutcome.failure("امضای رسید خرید معتبر نیست"))
+                    else ->
+                        cb(BillingOutcome.failure(result.message ?: "پرداخت توسط فروشگاه تأیید نشد"))
+                }
+            }
             try {
+                // امضای درست IabHelper مایکت (همان TrivialDrive گوگل):
+                // launchPurchaseFlow(Activity, sku, itemType, requestCode,
+                //                    listener, developerPayload)
+                // بدون requestCode و بدون handleActivityResult، نتیجهٔ خرید
+                // هرگز برنمی‌گردد و دکمهٔ خرید با «خطا» شکست می‌خورد.
+                purchaseCallback = callback
                 helper?.launchPurchaseFlow(
                     activity,
                     productId,
                     IabHelper.ITEM_TYPE_INAPP,
-                    { result: IabResult, purchase: Purchase? ->
-                        when {
-                            result.isSuccess && purchase != null -> {
-                                if (purchase.sku != productId) {
-                                    callback(BillingOutcome.failure("شناسه محصول با رسید فروشگاه هم‌خوان نیست"))
-                                } else {
-                                    callback(
-                                        BillingOutcome.success(
-                                            token = purchase.token,
-                                            orderId = purchase.orderId,
-                                            message = "پرداخت تأیید شد",
-                                        )
-                                    )
-                                }
-                            }
-                            result.response == IabHelper.IABHELPER_USER_CANCELLED ||
-                                result.response == IabHelper.BILLING_RESPONSE_RESULT_USER_CANCELED ->
-                                callback(BillingOutcome.failure("پرداخت لغو شد"))
-                            result.response == IabHelper.BILLING_RESPONSE_RESULT_ITEM_ALREADY_OWNED ->
-                                // قبلاً خریده؛ مسیر درست «بازیابی خرید» است.
-                                callback(BillingOutcome.failure("این محصول قبلاً خریداری شده؛ «بازیابی خرید قبلی» را بزنید"))
-                            result.response == IabHelper.IABHELPER_VERIFICATION_FAILED ->
-                                callback(BillingOutcome.failure("امضای رسید خرید معتبر نیست"))
-                            else ->
-                                callback(BillingOutcome.failure("پرداخت توسط فروشگاه تأیید نشد"))
-                        }
-                    },
+                    RC_REQUEST,
+                    listener,
                     payload,
                 )
             } catch (_: Exception) {
+                purchaseCallback = null
                 callback(BillingOutcome.failure("شروع پرداخت ممکن نیست"))
             }
         }
+    }
+
+    /**
+     * نتیجهٔ صفحهٔ پرداخت مایکت از اکتیویتی به اینجا می‌رسد.
+     * @return اگر کد درخواست متعلق به این درگاه بود و توسط IabHelper
+     * مصرف شد true برمی‌گرداند.
+     */
+    fun handleActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?): Boolean {
+        val client = helper ?: return false
+        if (requestCode != RC_REQUEST) return false
+        val wasWaiting = purchaseCallback != null
+        // پاسخ را به IabHelper می‌دهیم؛ در حالت موفقیت یا خطای استور،
+        // OnIabPurchaseFinishedListener (که بالا تعریف شد) صدا زده
+        // می‌شود و purchaseCallback را خالی می‌کند.
+        val handled = try {
+            client.handleActivityResult(requestCode, resultCode, data)
+        } catch (_: Exception) {
+            purchaseCallback?.let { cb ->
+                purchaseCallback = null
+                cb(BillingOutcome.failure("پاسخ فروشگاه دریافت نشد"))
+            }
+            return false
+        }
+        // اگر بعد از handleActivityResult هنوز شنونده‌ای در انتظار است
+        // (مثلاً کاربر دیالوگ پرداخت را بسته و resultCode != OK بوده و
+        // IabHelper شنونده را صدا نزده)، آن را با «لغو پرداخت» خاتمه
+        // می‌دهیم تا دکمهٔ خرید گیر نکند.
+        if (wasWaiting && purchaseCallback != null) {
+            val cb = purchaseCallback
+            purchaseCallback = null
+            cb?.invoke(BillingOutcome.failure("پرداخت لغو شد"))
+        }
+        return handled
     }
 
     fun restore(productId: String, callback: (BillingOutcome) -> Unit) {
@@ -172,6 +232,10 @@ class MyketBilling(context: Context, private val publicKey: String) {
     }
 
     fun dispose() {
+        purchaseCallback?.let { cb ->
+            purchaseCallback = null
+            cb(BillingOutcome.failure("برنامه بسته شد؛ پرداخت ناتمام ماند"))
+        }
         try {
             helper?.dispose()
         } catch (_: Exception) {
@@ -179,5 +243,6 @@ class MyketBilling(context: Context, private val publicKey: String) {
         }
         helper = null
         setupDone = false
+        setupFailed = false
     }
 }
