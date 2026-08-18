@@ -51,7 +51,9 @@ Future<bool> requestParentAccess(BuildContext context) async {
   // نتیجهٔ دروازه همان لحظه برمی‌گردد و دیالوگ اطلاع‌رسانی مستقل از جریان
   // caller روی صفحه می‌ماند؛ منتظر بسته‌شدنش نمی‌مانیم تا سرنوشت هیچ فلوی
   // خریدی به چرخهٔ عمر این دیالوگ گره نخورد.
-  unawaited(_showWrongPinNotice(context));
+  if (context.mounted) {
+    unawaited(_showWrongPinNotice(context));
+  }
   return false;
 }
 
@@ -122,55 +124,99 @@ Future<String?> _pinDialog(
   required String subtitle,
   required String confirmLabel,
 }) {
-  final controller = TextEditingController();
   return showDialog<String>(
     context: context,
     barrierDismissible: false,
-    builder: (ctx) {
-      return AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(title, style: AppFonts.vazirmatn(fontWeight: FontWeight.w900)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(subtitle, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              maxLength: 4,
-              obscureText: true,
-              autofocus: true,
-              textAlign: TextAlign.center,
-              inputFormatters: [_pinDigitFilter],
-              style: const TextStyle(fontSize: 28, letterSpacing: 10),
-              decoration: InputDecoration(
-                hintText: '••••',
-                counterText: '',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+    builder: (ctx) => _PinDialogContent(
+      title: title,
+      subtitle: subtitle,
+      confirmLabel: confirmLabel,
+    ),
+  );
+}
+
+/// محتوای دیالوگ پین.
+///
+/// ⚠️ نکتهٔ مهم: کنترلر ورودی باید هم‌عمر خود ویجت دیالوگ باشد. الگوی قدیمی
+/// `showDialog(...).whenComplete(controller.dispose)` کنترلر را به‌محض کامل‌شدن
+/// futureِ route نابود می‌کرد، در حالی که انیمیشن خروج دیالوگ هنوز در حال
+/// اجرا بود و TextField حین بازسازی به کنترلرِ disposeشده گوش می‌داد →
+/// «TextEditingController was used after being disposed» و به‌هم‌ریختگی
+/// layout. با Stateful بودن محتوا، dispose دقیقاً وقتی اتفاق می‌افتد که درخت
+/// ویجت واقعاً حذف می‌شود.
+class _PinDialogContent extends StatefulWidget {
+  const _PinDialogContent({
+    required this.title,
+    required this.subtitle,
+    required this.confirmLabel,
+  });
+
+  final String title;
+  final String subtitle;
+  final String confirmLabel;
+
+  @override
+  State<_PinDialogContent> createState() => _PinDialogContentState();
+}
+
+class _PinDialogContentState extends State<_PinDialogContent> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _confirm() {
+    // نرمال‌سازی ارقام فارسی/عربی به لاتین قبل از اعتبارسنجی.
+    final pin = normalizePinDigits(_controller.text.trim());
+    if (RegExp(r'^\d{4}$').hasMatch(pin)) {
+      Navigator.pop(context, pin);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      title: Text(widget.title,
+          style: AppFonts.vazirmatn(fontWeight: FontWeight.w900)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(widget.subtitle, textAlign: TextAlign.center),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _controller,
+            keyboardType: TextInputType.number,
+            maxLength: 4,
+            obscureText: true,
+            autofocus: true,
+            textAlign: TextAlign.center,
+            inputFormatters: [_pinDigitFilter],
+            onSubmitted: (_) => _confirm(),
+            style: const TextStyle(fontSize: 28, letterSpacing: 10),
+            decoration: InputDecoration(
+              hintText: '••••',
+              counterText: '',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('انصراف'),
-          ),
-          FilledButton(
-            onPressed: () {
-              // نرمال‌سازی ارقام فارسی/عربی به لاتین قبل از اعتبارسنجی.
-              final pin = normalizePinDigits(controller.text.trim());
-              if (RegExp(r'^\d{4}$').hasMatch(pin)) {
-                Navigator.pop(ctx, pin);
-              }
-            },
-            child: Text(confirmLabel),
           ),
         ],
-      );
-    },
-  ).whenComplete(controller.dispose);
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('انصراف'),
+        ),
+        FilledButton(
+          onPressed: _confirm,
+          child: Text(widget.confirmLabel),
+        ),
+      ],
+    );
+  }
 }
