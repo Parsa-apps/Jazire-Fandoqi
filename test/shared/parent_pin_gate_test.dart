@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:cryptography/dart.dart' show DartSha256;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,9 +11,16 @@ import 'package:jazireh_fandoghi/shared/widgets/parent_pin_gate.dart';
 /// دروازهٔ والد نباید هیچ‌وقت «بی‌صدا» شکست بخورد — شکست بی‌صدا دقیقاً
 /// همان چیزی است که کاربر به‌صورت «دکمهٔ خرید کار نمی‌کند» می‌بیند.
 ///
-/// نکتهٔ فنی تست‌ها: نتیجهٔ دروازه با `.then` در یک متغیر ثبت و با پامپ‌های
-/// کرانداز poll می‌شود؛ هیچ `await` بلاک‌کننده‌ای روی futureِ دروازه نیست تا
-/// اگر کاری در CI طول کشید، تست سریع و روشن شکست بخورد نه اینکه آویزان بماند.
+/// نکتهٔ فنی مهم: بدنهٔ testWidgets زیر FakeAsync اجرا می‌شود؛ هر await که
+/// قبل از pump به تایمر نیاز داشته باشد برای همیشه قفل می‌کند. به همین دلیل
+/// پین با هش legacy (SHA-256 همگام) کاشته می‌شود، نه با setParentPin که
+/// PBKDF2 ناهمگام دارد.
+String _legacyHash(String pin) {
+  final digest = const DartSha256()
+      .hashSync(utf8.encode('fandoghi-parent-pin-v1:$pin'));
+  return base64Encode(digest.bytes);
+}
+
 void main() {
   setUp(() {
     GameData.resetForTesting();
@@ -35,7 +44,6 @@ void main() {
     });
   });
 
-  /// دروازه را باز می‌کند و نتیجه‌اش را غیربلاک‌کننده ثبت می‌کند.
   Future<BuildContext> _pumpGateHost(WidgetTester tester) async {
     late BuildContext capturedContext;
     await tester.pumpWidget(MaterialApp(
@@ -51,7 +59,8 @@ void main() {
     'wrong PIN shows a visible error instead of failing silently',
     timeout: const Timeout(Duration(minutes: 2)),
     (tester) async {
-      expect(await GameData.setParentPin('2580'), isTrue);
+      // کاشت همگام پین (هش legacy) — بدون PBKDF2 ناهمگام قبل از pump.
+      GameData.parentPinHash = _legacyHash('2580');
       final context = await _pumpGateHost(tester);
 
       bool? gateResult;
@@ -63,13 +72,14 @@ void main() {
       expect(find.text('ورود والدین'), findsOneWidget);
       await tester.enterText(find.byType(TextField), '0000');
       await tester.tap(find.text('ورود'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
-      // پامپ‌های کرانداز: اگر verify طول کشید، زمان فیک جلو می‌رود.
-      for (var i = 0; i < 40 && gateResult == null; i++) {
-        await tester.pump(const Duration(milliseconds: 500));
-      }
+      // مسیر پین اشتباه کاملاً همگام است (مقایسه هش legacy)؛ پس نتیجه باید
+      // همین حالا آماده باشد.
       expect(gateResult, isFalse,
           reason: 'دروازه باید بعد از پین اشتباه مقدار false برگرداند');
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
       // کاربر باید پیام قابل‌مشاهده ببیند، نه سکوت.
@@ -87,7 +97,7 @@ void main() {
     'a PIN typed with Persian digits is accepted',
     timeout: const Timeout(Duration(minutes: 2)),
     (tester) async {
-      expect(await GameData.setParentPin('1234'), isTrue);
+      GameData.parentPinHash = _legacyHash('1234');
       final context = await _pumpGateHost(tester);
 
       bool? gateResult;
@@ -98,7 +108,9 @@ void main() {
       await tester.enterText(find.byType(TextField), '۱۲۳۴');
       await tester.tap(find.text('ورود'));
 
-      for (var i = 0; i < 40 && gateResult == null; i++) {
+      // تأیید پین درست، هش را به PBKDF2 ارتقا می‌دهد؛ آن کار ناهمگام حین
+      // پامپ‌ها جلو می‌رود، پس با پامپ کرانداز poll می‌کنیم.
+      for (var i = 0; i < 60 && gateResult == null; i++) {
         await tester.pump(const Duration(milliseconds: 500));
       }
       expect(gateResult, isTrue,
@@ -111,7 +123,7 @@ void main() {
     'a correct ASCII PIN unlocks on the first try',
     timeout: const Timeout(Duration(minutes: 2)),
     (tester) async {
-      expect(await GameData.setParentPin('2580'), isTrue);
+      GameData.parentPinHash = _legacyHash('2580');
       final context = await _pumpGateHost(tester);
 
       bool? gateResult;
@@ -122,7 +134,7 @@ void main() {
       await tester.enterText(find.byType(TextField), '2580');
       await tester.tap(find.text('ورود'));
 
-      for (var i = 0; i < 40 && gateResult == null; i++) {
+      for (var i = 0; i < 60 && gateResult == null; i++) {
         await tester.pump(const Duration(milliseconds: 500));
       }
       expect(gateResult, isTrue);
