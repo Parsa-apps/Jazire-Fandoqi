@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:cryptography/dart.dart' show DartSha256;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'package:jazireh_fandoghi/core/game_data.dart';
 import 'package:jazireh_fandoghi/shared/widgets/parent_pin_gate.dart';
@@ -23,6 +24,9 @@ String _legacyHash(String pin) {
 
 void main() {
   setUp(() {
+    // مثل بقیهٔ تست‌های ویجت اپ: بدون این خط، GoogleFonts موقع رندر متن‌های
+    // دیالوگ تلاش به دانلود فونت می‌کند و زیر fake-async استثنا می‌اندازد.
+    GoogleFonts.config.allowRuntimeFetching = false;
     GameData.resetForTesting();
     GameData.parentUnlockedThisSession = false;
   });
@@ -90,6 +94,7 @@ void main() {
       await tester.tap(find.text('باشه'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpWidget(const SizedBox.shrink());
     },
   );
 
@@ -116,6 +121,7 @@ void main() {
       expect(gateResult, isTrue,
           reason: 'پین فارسی‌رقم باید بعد از نرمال‌سازی پذیرفته شود');
       expect(GameData.parentUnlockedThisSession, isTrue);
+      await tester.pumpWidget(const SizedBox.shrink());
     },
   );
 
@@ -139,6 +145,7 @@ void main() {
       }
       expect(gateResult, isTrue);
       expect(GameData.parentUnlockedThisSession, isTrue);
+      await tester.pumpWidget(const SizedBox.shrink());
     },
   );
 }
