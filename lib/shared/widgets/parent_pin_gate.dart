@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -46,7 +48,10 @@ Future<bool> requestParentAccess(BuildContext context) async {
     return true;
   }
   // پین اشتباه بود — حتماً بازخورد نشان بده؛ سکوت یعنی «دکمه کار نمی‌کند».
-  await _showWrongPinNotice(context);
+  // نتیجهٔ دروازه همان لحظه برمی‌گردد و دیالوگ اطلاع‌رسانی مستقل از جریان
+  // caller روی صفحه می‌ماند؛ منتظر بسته‌شدنش نمی‌مانیم تا سرنوشت هیچ فلوی
+  // خریدی به چرخهٔ عمر این دیالوگ گره نخورد.
+  unawaited(_showWrongPinNotice(context));
   return false;
 }
 

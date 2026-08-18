@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -6,6 +8,10 @@ import 'package:jazireh_fandoghi/shared/widgets/parent_pin_gate.dart';
 
 /// دروازهٔ والد نباید هیچ‌وقت «بی‌صدا» شکست بخورد — شکست بی‌صدا دقیقاً
 /// همان چیزی است که کاربر به‌صورت «دکمهٔ خرید کار نمی‌کند» می‌بیند.
+///
+/// نکتهٔ فنی تست‌ها: نتیجهٔ دروازه با `.then` در یک متغیر ثبت و با پامپ‌های
+/// کرانداز poll می‌شود؛ هیچ `await` بلاک‌کننده‌ای روی futureِ دروازه نیست تا
+/// اگر کاری در CI طول کشید، تست سریع و روشن شکست بخورد نه اینکه آویزان بماند.
 void main() {
   setUp(() {
     GameData.resetForTesting();
@@ -29,10 +35,8 @@ void main() {
     });
   });
 
-  testWidgets('wrong PIN shows a visible error instead of failing silently',
-      (tester) async {
-    expect(await GameData.setParentPin('2580'), isTrue);
-
+  /// دروازه را باز می‌کند و نتیجه‌اش را غیربلاک‌کننده ثبت می‌کند.
+  Future<BuildContext> _pumpGateHost(WidgetTester tester) async {
     late BuildContext capturedContext;
     await tester.pumpWidget(MaterialApp(
       home: Builder(builder: (context) {
@@ -40,65 +44,89 @@ void main() {
         return const Scaffold(body: SizedBox.expand());
       }),
     ));
+    return capturedContext;
+  }
 
-    final access = requestParentAccess(capturedContext);
-    await tester.pumpAndSettle();
+  testWidgets(
+    'wrong PIN shows a visible error instead of failing silently',
+    timeout: const Timeout(Duration(minutes: 2)),
+    (tester) async {
+      expect(await GameData.setParentPin('2580'), isTrue);
+      final context = await _pumpGateHost(tester);
 
-    // دیالوگ ورود پین باز است؛ پین اشتباه وارد می‌کنیم.
-    expect(find.text('ورود والدین'), findsOneWidget);
-    await tester.enterText(find.byType(TextField), '0000');
-    await tester.tap(find.text('ورود'));
-    await tester.pumpAndSettle();
+      bool? gateResult;
+      unawaited(requestParentAccess(context).then((v) => gateResult = v));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
-    // کاربر باید پیام قابل‌مشاهده ببیند، نه سکوت.
-    expect(find.text('پین اشتباه بود'), findsOneWidget);
-    await tester.tap(find.text('باشه'));
-    await tester.pumpAndSettle();
+      // دیالوگ ورود پین باز است؛ پین اشتباه وارد می‌کنیم.
+      expect(find.text('ورود والدین'), findsOneWidget);
+      await tester.enterText(find.byType(TextField), '0000');
+      await tester.tap(find.text('ورود'));
 
-    expect(await access, isFalse);
-    expect(GameData.parentUnlockedThisSession, isFalse);
-  });
+      // پامپ‌های کرانداز: اگر verify طول کشید، زمان فیک جلو می‌رود.
+      for (var i = 0; i < 40 && gateResult == null; i++) {
+        await tester.pump(const Duration(milliseconds: 500));
+      }
+      expect(gateResult, isFalse,
+          reason: 'دروازه باید بعد از پین اشتباه مقدار false برگرداند');
+      await tester.pump(const Duration(milliseconds: 500));
 
-  testWidgets('a PIN typed with Persian digits is accepted', (tester) async {
-    expect(await GameData.setParentPin('1234'), isTrue);
+      // کاربر باید پیام قابل‌مشاهده ببیند، نه سکوت.
+      expect(find.text('پین اشتباه بود'), findsOneWidget);
+      expect(GameData.parentUnlockedThisSession, isFalse);
 
-    late BuildContext capturedContext;
-    await tester.pumpWidget(MaterialApp(
-      home: Builder(builder: (context) {
-        capturedContext = context;
-        return const Scaffold(body: SizedBox.expand());
-      }),
-    ));
+      // بستن دیالوگ خطا برای تمیز ماندن درخت ویجت.
+      await tester.tap(find.text('باشه'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+    },
+  );
 
-    final access = requestParentAccess(capturedContext);
-    await tester.pumpAndSettle();
+  testWidgets(
+    'a PIN typed with Persian digits is accepted',
+    timeout: const Timeout(Duration(minutes: 2)),
+    (tester) async {
+      expect(await GameData.setParentPin('1234'), isTrue);
+      final context = await _pumpGateHost(tester);
 
-    await tester.enterText(find.byType(TextField), '۱۲۳۴');
-    await tester.tap(find.text('ورود'));
-    await tester.pumpAndSettle();
+      bool? gateResult;
+      unawaited(requestParentAccess(context).then((v) => gateResult = v));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
-    expect(await access, isTrue);
-    expect(GameData.parentUnlockedThisSession, isTrue);
-  });
+      await tester.enterText(find.byType(TextField), '۱۲۳۴');
+      await tester.tap(find.text('ورود'));
 
-  testWidgets('a correct ASCII PIN unlocks on the first try', (tester) async {
-    expect(await GameData.setParentPin('2580'), isTrue);
+      for (var i = 0; i < 40 && gateResult == null; i++) {
+        await tester.pump(const Duration(milliseconds: 500));
+      }
+      expect(gateResult, isTrue,
+          reason: 'پین فارسی‌رقم باید بعد از نرمال‌سازی پذیرفته شود');
+      expect(GameData.parentUnlockedThisSession, isTrue);
+    },
+  );
 
-    late BuildContext capturedContext;
-    await tester.pumpWidget(MaterialApp(
-      home: Builder(builder: (context) {
-        capturedContext = context;
-        return const Scaffold(body: SizedBox.expand());
-      }),
-    ));
+  testWidgets(
+    'a correct ASCII PIN unlocks on the first try',
+    timeout: const Timeout(Duration(minutes: 2)),
+    (tester) async {
+      expect(await GameData.setParentPin('2580'), isTrue);
+      final context = await _pumpGateHost(tester);
 
-    final access = requestParentAccess(capturedContext);
-    await tester.pumpAndSettle();
+      bool? gateResult;
+      unawaited(requestParentAccess(context).then((v) => gateResult = v));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
-    await tester.enterText(find.byType(TextField), '2580');
-    await tester.tap(find.text('ورود'));
-    await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '2580');
+      await tester.tap(find.text('ورود'));
 
-    expect(await access, isTrue);
-  });
+      for (var i = 0; i < 40 && gateResult == null; i++) {
+        await tester.pump(const Duration(milliseconds: 500));
+      }
+      expect(gateResult, isTrue);
+      expect(GameData.parentUnlockedThisSession, isTrue);
+    },
+  );
 }
