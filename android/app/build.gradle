@@ -217,6 +217,71 @@ flutter {
     source = "../.."
 }
 
+// ---------------------------------------------------------------------
+// Backward-compatible release entry points
+// ---------------------------------------------------------------------
+// The active GitHub workflow still invokes
+// `flutter build apk --release` / `flutter build appbundle --release`
+// without `--flavor`. AGP's aggregate tasks build both store variants,
+// but Flutter then looks for the old unflavored names
+// (app-release.apk / app-release.aab) and exits with "failed to produce"
+// because only app-<flavor>-release.* exists.
+// Copy the store artifacts onto those legacy names instead of
+// re-registering assembleRelease / bundleRelease (AGP already owns them):
+//   * generic APK -> Myket (the store that accepts an APK)
+//   * generic AAB -> Bazaar (the store release distributed as an AAB)
+def firstExistingFile(List<File> candidates) {
+    return candidates.find { it != null && it.exists() }
+}
+
+tasks.matching { it.name == "assembleRelease" || it.name == "assembleMyketRelease" }.configureEach {
+    doLast {
+        def flutterApkDir = layout.buildDirectory.dir("outputs/flutter-apk").get().asFile
+        def agpApkDir = layout.buildDirectory.dir("outputs/apk/myket/release").get().asFile
+        def sourceApk = firstExistingFile([
+            new File(flutterApkDir, "app-myket-release.apk"),
+            new File(agpApkDir, "app-myket-release.apk"),
+            new File(agpApkDir, "app-myket-release-unsigned.apk"),
+        ])
+        def legacyApk = new File(flutterApkDir, "app-release.apk")
+        if (sourceApk == null) {
+            throw new GradleException(
+                "Expected Myket APK was not produced under ${flutterApkDir} or ${agpApkDir}"
+            )
+        }
+        copy {
+            from sourceApk
+            into legacyApk.parentFile
+            rename { legacyApk.name }
+        }
+        logger.lifecycle("Compatibility APK: ${legacyApk} (from ${sourceApk.name})")
+    }
+}
+
+tasks.matching { it.name == "bundleRelease" || it.name == "bundleBazaarRelease" }.configureEach {
+    doLast {
+        def bazaarBundleDir = layout.buildDirectory.dir("outputs/bundle/bazaarRelease").get().asFile
+        def releaseBundleDir = layout.buildDirectory.dir("outputs/bundle/release").get().asFile
+        def sourceAab = firstExistingFile([
+            new File(bazaarBundleDir, "app-bazaar-release.aab"),
+            new File(bazaarBundleDir, "app.aab"),
+            new File(releaseBundleDir, "app-bazaar-release.aab"),
+        ])
+        def legacyAab = new File(releaseBundleDir, "app-release.aab")
+        if (sourceAab == null) {
+            throw new GradleException(
+                "Expected Bazaar AAB was not produced under ${bazaarBundleDir}"
+            )
+        }
+        copy {
+            from sourceAab
+            into legacyAab.parentFile
+            rename { legacyAab.name }
+        }
+        logger.lifecycle("Compatibility AAB: ${legacyAab} (from ${sourceAab.name})")
+    }
+}
+
 // GitHub release builds are also the project's automated QA runner. Keeping
 // this dependency next to the Android release tasks ensures analyzer errors or
 // failing Flutter tests can never produce a distributable artifact, even when
