@@ -142,6 +142,22 @@ android {
         ]
     }
 
+    // Store APKs must not expose a competing market's billing permission.
+    // Poolakey contributes PAY_THROUGH_BAZAAR from its AAR, while the Myket
+    // client needs ir.mservices.market.BILLING. Flavor manifest overlays keep
+    // only the permission accepted by the destination store.
+    flavorDimensions += "store"
+    productFlavors {
+        bazaar {
+            dimension "store"
+            buildConfigField "String", "STORE_CHANNEL", '"bazaar"'
+        }
+        myket {
+            dimension "store"
+            buildConfigField "String", "STORE_CHANNEL", '"myket"'
+        }
+    }
+
     signingConfigs {
         release {
             if (hasReleaseSigning) {
@@ -187,7 +203,7 @@ android {
 
 gradle.taskGraph.whenReady { taskGraph ->
     def releaseRequested = taskGraph.allTasks.any { task ->
-        task.path == ":app:assembleRelease" || task.path == ":app:bundleRelease"
+        task.path ==~ /:app:(assemble|bundle).*Release/
     }
     if (releaseRequested && !hasReleaseSigning && !allowVerificationSigning) {
         throw new GradleException(
@@ -225,8 +241,10 @@ if (System.getenv("GITHUB_ACTIONS") == "true") {
             qualityMarker.text = "passed\n"
         }
     }
-    tasks.matching { it.name == "assembleRelease" || it.name == "bundleRelease" }
-        .configureEach { dependsOn(ciQualityGate) }
+    tasks.matching { task ->
+        (task.name.startsWith("assemble") || task.name.startsWith("bundle")) &&
+            task.name.endsWith("Release")
+    }.configureEach { dependsOn(ciQualityGate) }
 }
 
 // =====================================================================
@@ -346,12 +364,13 @@ def repackMyketAar = tasks.register("repackMyketAar") {
 
 // در مسیر runtime به‌جای AAR اصلی مایکت، نسخهٔ بازبسته‌بندی‌شده قرار
 // می‌گیرد تا تداخل کلاس‌های AIDL با Poolakey پیش نیاید.
-configurations {
-    debugRuntimeClasspath {
-        exclude group: myketBillingModule.group, module: myketBillingModule.module
-    }
-    releaseRuntimeClasspath {
-        exclude group: myketBillingModule.group, module: myketBillingModule.module
+// Flavoring changes configuration names (for example,
+// myketReleaseRuntimeClasspath), so apply the replacement to every runtime
+// classpath instead of relying on the former unflavored names.
+configurations.configureEach { configuration ->
+    if (configuration.name.endsWith("RuntimeClasspath")) {
+        configuration.exclude group: myketBillingModule.group,
+            module: myketBillingModule.module
     }
 }
 

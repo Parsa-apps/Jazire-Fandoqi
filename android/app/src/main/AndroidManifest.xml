@@ -5,11 +5,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- 🏪 پرداخت درون‌برنامه‌ای مایکت (Myket Billing Client). بدون این
-         مجوز، سرویس پرداخت مایکت در زمان اجرا وصل نمی‌شود و خرید با خطا
-         برمی‌گردد. -->
-    <uses-permission android:name="ir.mservices.market.BILLING" />
-
     <application
         android:label="جزیره فندقی"
         android:name="${applicationName}"
@@ -58,12 +53,7 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
-        <!-- 🏪 Package visibility (Android 11+): the app asks the OS which of
-             the supported stores is installed so it can pick the right billing
-             gateway and open the right review page. Without these entries
-             getApplicationInfo() throws NameNotFound on API 30+.
-             No data is read from the stores; only their presence. -->
-        <package android:name="com.farsitel.bazaar" />
-        <package android:name="ir.mservices.market" />
+        <!-- Store package visibility is declared by each store flavor so an
+             artifact does not advertise integration with a competing market. -->
     </queries>
 </manifest>

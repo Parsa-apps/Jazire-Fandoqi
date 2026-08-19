@@ -1,0 +1,14 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Bazaar's billing permission is normally contributed by Poolakey. It is
+         repeated here to make the store contract explicit and auditable. -->
+    <uses-permission android:name="com.farsitel.bazaar.permission.PAY_THROUGH_BAZAAR" />
+    <uses-permission
+        android:name="ir.mservices.market.BILLING"
+        tools:node="remove" />
+
+    <queries>
+        <package android:name="com.farsitel.bazaar" />
+    </queries>
+</manifest>

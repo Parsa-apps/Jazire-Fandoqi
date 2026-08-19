@@ -8,7 +8,12 @@ echo "=== PROFESSIONAL APP SIZE REDUCTION ==="
 echo "Building optimized release APK..."
 
 # Build with split ABI, minify, and split debug info
-flutter build apk --release --split-per-abi --obfuscate --split-debug-info=symbols/
+STORE_FLAVOR="${STORE_FLAVOR:-myket}"
+if [[ "$STORE_FLAVOR" != "myket" && "$STORE_FLAVOR" != "bazaar" ]]; then
+  echo "STORE_FLAVOR must be either 'myket' or 'bazaar'." >&2
+  exit 2
+fi
+flutter build apk --flavor "$STORE_FLAVOR" --release --split-per-abi --obfuscate --split-debug-info=symbols/
 
 echo "=== OPTIMIZED BUILDS COMPLETE ==="
 echo "Files in build/app/outputs/flutter-apk/:"

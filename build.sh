@@ -4,6 +4,11 @@
 set -Eeuo pipefail
 
 BUILD_MODE="${BUILD_MODE:-debug}"
+STORE_FLAVOR="${STORE_FLAVOR:-myket}"
+if [[ "$STORE_FLAVOR" != "myket" && "$STORE_FLAVOR" != "bazaar" ]]; then
+  echo "STORE_FLAVOR must be either 'myket' or 'bazaar'." >&2
+  exit 2
+fi
 PROJECT_NAME="amoozesh_fandoghi"
 FAILED=0
 
@@ -12,7 +17,7 @@ ok()   { printf '✅ %s\n' "$1"; }
 fail() { printf '❌ %s\n' "$1"; FAILED=1; }
 
 printf '===========================================================\n'
-printf '🐰 جزیره فندقی — سیستم بیلد حرفه‌ای (حالت: %s)\n' "$BUILD_MODE"
+printf '🐰 جزیره فندقی — سیستم بیلد حرفه‌ای (حالت: %s، فروشگاه: %s)\n' "$BUILD_MODE" "$STORE_FLAVOR"
 printf '===========================================================\n'
 
 # ── ۱. محیط Flutter ─────────────────────────────────────────────
@@ -85,12 +90,12 @@ if [[ "$BUILD_MODE" == "release" ]]; then
   fi
 
   log 'ساخت APK (split per ABI + obfuscation)...'
-  if ! flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build/symbols; then
+  if ! flutter build apk --flavor "$STORE_FLAVOR" --release --split-per-abi --obfuscate --split-debug-info=build/symbols; then
     fail 'ساخت APK شکست خورد'
     exit 1
   fi
   log 'ساخت AAB...'
-  if ! flutter build appbundle --release --obfuscate --split-debug-info=build/symbols; then
+  if ! flutter build appbundle --flavor "$STORE_FLAVOR" --release --obfuscate --split-debug-info=build/symbols; then
     fail 'ساخت AAB شکست خورد'
     exit 1
   fi
@@ -114,7 +119,7 @@ if [[ "$BUILD_MODE" == "release" ]]; then
   ok "حجم کل APKها: ${TOTAL}MB (هدف < ۳۵MB برای هر ABI)"
 else
   log 'ساخت نسخه آزمایشی (Debug)...'
-  if ! flutter build apk --debug; then
+  if ! flutter build apk --flavor "$STORE_FLAVOR" --debug; then
     fail 'ساخت Debug شکست خورد'
     exit 1
   fi
