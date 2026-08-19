@@ -72,64 +72,30 @@ jobs:
           chmod 600 android/key.properties
           echo "Release signing configured from GitHub Secrets."
 
-      - name: Build store APKs (Release)
-        run: |
-          flutter build apk --flavor myket --release
-          flutter build apk --flavor bazaar --release
+      - name: Build APK (Release)
+        run: flutter build apk --release
 
-      - name: Verify store-specific billing permissions
-        run: |
-          set -euo pipefail
-          AAPT="$(ls "$ANDROID_HOME"/build-tools/*/aapt 2>/dev/null | sort -V | tail -1)"
-          test -n "$AAPT" || { echo "aapt not found under $ANDROID_HOME/build-tools"; exit 1; }
-          MYKET="build/app/outputs/flutter-apk/app-myket-release.apk"
-          BAZAAR="build/app/outputs/flutter-apk/app-bazaar-release.apk"
-          "$AAPT" dump permissions "$MYKET" > /tmp/myket-permissions.txt
-          "$AAPT" dump permissions "$BAZAAR" > /tmp/bazaar-permissions.txt
-          grep -q 'ir.mservices.market.BILLING' /tmp/myket-permissions.txt
-          ! grep -q 'com.farsitel.bazaar.permission.PAY_THROUGH_BAZAAR' /tmp/myket-permissions.txt
-          grep -q 'com.farsitel.bazaar.permission.PAY_THROUGH_BAZAAR' /tmp/bazaar-permissions.txt
-          ! grep -q 'ir.mservices.market.BILLING' /tmp/bazaar-permissions.txt
-          echo "Store billing permissions are isolated correctly."
-
-      - name: Verify release signing (APKs)
+      - name: Verify release signing (APK)
         if: ${{ env.KEYSTORE_B64 != '' }}
         run: |
           set -euo pipefail
+          APK="build/app/outputs/flutter-apk/app-release.apk"
           APS="$(ls "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)"
           test -n "$APS" || { echo "apksigner not found under $ANDROID_HOME/build-tools"; exit 1; }
-          for APK in \
-            build/app/outputs/flutter-apk/app-myket-release.apk \
-            build/app/outputs/flutter-apk/app-bazaar-release.apk; do
-            "$APS" verify --print-certs "$APK"
-            echo "APK verified: $APK"
-          done
+          "$APS" verify --print-certs "$APK"
+          echo "APK verified: signed with the release certificate."
 
-      - name: Build store AABs (Release)
-        run: |
-          flutter build appbundle --flavor myket --release
-          flutter build appbundle --flavor bazaar --release
+      - name: Build AAB (Release)
+        run: flutter build appbundle --release
 
-      - name: Upload Myket APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: jazire-fandoqi-myket-apk
-          path: build/app/outputs/flutter-apk/app-myket-release.apk
+          name: kudake_iran_v3.0.0_apk
+          path: build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Upload Bazaar APK
+      - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: jazire-fandoqi-bazaar-apk
-          path: build/app/outputs/flutter-apk/app-bazaar-release.apk
-
-      - name: Upload Myket AAB
-        uses: actions/upload-artifact@v4
-        with:
-          name: jazire-fandoqi-myket-aab
-          path: build/app/outputs/bundle/myketRelease/app-myket-release.aab
-
-      - name: Upload Bazaar AAB
-        uses: actions/upload-artifact@v4
-        with:
-          name: jazire-fandoqi-bazaar-aab
-          path: build/app/outputs/bundle/bazaarRelease/app-bazaar-release.aab
+          name: kudake_iran_v3.0.0_aab
+          path: build/app/outputs/bundle/release/app-release.aab
