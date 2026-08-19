@@ -24,9 +24,15 @@ enum StoreVendor {
 
 /// تشخیص فروشگاه نصب‌کننده و انتخاب خودکار درگاه پرداخت.
 ///
-/// منبع حقیقت، `PackageManager.getInstallSourceInfo()` در سمت اندروید است
-/// (روی اندروید ۱۱+، و `getInstallerPackageName()` روی نسخه‌های قدیمی‌تر).
-/// نتیجه یک‌بار کش می‌شود چون در طول اجرای اپ تغییر نمی‌کند.
+/// در release **مرجع نهایی لایهٔ نیتیو است** (متد `storeVendor`): دقیقاً همان
+/// درگاهی که فراخوانی‌های purchase/restore با آن اجرا می‌شوند. منطق نیتیو
+/// (`StoreVendor.resolve`) اول بستهٔ نصب‌کننده را از
+/// `PackageManager.getInstallSourceInfo()` می‌پرسد و اگر ناشناخته بود (نصب
+/// مستقیم APK) ولی فقط **یکی** از دو فروشگاه روی دستگاه نصب باشد، همان را
+/// انتخاب می‌کند. این لایهٔ Dart باید همان تصمیم را بگیرد تا کاربرِ نصب
+/// دستی هم بتواند خرید/بازیابی کند؛ اگر نیتیو در دسترس نبود به
+/// `installerPackage` برمی‌گردیم. نتیجه یک‌بار کش می‌شود چون در طول اجرای
+/// اپ تغییر نمی‌کند.
 ///
 /// ⚠️ نکتهٔ امنیتی: بستهٔ نصب‌کننده را نمی‌توان جعل کرد (سیستم‌عامل آن را
 /// ثبت می‌کند)، ولی این مقدار فقط برای **مسیریابی** استفاده می‌شود، نه
@@ -46,7 +52,7 @@ class StoreDetector {
   /// آخرین مقدار تشخیص‌داده‌شده (بدون فراخوانی مجدد نیتیو).
   static StoreVendor? get cached => _cached;
 
-  /// فروشگاهی که اپ از آن نصب شده است.
+  /// فروشگاهی که اپ باید با درگاه آن کار کند.
   ///
   /// در حالت debug عمداً کافه‌بازار برگردانده می‌شود تا فلوی خرید در
   /// سندباکس قابل تست بماند (نصب از Android Studio installer ندارد).
@@ -56,6 +62,25 @@ class StoreDetector {
       _cached = StoreVendor.bazaar;
       return _cached!;
     }
+    // ۱) نظر لایهٔ نیتیو — همان resolve() با fallback «تنها فروشگاه
+    //    نصب‌شده» برای نصب‌های دستی. با timeout تا هیچ‌وقت فلوی خرید
+    //    منتظر نماند.
+    try {
+      final name = (await _channel
+                  .invokeMethod<String>('storeVendor')
+                  .timeout(const Duration(seconds: 4)) ??
+              '')
+          .trim()
+          .toLowerCase();
+      final mapped = fromNativeVendorName(name);
+      if (mapped != null) {
+        _cached = mapped;
+        return _cached!;
+      }
+    } catch (_) {
+      // نیتیو جواب نداد؛ fallback پایین.
+    }
+    // ۲) fallback: فقط بستهٔ نصب‌کننده.
     String installer = '';
     try {
       installer = (await _channel
@@ -69,6 +94,21 @@ class StoreDetector {
     }
     _cached = fromInstallerPackage(installer);
     return _cached!;
+  }
+
+  /// نگاشت نامِ برگشته از نیتیو (`bazaar`/`myket`/`unknown`) به enum.
+  /// مقدار ناشناخته `null` برمی‌گرداند تا caller به fallback برود.
+  @visibleForTesting
+  static StoreVendor? fromNativeVendorName(String? name) {
+    switch ((name ?? '').trim().toLowerCase()) {
+      case 'bazaar':
+        return StoreVendor.bazaar;
+      case 'myket':
+        return StoreVendor.myket;
+      case 'unknown':
+        return StoreVendor.unknown;
+    }
+    return null;
   }
 
   /// نگاشت خالصِ «بستهٔ نصب‌کننده → فروشگاه». جدا نگه داشته شده تا بدون

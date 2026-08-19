@@ -54,6 +54,25 @@ void main() {
     });
   });
 
+  group('native vendor name mapping', () {
+    // در release لایهٔ Dart تصمیمِ نیتیو (storeVendor) را می‌پرسد تا نصب‌های
+    // دستی هم — وقتی فقط یک فروشگاه روی دستگاه نصب است — بتوانند خرید کنند.
+    test('maps the names the native bridge returns', () {
+      expect(StoreDetector.fromNativeVendorName('bazaar'), StoreVendor.bazaar);
+      expect(StoreDetector.fromNativeVendorName('MYKET'), StoreVendor.myket);
+      expect(
+        StoreDetector.fromNativeVendorName(' unknown '),
+        StoreVendor.unknown,
+      );
+    });
+
+    test('returns null for unexpected values so the caller can fall back', () {
+      expect(StoreDetector.fromNativeVendorName(''), isNull);
+      expect(StoreDetector.fromNativeVendorName(null), isNull);
+      expect(StoreDetector.fromNativeVendorName('google'), isNull);
+    });
+  });
+
   group('billing availability', () {
     test('only known stores can take a payment', () {
       expect(StoreVendor.bazaar.supportsBilling, isTrue);

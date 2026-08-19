@@ -65,7 +65,13 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
     HapticFeedback.mediumImpact();
     if (!await _parentGate() || !mounted) return;
     setState(() => _loading = true);
-    final ok = await Monetization.purchaseFullVersion();
+    bool ok = false;
+    try {
+      ok = await Monetization.purchaseFullVersion();
+    } catch (e, st) {
+      // هیچ خطایی نباید بی‌صدا بماند؛ دکمهٔ خرید همیشه جواب می‌دهد.
+      debugPrint('paywall: خرید با خطای غیرمنتظره مواجه شد: $e\n$st');
+    }
     if (!mounted) return;
     setState(() => _loading = false);
     if (ok) {
@@ -74,32 +80,86 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
     } else {
       // پیام واقعی استور (انصراف، قبلاً خریده، عدم اتصال و...) را نشان می‌دهیم
       // تا هم رفع اشکال راحت‌تر باشد هم کاربر سردرگم نشود.
-      final errorMsg = Monetization.lastPurchaseError.isNotEmpty
-          ? Monetization.lastPurchaseError
-          : 'لطفاً اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.';
+      _showPurchaseFailedDialog();
+    }
+  }
+
+  void _showPurchaseFailedDialog() {
+    final errorMsg = Monetization.lastPurchaseError.isNotEmpty
+        ? Monetization.lastPurchaseError
+        : 'لطفاً اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.';
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.xl)),
+        title: Row(children: [Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.error_outline_rounded, color: Colors.red)), const SizedBox(width: 10), Text('پرداخت کامل نشد', style: AppFonts.vazirmatn(fontWeight: FontWeight.w900))]),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(errorMsg, style: AppFonts.vazirmatn(fontSize: 14, height: 1.6)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: const Color(0xFFF1F8FF), borderRadius: BorderRadius.circular(AppRadii.md)),
+              child: Row(children: [const Icon(Icons.help_outline_rounded, size: 18, color: AppColors.primary), const SizedBox(width: 8), Expanded(child: Text('اگر قبلاً خریدی انجام دادی، «بازیابی خرید» را بزن.', style: AppFonts.vazirmatn(fontSize: 12)))]),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('باشه', style: AppFonts.vazirmatn(color: AppColors.primary))),
+          FilledButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _restore(showResultDialogOnFailure: true);
+            },
+            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+            child: Text('بازیابی خرید', style: AppFonts.vazirmatn(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// بازیابی خرید با بازخورد تضمینی: موفقیت → بسته‌شدن صفحه، شکست →
+  /// دیالوگ قابل‌مشاهده (اسنک‌بار کوتاه به‌تنهایی کافی نبود و گاهی دیده
+  /// نمی‌شد). هیچ استثنایی هم بی‌صدا رها نمی‌شود.
+  Future<void> _restore({bool showResultDialogOnFailure = false}) async {
+    setState(() => _loading = true);
+    bool ok = false;
+    try {
+      ok = await Monetization.restoreFullVersion();
+    } catch (e, st) {
+      debugPrint('paywall: بازیابی خرید با خطای غیرمنتظره مواجه شد: $e\n$st');
+    }
+    if (!mounted) return;
+    setState(() => _loading = false);
+    if (ok) {
+      Navigator.pop(context, true);
+      return;
+    }
+    final msg = Monetization.lastPurchaseError.isNotEmpty
+        ? Monetization.lastPurchaseError
+        : 'خرید فعالی برای بازیابی یافت نشد.';
+    if (!mounted) return;
+    if (showResultDialogOnFailure) {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.xl)),
-          title: Row(children: [Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.error_outline_rounded, color: Colors.red)), const SizedBox(width: 10), Text('پرداخت کامل نشد', style: AppFonts.vazirmatn(fontWeight: FontWeight.w900))]),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(errorMsg, style: AppFonts.vazirmatn(fontSize: 14, height: 1.6)),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: const Color(0xFFF1F8FF), borderRadius: BorderRadius.circular(AppRadii.md)),
-                child: Row(children: [const Icon(Icons.help_outline_rounded, size: 18, color: AppColors.primary), const SizedBox(width: 8), Expanded(child: Text('اگر قبلاً خریدی انجام دادی، «بازیابی خرید» را بزن.', style: AppFonts.vazirmatn(fontSize: 12)))]),
-              ),
-            ],
-          ),
+          title: Text('بازیابی خرید', style: AppFonts.vazirmatn(fontWeight: FontWeight.w900)),
+          content: Text(msg, style: AppFonts.vazirmatn(fontSize: 14, height: 1.6)),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text('باشه', style: AppFonts.vazirmatn(color: AppColors.primary))),
-            FilledButton(onPressed: () async { Navigator.pop(ctx); if (await Monetization.restoreFullVersion() && mounted) Navigator.pop(context, true); }, style: FilledButton.styleFrom(backgroundColor: AppColors.primary), child: Text('بازیابی خرید', style: AppFonts.vazirmatn(color: Colors.white))),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('باشه', style: AppFonts.vazirmatn(color: AppColors.primary)),
+            ),
           ],
         ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg), duration: const Duration(seconds: 5)),
       );
     }
   }
@@ -267,18 +327,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                             ? null
                             : () async {
                                 HapticFeedback.lightImpact();
-                                final ok = await Monetization.restoreFullVersion();
-                                if (!mounted) return;
-                                if (ok) {
-                                  Navigator.pop(context, true);
-                                } else {
-                                  final msg = Monetization.lastPurchaseError.isNotEmpty
-                                      ? Monetization.lastPurchaseError
-                                      : 'خرید فعالی برای بازیابی یافت نشد.';
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(msg)),
-                                  );
-                                }
+                                await _restore();
                               },
                         child: Text('بازیابی خرید قبلی', style: AppFonts.vazirmatn(fontWeight: FontWeight.w800, color: AppColors.primary, fontSize: 13)),
                       ),
