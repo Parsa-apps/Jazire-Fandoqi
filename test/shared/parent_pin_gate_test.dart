@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:cryptography/dart.dart' show DartSha256;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -24,6 +25,14 @@ String _legacyHash(String pin) {
 
 void main() {
   setUp(() {
+    final binding = TestWidgetsFlutterBinding.ensureInitialized();
+    // کانال SecureStore در محیط تست هندلر نیتیو ندارد؛ بدون mock، فراخوانیِ
+    // read/write هرگز complete نمی‌شود و دروازه برای همیشه آویزان می‌ماند
+    // (همان الگویی که monetization_test برای کانال پرداخت استفاده می‌کند).
+    binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('kudake_iran/secure_store'),
+      (call) async => null,
+    );
     // مثل بقیهٔ تست‌های ویجت اپ: بدون این خط، GoogleFonts موقع رندر متن‌های
     // دیالوگ تلاش به دانلود فونت می‌کند و زیر fake-async استثنا می‌اندازد.
     GoogleFonts.config.allowRuntimeFetching = false;
@@ -76,15 +85,14 @@ void main() {
       expect(find.text('ورود والدین'), findsOneWidget);
       await tester.enterText(find.byType(TextField), '0000');
       await tester.tap(find.text('ورود'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
 
-      // مسیر پین اشتباه کاملاً همگام است (مقایسه هش legacy)؛ پس نتیجه باید
-      // همین حالا آماده باشد.
+      for (var i = 0; i < 60 && gateResult == null; i++) {
+        await tester.pump(const Duration(milliseconds: 500));
+      }
       expect(gateResult, isFalse,
           reason: 'دروازه باید بعد از پین اشتباه مقدار false برگرداند');
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 300));
 
       // کاربر باید پیام قابل‌مشاهده ببیند، نه سکوت.
       expect(find.text('پین اشتباه بود'), findsOneWidget);
