@@ -30,6 +30,9 @@
   محصول `full_version` (دائمی) باید در پنل توسعه‌دهنده مایکت ساخته شود و
   کلید RSA همان حساب در `android/billing.properties` (`myketRsaPublicKey`)
   قرار گیرد.
+- **خروجی مخصوص مایکت:** حتماً با `flutter build apk --flavor myket --release`
+  بسازید و فایل `app-myket-release.apk` را آپلود کنید. خروجی flavor مایکت
+  مجوز پرداخت رقیب (`PAY_THROUGH_BAZAAR`) را از manifest نهایی حذف می‌کند.
 - **لینک حریم خصوصی:** اجباری است؛ از URL هاست‌شده‌ی `PRIVACY_POLICY_FA.md`.
 
 ## ترتیب پیشنهادی تکمیل پیشخان

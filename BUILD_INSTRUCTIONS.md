@@ -57,7 +57,7 @@ keystore در `.gitignore` قرار دارند.
 
 > **امنیت امضای انتشار:** ساخت release محلی بدون `key.properties` عمداً متوقف
 > می‌شود تا خروجی امضاشده با کلید debug اشتباهاً به استور ارسال نشود. برای تست
-> روی گوشی از `flutter build apk --debug` استفاده کنید. محیط GitHub Actions فقط
+> روی گوشی از `flutter build apk --flavor myket --debug` استفاده کنید. محیط GitHub Actions فقط
 > برای راستی‌آزمایی کامپایل اجازهٔ امضای debug دارد و خروجی آن قابل انتشار نیست.
 
 > **🛡️ ضد دستکاری خودکار (v6.3):** هنگام ساخت release واقعی، SHA-256 گواهی
@@ -68,30 +68,38 @@ keystore در `.gitignore` قرار دارند.
 >
 > ```bash
 > tools/print_cert_sha256.sh android/release.keystore نام-کلید رمز-کیاستور
-> keytool -printcert -jarfile app-release.apk | grep "SHA256:"   # فقط هگز بعد از SHA256:
+> keytool -printcert -jarfile build/app/outputs/flutter-apk/app-myket-release.apk | grep "SHA256:"   # فقط هگز بعد از SHA256:
 > ```
 >
 > دو مقدار باید برابر باشند. (بیلدهای CI که با کلید debug امضا می‌شوند مقدار
 > خالی دارند و این بررسی در آن‌ها غیرفعال است — آن خروجی‌ها قابل انتشار نیستند.)
 
-### ۵. ساخت APK
+### ۵. ساخت APK مخصوص هر فروشگاه
 
-برای نسخه‌ی دیباگ (سریع‌تر، برای تست):
+هر فروشگاه باید خروجی مخصوص خودش را دریافت کند؛ در غیر این صورت مجوز پرداخت
+فروشگاه رقیب باعث ردشدن APK می‌شود.
+
 ```bash
-flutter build apk --debug
+# خروجی قابل ارسال به مایکت (بدون PAY_THROUGH_BAZAAR)
+flutter build apk --flavor myket --release
+
+# خروجی قابل ارسال به کافه‌بازار (بدون مجوز پرداخت مایکت)
+flutter build apk --flavor bazaar --release
 ```
 
-برای نسخه‌ی release (بهینه‌تر، برای انتشار):
+برای تست سریع نیز flavor را مشخص کنید:
+
 ```bash
-flutter build apk --release
+flutter build apk --flavor myket --debug
 ```
 
 ### ۶. یافتن فایل APK
 
-فایل APK در این مسیرها قرار دارد:
+- **مایکت release:** `build/app/outputs/flutter-apk/app-myket-release.apk`
+- **بازار release:** `build/app/outputs/flutter-apk/app-bazaar-release.apk`
+- **مایکت debug:** `build/app/outputs/flutter-apk/app-myket-debug.apk`
 
-- **دیباگ**: `build/app/outputs/flutter-apk/app-debug.apk`
-- **release**: `build/app/outputs/flutter-apk/app-release.apk`
+فایل بدون flavor مثل `app-release.apk` را در هیچ‌یک از دو فروشگاه بارگذاری نکنید.
 
 ## 📱 نصب روی گوشی
 
@@ -102,7 +110,7 @@ flutter build apk --release
 
 ### روش ۲: ADB (برای توسعه‌دهندگان)
 ```bash
-adb install build/app/outputs/flutter-apk/app-release.apk
+adb install build/app/outputs/flutter-apk/app-myket-release.apk
 ```
 
 ## 🎨 آیکون جدید
@@ -139,7 +147,7 @@ cd android
 cd ..
 flutter clean
 flutter pub get
-flutter build apk --release
+flutter build apk --flavor myket --release
 ```
 
 ### خطای `Java not found`:
@@ -153,8 +161,8 @@ java -version
 **راه حل فوری:**
 ```bash
 # روش ۱: دیباگ بساز (همیشه قابل نصب است)
-flutter build apk --debug
-adb install build/app/outputs/flutter-apk/app-debug.apk
+flutter build apk --flavor myket --debug
+adb install build/app/outputs/flutter-apk/app-myket-debug.apk
 
 # روش ۲: فقط برای تأیید release-mode و هرگز برای انتشار:
 ALLOW_VERIFICATION_SIGNING=1 BUILD_MODE=release ./build.sh
@@ -170,7 +178,7 @@ keytool -genkey -v -keystore android/release.keystore -alias fandoghi -keyalg RS
 اگر نسخه قبلی با کلید دیگری امضا شده بود:
 ```bash
 adb uninstall com.parsaapps.amoozesh_fandoghi
-adb install build/app/outputs/flutter-apk/app-release.apk
+adb install build/app/outputs/flutter-apk/app-myket-release.apk
 ```
 
 ## 📞 پشتیبانی

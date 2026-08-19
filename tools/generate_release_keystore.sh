@@ -39,4 +39,5 @@ EOF
   echo "Wrote $PROP_PATH (gitignored)"
 fi
 
-echo "Done. Build with: flutter build apk --release"
+echo "Done. Build for Myket with: flutter build apk --flavor myket --release"
+echo "Or build for Bazaar with: flutter build apk --flavor bazaar --release"

@@ -1,0 +1,14 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Myket accepts only its own billing contract. Poolakey's transitive
+         Bazaar permission is explicitly removed from this merged manifest. -->
+    <uses-permission android:name="ir.mservices.market.BILLING" />
+    <uses-permission
+        android:name="com.farsitel.bazaar.permission.PAY_THROUGH_BAZAAR"
+        tools:node="remove" />
+
+    <queries>
+        <package android:name="ir.mservices.market" />
+    </queries>
+</manifest>
