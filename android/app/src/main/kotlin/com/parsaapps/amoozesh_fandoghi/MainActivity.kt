@@ -13,10 +13,14 @@ import java.util.UUID
 
 /** Native multi-store billing bridge (Cafe Bazaar + Myket).
  *
- * The app ships to several Iranian stores. At runtime it asks the OS which
- * store installed it ([StoreVendor.resolve]) and routes every billing call to
- * that store's gateway — Poolakey for Bazaar, Myket Billing Client for Myket.
- * The store name is never shown to the user and is never chosen by hand.
+ * The app ships to several Iranian stores. Each artifact is built for a
+ * specific store via a Gradle flavor, and [BuildConfig.STORE_CHANNEL] is the
+ * authoritative store for that build ("myket" APK → Myket, "bazaar" AAB →
+ * Bazaar). At runtime [StoreVendor.fromChannel] reads that channel and routes
+ * every billing call to the matching gateway — Poolakey for Bazaar, Myket
+ * Billing Client for Myket. OS installer detection ([StoreVendor.resolve]) is
+ * kept only as a fallback for builds whose channel is unknown. The store name
+ * is never shown to the user and is never chosen by hand.
  *
  * A release purchase is accepted only after the store SDK validates the RSA
  * signature of the receipt.
@@ -32,9 +36,20 @@ class MainActivity : FlutterFragmentActivity() {
     private var purchaseInProgress = false
     private var pendingBackupResult: MethodChannel.Result? = null
 
-    /** فروشگاه نصب‌کننده؛ یک‌بار محاسبه و کش می‌شود. */
+    /**
+     * فروشگاهِ این بیلد؛ یک‌بار محاسبه و کش می‌شود.
+     *
+     * منبعِ قطعی کانال ساخت (`BuildConfig.STORE_CHANNEL`) است: هر قطعهٔ
+     * ارسالی به یک فروشگاه مشخص می‌رود (APKهای flavor «myket» → مایکت،
+     * AABهای flavor «bazaar» → کافه‌بازار)، پس تشخیص زمان‌اجرا فقط به
+     * عنوان fallback نگه داشته می‌شود. این کار جلوی مسدودشدن خرید را در
+     * مواردی می‌گیرد که تشخیص نصب‌کننده مبهم می‌شود (مثلاً نصب از سوی
+     * مکانیزمی که `installingPackageName` دقیقاً بستهٔ فروشگاه نیست، یا
+     * دستگاهی که هر دو اپِ بازار و مایکت را دارد).
+     */
     private val vendor: StoreVendor by lazy(LazyThreadSafetyMode.NONE) {
-        StoreVendor.resolve(applicationContext)
+        StoreVendor.fromChannel(BuildConfig.STORE_CHANNEL)
+            ?: StoreVendor.resolve(applicationContext)
     }
 
     private val bazaar: BazaarBilling by lazy(LazyThreadSafetyMode.NONE) {
