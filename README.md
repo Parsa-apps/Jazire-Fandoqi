@@ -2,6 +2,14 @@
 
 [![Flutter quality and release build](https://github.com/farshadkurd/kudake_iran/actions/workflows/build-apk.yml/badge.svg)](https://github.com/farshadkurd/kudake_iran/actions/workflows/build-apk.yml)
 
+## نسخه ۶.۲.۳+۳
+
+**نسخه ۶.۲.۳ — رفع اتصال پرداخت مایکت**
+
+- اصلاح کلید عمومی RSA مایکت در `android/billing.properties` (کلید قبلی نامعتبر بود و باعث شکست خرید نسخه کامل می‌شد)
+- تأیید محصول `full_version` در پنل توسعه‌دهنده مایکت (فعال و قیمت‌گذاری‌شده روی ۴۹۰٬۰۰۰ ریال)
+- به‌روزرسانی متن پیشخان فروشگاه‌ها (بازار و مایکت) با تأکید بر «همه‌چیز در یک اپ» در برابر اپ‌های رقیبی که هر موضوع را جدا می‌فروشند
+
 ## نسخه ۶.۲.۰+۱۳
 
 **نسخه ۶.۲.۰ — بسته «رشد خانواده»: مهارت زندگی، چند کودک روی یک گوشی و گزارش شفاف والد**
