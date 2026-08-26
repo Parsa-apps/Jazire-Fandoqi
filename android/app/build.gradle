@@ -1,3 +1,6 @@
+import java.security.KeyFactory
+import java.security.interfaces.RSAPublicKey
+import java.security.spec.X509EncodedKeySpec
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
@@ -201,6 +204,84 @@ android {
     }
 }
 
+// ---------------------------------------------------------------------
+// 🧾 صحت کلید عمومی RSA فروشگاه‌ها (پیش از ساخت نسخهٔ انتشار)
+// ---------------------------------------------------------------------
+// هر دو SDK پرداخت — Poolakey برای کافه‌بازار و Myket Billing Client برای
+// مایکت — در زمان اجرا همین رشته را Base64 decode کرده و با
+// X509EncodedKeySpec به PublicKey تبدیل می‌کنند و امضای رسید خرید را با آن
+// بررسی می‌کنند. اگر مقدار خراب باشد (کاراکتر اضافه، دو کلید به‌هم چسبیده،
+// یا بایت اضافی بعد از ساختار DER) امضای رسید رد می‌شود و دکمهٔ
+// «خرید نسخه کامل» با «امضای رسید خرید معتبر نیست» شکست می‌خورد.
+// کلید مایکت در ۶.۲.۲ دقیقاً همین مشکل را داشت: ۳۸۷ کاراکتر که ۱۷۱ تای
+// آن‌ها از کلیدی دیگر بود. این بررسی همان شرط را هنگام بیلد release اعمال
+// می‌کند تا APK با کلید خراب هرگز ساخته نشود.
+//
+// مقدار خالی خطا نیست: طبق قرارداد پروژه، کلید خالی یعنی پرداخت همان
+// فروشگاه غیرفعال است و بقیهٔ فروشگاه‌ها سالم می‌مانند — فقط هشدار می‌دهیم.
+def inspectStoreRsaKey = { String store, String key ->
+    if (key == null || key.trim().isEmpty()) {
+        return [store: store, state: 'empty', detail: '']
+    }
+    def compact = key.trim()
+    if (compact != key) {
+        return [store: store, state: 'malformed',
+                detail: 'has leading/trailing whitespace — paste it again as a single line']
+    }
+    byte[] der = null
+    try {
+        der = java.util.Base64.getDecoder().decode(compact)
+    } catch (IllegalArgumentException e) {
+        return [store: store, state: 'malformed',
+                detail: "is not valid base64 (${e.getMessage()})"]
+    }
+    if (java.util.Base64.getEncoder().encodeToString(der) != compact) {
+        return [store: store, state: 'malformed',
+                detail: 'is not canonical base64 (wrong padding or stray trailing bits)']
+    }
+    // طول اعلام‌شدهٔ SEQUENCE بیرونی DER؛ اگر با طول واقعی برابر نباشد یعنی
+    // چیزی بعد از کلید چسبانده شده است (دقیقاً باگ ۶.۲.۲).
+    int declared
+    if (der.length < 2 || (der[0] & 0xff) != 0x30) {
+        declared = -1
+    } else {
+        int first = der[1] & 0xff
+        if (first < 0x80) {
+            declared = first + 2
+        } else {
+            int count = first & 0x7f
+            declared = -1
+            if (count > 0 && count <= 4 && der.length >= 2 + count) {
+                int content = 0
+                for (int i = 0; i < count; i++) {
+                    content = (content << 8) | (der[2 + i] & 0xff)
+                }
+                declared = content + 2 + count
+            }
+        }
+    }
+    if (declared < 0) {
+        return [store: store, state: 'malformed',
+                detail: 'is not a DER-encoded X.509 SubjectPublicKeyInfo']
+    }
+    if (declared != der.length) {
+        return [store: store, state: 'malformed',
+                detail: "carries ${der.length - declared} extra byte(s) after the key — " +
+                        'two keys were pasted together; keep only the one your panel shows']
+    }
+    try {
+        def publicKey = KeyFactory.getInstance('RSA').generatePublic(new X509EncodedKeySpec(der))
+        int bits = ((RSAPublicKey) publicKey).getModulus().bitLength()
+        if (bits < 1024) {
+            return [store: store, state: 'malformed', detail: "RSA modulus is only ${bits} bits"]
+        }
+        return [store: store, state: 'ok', detail: "RSA ${bits}-bit public key"]
+    } catch (Exception e) {
+        return [store: store, state: 'malformed',
+                detail: "is not a parsable X.509 RSA public key (${e.getMessage()})"]
+    }
+}
+
 gradle.taskGraph.whenReady { taskGraph ->
     def releaseRequested = taskGraph.allTasks.any { task ->
         task.path ==~ /:app:(assemble|bundle).*Release/
@@ -210,6 +291,42 @@ gradle.taskGraph.whenReady { taskGraph ->
             "Release signing is not configured. Add android/key.properties, " +
             "or explicitly enable allowVerificationSigning for a non-publishable CI artifact."
         )
+    }
+    if (releaseRequested) {
+        // تسک‌های تجمیعی (assembleRelease / bundleRelease) هر دو flavor را
+        // می‌سازند، پس `flutter build apk --release` بدون flavor هم باید کلید
+        // هر دو فروشگاه سالم باشد.
+        def requestedNames = taskGraph.allTasks.collect { it.name } as Set
+        def needsMyket = requestedNames.any { it ==~ /(assemble|bundle)(Myket)?Release/ }
+        def needsBazaar = requestedNames.any { it ==~ /(assemble|bundle)(Bazaar)?Release/ }
+        def malformed = []
+        [
+            [store: 'Myket', key: myketRsaPublicKey, needed: needsMyket],
+            [store: 'Cafe Bazaar', key: bazaarRsaPublicKey, needed: needsBazaar],
+        ].each { entry ->
+            if (!entry.needed) return
+            def report = inspectStoreRsaKey(entry.store as String, entry.key as String)
+            switch (report.state) {
+                case 'ok':
+                    logger.lifecycle("✅ ${report.store} billing key OK (${report.detail})")
+                    break
+                case 'empty':
+                    logger.warn("⚠️  ${report.store} RSA public key is empty — in-app purchase " +
+                        "is disabled for that store in this artifact.")
+                    break
+                default:
+                    malformed << "  • ${report.store}: ${report.detail}"
+            }
+        }
+        if (!malformed.isEmpty()) {
+            throw new GradleException(
+                "Store billing public key(s) in android/billing.properties are malformed:\n" +
+                malformed.join("\n") + "\n" +
+                "Copy the key again from that store's developer panel as a single line.\n" +
+                "کلید عمومی فروشگاه در android/billing.properties خراب است؛ همان کلیدی را که " +
+                "پنل توسعه‌دهندهٔ آن فروشگاه نشان می‌دهد در یک خط کپی کنید."
+            )
+        }
     }
 }
 

@@ -1,18 +1,41 @@
 import 'package:flutter/material.dart';
 
 /// ═══════════════════════════════════════════════════════════════
-/// 🆕 تغییرات نسخه ۶.۲.۱ «جزیره فندقی»
+/// 🆕 تغییرات نسخه ۶.۲.۳ «جزیره فندقی»
 /// بعد از هر آپدیت یک‌بار به‌صورت خودکار نشان داده می‌شود.
 /// ═══════════════════════════════════════════════════════════════
 class WhatsNew {
   WhatsNew._();
 
-  static const String version = '۶.۲.۱';
+  static const String version = '۶.۲.۳';
   static const String versionName = 'جزیره فندقی';
-  static const String buildNumber = '+۱۴';
+  static const String buildNumber = '+۳';
 
   /// دسته‌بندی‌های تغییرات برای نمایش حرفه‌ای
   static const List<WhatsNewSection> sections = [
+    WhatsNewSection(
+      id: 'billing',
+      title: 'نصب رایگان و پرداخت شفاف',
+      emoji: '🏪',
+      color: Color(0xFF0984E3),
+      items: [
+        WhatsNewItem(
+          emoji: '🆓',
+          title: 'نصب جزیره فندقی رایگان است',
+          body: 'برای دانلود و نصب هیچ پولی پرداخت نمی‌کنید. آموزش و بازی‌های اصلی بدون خرید باز هستند.',
+        ),
+        WhatsNewItem(
+          emoji: '🔑',
+          title: 'خرید نسخه کامل درست شد',
+          body: 'کلید امنیتی پرداخت فروشگاه اصلاح شد؛ اگر پیش‌تر هنگام خرید با خطا روبه‌رو شدید، اکنون خرید و بازیابی خرید درست کار می‌کند.',
+        ),
+        WhatsNewItem(
+          emoji: '👨‍👩‍👧',
+          title: 'پرداخت فقط با تأیید والدین',
+          body: 'کودک دکمهٔ خرید نمی‌بیند؛ ورود به صفحهٔ پرداخت با رمز ورود انتخابی خودتان است و پول از درگاه امن فروشگاه کم می‌شود.',
+        ),
+      ],
+    ),
     WhatsNewSection(
       id: 'icon',
       title: 'ظاهر تازهٔ جزیره',
