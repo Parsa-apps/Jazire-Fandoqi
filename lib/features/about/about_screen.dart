@@ -7,16 +7,23 @@ import '../../app/app_colors.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import '../../core/app_legal.dart';
 import '../../core/billing_service.dart';
+import '../../core/store_listing.dart';
 import '../../core/store_rating_service.dart';
+import '../../core/store_vendor.dart';
 import '../../shared/widgets/parsa_gold_aura.dart';
 import '../../shared/widgets/parsa_website_card.dart';
 import '../../shared/widgets/theme_selector_widget.dart';
-import '../../shared/widgets/fandoghi_v2.dart';
 
 /// Publisher, support and privacy information for parents and store review.
 /// It intentionally does not invent a registration number or address.
+///
+/// برنامه‌های درون‌پرداخت مایکت نباید کاربر را به وب‌سایت ناشر بفرستند؛
+/// به‌جایش نام و لینک همان فروشگاه در این صفحه می‌آید.
 class AboutScreen extends StatelessWidget {
-  const AboutScreen({super.key});
+  const AboutScreen({super.key, this.vendorOverride});
+
+  /// فقط برای تست ویجت؛ در اپ واقعی از [StoreDetector] خوانده می‌شود.
+  final StoreVendor? vendorOverride;
 
   Future<void> _copy(BuildContext context, String value, String label) async {
     await Clipboard.setData(ClipboardData(text: value));
@@ -26,20 +33,35 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _openWebsite(BuildContext context) async {
-    var opened = false;
-    try {
-      opened = await launchUrl(
-        Uri.parse(AppLegal.websiteUrl),
-        mode: LaunchMode.externalApplication,
-      );
-    } on PlatformException {
-      opened = false;
+  Future<void> _openStorePage(BuildContext context, StoreVendor vendor) async {
+    if (!StoreListing.hasStorePage(vendor)) return;
+    var opened = await BillingService.openStoreDetails();
+    if (!opened) {
+      opened = await _launchUri(StoreListing.detailsDeepLink(vendor));
+    }
+    if (!opened) {
+      opened = await _launchUri(StoreListing.detailsWebUrl(vendor));
     }
     if (!opened && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('امکان باز کردن سایت وجود ندارد.')),
+        SnackBar(
+          content: Text(
+            'امکان باز کردن صفحهٔ ${StoreListing.displayName(vendor)} وجود ندارد.',
+          ),
+        ),
       );
+    }
+  }
+
+  Future<bool> _launchUri(String url) async {
+    if (url.isEmpty) return false;
+    try {
+      return await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+      );
+    } on PlatformException {
+      return false;
     }
   }
 
@@ -57,10 +79,7 @@ class AboutScreen extends StatelessWidget {
         children: [
           _buildPublisherCard(),
           const SizedBox(height: 22),
-          ParsaWebsiteCard(
-            title: AppLegal.websiteName,
-            onTap: () => _openWebsite(context),
-          )
+          _buildStoreCard(context)
               .animate()
               .fadeIn(duration: 650.ms, curve: Curves.easeOutCubic)
               .slideY(begin: 0.14, end: 0, duration: 700.ms)
@@ -227,6 +246,34 @@ class AboutScreen extends StatelessWidget {
 
   Widget _buildPublisherCard() {
     return const ParsaGoldAuraCard();
+  }
+
+  Widget _buildStoreCard(BuildContext context) {
+    if (vendorOverride != null) {
+      return _storeCard(context, vendorOverride!);
+    }
+    return FutureBuilder<StoreVendor>(
+      future: StoreDetector.detect(),
+      builder: (context, snapshot) {
+        final vendor = snapshot.data ?? StoreDetector.cached;
+        if (vendor == null || !StoreListing.hasStorePage(vendor)) {
+          return const SizedBox.shrink();
+        }
+        return _storeCard(context, vendor);
+      },
+    );
+  }
+
+  Widget _storeCard(BuildContext context, StoreVendor vendor) {
+    if (!StoreListing.hasStorePage(vendor)) {
+      return const SizedBox.shrink();
+    }
+    return ParsaWebsiteCard(
+      title: StoreListing.displayName(vendor),
+      subtitle: StoreListing.kicker,
+      buttonLabel: StoreListing.buttonLabel(vendor),
+      onTap: () => _openStorePage(context, vendor),
+    );
   }
 
   Widget _buildSection({

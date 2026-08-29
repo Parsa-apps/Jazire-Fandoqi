@@ -292,11 +292,9 @@ class _SplashState extends State<SplashScreen>
                       ),
                       const SizedBox(height: 5),
                       Text(
-                        // نام هیچ فروشگاهی اینجا نمی‌آید: یک APK واحد روی چند
-                        // فروشگاه منتشر می‌شود و کاربرِ هر کدام نباید نام
-                        // رقیب را ببیند. نگهبانش test/core/store_neutral_ui_test.dart است.
-                        'دانلود این نرم‌افزار در سایت رسمی پارسا اپس'
-                        ' و فروشگاه‌های معتبر',
+                        // نام هیچ فروشگاهی و هیچ وب‌سایت ناشری اینجا نمی‌آید.
+                        // بخش درباره، صفحهٔ همان فروشگاهِ این بیلد را نشان می‌دهد.
+                        'آموزش امن و آفلاین برای کودکان ایران',
                         textAlign: TextAlign.center,
                         textDirection: TextDirection.rtl,
                         style: AppFonts.vazirmatn(

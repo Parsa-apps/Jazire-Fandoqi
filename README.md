@@ -2,6 +2,15 @@
 
 [![Flutter quality and release build](https://github.com/farshadkurd/kudake_iran/actions/workflows/build-apk.yml/badge.svg)](https://github.com/farshadkurd/kudake_iran/actions/workflows/build-apk.yml)
 
+## نسخه ۶.۲.۶+۶
+
+**نسخه ۶.۲.۶ — رفع رد بازبینی مایکت (لینک وب‌سایت ناشر)**
+
+- در بخش «درباره و پشتیبانی»، دکمهٔ «ورود مستقیم به سایت» حذف شد؛ برنامه‌های درون‌پرداخت مایکت نباید کاربر را به وب‌سایت ناشر بفرستند
+- به‌جایش نام و لینک مایکت با اینتنت رسمی `myket://details?id=` جایگذاری شد ([مستند مایکت](https://myket.ir/kb/pages/open-application-page-in-myket/))
+- بیلد کافه‌بازار صفحهٔ برنامه در بازار را نشان می‌دهد — بدون ارجاع به سایت ناشر
+- همهٔ رفع‌شدگی‌های پرداخت مایکت پابرجاست
+
 ## نسخه ۶.۲.۵+۵
 
 **نسخه ۶.۲.۵ — نسخهٔ پایدار انتشار مایکت**

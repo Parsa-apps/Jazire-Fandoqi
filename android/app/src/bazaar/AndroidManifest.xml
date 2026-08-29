@@ -10,5 +10,9 @@
 
     <queries>
         <package android:name="com.farsitel.bazaar" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="bazaar" />
+        </intent>
     </queries>
 </manifest>

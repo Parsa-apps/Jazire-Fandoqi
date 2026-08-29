@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../../app/app_fonts.dart';
 import 'parsa_apps_logo.dart';
 
-/// قاب معرفی وب‌سایت پارسا اپس در صفحهٔ درباره و پشتیبانی.
+/// قاب معرفی صفحهٔ برنامه در فروشگاه (مایکت / کافه‌بازار) در بخش درباره.
 ///
 /// انیمیشن‌ها فقط تزئینی‌اند و در صورت فعال‌بودن تنظیم «کاهش حرکت» سیستم،
 /// متوقف می‌شوند. تمام کارت یک لینک قابل‌دسترسی است و دکمهٔ واضح نیز دارد.
@@ -13,11 +13,17 @@ class ParsaWebsiteCard extends StatefulWidget {
   const ParsaWebsiteCard({
     super.key,
     required this.onTap,
-    this.title = 'سایت پارسا اپس',
+    required this.title,
+    this.subtitle = 'صفحهٔ رسمی برنامه در فروشگاه',
+    this.buttonLabel = 'ورود به صفحه برنامه',
+    this.linkKey = const ValueKey('store_page_link'),
   });
 
   final VoidCallback onTap;
   final String title;
+  final String subtitle;
+  final String buttonLabel;
+  final Key linkKey;
 
   @override
   State<ParsaWebsiteCard> createState() => _ParsaWebsiteCardState();
@@ -61,7 +67,7 @@ class _ParsaWebsiteCardState extends State<ParsaWebsiteCard>
     return Semantics(
       link: true,
       button: true,
-      label: '${widget.title}، ورود مستقیم به وب‌سایت',
+      label: '${widget.title}، ${widget.buttonLabel}',
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         onEnter: (_) => setState(() => _hovered = true),
@@ -102,6 +108,9 @@ class _ParsaWebsiteCardState extends State<ParsaWebsiteCard>
           },
           child: _CardBody(
             title: widget.title,
+            subtitle: widget.subtitle,
+            buttonLabel: widget.buttonLabel,
+            linkKey: widget.linkKey,
             onTap: widget.onTap,
             hovered: _hovered,
             animation: _controller,
@@ -115,12 +124,18 @@ class _ParsaWebsiteCardState extends State<ParsaWebsiteCard>
 class _CardBody extends StatelessWidget {
   const _CardBody({
     required this.title,
+    required this.subtitle,
+    required this.buttonLabel,
+    required this.linkKey,
     required this.onTap,
     required this.hovered,
     required this.animation,
   });
 
   final String title;
+  final String subtitle;
+  final String buttonLabel;
+  final Key linkKey;
   final VoidCallback onTap;
   final bool hovered;
   final Animation<double> animation;
@@ -144,7 +159,7 @@ class _CardBody extends StatelessWidget {
           ),
         ),
         child: InkWell(
-          key: const ValueKey('parsa_website_link'),
+          key: linkKey,
           onTap: onTap,
           splashColor: const Color(0xFF64DFDF).withOpacity(0.22),
           highlightColor: Colors.white.withOpacity(0.05),
@@ -203,9 +218,9 @@ class _CardBody extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'دنیای محصولات و تازه‌های ما',
-                                style: TextStyle(
+                              Text(
+                                subtitle,
+                                style: const TextStyle(
                                   color: Color(0xFFB8F8F2),
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w700,
@@ -267,19 +282,25 @@ class _CardBody extends StatelessWidget {
                               ]
                             : const [],
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            'ورود مستقیم به سایت',
-                            style: TextStyle(
-                              color: Color(0xFF102A56),
-                              fontSize: 15,
-                              fontWeight: FontWeight.w900,
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                buttonLabel,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Color(0xFF102A56),
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
                             ),
                           ),
-                          SizedBox(width: 8),
-                          Icon(
+                          const SizedBox(width: 8),
+                          const Icon(
                             Icons.arrow_outward_rounded,
                             color: Color(0xFF102A56),
                             size: 20,

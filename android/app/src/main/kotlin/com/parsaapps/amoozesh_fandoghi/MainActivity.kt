@@ -99,6 +99,7 @@ class MainActivity : FlutterFragmentActivity() {
                     "openStoreReview" -> openStoreReview(result)
                     // نام قدیمی، برای سازگاری با نسخه‌های قبلی Dart.
                     "openBazaarReview" -> openStoreReview(result)
+                    "openStoreDetails" -> openStoreDetails(result)
                     else -> result.notImplemented()
                 }
             }
@@ -275,21 +276,54 @@ class MainActivity : FlutterFragmentActivity() {
                 deepLink = "bazaar://details?id=$packageName",
                 storePackage = StoreVendor.BAZAAR_PACKAGE,
                 webUrl = "https://cafebazaar.ir/app/$packageName",
+                action = Intent.ACTION_EDIT,
             )
             StoreVendor.MYKET -> openStoreIntent(
                 deepLink = "myket://comment?id=$packageName",
                 storePackage = StoreVendor.MYKET_PACKAGE,
                 webUrl = "https://myket.ir/app/$packageName",
+                action = Intent.ACTION_EDIT,
             )
             StoreVendor.UNKNOWN -> false
         }
         result.success(opened)
     }
 
-    private fun openStoreIntent(deepLink: String, storePackage: String, webUrl: String): Boolean {
+    /**
+     * صفحهٔ اطلاعات برنامه در فروشگاه این بیلد.
+     *
+     * مایکت برای برنامه‌های درون‌پرداخت اجازهٔ لینک به وب‌سایت ناشر را
+     * نمی‌دهد و اینتنت رسمی `myket://details?id=` را می‌خواهد:
+     * https://myket.ir/kb/pages/open-application-page-in-myket/
+     */
+    private fun openStoreDetails(result: MethodChannel.Result) {
+        val opened = when (vendor) {
+            StoreVendor.BAZAAR -> openStoreIntent(
+                deepLink = "bazaar://details?id=$packageName",
+                storePackage = StoreVendor.BAZAAR_PACKAGE,
+                webUrl = "https://cafebazaar.ir/app/$packageName",
+                action = Intent.ACTION_VIEW,
+            )
+            StoreVendor.MYKET -> openStoreIntent(
+                deepLink = "myket://details?id=$packageName",
+                storePackage = StoreVendor.MYKET_PACKAGE,
+                webUrl = "https://myket.ir/app/$packageName",
+                action = Intent.ACTION_VIEW,
+            )
+            StoreVendor.UNKNOWN -> false
+        }
+        result.success(opened)
+    }
+
+    private fun openStoreIntent(
+        deepLink: String,
+        storePackage: String,
+        webUrl: String,
+        action: String = Intent.ACTION_EDIT,
+    ): Boolean {
         return try {
             startActivity(
-                Intent(Intent.ACTION_EDIT, Uri.parse(deepLink)).apply {
+                Intent(action, Uri.parse(deepLink)).apply {
                     setPackage(storePackage)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }

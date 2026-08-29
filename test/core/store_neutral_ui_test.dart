@@ -39,9 +39,12 @@ void main() {
         .where((f) => f.path.endsWith('.dart'));
 
     for (final file in dartFiles) {
-      // این دو فایل عمداً نام فروشگاه‌ها را می‌شناسند (منطق مسیریابی)،
-      // ولی مقادیرشان شناسهٔ فنی‌اند نه متنِ رابط کاربری.
+      // این فایل‌ها عمداً نام فروشگاه را می‌شناسند:
+      //  - store_vendor: منطق مسیریابی درگاه (شناسهٔ فنی)
+      //  - store_listing: متن صفحهٔ «درباره» که مایکت صراحتاً نام و لینک
+      //    خودش را در برنامه‌های درون‌پرداخت می‌خواهد.
       if (file.path.endsWith('store_vendor.dart')) continue;
+      if (file.path.endsWith('store_listing.dart')) continue;
 
       final lines = file.readAsLinesSync();
       for (var i = 0; i < lines.length; i++) {
@@ -79,9 +82,23 @@ void main() {
     // فروشگاه. (نام متد قدیمیِ openBazaarReview فقط به‌عنوان alias مانده.)
     final billing = File('lib/core/billing_service.dart').readAsStringSync();
     expect(billing.contains('openStoreReview'), isTrue);
+    expect(billing.contains('openStoreDetails'), isTrue);
 
     final rating = File('lib/core/store_rating_service.dart').readAsStringSync();
     expect(rating.contains('openStoreReview'), isTrue,
         reason: 'امتیازدهی باید به فروشگاه نصب‌کننده برود');
+  });
+
+  test('about screen source never links to the publisher website', () {
+    final about =
+        File('lib/features/about/about_screen.dart').readAsStringSync();
+    expect(about.contains('websiteUrl'), isFalse);
+    expect(about.contains('github.io'), isFalse);
+    expect(about.contains('ورود مستقیم به سایت'), isFalse);
+
+    final card =
+        File('lib/shared/widgets/parsa_website_card.dart').readAsStringSync();
+    expect(card.contains('ورود مستقیم به سایت'), isFalse);
+    expect(card.contains('github.io'), isFalse);
   });
 }
