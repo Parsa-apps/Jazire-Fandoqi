@@ -187,6 +187,18 @@ class BillingService {
     }
   }
 
+  /// باز کردن صفحهٔ اطلاعات برنامه در همان فروشگاه (اینتنت رسمی
+  /// `myket://details?id=` / `bazaar://details?id=`). برای بخش درباره و
+  /// پشتیبانی؛ وب‌سایت ناشر هرگز باز نمی‌شود.
+  static Future<bool> openStoreDetails() async {
+    try {
+      final result = await _channel.invokeMethod<bool>('openStoreDetails');
+      return result == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// نام قدیمی؛ برای سازگاری با کدهای قبلی نگه داشته شده است.
   @Deprecated('Use openStoreReview')
   static Future<void> openBazaarReview() => openStoreReview();

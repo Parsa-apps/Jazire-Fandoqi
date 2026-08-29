@@ -6,6 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:jazireh_fandoghi/core/app_legal.dart';
 import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
 import 'package:jazireh_fandoghi/core/game_data.dart';
+import 'package:jazireh_fandoghi/core/store_listing.dart';
+import 'package:jazireh_fandoghi/core/store_vendor.dart';
 import 'package:jazireh_fandoghi/features/about/about_screen.dart';
 import 'package:jazireh_fandoghi/features/cartoons/cartoon_hub_screen.dart';
 import 'package:jazireh_fandoghi/features/gateway/app_gateway_screen.dart';
@@ -154,21 +156,36 @@ void main() {
     await _disposeAnimatedTree(tester);
   });
 
-  testWidgets('about screen hides the raw website address and exposes a direct link', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: AboutScreen()));
+  testWidgets('about screen on Myket shows the Myket page instead of a website', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: AboutScreen(vendorOverride: StoreVendor.myket)),
+    );
     expect(find.text(AppLegal.developerName), findsOneWidget);
-    expect(find.text(AppLegal.websiteName), findsOneWidget);
+    expect(find.text(StoreListing.myketName), findsOneWidget);
+    expect(find.text(StoreListing.buttonLabel(StoreVendor.myket)), findsOneWidget);
+    expect(find.text(StoreListing.kicker), findsOneWidget);
+    expect(find.byKey(const ValueKey('store_page_link')), findsOneWidget);
+    expect(find.text(AppLegal.websiteName), findsNothing);
     expect(find.text(AppLegal.websiteAddress), findsNothing);
+    expect(find.text('ورود مستقیم به سایت'), findsNothing);
     expect(find.byKey(const ValueKey('parsa_website_address')), findsNothing);
-    expect(find.byKey(const ValueKey('parsa_website_link')), findsOneWidget);
-    expect(find.text('ورود مستقیم به سایت'), findsOneWidget);
+    expect(find.byKey(const ValueKey('parsa_website_link')), findsNothing);
 
-    // Keep scrolling the stable outer ListView until both adjacent contact
-    // cards are built. A dynamic `Scrollable.first` can switch to a lazily
-    // created nested scrollable and then disappear between two searches.
     await _scrollUntilContactsAreBuilt(tester);
     expect(find.text(AppLegal.supportEmail), findsOneWidget);
     expect(find.text(AppLegal.telegramHandle), findsOneWidget);
+
+    await _disposeAnimatedTree(tester);
+  });
+
+  testWidgets('about screen on Bazaar shows the Bazaar page instead of a website', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: AboutScreen(vendorOverride: StoreVendor.bazaar)),
+    );
+    expect(find.text(StoreListing.bazaarName), findsOneWidget);
+    expect(find.text(StoreListing.buttonLabel(StoreVendor.bazaar)), findsOneWidget);
+    expect(find.text(AppLegal.websiteName), findsNothing);
+    expect(find.text('ورود مستقیم به سایت'), findsNothing);
 
     await _disposeAnimatedTree(tester);
   });
