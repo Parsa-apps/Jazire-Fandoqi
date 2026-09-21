@@ -348,6 +348,31 @@ class FandoqiHubs {
         gameName: 'جزیره‌ساز',
         isFree: false,
       ),
+      // ── نسخه ۷: شهر بازی‌های تازه ──
+      HubActivity(
+        title: '🎪 شهر بازی‌های تازه',
+        subtitle: '۱۰ بازی جدید: کلمه‌ساز، شمارش، کارآگاه و سبد دسته‌بندی',
+        emoji: '🎪',
+        route: '/games-carnival',
+        gameName: 'شهر بازی‌ها',
+        isFree: true,
+      ),
+      HubActivity(
+        title: 'ترتیب اعداد',
+        subtitle: 'اعداد را از کوچک به بزرگ مرتب کن',
+        emoji: '🪜',
+        route: '/mini/number-order',
+        gameName: 'ترتیب اعداد',
+        isFree: true,
+      ),
+      HubActivity(
+        title: 'متفاوت را پیدا کن',
+        subtitle: 'یک مورد متفاوت بین بقیه پنهان شده؛ پیدا کن!',
+        emoji: '🕵️',
+        route: '/mini/odd-one',
+        gameName: 'متفاوت را پیدا کن',
+        isFree: true,
+      ),
     ],
   );
 

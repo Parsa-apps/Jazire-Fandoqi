@@ -124,6 +124,7 @@ class ParentInsights {
       'حیوانات': pick(['animals', 'حیوانات']),
       'حافظه': pick(['memory', 'حافظه']),
       'ریاضی': pick(['math', 'ریاضی']),
+      'منطق': pick(['logic', 'منطق']),
       'هنر': pick(['drawing', 'هنر']),
     };
   }

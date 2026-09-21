@@ -72,7 +72,14 @@ class _SplashState extends State<SplashScreen>
       HapticFeedback.lightImpact();
       final destination =
           GameData.tutorialDoNotShow ? '/gateway' : '/tutorial';
-      Navigator.pushReplacementNamed(context, destination);
+      // نسخه ۷: بعد از نصب آپدیت، «تازه‌های نسخه» یک‌بار و به‌صورت
+      // خودکار نمایش داده می‌شود؛ سپس مقصد اصلی (دروازه یا آموزش).
+      final showWhatsNew = GrowthStore.shouldShowWhatsNew;
+      Navigator.pushReplacementNamed(
+        context,
+        showWhatsNew ? '/whats-new' : destination,
+        arguments: showWhatsNew ? destination : null,
+      );
     });
   }
 

@@ -10,8 +10,9 @@ void main() {
 
   test('the complete premium achievement catalogue has unique ids', () {
     final ids = AchievementSystem.allAchievements.map((a) => a.id).toSet();
-    expect(AchievementSystem.allAchievements.length, 52);
-    expect(ids.length, 52, reason: 'idها نباید تکراری باشند');
+    // نسخه ۷: ۵۲ + ۱۴ مدال جدید (XP، منطق، شمارش، واژه، شکل، رنگ) = ۶۶
+    expect(AchievementSystem.allAchievements.length, 66);
+    expect(ids.length, 66, reason: 'idها نباید تکراری باشند');
   });
 
   test('cartoon achievements unlock after watching cartoons', () {

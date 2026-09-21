@@ -11,7 +11,11 @@ import '../../core/growth/whats_new.dart';
 /// 🎁 صفحه تازه‌های نسخه — طراحی پرمیوم، کارتی، انیمیشندار
 /// ═══════════════════════════════════════════════════════════════
 class WhatsNewScreen extends StatelessWidget {
-  const WhatsNewScreen({super.key});
+  const WhatsNewScreen({super.key, this.nextRoute});
+
+  /// اگر از اسپلش بعد از آپدیت باز شده باشد، مقصد بعدی این است؛
+  /// در غیر این صورت صفحه فقط pop می‌شود (حالت دستی از منوها).
+  final String? nextRoute;
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +60,11 @@ class WhatsNewScreen extends StatelessWidget {
                       IconButton(
                         onPressed: () {
                           GrowthStore.markWhatsNewSeen();
-                          Navigator.pop(context);
+                          if (nextRoute != null) {
+                            Navigator.pushReplacementNamed(context, nextRoute!);
+                          } else {
+                            Navigator.pop(context);
+                          }
                         },
                         icon: const Icon(Icons.close_rounded,
                             color: Colors.white, size: 26),
@@ -118,7 +126,11 @@ class WhatsNewScreen extends StatelessWidget {
                         child: ElevatedButton(
                           onPressed: () {
                             GrowthStore.markWhatsNewSeen();
-                            Navigator.pop(context);
+                            if (nextRoute != null) {
+                              Navigator.pushReplacementNamed(context, nextRoute!);
+                            } else {
+                              Navigator.pop(context);
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,

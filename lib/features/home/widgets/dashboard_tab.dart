@@ -121,6 +121,52 @@ class _DashboardState extends ConsumerState<DashboardTab>
   }
 
   List<_GameTile> get _allGames => [
+        // ── نسخه ۷: شهر بازی‌های تازه در صدر فهرست ──
+        const _GameTile(
+          title: 'بازی‌های تازه',
+          gameName: 'شهر بازی‌ها',
+          route: '/games-carnival',
+          emoji: '🎪',
+          glow: Color(0xFF00BCD4),
+          category: _GameCategory.fun,
+          subtitle: '۱۰ بازی جدید + سطح جزیره',
+        ),
+        const _GameTile(
+          title: 'حرف اول',
+          gameName: 'حرف اول',
+          route: '/mini/first-letter',
+          emoji: '🔤',
+          glow: Color(0xFF1E88E5),
+          category: _GameCategory.base,
+          subtitle: 'شروع خواندن کلمه‌ها',
+        ),
+        const _GameTile(
+          title: 'کلمه‌ساز',
+          gameName: 'کلمه‌ساز',
+          route: '/mini/word-builder',
+          emoji: '🧱',
+          glow: Color(0xFF43A047),
+          category: _GameCategory.base,
+          subtitle: 'حرف گم‌شده را جا بگذار',
+        ),
+        const _GameTile(
+          title: 'شمارش خوش',
+          gameName: 'شمارش خوش',
+          route: '/mini/counting',
+          emoji: '🔢',
+          glow: Color(0xFFEC407A),
+          category: _GameCategory.base,
+          subtitle: 'چند تا می‌بینی؟',
+        ),
+        const _GameTile(
+          title: 'متفاوت را پیدا کن',
+          gameName: 'متفاوت را پیدا کن',
+          route: '/mini/odd-one',
+          emoji: '🕵️',
+          glow: Color(0xFF5E35B1),
+          category: _GameCategory.brain,
+          subtitle: 'چشم تیز کارآگاه',
+        ),
         _GameTile(
           title: 'الفبا',
           gameName: 'الفبا',

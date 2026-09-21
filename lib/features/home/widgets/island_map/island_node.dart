@@ -43,6 +43,8 @@ class PillRect {
     'assets/theme_map/island_lullaby.png': 466 / 440,
     'assets/theme_map/island_profile.png': 547 / 440,
     'assets/theme_map/island_about.png': 577 / 440,
+    // ── نسخه ۷: سکوی شهر بازی‌های تازه ──
+    'assets/theme_map/island_carnival.png': 467 / 440,
     'assets/theme_map/hero_fandoq.png': 456 / 420,
     'assets/theme_map/sign_board.png': 376 / 560,
     'assets/theme_map/bridge.png': 281 / 720,

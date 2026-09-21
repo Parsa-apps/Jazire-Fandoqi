@@ -11,9 +11,11 @@ void main() {
       expect(ParentInsights.dailyBudgetRatio, inInclusiveRange(0.0, 1.0));
     });
 
-    test('radarSkills دقیقاً ۸ مهارت برمی‌گرداند', () {
+    test('radarSkills دقیقاً ۹ مهارت برمی‌گرداند', () {
       final skills = ParentInsights.radarSkills();
-      expect(skills.length, 8);
+      // نسخه ۷: محور «منطق» برای بازی‌های هوش اضافه شد
+      expect(skills.length, 9);
+      expect(skills.containsKey('منطق'), isTrue);
       for (final v in skills.values) {
         expect(v, inInclusiveRange(0, 100));
       }

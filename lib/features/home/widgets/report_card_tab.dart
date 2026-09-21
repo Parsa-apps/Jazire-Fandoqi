@@ -65,6 +65,11 @@ class ReportCardTab extends ConsumerWidget {
 
               const SizedBox(height: 16),
 
+              // ── نسخه ۷: سطح جزیره و نوار تجربه ──
+              _buildIslandLevelCard(),
+
+              const SizedBox(height: 16),
+
               // پیشرفت در دروس و مهارت‌ها
               _sectionTitle('📊 وضعیت یادگیری موضوعات'),
               const SizedBox(height: 8),
@@ -241,6 +246,76 @@ class ReportCardTab extends ConsumerWidget {
     );
   }
 
+  /// ── نسخه ۷: کارت سطح جزیره — تجربهٔ یادگیری کودک ──
+  Widget _buildIslandLevelCard() {
+    final level = GameData.islandLevel;
+    final progress = GameData.islandLevelProgress;
+    final remaining = GameData.xpToNextIslandLevel;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [Color(0xFF7C4DFF), Color(0xFF42A5F5)],
+        ),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF7C4DFF).withOpacity(0.35),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('🐿️', style: TextStyle(fontSize: 30)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'سطح جزیره: ${PersianDigits.toFa(level)} — ${GameData.islandLevelTitle}',
+                  style: AppFonts.vazirmatn(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              Text(
+                '${PersianDigits.toFa(GameData.xp)} تجربه',
+                style: AppFonts.vazirmatn(
+                  color: const Color(0xFFFFF176),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 12,
+              backgroundColor: Colors.white.withOpacity(0.25),
+              valueColor:
+                  const AlwaysStoppedAnimation<Color>(Color(0xFFFFD700)),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${PersianDigits.toFa(remaining)} تجربه تا سطح بعد — با بازی و یادگیری جمع می‌شود',
+            style: AppFonts.vazirmatn(color: Colors.white70, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSubjectsProgress() {
     final subjects = [
       ('فارسی و الفبا', '🔤', (GameData.skills['alphabet'] ?? 0) / 20.0, const Color(0xFFD35400)),
@@ -248,6 +323,7 @@ class ReportCardTab extends ConsumerWidget {
       ('علوم و حیوانات', '🦁', (GameData.skills['animals'] ?? 0) / 20.0, const Color(0xFF27AE60)),
       ('هنر و نقاشی', '🎨', (GameData.skills['colors'] ?? 0) / 20.0, const Color(0xFFE74C3C)),
       ('مهارت‌های زندگی', '🧭', (GameData.skills['concepts'] ?? 0) / 20.0, const Color(0xFF00897B)),
+      ('هوش و منطق', '🕵️', (GameData.skills['logic'] ?? 0) / 20.0, const Color(0xFF5E35B1)),
     ];
 
     return Container(
