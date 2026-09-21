@@ -34,10 +34,12 @@ class BackgroundMusicObserver extends NavigatorObserver {
     if (name == '/lullabies' || name.startsWith('/lullaby/')) return null;
 
     if (name.startsWith('/game/') ||
+        name.startsWith('/mini/') ||
         const <String>{
           '/alphabet', '/memory_match', '/bubble_pop', '/star_catch',
           '/colors_lab', '/puzzle', '/math_race', '/pattern',
           '/sound_match', '/body_parts', '/island_builder',
+          '/games-carnival',
         }.contains(name)) {
       return 'games';
     }

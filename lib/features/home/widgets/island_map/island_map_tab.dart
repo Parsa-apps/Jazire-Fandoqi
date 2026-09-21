@@ -237,6 +237,8 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
     final heroW = (w * 0.42).clamp(120.0, 200.0);
 
     // چیدمان مارپیچ: هر سکو با جای عمودی، سمت (چپ/وسط/راست) و ضریب اندازه
+    // نسخه ۷: سکوی «شهر بازی‌های تازه» اضافه شد و ریتم عمودی کمی فشرده‌تر
+    // شد تا هشت سکو بدون تصادم روی مسیر جا بگیرند.
     final slots = <_Slot>[
       _Slot(
         asset: 'assets/theme_map/island_cartoon.png',
@@ -252,7 +254,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
       _Slot(
         asset: 'assets/theme_map/island_tales.png',
         label: 'قصه‌ها',
-        top: 0.2646,
+        top: 0.2580,
         side: 1,
         widthMul: 1.00,
         phase: 0.22,
@@ -261,7 +263,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
       _Slot(
         asset: 'assets/theme_map/island_story.png',
         label: 'فارسی',
-        top: 0.3815,
+        top: 0.3560,
         side: -1,
         widthMul: 1.00,
         phase: 0.35,
@@ -270,7 +272,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
       _Slot(
         asset: 'assets/theme_map/island_game.png',
         label: 'بازی‌ها',
-        top: 0.4852,
+        top: 0.4540,
         side: 0,
         widthMul: 1.10,
         phase: 0.55,
@@ -279,16 +281,26 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
       _Slot(
         asset: 'assets/theme_map/island_lullaby.png',
         label: 'لالایی',
-        top: 0.5832,
+        top: 0.5520,
         side: 1,
         widthMul: 1.00,
         phase: 0.72,
         onTap: () => _go('/lullabies'),
       ),
+      // 🎪 نسخه ۷: شهر بازی‌های تازه — ده بازی جدید با سیستم XP
+      _Slot(
+        asset: 'assets/theme_map/island_carnival.png',
+        label: 'بازی‌های تازه',
+        top: 0.6490,
+        side: -1,
+        widthMul: 1.06,
+        phase: 0.40,
+        onTap: () => _go('/games-carnival'),
+      ),
       _Slot(
         asset: 'assets/theme_map/island_profile.png',
         label: 'پروفایل من',
-        top: 0.6795,
+        top: 0.7420,
         side: -1,
         widthMul: 1.00,
         phase: 0.20,
@@ -297,7 +309,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
       _Slot(
         asset: 'assets/theme_map/island_about.png',
         label: 'دربارهٔ ما',
-        top: 0.7898,
+        top: 0.8350,
         side: 1,
         widthMul: 0.94,
         phase: 0.88,

@@ -37,6 +37,8 @@ class AppColors {
   // گرادیان آسمان → اقیانوس برای پس‌زمینهٔ نقشه (سه چرخهٔ روز)
   static const mapSkyMorning = Color(0xFFBFE9FF);
   static const mapSkyNoon = Color(0xFF8FD8F7);
+  /// آسمان گرمِ غروب — بین ظهر و شب (نسخه ۷)
+  static const mapSkySunset = Color(0xFFFFB98A);
   static const mapSkyNight = Color(0xFF3B4C7A);
   static const mapSeaTop = Color(0xFF4FC3F7);
   static const mapSeaDeep = Color(0xFF0277BD);

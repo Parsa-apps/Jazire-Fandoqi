@@ -6,6 +6,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/app_colors.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import '../../core/game_data.dart';
+import '../../core/growth/persian_digits.dart';
+import '../../core/xp_system.dart';
 import '../../presentation/providers/game_state_provider.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
 import '../../shared/widgets/star_field.dart';
@@ -273,7 +275,7 @@ class _ProfileState extends ConsumerState<ProfileScreen>
 
                   const SizedBox(height: 4),
 
-                  // Level badge
+                  // Level badge — ⭐ نسخه ۷: سطح جزیره از تجربهٔ واقعی
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                     decoration: BoxDecoration(
@@ -282,7 +284,7 @@ class _ProfileState extends ConsumerState<ProfileScreen>
                       border: Border.all(color: Colors.white.withOpacity(0.2)),
                     ),
                     child: Text(
-                      'لول ${GameData.level} • ${GameData.getLevelName()}',
+                      XpSystem.levelLabel(GameData.islandLevel),
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
@@ -291,16 +293,42 @@ class _ProfileState extends ConsumerState<ProfileScreen>
                     ),
                   ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.3),
 
+                  const SizedBox(height: 8),
+
+                  // ⭐ نسخه ۷: نوار تجربهٔ سطح جزیره
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 34),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: LinearProgressIndicator(
+                        value: GameData.islandLevelProgress,
+                        minHeight: 10,
+                        backgroundColor: Colors.white.withOpacity(0.22),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xFFFFD700),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${PersianDigits.toFa(GameData.xpToNextIslandLevel)} تجربه تا سطح بعد',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.75),
+                      fontSize: 11,
+                    ),
+                  ).animate().fadeIn(delay: 500.ms),
+
                   const SizedBox(height: 16),
 
                   // Quick stats row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _miniStat('⭐', '${GameData.stars}', 'ستاره'),
-                      _miniStat('💰', '${GameData.coins}', 'سکه'),
-                      _miniStat('🔥', '${GameData.streak}', 'روز پیاپی'),
-                      _miniStat('🏅', '${GameData.achievements.length}', 'مدال'),
+                      _miniStat('⭐', PersianDigits.toFa(GameData.stars), 'ستاره'),
+                      _miniStat('💰', PersianDigits.toFa(GameData.coins), 'سکه'),
+                      _miniStat('🔥', PersianDigits.toFa(GameData.streak), 'روز پیاپی'),
+                      _miniStat('🏅', PersianDigits.toFa(GameData.achievements.length), 'مدال'),
                     ],
                   ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.3),
                 ],
@@ -342,8 +370,15 @@ class _ProfileState extends ConsumerState<ProfileScreen>
   // ─── STAT RINGS ──────────────────────────────
   Widget _buildStatRings() {
     final successRate = GameData.successRate;
-    final levelProgress = (GameData.coins % 100) / 100;
-    final missionProgress = GameData.dailyMissions / 4;
+    // ⭐ نسخه ۷: حلقهٔ «سطح جزیره» از تجربهٔ واقعی (XP) — نه سکه
+    final level = GameData.islandLevel;
+    final levelFrom = XpSystem.xpToReach(level);
+    final levelTo = XpSystem.xpToReach(level + 1);
+    final levelProgress =
+        levelTo <= levelFrom ? 1.0 : (GameData.xp - levelFrom) / (levelTo - levelFrom);
+    // ⭐ نسخه ۷: تعداد مأموریت‌ها داینامیک (۹ مأموریت) — قبلاً /4 ثابت بود
+    final missionTotal = GameData.missionTargets.length;
+    final missionProgress = GameData.dailyMissions / missionTotal;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -355,15 +390,15 @@ class _ProfileState extends ConsumerState<ProfileScreen>
               Expanded(child: _statRingCard(
                 'نرخ موفقیت',
                 successRate,
-                '${(successRate * 100).toStringAsFixed(0)}%',
+                '${PersianDigits.toFa((successRate * 100).round())}٪',
                 const Color(0xFF00B894),
                 _ringCtrl.value,
               )),
               const SizedBox(width: 12),
               Expanded(child: _statRingCard(
-                'پیشرفت لول',
+                'سطح جزیره',
                 levelProgress,
-                '${GameData.coins % 100}/100',
+                '${PersianDigits.toFa(GameData.xp - levelFrom)}/${PersianDigits.toFa(levelTo - levelFrom)}',
                 const Color(0xFF6C5CE7),
                 _ringCtrl.value,
               )),
@@ -371,7 +406,7 @@ class _ProfileState extends ConsumerState<ProfileScreen>
               Expanded(child: _statRingCard(
                 'ماموریت‌ها',
                 missionProgress,
-                '${GameData.dailyMissions}/4',
+                '${PersianDigits.toFa(GameData.dailyMissions)}/${PersianDigits.toFa(missionTotal)}',
                 const Color(0xFFFFD700),
                 _ringCtrl.value,
               )),

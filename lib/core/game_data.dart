@@ -11,6 +11,7 @@ import '../data/datasources/hive_player_store.dart';
 import 'drawing/drawing_album.dart';
 import 'literacy/literacy_path.dart';
 import 'security/secure_store.dart';
+import 'xp_system.dart';
 
 /// Single source of truth for the local player profile.
 ///
@@ -50,6 +51,25 @@ class GameData {
   static int stars = 0;
   static int coins = 0;
   static int level = 1;
+
+  /// ⭐ نسخه ۷ — تجربهٔ یادگیری (XP) و «سطح جزیره».
+  /// برخلاف level (که از سکه مشتق می‌شود)، این سنجهٔ واقعی پیشرفت است
+  /// و هرگز کم نمی‌شود.
+  static int xp = 0;
+
+  /// ⭐ نسخه ۷ — با هر تعویض کامل پروفایل (سوییچ خواهر/برادر، بازیابی
+  /// بکاپ والدین) بالا می‌رود تا `IslandLevelWatcher` بداند تغییر سطح
+  /// ناشی از پیشرفت واقعی بوده یا جایگزینی پروفایل.
+  static int profileGeneration = 0;
+
+  /// ⭐ نسخه ۷ — دفتر تجربهٔ روزانه: کلید تاریخ (yyyy-MM-dd) → تجربهٔ
+  /// همان روز. فقط از مسیر `addXp` پر می‌شود (تاریخ جعلی ساخته نمی‌شود)،
+  /// ورودی‌های قدیمی‌تر از ۱۴ روز هرس می‌شوند و همراه کودک در سوییچ
+  /// خواهر/برادر جابه‌جا می‌شود. پنل والدین نمودار ۷ روزه را از اینجا می‌سازد.
+  static Map<String, int> dailyXpLog = <String, int>{};
+
+  /// قدم تاریخ دفتر تجربهٔ روزانه (روز).
+  static const int _dailyXpLogKeepDays = 14;
   static int streak = 0;
   static int totalCorrect = 0;
   static int totalWrong = 0;
@@ -88,6 +108,10 @@ class GameData {
     'colors': 0,
     'math': 0,
     'memory': 0,
+    // ── نسخه ۷: مأموریت‌های جدید دنیای بازی‌های تازه ──
+    'words': 0,
+    'counting': 0,
+    'logic': 0,
   };
   static Map<String, int> skills = <String, int>{
     'math': 0,
@@ -109,6 +133,8 @@ class GameData {
     'jobs': 0,
     'stories': 0,
     'lullaby': 0,
+    // ── نسخه ۷: مهارت منطق و تفکر ──
+    'logic': 0,
   };
 
   // Settings
@@ -232,6 +258,14 @@ class GameData {
       stars = _readInt('stars', 0);
       coins = _readInt('c', 0);
       level = _readInt('l', 1, min: 1, max: _maxStoredCounter);
+      // ⭐ نسخه ۷: XP — نصب‌های قدیمی ۶.x یک‌بار از ستاره و سکه بذر می‌گیرند
+      if (prefs.containsKey('xp')) {
+        xp = _readInt('xp', 0);
+      } else {
+        _seedLegacyXp();
+      }
+      // ⭐ نسخه ۷: دفتر تجربهٔ روزانه (مسیر قدیمی SharedPreferences)
+      dailyXpLog = _readColonIntMap('dxp');
       streak = _readInt('s', 0, min: 0, max: 100000);
       totalCorrect = _readInt('tc', 0);
       totalWrong = _readInt('tw', 0);
@@ -487,6 +521,17 @@ class GameData {
     stars = asInt('stars', 0).clamp(0, _maxStoredCounter);
     coins = asInt('c', 0).clamp(0, _maxStoredCounter);
     level = asInt('l', 1).clamp(1, _maxStoredCounter);
+    // ⭐ نسخه ۷: اسنپ‌شات‌های نسخهٔ ۶.x کلید xp ندارند؛ در آن حالت
+    // یک‌بار از ستاره و سکه بذر گرفته می‌شود تا پیشرفت قبلی کودک
+    // پس از آپدیت از بین نرود (مهاجرت امن 6.2.6 → 7.0.0).
+    if (d.containsKey('xp')) {
+      xp = asInt('xp', 0).clamp(0, _maxStoredCounter);
+    } else {
+      _seedLegacyXp();
+    }
+    // ⭐ نسخه ۷: اسنپ‌شات‌های قدیمی کلید dxp ندارند → دفتر خالی می‌ماند
+    // (تاریخچه جعلی ساخته نمی‌شود؛ از امروز شروع می‌شود).
+    dailyXpLog = asSkillMap('dxp');
     streak = asInt('s', 0).clamp(0, 100000);
     totalCorrect = asInt('tc', 0).clamp(0, _maxStoredCounter);
     totalWrong = asInt('tw', 0).clamp(0, _maxStoredCounter);
@@ -596,11 +641,19 @@ class GameData {
     }
   }
 
+  /// قدردانی یک‌باره از پیشرفت نسخه‌های ۶.x: ستاره و سکهٔ موجود به XP
+  /// اولیه تبدیل می‌شود (سقف ۵۰۰۰) تا کودک با آپدیت احساس شروع از صفر نکند.
+  static void _seedLegacyXp() {
+    xp = min(5000, stars * 5 + coins);
+  }
+
   /// ساخت اسنپ‌شات Hive از وضعیت فعلی (فاز ۴).
   static Map<String, Object?> _buildSnapshot() => <String, Object?>{
         'stars': stars,
         'c': coins,
         'l': level,
+        'xp': xp,
+        'dxp': dailyXpLog,
         's': streak,
         'tc': totalCorrect,
         'tw': totalWrong,
@@ -762,6 +815,7 @@ class GameData {
     await prefs.setInt('stars', stars);
     await prefs.setInt('c', coins);
     await prefs.setInt('l', level);
+    await prefs.setStringList('dxp', _encodeColonIntMap(dailyXpLog));
     await prefs.setInt('s', streak);
     await prefs.setInt('tc', totalCorrect);
     await prefs.setInt('tw', totalWrong);
@@ -867,6 +921,46 @@ class GameData {
     unawaited(save());
   }
 
+  /// ⭐ نسخه ۷ — افزودن تجربهٔ یادگیری. خروجی: true یعنی ارتقای
+  /// «سطح جزیره». جشن ارتقا (صدا/فندقی) بر عهدهٔ لایهٔ UI است.
+  static bool addXp(int amount) {
+    if (!_isLoaded || amount <= 0) return false;
+    final before = islandLevel;
+    xp = min(_maxStoredCounter, xp + amount);
+    final leveledUp = islandLevel > before;
+    _recordDailyXp(amount);
+    _autoAchieve();
+    _notify();
+    unawaited(save());
+    return leveledUp;
+  }
+
+  /// ⭐ نسخه ۷: ثبت تجربهٔ امروز در دفتر روزانه + هرس ورودی‌های کهنه.
+  /// فقط از `addXp` صدا زده می‌شود تا تاریخچه با تجربهٔ واقعی هم‌خوان بماند.
+  static void _recordDailyXp(int amount) {
+    final today = _dateKey();
+    dailyXpLog[today] =
+        min(_maxStoredCounter, (dailyXpLog[today] ?? 0) + amount);
+    if (dailyXpLog.length > _dailyXpLogKeepDays) {
+      final cutoff =
+          DateTime.now().subtract(const Duration(days: _dailyXpLogKeepDays));
+      dailyXpLog.removeWhere((key, _) {
+        final day = DateTime.tryParse(key);
+        return day == null || day.isBefore(cutoff);
+      });
+    }
+  }
+
+  /// سطح جزیره از XP محاسبه می‌شود (نه از سکه).
+  static int get islandLevel => XpSystem.levelFor(xp);
+
+  static String get islandLevelTitle => XpSystem.titleForLevel(islandLevel);
+
+  /// پیشرفت ۰..۱ داخل سطح فعلی — برای نوار پیشرفت UI.
+  static double get islandLevelProgress => XpSystem.progressInLevel(xp);
+
+  static int get xpToNextIslandLevel => XpSystem.xpToNextLevel(xp);
+
   /// Spends currency atomically. Negative calls to [addCoins] used to be
   /// silently ignored, which made the PR80 ice-heart purchase appear to work
   /// while never charging the child.
@@ -901,8 +995,12 @@ class GameData {
     if (!_isLoaded) return;
     if (correct) {
       totalCorrect = min(_maxStoredCounter, totalCorrect + 1);
+      // ⭐ نسخه ۷: پاسخ درست +۲ XP
+      xp = min(_maxStoredCounter, xp + XpSystem.xpPerCorrect);
     } else {
       totalWrong = min(_maxStoredCounter, totalWrong + 1);
+      // ⭐ نسخه ۷: تلاش هم ارزشمند است؛ +۱ XP بدون تنبیه
+      xp = min(_maxStoredCounter, xp + XpSystem.xpPerAttempt);
     }
     _progressMissionInternal('questions');
     if (skill != null && skills.containsKey(skill)) {
@@ -936,6 +1034,10 @@ class GameData {
     'colors': 1,
     'math': 3, // فاز ۵۲: مأموریت ریاضی
     'memory': 2, // دو دور کوتاه برای تکمیل مأموریت حافظه
+    // ── نسخه ۷: مأموریت‌های دنیای بازی‌های تازه ──
+    'words': 2, // کلمه‌ساز یا حرف اول
+    'counting': 2, // شمارش یا ترتیب اعداد
+    'logic': 2, // مورد متفاوت، طبقه‌بندی، الگو
   };
 
   static void progressMission(String id, {int amount = 1}) {
@@ -1256,6 +1358,8 @@ class GameData {
     }
     stars = min(_maxStoredCounter, stars + 3);
     prizeBoxTokens = min(_maxStoredCounter, prizeBoxTokens + 1);
+    // ⭐ نسخه ۷: تکمیل مرحله +۱۰ XP
+    xp = min(_maxStoredCounter, xp + XpSystem.xpPerStage);
     _autoAchieve();
     _notify();
     unawaited(save());
@@ -1432,7 +1536,7 @@ class GameData {
 
   // ==================== SIBLING / GROWTH EXPORT ====================
   static const List<String> _childProgressKeys = <String>[
-    'stars', 'c', 'l', 's', 'tc', 'tw', 'av', 'childName',
+    'stars', 'c', 'l', 'xp', 'dxp', 's', 'tc', 'tw', 'av', 'childName',
     'childAge', 'dm', 'missionDay', 'mp', 'ss', 'wpm', 'tps', 'ach', 'st',
     'ownedItems', 'hs', 'mrhs', 'qhs', 'lld', 'lscd', 'aiBuddy', 'currentStage',
     'currentIsland', 'cs', 'pbt', 'op', 'stories', 'sfav', 'lastStoryId',
@@ -1453,15 +1557,23 @@ class GameData {
   static void importChildProgress(Map<String, Object?> child) {
     final merged = _buildSnapshot()..addAll(child);
     _applySnapshot(merged);
+    // ⭐ نسخه ۷: کل پروفایل جایگزین شد (سوییچ خواهر/برادر یا بازیابی
+    // بکاپ والدین) — جشن ارتقای سطح جزیره نباید به‌اشتباه اجرا شود.
+    profileGeneration++;
     _notify();
     unawaited(save());
   }
 
   /// پروفایل خواهر/برادر تازه: پیشرفت صفر، تنظیمات والد سر جایش.
   static void resetChildProgressKeepingParent() {
+    // ⭐ نسخه ۷: تعویض کل پروفایل — نسل بالا می‌رود تا جشن ارتقا فقط
+    // برای پیشرفت واقعی کودک اجرا شود.
+    profileGeneration++;
     stars = 0;
     coins = 0;
     level = 1;
+    xp = 0;
+    dailyXpLog = <String, int>{};
     streak = 0;
     totalCorrect = 0;
     totalWrong = 0;
@@ -1485,6 +1597,9 @@ class GameData {
       'colors': 0,
       'math': 0,
       'memory': 0,
+      'words': 0,
+      'counting': 0,
+      'logic': 0,
     };
     for (final key in skills.keys.toList()) {
       skills[key] = 0;
@@ -1707,6 +1822,15 @@ class GameData {
     }
     if (watchedCartoons.isNotEmpty) candidates.add('cartoon_watcher');
     if (watchedCartoons.length >= 5) candidates.add('cartoon_fan');
+    // ⭐ نسخه ۷: مدال‌های مسیر XP «سطح جزیره»
+    if (xp >= 100) candidates.add('xp_100');
+    if (xp >= 500) candidates.add('xp_500');
+    if (xp >= 1000) candidates.add('xp_1000');
+    if (xp >= 2500) candidates.add('xp_2500');
+    if (xp >= 5000) candidates.add('xp_5000');
+    // ⭐ نسخه ۷: مدال مهارت منطق
+    if ((skills['logic'] ?? 0) >= 10) candidates.add('logic_10');
+    if ((skills['logic'] ?? 0) >= 50) candidates.add('logic_50');
     for (final id in candidates) {
       if (!achievements.contains(id)) achievements.add(id);
     }
@@ -1724,6 +1848,9 @@ class GameData {
     stars = 0;
     coins = 0;
     level = 1;
+    xp = 0;
+    profileGeneration = 0;
+    dailyXpLog = <String, int>{};
     streak = 0;
     totalCorrect = 0;
     totalWrong = 0;
@@ -1754,6 +1881,9 @@ class GameData {
       'colors': 0,
       'math': 0,
       'memory': 0,
+      'words': 0,
+      'counting': 0,
+      'logic': 0,
     };
     skills = <String, int>{
       'math': 0,
@@ -1775,6 +1905,7 @@ class GameData {
       'jobs': 0,
       'stories': 0,
       'lullaby': 0,
+      'logic': 0,
     };
     timeLimitMinutes = 60;
     parentPinHash = '';

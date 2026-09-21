@@ -69,6 +69,18 @@ import 'features/games/math/compare_crocodile_game.dart';
 import 'features/games/math/clock_hour_game.dart';
 import 'features/games/math/add_subtract_game.dart';
 import 'features/games/alphabet_academy/dictation_game.dart';
+// ── نسخه ۷: شهر بازی‌های تازه (۱۰ بازی جدید) ──
+import 'features/games/mini_games/games_carnival_screen.dart';
+import 'features/games/mini_games/first_letter_game.dart';
+import 'features/games/mini_games/word_builder_game.dart';
+import 'features/games/mini_games/counting_fun_game.dart';
+import 'features/games/mini_games/visual_math_game.dart';
+import 'features/games/mini_games/big_small_game.dart';
+import 'features/games/mini_games/shape_match_game.dart';
+import 'features/games/mini_games/color_mix_game.dart';
+import 'features/games/mini_games/number_order_game.dart';
+import 'features/games/mini_games/odd_one_out_game.dart';
+import 'features/games/mini_games/sort_basket_game.dart';
 import 'features/growth/catalog_search_screen.dart';
 import 'features/growth/certificates_screen.dart';
 import 'features/growth/growth_app_shell.dart';
@@ -178,10 +190,33 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
   final BackgroundMusicObserver _backgroundMusicObserver =
       BackgroundMusicObserver();
 
+  /// ⭐ نسخه ۷: جشن سراسری ارتقای «سطح جزیره» — در هر صفحه‌ای که
+  /// کودک پیشرفت کند (بازی‌های قدیمی و جدید) یک‌بار جشن گرفته می‌شود.
+  late final IslandLevelWatcher _islandLevelWatcher;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _islandLevelWatcher = IslandLevelWatcher(
+      onLevelUp: (from, to) {
+        unawaited(AudioService.levelUp());
+        FandoghiCoach.celebrate(
+          'هورا! به ${XpSystem.levelLabel(to)} رسیدی! 🎉🌰',
+        );
+      },
+    );
+    GameData.changes.addListener(_onGameDataChanged);
+    // بعد از اولین فریم مسلح می‌شود تا پرشِ حین بارگذاری/مهاجرت
+    // هیچ‌وقت جشن نگیرد.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _islandLevelWatcher.arm();
+    });
+  }
+
+  void _onGameDataChanged() {
+    if (!mounted) return;
+    _islandLevelWatcher.handleChange();
   }
 
   @override
@@ -194,6 +229,7 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
 
   @override
   void dispose() {
+    GameData.changes.removeListener(_onGameDataChanged);
     WidgetsBinding.instance.removeObserver(this);
     _themeController.dispose();
     super.dispose();
@@ -306,6 +342,53 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
         '/puzzle': (context) => const PuzzleGame(),
         '/math_race': (context) => const MathRaceGame(),
         '/pattern': (context) => const PatternGame(),
+        // ── نسخه ۷: شهر بازی‌های تازه — ۵ بازی رایگان + ۵ بازی نسخهٔ کامل ──
+        // همه از GameAccessGate رد می‌شوند تا ساعت خواب و فیلتر والدین
+        // برای بازی‌های جدید هم دقیقاً مثل بازی‌های قبلی اعمال شود.
+        '/games-carnival': (context) => GameAccessGate(
+              gameName: 'شهر بازی‌ها',
+              child: const GamesCarnivalScreen(),
+            ),
+        '/mini/first-letter': (context) => GameAccessGate(
+              gameName: 'حرف اول',
+              child: const FirstLetterGame(),
+            ),
+        '/mini/word-builder': (context) => GameAccessGate(
+              gameName: 'کلمه‌ساز',
+              child: const WordBuilderGame(),
+            ),
+        '/mini/counting': (context) => GameAccessGate(
+              gameName: 'شمارش خوش',
+              child: const CountingFunGame(),
+            ),
+        '/mini/visual-math': (context) => GameAccessGate(
+              gameName: 'جمع تصویری',
+              child: const VisualMathGame(),
+            ),
+        '/mini/big-small': (context) => GameAccessGate(
+              gameName: 'بزرگ و کوچک',
+              child: const BigSmallGame(),
+            ),
+        '/mini/shape-match': (context) => GameAccessGate(
+              gameName: 'جورچین شکل‌ها',
+              child: const ShapeMatchGame(),
+            ),
+        '/mini/color-mix': (context) => GameAccessGate(
+              gameName: 'ترکیب رنگ',
+              child: const ColorMixGame(),
+            ),
+        '/mini/number-order': (context) => GameAccessGate(
+              gameName: 'ترتیب اعداد',
+              child: const NumberOrderGame(),
+            ),
+        '/mini/odd-one': (context) => GameAccessGate(
+              gameName: 'متفاوت را پیدا کن',
+              child: const OddOneOutGame(),
+            ),
+        '/mini/sort-basket': (context) => GameAccessGate(
+              gameName: 'سبد دسته‌بندی',
+              child: const SortBasketGame(),
+            ),
         '/sound_match': (context) => GameAccessGate(
               gameName: 'صدا',
               child: const SoundMatchGame(),
@@ -331,7 +414,12 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
               gameName: 'واژگان',
               child: const VocabularyScreen(),
             ),
-        '/whats-new': (context) => const WhatsNewScreen(),
+        '/whats-new': (context) => WhatsNewScreen(
+              nextRoute:
+                  ModalRoute.of(context)?.settings.arguments is String
+                      ? ModalRoute.of(context)!.settings.arguments as String
+                      : null,
+            ),
         '/parent-booklet': (context) => const ParentBookletScreen(),
       },
       onGenerateRoute: (settings) {

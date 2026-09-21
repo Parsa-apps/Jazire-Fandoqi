@@ -61,6 +61,7 @@ class _SkyOceanPainter extends CustomPainter {
   Color get _skyTop => switch (cycle) {
         DayCycle.morning => AppColors.mapSkyMorning,
         DayCycle.noon => AppColors.mapSkyNoon,
+        DayCycle.sunset => AppColors.mapSkySunset,
         DayCycle.night => AppColors.mapSkyNight,
       };
 
@@ -68,6 +69,7 @@ class _SkyOceanPainter extends CustomPainter {
   Color get _skyLow => switch (cycle) {
         DayCycle.morning => const Color(0xFFFFF0D2),
         DayCycle.noon => const Color(0xFFDFF4FF),
+        DayCycle.sunset => const Color(0xFFFFD9A0),
         DayCycle.night => const Color(0xFF64729B),
       };
 
@@ -125,8 +127,16 @@ class _SkyOceanPainter extends CustomPainter {
     final isNight = cycle == DayCycle.night;
     final center = Offset(size.width * 0.82, size.height * 0.035);
     final r = size.width * 0.11;
-    final body = (isNight ? const Color(0xFFFFF3C4) : const Color(0xFFFFD54F))
-        .withOpacity(fade);
+    // نسخه ۷: در غروب خورشید نارنجی و گرم‌تر می‌شود
+    final Color sunColor;
+    if (isNight) {
+      sunColor = const Color(0xFFFFF3C4);
+    } else if (cycle == DayCycle.sunset) {
+      sunColor = const Color(0xFFFF9E5E);
+    } else {
+      sunColor = const Color(0xFFFFD54F);
+    }
+    final body = sunColor.withOpacity(fade);
 
     canvas.drawCircle(
       center,

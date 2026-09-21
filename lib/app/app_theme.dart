@@ -9,15 +9,20 @@ import 'package:jazireh_fandoghi/app/app_fonts.dart';
 /// پشتیبانی از ۶ تم اختصاصی و پویا برای کودکان و والدین
 /// =======================================================
 
-enum DayCycle { morning, noon, night }
+/// چرخه روز جزیره — نسخه ۷: غروبِ طلایی بین ظهر و شب اضافه شد
+/// تا کودک گذرِ نرمِ روز را در کل جزیره ببیند.
+enum DayCycle { morning, noon, sunset, night }
 
 class AppTheme {
-  static DayCycle get currentCycle {
-    final hour = DateTime.now().hour;
+  /// فاز روز برای ساعت مشخص — جدا از currentCycle تا تست‌پذیر باشد.
+  static DayCycle cycleForHour(int hour) {
     if (hour >= 6 && hour < 12) return DayCycle.morning;
-    if (hour >= 12 && hour < 18) return DayCycle.noon;
+    if (hour >= 12 && hour < 17) return DayCycle.noon;
+    if (hour >= 17 && hour < 19) return DayCycle.sunset;
     return DayCycle.night;
   }
+
+  static DayCycle get currentCycle => cycleForHour(DateTime.now().hour);
 
   static TextTheme _textTheme(Brightness brightness, {double scaleFactor = 1.0, Color? textColor}) {
     final foreground = textColor ??

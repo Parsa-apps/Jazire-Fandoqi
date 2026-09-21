@@ -89,6 +89,21 @@ class AchievementSystem {
     const Achievement(id: 'lullaby_1', title: 'خواب شیرین', description: 'یک لالایی گوش دادی', emoji: '🌙', target: 1, type: 'lullaby', category: 'لالایی'),
     const Achievement(id: 'lullaby_5', title: 'ستارهٔ شب', description: '۵ لالایی گوش دادی', emoji: '🌟', target: 5, type: 'lullaby', category: 'لالایی'),
     const Achievement(id: 'island_1', title: 'معمار جزیره', description: 'اولین تزئین جزیره', emoji: '🏝️', target: 1, type: 'island', category: 'جزیره'),
+    // ── نسخه ۷: مسیر XP «سطح جزیره» ──
+    const Achievement(id: 'xp_100', title: 'دوست فندقی', description: '۱۰۰ تجربهٔ یادگیری جمع کردی', emoji: '🐿️', target: 100, type: 'xp', category: 'جزیره'),
+    const Achievement(id: 'xp_500', title: 'هم‌بازی فندقی', description: '۵۰۰ تجربهٔ یادگیری!', emoji: '🤝', target: 500, type: 'xp', category: 'جزیره'),
+    const Achievement(id: 'xp_1000', title: 'کاشف جزیره', description: '۱۰۰۰ تجربه — کل جزیره را دیدی!', emoji: '🧭', target: 1000, type: 'xp', category: 'جزیره'),
+    const Achievement(id: 'xp_2500', title: 'قهرمان جزیره', description: '۲۵۰۰ تجربهٔ یادگیری', emoji: '🏆', target: 2500, type: 'xp', category: 'جزیره'),
+    const Achievement(id: 'xp_5000', title: 'افسانه جزیره', description: '۵۰۰۰ تجربه — افسانه شدی!', emoji: '👑', target: 5000, type: 'xp', category: 'جزیره'),
+    // ── نسخه ۷: مهارت‌های دنیای بازی‌های تازه ──
+    const Achievement(id: 'counting_10', title: 'استاد اعداد', description: '۱۰ بار شمارش و ترتیب اعداد', emoji: '🔢', target: 10, type: 'counting', category: 'آموزش'),
+    const Achievement(id: 'counting_50', title: 'ریاضیدان کوچک', description: '۵۰ تمرین عددی', emoji: '➗', target: 50, type: 'counting', category: 'آموزش'),
+    const Achievement(id: 'vocab_10', title: 'کلمه‌ساز کوچک', description: '۱۰ تمرین کلمه‌سازی', emoji: '🧱', target: 10, type: 'vocab', category: 'آموزش'),
+    const Achievement(id: 'vocab_50', title: 'استاد کلمه‌ها', description: '۵۰ تمرین کلمه و حرف', emoji: '📚', target: 50, type: 'vocab', category: 'آموزش'),
+    const Achievement(id: 'shapes_10', title: 'استاد شکل‌ها', description: '۱۰ بار شکل‌ها را جور کردی', emoji: '🔷', target: 10, type: 'shapes', category: 'آموزش'),
+    const Achievement(id: 'colors_10', title: 'استاد رنگ‌ها', description: '۱۰ بار رنگ‌ها را ترکیب کردی', emoji: '🎨', target: 10, type: 'colors', category: 'آموزش'),
+    const Achievement(id: 'logic_10', title: 'کارآگاه کوچک', description: '۱۰ تمرین منطق و تشخیص', emoji: '🕵️', target: 10, type: 'logic', category: 'هوش'),
+    const Achievement(id: 'logic_50', title: 'استاد منطق', description: '۵۰ تمرین منطق — ذهن تیز!', emoji: '🦉', target: 50, type: 'logic', category: 'هوش'),
   ];
 
   /// بررسی خودکار همه مدال‌ها و باز کردن مدال‌های جدید.
@@ -138,6 +153,19 @@ class AchievementSystem {
         return (GameData.skills['lullaby'] ?? 0) >= achievement.target;
       case 'island':
         return GameData.islandDecorations.length >= achievement.target;
+      // ── نسخه ۷: مسیر XP و مهارت‌های جدید ──
+      case 'xp':
+        return GameData.xp >= achievement.target;
+      case 'logic':
+        return (GameData.skills['logic'] ?? 0) >= achievement.target;
+      case 'counting':
+        return (GameData.skills['counting'] ?? 0) >= achievement.target;
+      case 'vocab':
+        return (GameData.skills['vocab'] ?? 0) >= achievement.target;
+      case 'shapes':
+        return (GameData.skills['shapes'] ?? 0) >= achievement.target;
+      case 'colors':
+        return (GameData.skills['colors'] ?? 0) >= achievement.target;
       default:
         return false;
     }
@@ -177,6 +205,19 @@ class AchievementSystem {
         return ((GameData.skills['lullaby'] ?? 0) / achievement.target).clamp(0.0, 1.0).toDouble();
       case 'island':
         return (GameData.islandDecorations.length / achievement.target).clamp(0.0, 1.0);
+      // ── نسخه ۷: مسیر XP و مهارت‌های جدید ──
+      case 'xp':
+        return (GameData.xp / achievement.target).clamp(0.0, 1.0);
+      case 'logic':
+        return ((GameData.skills['logic'] ?? 0) / achievement.target).clamp(0.0, 1.0);
+      case 'counting':
+        return ((GameData.skills['counting'] ?? 0) / achievement.target).clamp(0.0, 1.0);
+      case 'vocab':
+        return ((GameData.skills['vocab'] ?? 0) / achievement.target).clamp(0.0, 1.0);
+      case 'shapes':
+        return ((GameData.skills['shapes'] ?? 0) / achievement.target).clamp(0.0, 1.0);
+      case 'colors':
+        return ((GameData.skills['colors'] ?? 0) / achievement.target).clamp(0.0, 1.0);
       default:
         return 0.0;
     }
