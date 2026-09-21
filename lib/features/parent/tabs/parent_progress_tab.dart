@@ -39,6 +39,10 @@ class ParentProgressTab extends StatelessWidget {
     final trend = ParentInsights.trend();
     final maxTrend = trend.fold<int>(1, (m, d) => d.total > m ? d.total : m);
     final accuracy = (GameData.averageSuccessRate).round();
+    // ⭐ نسخه ۷: روند تجربهٔ روزانه برای پنل والدین
+    final xpTrend = ParentInsights.xpTrend();
+    final hasXp = xpTrend.any((d) => d.xp > 0);
+    final maxXp = xpTrend.fold<int>(1, (m, d) => d.xp > m ? d.xp : m);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -100,14 +104,14 @@ class ParentProgressTab extends StatelessWidget {
                     const Text('🏅', style: TextStyle(fontSize: 22)),
                     const SizedBox(height: 8),
                     Text(
-                      PersianDigits.toFa(GameData.level),
+                      PersianDigits.toFa(GameData.islandLevel),
                       style: AppFonts.vazirmatn(
                         fontSize: 26,
                         fontWeight: FontWeight.w900,
                         color: const Color(0xFFE17055),
                       ),
                     ),
-                    Text('سطح',
+                    Text('سطح جزیره',
                         style: AppFonts.vazirmatn(
                             fontSize: 12, color: Colors.grey)),
                   ],
@@ -303,6 +307,98 @@ class ParentProgressTab extends StatelessWidget {
                   fontSize: 12.5,
                   color: ToneBanner.colorOf(ParentInsights.balanceTone),
                   fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // ⭐ نسخه ۷: تجربهٔ روزانه (۷ روز اخیر)
+        ParentCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SectionTitle(
+                emoji: '🌟',
+                title: 'تجربهٔ روزانه',
+                subtitle: 'تجربه‌ای که با بازی و یادگیری در ۷ روز اخیر جمع شده',
+              ),
+              const SizedBox(height: 14),
+              if (!hasXp)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF8E1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Text(
+                    'هنوز تجربه‌ای ثبت نشده. با اولین بازی، ستون امروز پر می‌شود 🌱',
+                    style: TextStyle(height: 1.6),
+                    textAlign: TextAlign.center,
+                  ),
+                )
+              else
+                SizedBox(
+                  height: 110,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      for (final d in xpTrend)
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                if (d.xp > 0)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 4),
+                                    child: Text(
+                                      PersianDigits.toFa(d.xp),
+                                      style: AppFonts.vazirmatn(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: const Color(0xFFF57F17),
+                                      ),
+                                    ),
+                                  ),
+                                Expanded(
+                                  child: Align(
+                                    alignment: Alignment.bottomCenter,
+                                    child: FractionallySizedBox(
+                                      heightFactor: d.xp == 0
+                                          ? 0.04
+                                          : (d.xp / maxXp).clamp(0.08, 1),
+                                      child: DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF9A825),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(PersianDigits.toFa(d.label),
+                                    style: AppFonts.vazirmatn(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800)),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 8),
+              Text(
+                ParentInsights.xpTrendSummary(),
+                style: AppFonts.vazirmatn(
+                  fontSize: 12.5,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],

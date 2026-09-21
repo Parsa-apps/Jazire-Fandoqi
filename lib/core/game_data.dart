@@ -61,6 +61,15 @@ class GameData {
   /// بکاپ والدین) بالا می‌رود تا `IslandLevelWatcher` بداند تغییر سطح
   /// ناشی از پیشرفت واقعی بوده یا جایگزینی پروفایل.
   static int profileGeneration = 0;
+
+  /// ⭐ نسخه ۷ — دفتر تجربهٔ روزانه: کلید تاریخ (yyyy-MM-dd) → تجربهٔ
+  /// همان روز. فقط از مسیر `addXp` پر می‌شود (تاریخ جعلی ساخته نمی‌شود)،
+  /// ورودی‌های قدیمی‌تر از ۱۴ روز هرس می‌شوند و همراه کودک در سوییچ
+  /// خواهر/برادر جابه‌جا می‌شود. پنل والدین نمودار ۷ روزه را از اینجا می‌سازد.
+  static Map<String, int> dailyXpLog = <String, int>{};
+
+  /// قدم تاریخ دفتر تجربهٔ روزانه (روز).
+  static const int _dailyXpLogKeepDays = 14;
   static int streak = 0;
   static int totalCorrect = 0;
   static int totalWrong = 0;
@@ -255,6 +264,8 @@ class GameData {
       } else {
         _seedLegacyXp();
       }
+      // ⭐ نسخه ۷: دفتر تجربهٔ روزانه (مسیر قدیمی SharedPreferences)
+      dailyXpLog = _readColonIntMap('dxp');
       streak = _readInt('s', 0, min: 0, max: 100000);
       totalCorrect = _readInt('tc', 0);
       totalWrong = _readInt('tw', 0);
@@ -518,6 +529,9 @@ class GameData {
     } else {
       _seedLegacyXp();
     }
+    // ⭐ نسخه ۷: اسنپ‌شات‌های قدیمی کلید dxp ندارند → دفتر خالی می‌ماند
+    // (تاریخچه جعلی ساخته نمی‌شود؛ از امروز شروع می‌شود).
+    dailyXpLog = asSkillMap('dxp');
     streak = asInt('s', 0).clamp(0, 100000);
     totalCorrect = asInt('tc', 0).clamp(0, _maxStoredCounter);
     totalWrong = asInt('tw', 0).clamp(0, _maxStoredCounter);
@@ -639,6 +653,7 @@ class GameData {
         'c': coins,
         'l': level,
         'xp': xp,
+        'dxp': dailyXpLog,
         's': streak,
         'tc': totalCorrect,
         'tw': totalWrong,
@@ -800,6 +815,7 @@ class GameData {
     await prefs.setInt('stars', stars);
     await prefs.setInt('c', coins);
     await prefs.setInt('l', level);
+    await prefs.setStringList('dxp', _encodeColonIntMap(dailyXpLog));
     await prefs.setInt('s', streak);
     await prefs.setInt('tc', totalCorrect);
     await prefs.setInt('tw', totalWrong);
@@ -912,10 +928,27 @@ class GameData {
     final before = islandLevel;
     xp = min(_maxStoredCounter, xp + amount);
     final leveledUp = islandLevel > before;
+    _recordDailyXp(amount);
     _autoAchieve();
     _notify();
     unawaited(save());
     return leveledUp;
+  }
+
+  /// ⭐ نسخه ۷: ثبت تجربهٔ امروز در دفتر روزانه + هرس ورودی‌های کهنه.
+  /// فقط از `addXp` صدا زده می‌شود تا تاریخچه با تجربهٔ واقعی هم‌خوان بماند.
+  static void _recordDailyXp(int amount) {
+    final today = _dateKey();
+    dailyXpLog[today] =
+        min(_maxStoredCounter, (dailyXpLog[today] ?? 0) + amount);
+    if (dailyXpLog.length > _dailyXpLogKeepDays) {
+      final cutoff =
+          DateTime.now().subtract(const Duration(days: _dailyXpLogKeepDays));
+      dailyXpLog.removeWhere((key, _) {
+        final day = DateTime.tryParse(key);
+        return day == null || day.isBefore(cutoff);
+      });
+    }
   }
 
   /// سطح جزیره از XP محاسبه می‌شود (نه از سکه).
@@ -1503,7 +1536,7 @@ class GameData {
 
   // ==================== SIBLING / GROWTH EXPORT ====================
   static const List<String> _childProgressKeys = <String>[
-    'stars', 'c', 'l', 'xp', 's', 'tc', 'tw', 'av', 'childName',
+    'stars', 'c', 'l', 'xp', 'dxp', 's', 'tc', 'tw', 'av', 'childName',
     'childAge', 'dm', 'missionDay', 'mp', 'ss', 'wpm', 'tps', 'ach', 'st',
     'ownedItems', 'hs', 'mrhs', 'qhs', 'lld', 'lscd', 'aiBuddy', 'currentStage',
     'currentIsland', 'cs', 'pbt', 'op', 'stories', 'sfav', 'lastStoryId',
@@ -1540,6 +1573,7 @@ class GameData {
     coins = 0;
     level = 1;
     xp = 0;
+    dailyXpLog = <String, int>{};
     streak = 0;
     totalCorrect = 0;
     totalWrong = 0;
@@ -1816,6 +1850,7 @@ class GameData {
     level = 1;
     xp = 0;
     profileGeneration = 0;
+    dailyXpLog = <String, int>{};
     streak = 0;
     totalCorrect = 0;
     totalWrong = 0;

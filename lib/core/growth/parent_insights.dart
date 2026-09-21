@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import '../game_data.dart';
+import '../jalali_calendar.dart';
 import 'growth_store.dart';
 import 'persian_digits.dart';
 import 'weekly_engine.dart';
@@ -155,6 +156,35 @@ class ParentInsights {
           .map((d) =>
               (label: d.$1, total: d.$2, learning: d.$3))
           .toList(growable: false);
+
+  // ── روند تجربهٔ روزانه (نسخه ۷) ───────────────────────────
+  /// تجربهٔ کسب‌شده در ۷ روز اخیر؛ برچسب هر روز = روزِ تقویم جلالی.
+  static List<({String label, int xp})> xpTrend() {
+    final now = DateTime.now();
+    return [
+      for (var i = 6; i >= 0; i--)
+        (
+          label: PersianDigits.toFa(
+              JalaliDate.fromGregorian(now.subtract(Duration(days: i))).day),
+          xp: GameData.dailyXpLog[GrowthStore.dateKey(now.subtract(Duration(days: i)))] ?? 0,
+        ),
+    ];
+  }
+
+  /// مجموع تجربهٔ ۷ روز اخیر.
+  static int get weekXp => xpTrend().fold(0, (sum, d) => sum + d.xp);
+
+  /// خلاصهٔ والدپسند از روند تجربه؛ بدون فشار یا مقایسهٔ منفی.
+  static String xpTrendSummary() {
+    final week = weekXp;
+    if (week == 0) {
+      return 'هنوز تجربه‌ای ثبت نشده؛ با اولین بازی امروز شروع می‌شود 🌱';
+    }
+    final best = xpTrend()
+        .fold<int>(0, (m, d) => d.xp > m ? d.xp : m);
+    return 'این هفته ${PersianDigits.toFa(week)} تجربه کسب شد'
+        '${best > 0 ? ' — پرکارترین روز: ${PersianDigits.toFa(best)} تجربه' : ''}';
+  }
 
   static int get streakDays => GameData.streak;
 
