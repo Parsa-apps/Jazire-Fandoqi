@@ -56,6 +56,11 @@ class GameData {
   /// برخلاف level (که از سکه مشتق می‌شود)، این سنجهٔ واقعی پیشرفت است
   /// و هرگز کم نمی‌شود.
   static int xp = 0;
+
+  /// ⭐ نسخه ۷ — با هر تعویض کامل پروفایل (سوییچ خواهر/برادر، بازیابی
+  /// بکاپ والدین) بالا می‌رود تا `IslandLevelWatcher` بداند تغییر سطح
+  /// ناشی از پیشرفت واقعی بوده یا جایگزینی پروفایل.
+  static int profileGeneration = 0;
   static int streak = 0;
   static int totalCorrect = 0;
   static int totalWrong = 0;
@@ -1519,12 +1524,18 @@ class GameData {
   static void importChildProgress(Map<String, Object?> child) {
     final merged = _buildSnapshot()..addAll(child);
     _applySnapshot(merged);
+    // ⭐ نسخه ۷: کل پروفایل جایگزین شد (سوییچ خواهر/برادر یا بازیابی
+    // بکاپ والدین) — جشن ارتقای سطح جزیره نباید به‌اشتباه اجرا شود.
+    profileGeneration++;
     _notify();
     unawaited(save());
   }
 
   /// پروفایل خواهر/برادر تازه: پیشرفت صفر، تنظیمات والد سر جایش.
   static void resetChildProgressKeepingParent() {
+    // ⭐ نسخه ۷: تعویض کل پروفایل — نسل بالا می‌رود تا جشن ارتقا فقط
+    // برای پیشرفت واقعی کودک اجرا شود.
+    profileGeneration++;
     stars = 0;
     coins = 0;
     level = 1;
@@ -1804,6 +1815,7 @@ class GameData {
     coins = 0;
     level = 1;
     xp = 0;
+    profileGeneration = 0;
     streak = 0;
     totalCorrect = 0;
     totalWrong = 0;

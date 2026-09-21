@@ -190,10 +190,33 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
   final BackgroundMusicObserver _backgroundMusicObserver =
       BackgroundMusicObserver();
 
+  /// ⭐ نسخه ۷: جشن سراسری ارتقای «سطح جزیره» — در هر صفحه‌ای که
+  /// کودک پیشرفت کند (بازی‌های قدیمی و جدید) یک‌بار جشن گرفته می‌شود.
+  late final IslandLevelWatcher _islandLevelWatcher;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _islandLevelWatcher = IslandLevelWatcher(
+      onLevelUp: (from, to) {
+        unawaited(AudioService.levelUp());
+        FandoghiCoach.celebrate(
+          'هورا! به ${XpSystem.levelLabel(to)} رسیدی! 🎉🌰',
+        );
+      },
+    );
+    GameData.changes.addListener(_onGameDataChanged);
+    // بعد از اولین فریم مسلح می‌شود تا پرشِ حین بارگذاری/مهاجرت
+    // هیچ‌وقت جشن نگیرد.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _islandLevelWatcher.arm();
+    });
+  }
+
+  void _onGameDataChanged() {
+    if (!mounted) return;
+    _islandLevelWatcher.handleChange();
   }
 
   @override
@@ -206,6 +229,7 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
 
   @override
   void dispose() {
+    GameData.changes.removeListener(_onGameDataChanged);
     WidgetsBinding.instance.removeObserver(this);
     _themeController.dispose();
     super.dispose();
