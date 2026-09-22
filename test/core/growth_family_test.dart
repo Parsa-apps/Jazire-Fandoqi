@@ -89,7 +89,7 @@ void main() {
   });
 
   test('certificates are earned only when the requirement is met', () {
-    expect(CertificateBuilder.all().length, 6);
+    expect(CertificateBuilder.all().length, 10);
     expect(CertificateBuilder.earnedCount, 0);
 
     for (var i = 0; i < 20; i++) {
@@ -100,6 +100,42 @@ void main() {
       isTrue,
     );
     expect(CertificateBuilder.achievementCardText('خوشنویس'), contains('مدال'));
+  });
+
+  test('island level milestone certificates unlock at their levels (7.1)', () {
+    // شروع: هیچ گواهی سطح جزیره باز نیست
+    final islandCerts =
+        CertificateBuilder.all().where((c) => c.id.startsWith('cert_island'));
+    expect(islandCerts.length, 4);
+    expect(islandCerts.every((c) => !c.earned), isTrue);
+
+    // مرز سطح ۳ (۱۵۰ XP): «دوست جزیره»
+    GameData.xp = 150;
+    final friend = CertificateBuilder.islandCertificateFor(3);
+    expect(friend, isNotNull);
+    expect(friend!.earned, isTrue);
+    expect(friend.title, 'دوست جزیره');
+    expect(friend.requirement, 'رسیدن به سطح ۳ جزیره');
+    expect(CertificateBuilder.islandCertificateFor(5)!.earned, isFalse);
+
+    // مرز سطح ۹ (۱۸۰۰ XP): «افسانه جزیره» + متن اشتراک با لقب و سطح
+    GameData.xp = 1800;
+    final legend = CertificateBuilder.islandCertificateFor(9);
+    expect(legend!.earned, isTrue);
+    expect(legend.title, 'افسانه جزیره');
+    final shareText = legend.shareText('نگار');
+    expect(shareText, contains('نگار'));
+    expect(shareText, contains('سطح ۹ جزیره'));
+    expect(shareText, contains('افسانه جزیره'));
+
+    // نقاط عطف دقیقاً سطوح ۳/۵/۷/۹ هستند
+    expect(CertificateBuilder.isIslandMilestone(2), isFalse);
+    expect(CertificateBuilder.isIslandMilestone(4), isFalse);
+    expect(CertificateBuilder.islandCertificateFor(4), isNull);
+    for (final level in [3, 5, 7, 9]) {
+      expect(CertificateBuilder.isIslandMilestone(level), isTrue);
+      expect(CertificateBuilder.islandCertificateFor(level)!.earned, isTrue);
+    }
   });
 
   test('jalali weekday names map 1..7 to Monday..Sunday', () {
