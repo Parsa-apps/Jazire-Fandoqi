@@ -23,6 +23,7 @@ import 'features/about/privacy_policy_screen.dart';
 import 'features/buddy/buddy_chat_screen.dart';
 import 'features/cartoons/cartoon_hub_screen.dart';
 import 'features/cartoons/cartoon_player_screen.dart';
+import 'features/cartoons/online_cartoon_gate.dart';
 import 'core/cartoons/cartoon_data.dart';
 import 'features/gateway/app_gateway_screen.dart';
 import 'features/games/alphabet_academy/alphabet_academy_game.dart';
@@ -326,7 +327,13 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
               gameName: 'احساسات',
               child: const SelHubScreen(),
             ),
-        '/cartoons': (context) => const CartoonHubScreen(),
+        // ⭐ نسخهٔ ۷.۱: کارتون‌کده از «دروازهٔ شفاف آنلاین» رد می‌شود —
+        // طبق قانون Offline-First، پیش از نخستین ورودِ هر اجرا یک اعلان
+        // شفاف نمایش داده می‌شود و تا تأیید نشود هیچ محتوای آنلاین
+        // ساخته نمی‌شود.
+        '/cartoons': (context) => OnlineCartoonGate(
+              child: const CartoonHubScreen(),
+            ),
         '/stories': (context) => const StoriesHubScreen(),
         '/stories/read': (context) => StoryReaderScreen(
               story: DecodableStories.forToday().toChildrenStory(),
