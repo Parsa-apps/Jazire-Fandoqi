@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../../../app/app_colors.dart';
 import '../../../core/ai_system.dart';
-import '../mini_game_models.dart';
-import '../mini_game_scaffold.dart';
+import 'mini_game_models.dart';
+import 'mini_game_scaffold.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// 🔤 حرف اول — بازی ۱ از دنیای بازی‌های تازه (نسخه ۷.۰.۰)

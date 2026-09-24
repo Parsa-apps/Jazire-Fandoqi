@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import '../../../app/app_colors.dart';
 import '../../../core/ai_system.dart';
 import '../../../core/growth/persian_digits.dart';
-import '../mini_game_models.dart';
-import '../mini_game_scaffold.dart';
+import 'mini_game_models.dart';
+import 'mini_game_scaffold.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// ➕ جمع تصویری — بازی ۴ از دنیای بازی‌های تازه (نسخه ۷.۰.۰)

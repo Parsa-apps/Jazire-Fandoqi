@@ -941,14 +941,14 @@ class GameData {
     final today = _dateKey();
     dailyXpLog[today] =
         min(_maxStoredCounter, (dailyXpLog[today] ?? 0) + amount);
-    if (dailyXpLog.length > _dailyXpLogKeepDays) {
-      final cutoff =
-          DateTime.now().subtract(const Duration(days: _dailyXpLogKeepDays));
-      dailyXpLog.removeWhere((key, _) {
-        final day = DateTime.tryParse(key);
-        return day == null || day.isBefore(cutoff);
-      });
-    }
+    // هرس در هر ثبت انجام می‌شود (نه فقط وقتی تعداد ورودی از سقف گذشت)
+    // تا کلیدهای خراب و روزهای کهنه همیشه پاک بمانند.
+    final cutoff =
+        DateTime.now().subtract(const Duration(days: _dailyXpLogKeepDays));
+    dailyXpLog.removeWhere((key, _) {
+      final day = DateTime.tryParse(key);
+      return day == null || day.isBefore(cutoff);
+    });
   }
 
   /// سطح جزیره از XP محاسبه می‌شود (نه از سکه).
