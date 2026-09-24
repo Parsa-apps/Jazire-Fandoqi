@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../../../app/app_colors.dart';
 import '../../../core/growth/persian_digits.dart';
-import '../mini_game_models.dart';
-import '../mini_game_scaffold.dart';
+import 'mini_game_models.dart';
+import 'mini_game_scaffold.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// 🔢 ترتیب اعداد — بازی ۸ از دنیای بازی‌های تازه (نسخه ۷.۰.۰)

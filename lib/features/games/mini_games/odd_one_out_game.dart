@@ -3,8 +3,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../../app/app_colors.dart';
-import '../mini_game_models.dart';
-import '../mini_game_scaffold.dart';
+import 'mini_game_models.dart';
+import 'mini_game_scaffold.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// 🕵️ متفاوت را پیدا کن — بازی ۹ از دنیای بازی‌های تازه (نسخه ۷.۰.۰)
