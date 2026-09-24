@@ -54,7 +54,7 @@ class MiniGameRound {
   /// «گذاشتم!» تأیید می‌کند (طبقه‌بندی). در غیر این صورت تک‌انتخابی است.
   final bool multiSelect;
 
-  const MiniGameRound({
+  MiniGameRound({
     required this.prompt,
     required this.scene,
     required this.options,

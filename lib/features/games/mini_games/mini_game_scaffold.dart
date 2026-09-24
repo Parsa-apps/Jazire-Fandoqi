@@ -117,7 +117,7 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
         return;
       }
       // Hint ظریف: فندقی راهنمایی می‌کند و پاسخ درست نرم می‌تپد.
-      FandoghiCoach.say(widget.round.hint);
+      FandoghiCoach.say(round.hint);
       setState(() => _hintActive = true);
     });
   }
@@ -445,8 +445,8 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
               ),
       ),
     ).animate().fadeIn(duration: 260.ms).slideY(
-          begin: const Offset(0, 0.08),
-          end: Offset.zero,
+          begin: 0.08,
+          end: 0,
           duration: 300.ms,
           curve: Curves.easeOutCubic,
         );
@@ -755,4 +755,3 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
     );
   }
 }
-und;
