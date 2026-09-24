@@ -1,5 +1,9 @@
 name: Build APK & AAB - کودک دانا v3
 
+# ⚠️ TEMPORARY DIAGNOSTIC WORKFLOW (arena/01a0d565 branch only)
+# Runs the full test suite split into parallel chunks with the GitHub reporter
+# so every failing test gets its own annotation (10 per step limit).
+# Will be reverted to the real build workflow before merge.
 
 on:
   push:
@@ -7,95 +11,118 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  diag-v7-core:
     runs-on: ubuntu-latest
-    env:
-      # When KEYSTORE_B64 is present the release is signed with the project's
-      # release key; when absent the build still succeeds (debug-signed,
-      # non-publishable). See android/app/build.gradle + KEYSTORE_ROTATION_GUIDE.md.
-      KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: 'temurin', java-version: '17' }
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: '3.24.3', channel: 'stable', cache: true }
+      - run: flutter pub get
+      - name: Run v7 core tests
+        run: >-
+          flutter test -r github --timeout 2m
+          test/core/achievement_system_test.dart
+          test/core/daily_xp_log_test.dart
+          test/core/day_cycle_and_missions_v7_test.dart
+          test/core/island_level_watcher_test.dart
+          test/core/xp_system_test.dart
+          test/core/parent_insights_test.dart
+          test/core/growth_family_test.dart
 
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
+  diag-v7-games:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: 'temurin', java-version: '17' }
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: '3.24.3', channel: 'stable', cache: true }
+      - run: flutter pub get
+      - name: Run mini-game tests
+        run: >-
+          flutter test -r github --timeout 2m
+          test/features/games/mini_games/mini_game_scaffold_test.dart
+          test/features/games/mini_games/mini_games_generators_test.dart
+          test/features/games/grade1_math_and_alphabet_test.dart
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.24.3'
-          channel: 'stable'
-          cache: true
+  diag-v7-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: 'temurin', java-version: '17' }
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: '3.24.3', channel: 'stable', cache: true }
+      - run: flutter pub get
+      - name: Run v7 UI tests
+        run: >-
+          flutter test -r github --timeout 2m
+          test/features/cartoons/online_cartoon_gate_test.dart
+          test/features/growth/island_milestone_celebration_test.dart
+          test/integration_test/app_flow_test.dart
+          test/app_smoke_test.dart
 
-      # ==================== FIX اصلی ====================
-      - name: Ensure Android folder exists
-        run: |
-          if [ ! -d "android" ]; then
-            echo "android folder not found. Creating..."
-            flutter create . --platforms android
-          else
-            echo "android folder exists"
-          fi
+  diag-core-rest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: 'temurin', java-version: '17' }
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: '3.24.3', channel: 'stable', cache: true }
+      - run: flutter pub get
+      - name: Run remaining core tests
+        run: >-
+          flutter test -r github --timeout 2m
+          test/core/ai_system_test.dart
+          test/core/aparat_safety_test.dart
+          test/core/audio_service_test.dart
+          test/core/cartoon_data_test.dart
+          test/core/catalog_search_test.dart
+          test/core/content_access_policy_test.dart
+          test/core/decodable_stories_test.dart
+          test/core/drawing_album_test.dart
+          test/core/educational_content_integrity_test.dart
+          test/core/fandoghi_coach_test.dart
+          test/core/game_data_test.dart
+          test/core/grade1_math_test.dart
+          test/core/growth_persian_digits_test.dart
+          test/core/growth_store_test.dart
+          test/core/jalali_calendar_test.dart
+          test/core/life_skills_data_test.dart
+          test/core/literacy_path_test.dart
+          test/core/monetization_test.dart
+          test/core/no_gallery_access_test.dart
+          test/core/parent_pin_test.dart
+          test/core/quiz_shuffle_test.dart
+          test/core/store_listing_test.dart
+          test/core/store_neutral_ui_test.dart
+          test/core/store_vendor_test.dart
+          test/core/story_read_along_test.dart
+          test/core/today_path_test.dart
+          test/core/weekly_engine_test.dart
 
-      - name: Create local.properties
-        run: |
-          echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
-          echo "sdk.dir=$ANDROID_HOME" >> android/local.properties
-
-      - name: Flutter pub get
-        run: flutter pub get
-
-      - name: Configure release signing
-        if: ${{ env.KEYSTORE_B64 != '' }}
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-        run: |
-          set -euo pipefail
-          # Restore the release keystore from the GitHub Secret.
-          printf '%s' "$KEYSTORE_B64" | base64 -d > android/release.keystore
-          chmod 600 android/release.keystore
-          # build.gradle resolves storeFile relative to android/ (rootProject),
-          # so key.properties is written there and points at release.keystore.
-          # PKCS12 uses one password for store-integrity and key encryption, so
-          # storePassword == keyPassword; alias is the fixed release-key identity.
-          {
-            echo "storeFile=release.keystore"
-            echo "storePassword=${KEYSTORE_PASSWORD}"
-            echo "keyAlias=fandoghi"
-            echo "keyPassword=${KEYSTORE_PASSWORD}"
-          } > android/key.properties
-          chmod 600 android/key.properties
-          echo "Release signing configured from GitHub Secrets."
-
-      - name: Build APK (Release)
-        run: flutter build apk --release
-
-      - name: Verify release signing (APK)
-        if: ${{ env.KEYSTORE_B64 != '' }}
-        run: |
-          set -euo pipefail
-          APK="build/app/outputs/flutter-apk/app-release.apk"
-          APS="$(ls "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)"
-          test -n "$APS" || { echo "apksigner not found under $ANDROID_HOME/build-tools"; exit 1; }
-          "$APS" verify --print-certs "$APK"
-          echo "APK verified: signed with the release certificate."
-
-      - name: Build AAB (Release)
-        run: flutter build appbundle --release
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: kudake_iran_v3.0.0_apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-
-      - name: Upload AAB
-        uses: actions/upload-artifact@v4
-        with:
-          name: kudake_iran_v3.0.0_aab
-          path: build/app/outputs/bundle/release/app-release.aab
+  diag-features-rest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: 'temurin', java-version: '17' }
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: '3.24.3', channel: 'stable', cache: true }
+      - run: flutter pub get
+      - name: Run remaining feature tests
+        run: >-
+          flutter test -r github --timeout 2m
+          test/features/games/puzzle_game_test.dart
+          test/features/gateway/profile_offer_test.dart
+          test/features/learning_library_screen_test.dart
+          test/features/lullabies/lullaby_hub_screen_test.dart
+          test/features/shop/full_version_paywall_test.dart
+          test/features/stories/stories_hub_screen_test.dart
+          test/features/tutorial/app_tutorial_screen_test.dart
+          test/shared/child_touch_target_test.dart
+          test/shared/draggable_fandoghi_test.dart
+          test/shared/parent_pin_gate_test.dart
