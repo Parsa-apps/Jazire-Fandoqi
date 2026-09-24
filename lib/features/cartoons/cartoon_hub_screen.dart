@@ -65,9 +65,8 @@ class _CartoonHubScreenState extends State<CartoonHubScreen>
       },
     );
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _maybeShowParentDisclosure();
-    });
+    // ⭐ نسخهٔ ۷.۱: اعلان شفاف «پیش از ورود» در OnlineCartoonGate
+    // نمایش داده می‌شود؛ این صفحه فقط بعد از تأیید ساخته می‌شود.
   }
 
   @override
@@ -91,84 +90,6 @@ class _CartoonHubScreenState extends State<CartoonHubScreen>
     final max = _scrollController.position.maxScrollExtent;
     if (max <= 0) return 0;
     return (_scrollController.offset / max).clamp(0.0, 1.0);
-  }
-
-  Future<void> _maybeShowParentDisclosure() async {
-    final shown = GameData.getBool('cartoon_parent_disclosure_shown') ?? false;
-    if (shown) return;
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        backgroundColor: const Color(0xFFFFFDF7),
-        title: Row(
-          children: [
-            const Text('👨‍👩‍👧', style: TextStyle(fontSize: 28)),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'اطلاعیه به والدین عزیز',
-                style: AppFonts.kids(
-                  color: const Color(0xFF3B2B52),
-                  fontSize: 17,
-                ),
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _disclosureRow(Icons.wifi_rounded, const Color(0xFF2196F3),
-                'بخش «کارتون‌کده» تنها بخش آنلاین اپ است و برای پخش به اینترنت نیاز دارد.'),
-            const SizedBox(height: 10),
-            _disclosureRow(Icons.verified_rounded, const Color(0xFF43A047),
-                'ویدیوها فقط از سرویس ویدیوی ایرانی آپارات (aparat.com) و صرفاً از طریق هش‌های از پیش تأییدشده و فهرست سفید پخش می‌شوند.'),
-            const SizedBox(height: 10),
-            _disclosureRow(Icons.shield_rounded, const Color(0xFFEF6C00),
-                'هیچ‌گونه جستجوی آزاد، تبلیغ، لینک خروجی به سایت‌های ثالث، یا ارسال اطلاعات کودک به سرور وجود ندارد.'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              GameData.setBool('cartoon_parent_disclosure_shown', true);
-              Navigator.of(ctx).pop();
-            },
-            child: Text(
-              'مطّلع شدم ✅',
-              style: AppFonts.kids(
-                color: const Color(0xFF7E57C2),
-                fontSize: 16,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _disclosureRow(IconData icon, Color color, String text) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: color, size: 20),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(
-              color: Color(0xFF4B3565),
-              fontSize: 12,
-              height: 1.6,
-            ),
-            textAlign: TextAlign.justify,
-          ),
-        ),
-      ],
-    );
   }
 
   bool _isLocked(Cartoon cartoon) =>

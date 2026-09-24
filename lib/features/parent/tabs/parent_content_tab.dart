@@ -219,7 +219,7 @@ class _ParentContentTabState extends State<ParentContentTab> {
                 emoji: '📶',
                 title: 'اینترنت و داده',
                 subtitle:
-                    'بیشتر اپ کاملاً آفلاین است؛ فقط کارتون به اینترنت نیاز دارد.',
+                    'بیشتر اپ کاملاً آفلاین است؛ فقط کارتون به اینترنت نیاز دارد و پیش از ورود، اعلان شفاف نشان داده می‌شود.',
               ),
               ParentSwitchTile(
                 title: 'صرفه‌جویی داده',

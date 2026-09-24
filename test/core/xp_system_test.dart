@@ -161,6 +161,6 @@ void main() {
   });
 
   test('نسخهٔ برنامه و تازه‌های نسخه همگام هستند', () {
-    expect(GrowthStore.appVersion, '7.0.0');
+    expect(GrowthStore.appVersion, '7.1.0');
   });
 }

@@ -23,8 +23,10 @@ import 'features/about/privacy_policy_screen.dart';
 import 'features/buddy/buddy_chat_screen.dart';
 import 'features/cartoons/cartoon_hub_screen.dart';
 import 'features/cartoons/cartoon_player_screen.dart';
+import 'features/cartoons/online_cartoon_gate.dart';
 import 'core/cartoons/cartoon_data.dart';
 import 'features/gateway/app_gateway_screen.dart';
+import 'features/growth/island_milestone_celebration.dart';
 import 'features/games/alphabet_academy/alphabet_academy_game.dart';
 import 'features/games/bubble_pop/bubble_pop_game.dart';
 import 'features/games/drawing/drawing_game.dart';
@@ -186,6 +188,12 @@ class JazirehFandoghiApp extends StatefulWidget {
 
 class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
     with WidgetsBindingObserver {
+  /// ⭐ نسخهٔ ۷.۱: کلید ناوبری سراسری — کال‌بک نگهبانِ سطح جزیره به
+  /// BuildContext دسترسی ندارد؛ با این کلید، جشن گواهی نقاط عطف از هر
+  /// صفحه‌ای (حین هر بازی) قابل نمایش است.
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
+
   final ThemeController _themeController = ThemeController();
   final BackgroundMusicObserver _backgroundMusicObserver =
       BackgroundMusicObserver();
@@ -204,6 +212,19 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
         FandoghiCoach.celebrate(
           'هورا! به ${XpSystem.levelLabel(to)} رسیدی! 🎉🌰',
         );
+        // ⭐ نسخهٔ ۷.۱: در نقاط عطف (سطح ۳/۵/۷/۹) گواهی افتخار با نام
+        // کودک جشن گرفته می‌شود. بعد از پایان فریم نمایش داده می‌شود تا
+        // با انیمیشن صفحهٔ در حال ساخت تداخلی پیش نیاید.
+        if (IslandMilestoneCelebration.isMilestone(to)) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final dialogContext = navigatorKey.currentContext;
+            if (dialogContext != null) {
+              unawaited(
+                IslandMilestoneCelebration.show(dialogContext, level: to),
+              );
+            }
+          });
+        }
       },
     );
     GameData.changes.addListener(_onGameDataChanged);
@@ -253,6 +274,7 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
           theme: _themeController.themeFor(Brightness.light),
           darkTheme: _themeController.themeFor(Brightness.dark),
           themeMode: ThemeMode.system,
+          navigatorKey: navigatorKey,
           navigatorObservers: <NavigatorObserver>[_backgroundMusicObserver],
           builder: (context, child) => GrowthAppShell(
             child: FandoghiCoachOverlay(
@@ -326,7 +348,13 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
               gameName: 'احساسات',
               child: const SelHubScreen(),
             ),
-        '/cartoons': (context) => const CartoonHubScreen(),
+        // ⭐ نسخهٔ ۷.۱: کارتون‌کده از «دروازهٔ شفاف آنلاین» رد می‌شود —
+        // طبق قانون Offline-First، پیش از نخستین ورودِ هر اجرا یک اعلان
+        // شفاف نمایش داده می‌شود و تا تأیید نشود هیچ محتوای آنلاین
+        // ساخته نمی‌شود.
+        '/cartoons': (context) => OnlineCartoonGate(
+              child: const CartoonHubScreen(),
+            ),
         '/stories': (context) => const StoriesHubScreen(),
         '/stories/read': (context) => StoryReaderScreen(
               story: DecodableStories.forToday().toChildrenStory(),
