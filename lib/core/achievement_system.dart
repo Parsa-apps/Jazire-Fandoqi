@@ -102,6 +102,7 @@ class AchievementSystem {
     const Achievement(id: 'vocab_50', title: 'استاد کلمه‌ها', description: '۵۰ تمرین کلمه و حرف', emoji: '📚', target: 50, type: 'vocab', category: 'آموزش'),
     const Achievement(id: 'shapes_10', title: 'استاد شکل‌ها', description: '۱۰ بار شکل‌ها را جور کردی', emoji: '🔷', target: 10, type: 'shapes', category: 'آموزش'),
     const Achievement(id: 'colors_10', title: 'استاد رنگ‌ها', description: '۱۰ بار رنگ‌ها را ترکیب کردی', emoji: '🎨', target: 10, type: 'colors', category: 'آموزش'),
+    const Achievement(id: 'colors_50', title: 'استاد رنگین‌کمان', description: '۵۰ تمرین رنگ و ترکیب رنگ‌ها', emoji: '🌈', target: 50, type: 'colors', category: 'آموزش'),
     const Achievement(id: 'logic_10', title: 'کارآگاه کوچک', description: '۱۰ تمرین منطق و تشخیص', emoji: '🕵️', target: 10, type: 'logic', category: 'هوش'),
     const Achievement(id: 'logic_50', title: 'استاد منطق', description: '۵۰ تمرین منطق — ذهن تیز!', emoji: '🦉', target: 50, type: 'logic', category: 'هوش'),
   ];

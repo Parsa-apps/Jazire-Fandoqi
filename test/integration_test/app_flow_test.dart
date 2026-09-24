@@ -77,6 +77,11 @@ void main() {
     expect(tester.takeException(), isNull);
 
     // با زدن «بزن بریم بازی کنیم» به مقصد اصلی (آموزش) می‌رود
+    // دکمه داخل ListView تنب است و پایین صفحه می‌افتد؛ اول اسکرول می‌کنیم.
+    await tester.scrollUntilVisible(
+      find.text('بزن بریم بازی کنیم 🎮'),
+      200,
+    );
     await tester.tap(find.text('بزن بریم بازی کنیم 🎮'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
