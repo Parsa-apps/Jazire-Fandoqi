@@ -1,0 +1,49 @@
+name: Diagnostic tests (temporary)
+
+# 🔧 موقت — فقط برای استخراج جزئیات کامل خطای تست‌های v7 باقی‌مانده.
+# بعد از سبزشدن کامل حذف می‌شود.
+
+on:
+  push:
+    branches: ['arena/01a0d5d1-jazire-fandoqi']
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.3'
+          channel: 'stable'
+          cache: true
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Run the five failing test files (machine reporter)
+        run: |
+          set +e
+          timeout --signal=TERM --kill-after=30s 15m \
+            flutter test --machine --timeout 2m \
+              test/features/games/mini_games/mini_games_generators_test.dart \
+              test/features/games/mini_games/mini_game_scaffold_test.dart \
+              test/features/growth/island_milestone_celebration_test.dart \
+              test/features/cartoons/online_cartoon_gate_test.dart \
+              test/integration_test/app_flow_test.dart \
+              > machine_output.jsonl 2> stderr.log
+          echo "flutter_test_exit=$?" >> "$GITHUB_ENV"
+          exit 0
+
+      - name: Emit failure annotations
+        run: python3 tool/emit_test_annotations.py machine_output.jsonl
+
+      - name: Stderr tail
+        if: always()
+        run: tail -n 60 stderr.log || true
