@@ -3,6 +3,10 @@
 error annotation per failed test, so the full failure text stays readable
 even when raw Actions logs are unavailable.
 
+For `testWidgets` failures, package:test often reports only
+"Test failed. See exception logs above." in the error event — the real
+exception text arrives via `print` events, so those are included too.
+
 Temporary diagnostic helper for the v7 test triage.
 """
 
@@ -10,8 +14,9 @@ import json
 import sys
 
 MAX_ANNOTATIONS = 10
-MAX_MESSAGE_CHARS = 5500
-MAX_STACK_LINES = 30
+MAX_MESSAGE_CHARS = 6000
+MAX_STACK_LINES = 25
+MAX_PRINT_CHARS = 3500
 
 
 def _escape(message: str) -> str:
@@ -37,35 +42,43 @@ def main() -> int:
             test = event.get('test') or {}
             names[test.get('id')] = test.get('name') or 'unnamed test'
 
-    # testID -> list of (error, stack)
-    failures = {}
+    errors = {}   # testID -> [(error, stack), ...]
+    prints = {}   # testID -> [message, ...]
     for event in events:
-        if event.get('type') != 'error':
-            continue
-        test_id = event.get('testID')
-        if test_id is None:
-            continue
-        failures.setdefault(test_id, []).append(
-            (str(event.get('error') or '(no error message)'),
-             str(event.get('stackTrace') or ''))
-        )
+        kind = event.get('type')
+        if kind == 'error':
+            test_id = event.get('testID')
+            if test_id is None:
+                continue
+            errors.setdefault(test_id, []).append(
+                (str(event.get('error') or '(no error message)'),
+                 str(event.get('stackTrace') or ''))
+            )
+        elif kind == 'print':
+            test_id = event.get('testID')
+            if test_id is None:
+                continue
+            prints.setdefault(test_id, []).append(str(event.get('message') or ''))
 
-    if not failures:
+    if not errors:
         print('::error title=No parsed failures::The machine log contained no error events.')
         return 0
 
     emitted = 0
-    for test_id, errors in failures.items():
+    for test_id, error_list in errors.items():
         if emitted >= MAX_ANNOTATIONS:
-            print(f'::error title=Annotation cap reached::{len(failures) - emitted} more failed tests not annotated')
+            print(f'::error title=Annotation cap reached::{len(errors) - emitted} more failed tests not annotated')
             break
         name = names.get(test_id, f'test {test_id}')
         parts = []
-        for error, stack in errors:
+        for error, stack in error_list:
             parts.append(error)
             stack_lines = [line for line in stack.splitlines() if line.strip()]
             if stack_lines:
                 parts.append('\n'.join(stack_lines[:MAX_STACK_LINES]))
+        printed = '\n'.join(prints.get(test_id, []))
+        if printed.strip():
+            parts.append('---- printed output ----\n' + printed[:MAX_PRINT_CHARS])
         message = ('\n\n----\n\n'.join(parts))[:MAX_MESSAGE_CHARS]
         title = name if len(name) <= 200 else name[:197] + '...'
         print(f'::error title={_escape(title)}::{_escape(message)}')

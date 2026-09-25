@@ -78,11 +78,15 @@ void main() {
 
     // با زدن «بزن بریم بازی کنیم» به مقصد اصلی (آموزش) می‌رود
     // دکمه داخل ListView تنب است و پایین صفحه می‌افتد؛ اول اسکرول می‌کنیم.
-    await tester.scrollUntilVisible(
-      find.text('بزن بریم بازی کنیم 🎮'),
-      200,
-    );
-    await tester.tap(find.text('بزن بریم بازی کنیم 🎮'));
+    final startButton = find.text('بزن بریم بازی کنیم 🎮');
+    await tester.scrollUntilVisible(startButton, 200);
+    // ممکن است فقط تکهٔ بالای دکمه داخل دید باشد ( ListView با
+    // cacheExtent می‌سازدش)؛ برای لمسِ مرکز، کامل داخل دید می‌آوریم.
+    await tester.ensureVisible(startButton);
+    // دکمه با fadeIn(delay: 500ms) ظاهر می‌شود؛ تا پیش از کامل‌شدن
+    // انیمیشن، opacity صفر است و لمس آن از دست می‌رود (warnIfMissed).
+    await tester.pump(const Duration(milliseconds: 1000));
+    await tester.tap(startButton);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
 

@@ -55,13 +55,19 @@ class IslandMilestoneCelebration {
         actions: <Widget>[
           StatefulBuilder(
             builder: (context, setDialogState) => TextButton.icon(
-              onPressed: () async {
-                await Clipboard.setData(
-                  ClipboardData(
-                    text: certificate.shareText(GameData.childName),
-                  ),
-                );
+              onPressed: () {
+                // تأییدِ درون‌دیالوگی فوری: نوشتن کلیپ‌بورد I/O است و
+                // نباید بازخوردِ «کپی شد» را عقب بیندازد (در محیط تست
+                // هم کانال کلیپ‌بورد پاسخ نمی‌دهد و await هرگز کامل
+                // نمی‌شد).
                 setDialogState(() => copied = true);
+                unawaited(
+                  Clipboard.setData(
+                    ClipboardData(
+                      text: certificate.shareText(GameData.childName),
+                    ),
+                  ).catchError((Object _) {}),
+                );
               },
               icon: Icon(
                 copied ? Icons.check_circle_rounded : Icons.copy_rounded,
