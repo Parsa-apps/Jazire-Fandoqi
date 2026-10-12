@@ -30,6 +30,12 @@ import 'mini_game_models.dart';
 ///  - ثبت مرکزی XP/مهارت/مأموریت/مدال از طریق GameData
 ///  - جشن ارتقای «سطح جزیره» در پایان
 /// ═══════════════════════════════════════════════════════════════
+// DIAG-BISECT-BEGIN (temporary): lets the diagnostic probe mount the scaffold
+// with individual pieces removed, to find which piece hangs the first build.
+Set<String> diagSkipPieces = <String>{};
+
+// DIAG-BISECT-END
+
 /// TEMPORARY diagnostic mark — removed together with the diagnostic workflow.
 /// Writes the current stage to a file so a hang still shows how far it got.
 int _diagMarkCount = 0;
@@ -336,32 +342,42 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
     _diagMark('game: options built');
     final scene = _buildScene(r);
     _diagMark('game: scene built');
+    final prompt = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Text(
+        r.prompt,
+        textAlign: TextAlign.center,
+        style: AppFonts.vazirmatn(
+          color: Colors.white,
+          fontSize: 21,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+    final roundLabel = Text(
+      'دور ${PersianDigits.toFa(_roundIndex + 1)} از ${PersianDigits.toFa(_rounds.length)}',
+      style: AppFonts.vazirmatn(color: Colors.white54, fontSize: 14),
+    );
     return Column(
       children: [
-        header,
-        const SizedBox(height: 10),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            r.prompt,
-            textAlign: TextAlign.center,
-            style: AppFonts.vazirmatn(
-              color: Colors.white,
-              fontSize: 21,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        scene,
-        const SizedBox(height: 14),
-        Expanded(child: options),
-        const SizedBox(height: 8),
-        Text(
-          'دور ${PersianDigits.toFa(_roundIndex + 1)} از ${PersianDigits.toFa(_rounds.length)}',
-          style: AppFonts.vazirmatn(color: Colors.white54, fontSize: 14),
-        ),
-        const SizedBox(height: 10),
+        if (!diagSkipPieces.contains('header')) ...<Widget>[
+          header,
+          const SizedBox(height: 10),
+        ],
+        if (!diagSkipPieces.contains('prompt')) ...<Widget>[
+          prompt,
+          const SizedBox(height: 12),
+        ],
+        if (!diagSkipPieces.contains('scene')) ...<Widget>[
+          scene,
+          const SizedBox(height: 14),
+        ],
+        if (!diagSkipPieces.contains('options')) Expanded(child: options),
+        if (!diagSkipPieces.contains('roundLabel')) ...<Widget>[
+          const SizedBox(height: 8),
+          roundLabel,
+          const SizedBox(height: 10),
+        ],
       ],
     );
   }
@@ -437,7 +453,7 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
   }
 
   Widget _buildScene(MiniGameRound r) {
-    return KeyedSubtree(
+    final Widget box = KeyedSubtree(
       key: ValueKey('scene-$_roundIndex'),
       child: Container(
         constraints: const BoxConstraints(minHeight: 96, maxHeight: 170),
@@ -473,7 +489,9 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
                 ),
               ),
       ),
-    ).animate().fadeIn(duration: 260.ms).slideY(
+    );
+    if (diagSkipPieces.contains('sceneAnimate')) return box;
+    return box.animate().fadeIn(duration: 260.ms).slideY(
           begin: 0.08,
           end: 0,
           duration: 300.ms,
@@ -556,6 +574,9 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
     required bool isColorGame,
     required bool wide,
   }) {
+    if (diagSkipPieces.contains('card')) {
+      return const SizedBox(width: 104, height: 72);
+    }
     final option = r.options[i];
     final isWrongTry = _wrongTries.contains(i);
     final isSolved = _solvedIndex == i || (_solvedIndex == -1 && option.correct);
@@ -628,6 +649,11 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
           .then()
           .scale(end: const Offset(1, 1), duration: 180.ms);
     }
+
+    if (diagSkipPieces.contains('touch')) {
+      interactive = child;
+    }
+    if (diagSkipPieces.contains('pulse')) return interactive;
 
     // قابِ نبض از همان فریم اول سوار است و فقط مقیاسش با فعال‌شدن Hint عوض
     // می‌شود؛ این‌طور فعال‌شدن راهنما هیچ ویجتی را سوار/پیاده نمی‌کند.
