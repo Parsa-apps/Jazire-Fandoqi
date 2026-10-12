@@ -11,12 +11,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        file:
-          - test/features/tutorial/app_tutorial_screen_test.dart
-          - test/features/gateway/profile_offer_test.dart
-          - test/features/cartoons/online_cartoon_gate_test.dart
-          - test/features/games/mini_games/mini_game_scaffold_test.dart
-          - test/integration_test/app_flow_test.dart
+        include:
+          - file: test/features/cartoons/online_cartoon_gate_test.dart
+            watchdog: 5m
+          - file: test/features/games/mini_games/mini_game_scaffold_test.dart
+            watchdog: 5m
+          - file: tool/diag/cartoons_reload_test.dart
+            watchdog: 5m
+          - file: tool/diag/multi_select_test.dart
+            watchdog: 5m
+          - file: tool/diag/hint_hang_test.dart
+            watchdog: 5m
     name: ${{ matrix.file }}
     steps:
       - name: Checkout
@@ -33,4 +38,4 @@ jobs:
         run: flutter pub get
 
       - name: Run single test file (diagnostic)
-        run: bash tool/diag_tests.sh '${{ matrix.file }}'
+        run: bash tool/diag_tests.sh '${{ matrix.file }}' '${{ matrix.watchdog }}'

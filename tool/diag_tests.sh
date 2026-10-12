@@ -3,16 +3,17 @@
 # chunked check annotations (the raw Actions log backend is not always
 # reachable from our tooling, while the annotations API is).
 #
-# Usage: tool/diag_tests.sh <test-file>
+# Usage: tool/diag_tests.sh <test-file> [watchdog]
 set -uo pipefail
 
-file="${1:?usage: diag_tests.sh <test-file>}"
+file="${1:?usage: diag_tests.sh <test-file> [watchdog]}"
+watchdog="${2:-15m}"
 log_file="$(mktemp)"
 started="$(date +%s)"
 
 set +e
-timeout --signal=TERM --kill-after=30s 15m \
-  flutter test --reporter expanded --timeout 90s "$file" 2>&1 | tee "$log_file"
+timeout --signal=TERM --kill-after=30s "$watchdog" \
+  flutter test --reporter expanded "$file" 2>&1 | tee "$log_file"
 status=${PIPESTATUS[0]}
 set -e
 
@@ -20,7 +21,7 @@ set -e
   echo
   echo "--- diagnostic ---"
   echo "file: $file"
-  echo "exit: $status (124 = killed by the 15m watchdog)"
+  echo "exit: $status (124 = killed by the $watchdog watchdog)"
   echo "elapsed: $(( $(date +%s) - started ))s"
 } >> "$log_file"
 
