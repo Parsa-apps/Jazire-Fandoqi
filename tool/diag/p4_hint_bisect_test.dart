@@ -1,13 +1,16 @@
 // TEMPORARY diagnostic harness — deleted before the final build.
 //
-// P4: the real MiniGameScaffold, with the time advanced one second at a time and
-// a note printed before each pump, so the log pinpoints the exact second that
-// hangs.
-//  P4a: hint is empty (FandoghiCoach.say returns immediately) — the pulse alone.
-//  P4b: real hint text — pulse + toast + character.
+// P4: the real MiniGameScaffold with the time advanced one second at a time.
+// Every step is a *plain* print (not a workflow command) so the chunked log
+// annotations keep working; the last line of the log therefore shows exactly
+// which second never finished.
+//  P4a: hint is empty — the pulse + rebuild only.
+//  P4b: real hint text — pulse + rebuild + coach toast.
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'package:jazireh_fandoghi/app/app_colors.dart';
 import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
@@ -15,13 +18,7 @@ import 'package:jazireh_fandoghi/core/game_data.dart';
 import 'package:jazireh_fandoghi/features/games/mini_games/mini_game_models.dart';
 import 'package:jazireh_fandoghi/features/games/mini_games/mini_game_scaffold.dart';
 
-void note(String tag, String message) {
-  final escaped = message
-      .replaceAll('%', '%25')
-      .replaceAll('\r', '%0D')
-      .replaceAll('\n', '%0A');
-  print('::error title=DIAG $tag::$escaped');
-}
+void step(String tag, String message) => print('[DIAG $tag] $message');
 
 MiniGameSpec spec() => const MiniGameSpec(
       title: 'بازی آزمایشی 🧪',
@@ -65,31 +62,38 @@ Future<void> pumpGame(WidgetTester tester, String hint) async {
   await tester.pump(const Duration(milliseconds: 100));
 }
 
+String where(WidgetTester tester) {
+  final animate = find.byType(Animate).evaluate().length;
+  final tickers = tester.binding.transientCallbackCount;
+  final text = FandoghiCoach.current.value?.text ?? '(none)';
+  return 'animate=$animate tickers=$tickers coach=$text';
+}
+
 Future<void> slices(WidgetTester tester, String tag) async {
-  for (var i = 1; i <= 11; i++) {
-    note(tag, 'pump #$i begin');
+  for (var i = 1; i <= 12; i++) {
+    step(tag, 'pump #$i begin — before: ${where(tester)}');
     await tester.pump(const Duration(seconds: 1));
-    note(tag, 'pump #$i done');
+    step(tag, 'pump #$i done  — after:  ${where(tester)}');
   }
 }
 
 void main() {
-  setUp(GameData.resetForTesting);
+  setUp(() {
+    GoogleFonts.config.allowRuntimeFetching = false;
+    GameData.resetForTesting();
+  });
 
   tearDown(FandoghiCoach.clear);
 
-  testWidgets('DIAG-P4a: empty hint — second-by-second pumps',
-      (tester) async {
+  testWidgets('DIAG-P4a: empty hint — second-by-second pumps', (tester) async {
     await pumpGame(tester, '');
     await slices(tester, 'P4a');
-    note('P4a', 'finished — OK');
+    step('P4a', 'finished — OK');
   });
 
-  testWidgets('DIAG-P4b: real hint — second-by-second pumps',
-      (tester) async {
+  testWidgets('DIAG-P4b: real hint — second-by-second pumps', (tester) async {
     await pumpGame(tester, 'دوتا یکی دیگه اضافه کن');
     await slices(tester, 'P4b');
-    final hintWidgets = find.text('دوتا یکی دیگه اضافه کن').evaluate().length;
-    note('P4b', 'finished — OK; hint text widgets=$hintWidgets');
+    step('P4b', 'finished — OK');
   });
 }

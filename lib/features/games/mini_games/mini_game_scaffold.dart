@@ -86,7 +86,7 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
     _pulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
-    );
+    )..repeat(reverse: true);
     FandoghiCoach.enablePersistentPresence();
     GameData.recordGamePlayed(widget.spec.gameId);
     ActivityTracker.recordOpen(
@@ -109,30 +109,15 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
     super.dispose();
   }
 
-  /// نبض Hint فقط تا وقتی راهنما فعال است می‌زند؛ انیمیشن بی‌کار در تمام
-  /// طول بازی اجرا نمی‌شود (هم برای باتری، هم برای تست‌های زمان‌محور).
-  void _startPulse() {
-    if (!_pulseCtrl.isAnimating) _pulseCtrl.repeat(reverse: true);
-  }
-
-  void _stopPulse() {
-    _pulseCtrl.stop();
-    _pulseCtrl.value = 0;
-  }
-
   void _armHint() {
     _hintTimer?.cancel();
-    if (_hintActive) {
-      _stopPulse();
-      setState(() => _hintActive = false);
-    }
+    if (_hintActive) setState(() => _hintActive = false);
     _hintTimer = Timer(_hintDelay, () {
       if (!mounted || _finished || _transitioning || _solvedIndex != null) {
         return;
       }
       // Hint ظریف: فندقی راهنمایی می‌کند و پاسخ درست نرم می‌تپد.
       FandoghiCoach.say(round.hint);
-      _startPulse();
       setState(() => _hintActive = true);
     });
   }
@@ -180,7 +165,6 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
       );
       // پس از سه تلاش، پاسخ درست نرم روشن می‌شود (بدون شکست).
       if (_triesThisRound >= 3) {
-        _startPulse();
         setState(() => _hintActive = true);
       }
       _armHint();
@@ -608,22 +592,23 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
       child: child,
     );
 
-    if (showHintPulse) {
-      // Hint ظریف: پاسخ درست نرم می‌تپد — بدون دادن جواب کلامی
-      interactive = AnimatedBuilder(
-        animation: _pulseCtrl,
-        builder: (context, _) {
-          final t = 1 + _pulseCtrl.value * 0.07;
-          return Transform.scale(scale: t, child: interactive);
-        },
-      );
-    } else if (isSolved) {
+    if (isSolved) {
       interactive = interactive
           .animate()
           .scale(end: const Offset(1.06, 1.06), duration: 240.ms)
           .then()
           .scale(end: const Offset(1, 1), duration: 180.ms);
     }
+
+    // قابِ نبض از همان فریم اول سوار است و فقط مقیاسش با فعال‌شدن Hint عوض
+    // می‌شود؛ این‌طور فعال‌شدن راهنما هیچ ویجتی را سوار/پیاده نمی‌کند.
+    interactive = AnimatedBuilder(
+      animation: _pulseCtrl,
+      builder: (context, _) {
+        final t = showHintPulse ? 1 + _pulseCtrl.value * 0.07 : 1.0;
+        return Transform.scale(scale: t, child: interactive);
+      },
+    );
 
     return interactive;
   }

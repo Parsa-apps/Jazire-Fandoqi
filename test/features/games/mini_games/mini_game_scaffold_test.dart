@@ -73,6 +73,14 @@ Future<void> _pump(WidgetTester tester) async {
   await tester.pump(const Duration(milliseconds: 100));
 }
 
+/// پایانِ تمیز هر تست: `flutter_animate` هنگام سوارشدن هر `Animate` یک تایمر
+/// تأخیری صفر می‌سازد؛ اگر تست پیش از سوختن آن تمام شود، چارچوب «تایمر معلق»
+/// را خطا می‌شمارد. یک تیک کوتاه همه را می‌سوزاند (و چون درخت ثابت است، تایمر
+/// تازه‌ای هم ساخته نمی‌شود).
+Future<void> _drainTimers(WidgetTester tester) async {
+  await tester.pump(const Duration(milliseconds: 20));
+}
+
 /// لمس ایمن: گزینه‌ها داخل ویوپورتِ اسکرول‌شدنی‌اند و در قابِ کوتاهِ تست،
 /// کارت پایینی بیرون دید می‌افتد (لمس روی دکمهٔ «گذاشتم» می‌نشیند). پیش از
 /// هر لمس، ویجت را کامل داخل قاب می‌آوریم تا لمس واقعاً روی هدف بنشیند.
@@ -141,6 +149,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1500));
     expect(find.text('بازی آزمایشی 🧪'), findsOneWidget);
     expect(find.text('دور جدید 🔄'), findsOneWidget);
+
+    await _drainTimers(tester);
   });
 
   testWidgets('مأموریت، مهارت و آمار بازی ثبت می‌شود', (tester) async {
@@ -167,6 +177,8 @@ void main() {
     expect(GameData.skills['logic'], greaterThanOrEqualTo(3));
     // XP: ۲+۲+۲ (پاسخ‌های درست) + ۵ (پایان بازی)
     expect(GameData.xp, 11);
+
+    await _drainTimers(tester);
   });
 
   testWidgets('Hint ظریف بعد از ۱۰ ثانیه بی‌حرکتی فعال می‌شود (بدون کرش)',
@@ -181,6 +193,11 @@ void main() {
     expect(find.text('۱ + ۱ چند می‌شود؟'), findsOneWidget);
     // فندقی راهنما را گفته و بازی پایدار مانده
     expect(tester.takeException(), isNull);
+
+    // پیام را جمع می‌کنیم تا کاراکترِ سخنگو (و تایمر پلک‌زدنش) پیاده شود؛
+    // وگرنه «تایمر معلق» در پایان تست خطا می‌شود.
+    FandoghiCoach.clear();
+    await _drainTimers(tester);
   });
 
   testWidgets('دور جدید دوباره از اول شروع می‌شود', (tester) async {
@@ -203,5 +220,7 @@ void main() {
     await _tap(tester, find.text('دور جدید 🔄'));
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('۱ + ۱ چند می‌شود؟'), findsOneWidget);
+
+    await _drainTimers(tester);
   });
 }
