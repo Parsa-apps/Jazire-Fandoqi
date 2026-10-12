@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -30,25 +29,6 @@ import 'mini_game_models.dart';
 ///  - ثبت مرکزی XP/مهارت/مأموریت/مدال از طریق GameData
 ///  - جشن ارتقای «سطح جزیره» در پایان
 /// ═══════════════════════════════════════════════════════════════
-// DIAG-BISECT-BEGIN (temporary): lets the diagnostic probe mount the scaffold
-// with individual pieces removed, to find which piece hangs the first build.
-Set<String> diagSkipPieces = <String>{};
-
-// DIAG-BISECT-END
-
-/// TEMPORARY diagnostic mark — removed together with the diagnostic workflow.
-/// Writes the current stage to a file so a hang still shows how far it got.
-int _diagMarkCount = 0;
-
-void _diagMark(String message) {
-  if (_diagMarkCount++ > 400) return;
-  try {
-    final file = File('diag-logs/mini_game_scaffold-lib-progress.log');
-    if (!file.parent.existsSync()) file.parent.createSync(recursive: true);
-    file.writeAsStringSync('$message\n', mode: FileMode.append);
-  } catch (_) {}
-}
-
 class MiniGameScaffold extends StatefulWidget {
   final MiniGameSpec spec;
 
@@ -102,30 +82,22 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
   @override
   void initState() {
     super.initState();
-    _diagMark('initState: enter');
     _rounds = widget.roundFactory();
-    _diagMark('initState: rounds built (${_rounds.length})');
+    // کنترلر نبض فقط هنگام نمایش راهنما اجرا می‌شود (نه از فریم اول و بی‌پایان).
     _pulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
-    )..repeat(reverse: true);
-    _diagMark('initState: pulse controller ready');
+    );
     FandoghiCoach.enablePersistentPresence();
-    _diagMark('initState: persistent presence');
     GameData.recordGamePlayed(widget.spec.gameId);
-    _diagMark('initState: recordGamePlayed done');
     ActivityTracker.recordOpen(
       route: '/game/${widget.spec.gameId}',
       title: widget.spec.gameId,
     );
-    _diagMark('initState: recordOpen done');
     _levelAtStart = GameData.islandLevel;
-    _diagMark('initState: islandLevel=${GameData.islandLevel}');
     _armHint();
-    _diagMark('initState: hint armed');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _diagMark('postFrame: intro coach');
       FandoghiCoach.instruction(widget.spec.introCoach);
     });
   }
@@ -140,6 +112,7 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
 
   void _armHint() {
     _hintTimer?.cancel();
+    _pulseCtrl.stop();
     if (_hintActive) setState(() => _hintActive = false);
     _hintTimer = Timer(_hintDelay, () {
       if (!mounted || _finished || _transitioning || _solvedIndex != null) {
@@ -147,8 +120,14 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
       }
       // Hint ظریف: فندقی راهنمایی می‌کند و پاسخ درست نرم می‌تپد.
       FandoghiCoach.say(round.hint);
-      setState(() => _hintActive = true);
+      _showHint();
     });
+  }
+
+  /// روشن‌کردن راهنما: فقط اینجا کنترلر نبض راه می‌افتد.
+  void _showHint() {
+    setState(() => _hintActive = true);
+    _pulseCtrl.repeat(reverse: true);
   }
 
   MiniGameRound get round => _rounds[_roundIndex];
@@ -193,10 +172,11 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
         duration: const Duration(seconds: 2),
       );
       // پس از سه تلاش، پاسخ درست نرم روشن می‌شود (بدون شکست).
-      if (_triesThisRound >= 3) {
-        setState(() => _hintActive = true);
-      }
       _armHint();
+      // پس از سه تلاش راهنما باید روشن بماند (بعد از _armHint که آن را خاموش می‌کند).
+      if (_triesThisRound >= 3) {
+        _showHint();
+      }
     }
   }
 
@@ -320,64 +300,48 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
   // ── UI ───────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    _diagMark('build: enter finished=$_finished');
-    final Widget inner = _finished ? _buildResult() : _buildGame();
-    _diagMark('build: inner built');
-    final Widget body = DecoratedBox(
-      decoration: BoxDecoration(gradient: widget.spec.gradient),
-      child: SafeArea(child: inner),
+    return Scaffold(
+      body: DecoratedBox(
+        decoration: BoxDecoration(gradient: widget.spec.gradient),
+        child: SafeArea(
+          child: _finished ? _buildResult() : _buildGame(),
+        ),
+      ),
     );
-    _diagMark('build: body built');
-    _diagMark('build: exit');
-    return Scaffold(body: body);
   }
 
   Widget _buildGame() {
     final r = round;
-    _diagMark('game: enter');
-    final header = _buildHeader();
-    _diagMark('game: header built');
-    final options =
-        r.multiSelect ? _buildMultiSelectOptions(r) : _buildOptions(r);
-    _diagMark('game: options built');
-    final scene = _buildScene(r);
-    _diagMark('game: scene built');
-    final prompt = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Text(
-        r.prompt,
-        textAlign: TextAlign.center,
-        style: AppFonts.vazirmatn(
-          color: Colors.white,
-          fontSize: 21,
-          fontWeight: FontWeight.w900,
-        ),
-      ),
-    );
-    final roundLabel = Text(
-      'دور ${PersianDigits.toFa(_roundIndex + 1)} از ${PersianDigits.toFa(_rounds.length)}',
-      style: AppFonts.vazirmatn(color: Colors.white54, fontSize: 14),
-    );
     return Column(
       children: [
-        if (!diagSkipPieces.contains('header')) ...<Widget>[
-          header,
-          const SizedBox(height: 10),
-        ],
-        if (!diagSkipPieces.contains('prompt')) ...<Widget>[
-          prompt,
-          const SizedBox(height: 12),
-        ],
-        if (!diagSkipPieces.contains('scene')) ...<Widget>[
-          scene,
-          const SizedBox(height: 14),
-        ],
-        if (!diagSkipPieces.contains('options')) Expanded(child: options),
-        if (!diagSkipPieces.contains('roundLabel')) ...<Widget>[
-          const SizedBox(height: 8),
-          roundLabel,
-          const SizedBox(height: 10),
-        ],
+        _buildHeader(),
+        const SizedBox(height: 10),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            r.prompt,
+            textAlign: TextAlign.center,
+            style: AppFonts.vazirmatn(
+              color: Colors.white,
+              fontSize: 21,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        _buildScene(r),
+        const SizedBox(height: 14),
+        Expanded(
+          child: r.multiSelect
+              ? _buildMultiSelectOptions(r)
+              : _buildOptions(r),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'دور ${PersianDigits.toFa(_roundIndex + 1)} از ${PersianDigits.toFa(_rounds.length)}',
+          style: AppFonts.vazirmatn(color: Colors.white54, fontSize: 14),
+        ),
+        const SizedBox(height: 10),
       ],
     );
   }
@@ -453,7 +417,7 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
   }
 
   Widget _buildScene(MiniGameRound r) {
-    final Widget box = KeyedSubtree(
+    return KeyedSubtree(
       key: ValueKey('scene-$_roundIndex'),
       child: Container(
         constraints: const BoxConstraints(minHeight: 96, maxHeight: 170),
@@ -489,9 +453,7 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
                 ),
               ),
       ),
-    );
-    if (diagSkipPieces.contains('sceneAnimate')) return box;
-    return box.animate().fadeIn(duration: 260.ms).slideY(
+    ).animate().fadeIn(duration: 260.ms).slideY(
           begin: 0.08,
           end: 0,
           duration: 300.ms,
@@ -574,9 +536,6 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
     required bool isColorGame,
     required bool wide,
   }) {
-    if (diagSkipPieces.contains('card')) {
-      return const SizedBox(width: 104, height: 72);
-    }
     final option = r.options[i];
     final isWrongTry = _wrongTries.contains(i);
     final isSolved = _solvedIndex == i || (_solvedIndex == -1 && option.correct);
@@ -650,13 +609,10 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
           .scale(end: const Offset(1, 1), duration: 180.ms);
     }
 
-    if (diagSkipPieces.contains('touch')) {
-      interactive = child;
-    }
-    if (diagSkipPieces.contains('pulse')) return interactive;
-
     // قابِ نبض از همان فریم اول سوار است و فقط مقیاسش با فعال‌شدن Hint عوض
     // می‌شود؛ این‌طور فعال‌شدن راهنما هیچ ویجتی را سوار/پیاده نمی‌کند.
+    // فقط وقتی راهنما روشن است قاب نبض سوار می‌شود؛ بقیهٔ کارت‌ها بدون آن ساخته می‌شوند.
+    if (!showHintPulse) return interactive;
     interactive = AnimatedBuilder(
       animation: _pulseCtrl,
       builder: (context, _) {
