@@ -8,6 +8,7 @@ import 'dart:io';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -32,6 +33,20 @@ void step(String message) {
     file.writeAsStringSync('${_trace.join('\n')}\n');
   } catch (_) {}
 }
+
+Widget _sceneHost(Widget scene) => Scaffold(
+      body: DecoratedBox(
+        decoration: BoxDecoration(gradient: AppGradients.primary),
+        child: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [scene],
+            ),
+          ),
+        ),
+      ),
+    );
 
 Widget realScaffold() => MiniGameScaffold(
       spec: const MiniGameSpec(
@@ -298,6 +313,48 @@ void main() {
       'S4',
       const PulsingScreen(withSceneAnimation: true, withButton: true),
     );
+  });
+
+  // The real scene: KeyedSubtree + Container + FittedBox + Text, wrapped in
+  // exactly the same flutter_animate chain as the scaffold (or not).
+  Widget scene({required bool animate, required bool slide}) {
+    final Widget box = KeyedSubtree(
+      key: const ValueKey('scene-0'),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 96, maxHeight: 170),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: Colors.white24),
+        ),
+        child: const FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text('🧪', textAlign: TextAlign.center, style: TextStyle(fontSize: 44, height: 1.15)),
+        ),
+      ),
+    );
+    if (!animate) return box;
+    if (!slide) return box.animate().fadeIn(duration: 260.ms);
+    return box.animate().fadeIn(duration: 260.ms).slideY(
+          begin: 0.08,
+          end: 0,
+          duration: 300.ms,
+          curve: Curves.easeOutCubic,
+        );
+  }
+
+  testWidgets('P6-S7 scene without animate()', (tester) async {
+    await mount(tester, 'S7', _sceneHost(scene(animate: false, slide: false)));
+  });
+
+  testWidgets('P6-S8 scene with fadeIn only', (tester) async {
+    await mount(tester, 'S8', _sceneHost(scene(animate: true, slide: false)));
+  });
+
+  testWidgets('P6-S9 scene with fadeIn + slideY', (tester) async {
+    await mount(tester, 'S9', _sceneHost(scene(animate: true, slide: true)));
   });
 
   // Mount the real scaffold but stop the frame pipeline at a chosen phase.
