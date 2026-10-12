@@ -49,10 +49,11 @@ void main() {
   testWidgets('DIAG-P0: GameData.resetForTesting leaves memory storage on',
       (tester) async {
     note('P0', 'isLoaded=${GameData.isLoaded}');
-    final snapshot = await HivePlayerStore.readSnapshot().timeout(
-      const Duration(seconds: 5),
-    );
-    note('P0', 'readSnapshot=$snapshot');
+    final ok = await completes(tester, () async {
+      final snapshot = await HivePlayerStore.readSnapshot();
+      note('P0', 'readSnapshot=$snapshot');
+    });
+    note('P0', 'completed=$ok');
   });
 
   testWidgets('DIAG-P1: SharedPreferences.getInstance', (tester) async {

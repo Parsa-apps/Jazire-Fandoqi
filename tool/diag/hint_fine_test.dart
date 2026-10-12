@@ -112,6 +112,15 @@ void main() {
     note('D2', 'short pump finished; coach=${FandoghiCoach.current.value?.text}');
   });
 
+  testWidgets('DIAG-D4: empty hint text (coach silent) + 11s pump',
+      (tester) async {
+    await pump(tester, multiSelectOnly(hint: ''));
+    note('D4', 'pumping 11s with an empty hint');
+    await tester.pump(const Duration(seconds: 11));
+    note('D4', '11s pump finished');
+  });
+
+
   testWidgets('DIAG-D1: fine-grained pumps across the 10s hint',
       (tester) async {
     await pump(tester, firstRoundOnly());
@@ -123,14 +132,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     note('D1', 'done; hint text widgets=' 
         '${find.text('دوتا یکی دیگه اضافه کن').evaluate().length}');
-  });
-
-  testWidgets('DIAG-D4: empty hint text (coach silent) + 11s pump',
-      (tester) async {
-    await pump(tester, multiSelectOnly(hint: ''));
-    note('D4', 'pumping 11s with an empty hint');
-    await tester.pump(const Duration(seconds: 11));
-    note('D4', '11s pump finished');
   });
 
   testWidgets('DIAG-D3: 1s slices up to 12s', (tester) async {
