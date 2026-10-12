@@ -1,27 +1,29 @@
 #!/usr/bin/env bash
-# Temporary diagnostic helper: runs only the test files that are currently red
-# and publishes their failure output as check annotations (chunked, because
-# GitHub caps annotations per step).
+# Temporary diagnostic helper: run one test file and publish its full log as
+# chunked check annotations (the raw Actions log backend is not always
+# reachable from our tooling, while the annotations API is).
+#
+# Usage: tool/diag_tests.sh <test-file>
 set -uo pipefail
 
-FILES=(
-  test/features/tutorial/app_tutorial_screen_test.dart
-  test/features/gateway/profile_offer_test.dart
-  test/features/cartoons/online_cartoon_gate_test.dart
-  test/features/games/mini_games/mini_game_scaffold_test.dart
-  test/integration_test/app_flow_test.dart
-)
+file="${1:?usage: diag_tests.sh <test-file>}"
+log_file="$(mktemp)"
+started="$(date +%s)"
 
-for file in "${FILES[@]}"; do
-  log="$(mktemp)"
-  echo "::group::flutter test $file"
-  flutter test --reporter expanded --timeout 2m "$file" 2>&1 | tee "$log"
-  status=${PIPESTATUS[0]}
-  echo "::endgroup::"
-  if [[ $status -ne 0 ]]; then
-    python3 tool/diag_annotate.py "$(basename "$file")" "$log" || true
-  fi
-  rm -f "$log"
-done
+set +e
+timeout --signal=TERM --kill-after=30s 15m \
+  flutter test --reporter expanded --timeout 90s "$file" 2>&1 | tee "$log_file"
+status=${PIPESTATUS[0]}
+set -e
 
-exit 0
+{
+  echo
+  echo "--- diagnostic ---"
+  echo "file: $file"
+  echo "exit: $status (124 = killed by the 15m watchdog)"
+  echo "elapsed: $(( $(date +%s) - started ))s"
+} >> "$log_file"
+
+python3 tool/ci_annotate.py "$(basename "$file")" "$log_file" || true
+rm -f "$log_file"
+exit "$status"

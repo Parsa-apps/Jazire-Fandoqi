@@ -2,8 +2,9 @@
 set -uo pipefail
 
 # Runs inside the Android release build on GitHub Actions. Besides keeping the
-# full console output, publish the useful tail as a check annotation so a failed
-# test remains diagnosable when the raw Actions log backend is unavailable.
+# full console output, publish the useful part of a failing check as chunked
+# check annotations so it stays diagnosable when the raw Actions log backend is
+# unavailable.
 run_check() {
   local title="$1"
   shift
@@ -16,14 +17,17 @@ run_check() {
   set -e
 
   if [[ $status -ne 0 ]]; then
-    local diagnostics details
-    diagnostics="$(grep -E '(^|[[:space:]])error •|Error:|FAIL|TestFailure|Some tests failed|EXCEPTION CAUGHT|\[E\]' "$log_file" | tail -n 40 || true)"
-    details="${diagnostics}"$'\n\n--- final output ---\n'"$(tail -n 35 "$log_file")"
-    details="$(printf '%s' "$details" | tail -c 7000)"
-    details="${details//'%'/'%25'}"
-    details="${details//$'\r'/'%0D'}"
-    details="${details//$'\n'/'%0A'}"
-    printf '::error title=%s::%s\n' "$title" "$details"
+    if command -v python3 >/dev/null 2>&1 && [[ -f tool/ci_annotate.py ]]; then
+      python3 tool/ci_annotate.py "$title" "$log_file" || true
+    else
+      # Fallback (no python3): one escaped annotation, as before.
+      local details
+      details="$(tail -c 6000 "$log_file")"
+      details="${details//'%'/'%25'}"
+      details="${details//$'\r'/'%0D'}"
+      details="${details//$'\n'/'%0A'}"
+      printf '::error title=%s::%s\n' "$title" "$details"
+    fi
     rm -f "$log_file"
     return "$status"
   fi

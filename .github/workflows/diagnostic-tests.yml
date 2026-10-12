@@ -8,6 +8,16 @@ on:
 jobs:
   diag:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        file:
+          - test/features/tutorial/app_tutorial_screen_test.dart
+          - test/features/gateway/profile_offer_test.dart
+          - test/features/cartoons/online_cartoon_gate_test.dart
+          - test/features/games/mini_games/mini_game_scaffold_test.dart
+          - test/integration_test/app_flow_test.dart
+    name: ${{ matrix.file }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,5 +32,5 @@ jobs:
       - name: Flutter pub get
         run: flutter pub get
 
-      - name: Run failing test files (diagnostic)
-        run: bash tool/diag_tests.sh
+      - name: Run single test file (diagnostic)
+        run: bash tool/diag_tests.sh '${{ matrix.file }}'
