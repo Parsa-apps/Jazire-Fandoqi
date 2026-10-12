@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:jazireh_fandoghi/core/game_data.dart';
 import 'package:jazireh_fandoghi/core/growth/growth_store.dart';
+import 'package:jazireh_fandoghi/features/gateway/app_gateway_screen.dart';
 import 'package:jazireh_fandoghi/features/growth/whats_new_screen.dart';
 import 'package:jazireh_fandoghi/features/splash/splash_screen.dart';
 import 'package:jazireh_fandoghi/features/tutorial/app_tutorial_screen.dart';
@@ -36,24 +37,26 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.byType(AppTutorialScreen), findsOneWidget);
-    expect(find.text('من فندقی‌ام؛ راهنمای همیشگی تو'), findsOneWidget);
+    expect(find.text('به جزیره فندقی خوش آمدی'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('returning user sees tutorial until choosing do not show',
+  testWidgets('returning user skips tutorial and goes to main page',
       (tester) async {
+    // کاربر قبلاً آموزش را دیده است
     GameData.onboardingSeen = true;
-    GameData.tutorialDoNotShow = false;
 
     await tester.pumpWidget(
       const ProviderScope(child: JazirehFandoghiApp()),
     );
     await tester.pump(const Duration(seconds: 3));
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.byType(AppTutorialScreen), findsOneWidget);
-    expect(find.text('من فندقی‌ام؛ راهنمای همیشگی تو'), findsOneWidget);
+
+    // آموزش نمایش داده نمی‌شود — مستقیم به دروازه (صفحه اصلی) می‌رود
+    expect(find.byType(AppTutorialScreen), findsNothing);
+    expect(find.byType(AppGatewayScreen), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
