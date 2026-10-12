@@ -33,6 +33,30 @@ void step(String message) {
   } catch (_) {}
 }
 
+Widget realScaffold() => MiniGameScaffold(
+      spec: const MiniGameSpec(
+        title: 'بازی آزمایشی 🧪',
+        gameId: 'بازی آزمایشی',
+        skill: 'logic',
+        missionId: 'logic',
+        gradient: AppGradients.primary,
+        introCoach: 'سلام! شروع کنیم',
+        rewardCoach: 'تمام شد!',
+        rounds: 1,
+      ),
+      roundFactory: () => <MiniGameRound>[
+        MiniGameRound(
+          prompt: '۱ + ۱ چند می‌شود؟',
+          scene: '🧪',
+          options: [
+            MiniGameOption('۲', correct: true),
+            MiniGameOption('۳'),
+          ],
+          hint: 'دوتا یکی دیگه اضافه کن',
+        ),
+      ],
+    );
+
 Widget host(Widget child) => MaterialApp(
       locale: const Locale('fa'),
       supportedLocales: const [Locale('fa')],
@@ -135,7 +159,7 @@ Widget sliceStatic({bool animatedContainer = false, bool touch = false}) {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(AppRadii.xl),
+                borderRadius: BorderRadius.circular(28),
                 border: Border.all(color: Colors.white24),
               ),
               child: const FittedBox(
@@ -276,33 +300,33 @@ void main() {
     );
   });
 
+  // Mount the real scaffold but stop the frame pipeline at a chosen phase.
+  // Whichever phase first hangs names the stage that is stuck.
+  for (final entry in <String, EnginePhase>{
+    'S6a': EnginePhase.build,
+    'S6b': EnginePhase.layout,
+    'S6c': EnginePhase.paint,
+    'S6d': EnginePhase.composite,
+  }.entries) {
+    testWidgets('P6-${entry.key} real scaffold up to ${entry.value}',
+        (tester) async {
+      final tag = entry.key;
+      step('$tag: pumpWidget begin (${entry.value})');
+      await tester.pumpWidget(
+        host(realScaffold()),
+        phase: entry.value,
+      );
+      step('$tag: pumpWidget done');
+      await tester.pump(const Duration(milliseconds: 100), entry.value);
+      step('$tag: first pump done');
+    });
+  }
+
   testWidgets('P6-S5 real MiniGameScaffold (control)', (tester) async {
     await mount(
       tester,
       'S5',
-      MiniGameScaffold(
-        spec: const MiniGameSpec(
-          title: 'بازی آزمایشی 🧪',
-          gameId: 'بازی آزمایشی',
-          skill: 'logic',
-          missionId: 'logic',
-          gradient: AppGradients.primary,
-          introCoach: 'سلام! شروع کنیم',
-          rewardCoach: 'تمام شد!',
-          rounds: 1,
-        ),
-        roundFactory: () => <MiniGameRound>[
-          MiniGameRound(
-            prompt: _titles[0],
-            scene: '🧪',
-            options: [
-              MiniGameOption('۲', correct: true),
-              MiniGameOption('۳'),
-            ],
-            hint: 'دوتا یکی دیگه اضافه کن',
-          ),
-        ],
-      ),
+      realScaffold(),
     );
   });
 }
