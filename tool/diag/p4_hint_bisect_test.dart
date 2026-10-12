@@ -1,11 +1,12 @@
 // TEMPORARY diagnostic harness — deleted before the final build.
 //
 // P4: the real MiniGameScaffold with the time advanced one second at a time.
-// Every step is a *plain* print (not a workflow command) so the chunked log
-// annotations keep working; the last line of the log therefore shows exactly
-// which second never finished.
+// Every step is written to diag-logs/p4-progress.log (uploaded as an artifact
+// by the workflow) so the last line survives even when the test hangs.
 //  P4a: hint is empty — the pulse + rebuild only.
 //  P4b: real hint text — pulse + rebuild + coach toast.
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -18,7 +19,24 @@ import 'package:jazireh_fandoghi/core/game_data.dart';
 import 'package:jazireh_fandoghi/features/games/mini_games/mini_game_models.dart';
 import 'package:jazireh_fandoghi/features/games/mini_games/mini_game_scaffold.dart';
 
-void step(String tag, String message) => print('[DIAG $tag] $message');
+final List<String> _trace = <String>[];
+
+/// چاپ + نوشتن هم‌زمان در فایل: خروجی print یک تستِ معلق تا پایان تست به لاگ
+/// نمی‌رسد، ولی این فایل بلافاصله روی دیسک می‌نشیند و همراه artifact آپلود
+/// می‌شود (پس آخرین خطش معلوم می‌کند کار در کدام مرحله قفل شده است).
+void step(String tag, String message) {
+  final line = '[DIAG $tag] $message';
+  _trace.add(line);
+  print(line);
+  try {
+    const path = 'diag-logs/p4-progress.log';
+    final file = File(path);
+    if (!file.parent.existsSync()) file.parent.createSync(recursive: true);
+    file.writeAsStringSync('${_trace.join('\n')}\n');
+  } catch (_) {
+    // فقط تشخیصی — اگر نوشتن نشد (مثلاً روی دستگاه) اهمیتی ندارد
+  }
+}
 
 MiniGameSpec spec() => const MiniGameSpec(
       title: 'بازی آزمایشی 🧪',

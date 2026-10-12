@@ -45,3 +45,12 @@ jobs:
 
       - name: Run single test file (diagnostic)
         run: bash tool/diag_tests.sh '${{ matrix.file }}' '${{ matrix.watchdog }}'
+
+      - name: Upload full diagnostic log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diag-${{ strategy.job-index }}
+          path: diag-logs/
+          if-no-files-found: ignore
+          retention-days: 3

@@ -8,7 +8,13 @@ set -uo pipefail
 
 file="${1:?usage: diag_tests.sh <test-file|ALL> [watchdog]}"
 watchdog="${2:-15m}"
-log_file="$(mktemp)"
+# لاگ کامل در پوشهٔ diag-logs/ می‌ماند تا به‌عنوان artifact قابل دانلود باشد
+# (خلاصهٔ annotation سقف دارد و برای لاگ‌های بلند کافی نیست).
+log_dir="${DIAG_LOG_DIR:-diag-logs}"
+mkdir -p "$log_dir"
+safe_name="$(echo "$file" | tr '/' '_')"
+log_file="$log_dir/$safe_name.log"
+: > "$log_file"
 started="$(date +%s)"
 
 # "ALL" = کل مجموعهٔ تست‌ها، دقیقاً مثل دروازهٔ QA خودِ بیلد.
@@ -41,5 +47,4 @@ set +e
 } >> "$log_file"
 
 python3 tool/ci_annotate.py "$(basename "$file")" "$log_file"
-rm -f "$log_file"
 exit "$status"

@@ -16,6 +16,11 @@ run_check() {
   local status=${PIPESTATUS[0]}
   set -e
 
+  # لاگ کامل را نگه می‌داریم تا ورک‌فلو (در صورت شکست) به‌عنوان artifact
+  # آپلودش کند؛ annotation سقف دارد و لاگ‌های بلند را کامل پوشش نمی‌دهد.
+  mkdir -p qa-gate-log
+  cp "$log_file" "qa-gate-log/$(echo "$title" | tr ' ' '_').log"
+
   if [[ $status -ne 0 ]]; then
     if command -v python3 >/dev/null 2>&1 && [[ -f tool/ci_annotate.py ]]; then
       python3 tool/ci_annotate.py "$title" "$log_file" || true
