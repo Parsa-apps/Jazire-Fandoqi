@@ -22,7 +22,7 @@ DETAIL_MARKER = re.compile(
     r"|Deletion failed)"
 )
 MAX_ANNOTATIONS = 8
-CHUNK = 4000
+CHUNK = 7000
 
 
 def escape(text):
@@ -81,16 +81,18 @@ def main():
         if names:
             emit(f"{title} — failing names ({len(names)})", "\n".join(names))
 
-    # 3) Per-failure detail, then the raw tail (shows where a hang stopped).
-    blocks = detail_blocks(lines)
-    tail = "\n".join(lines[-30:])
-    body = "\n\n".join(blocks) if blocks else raw
-    body = body + "\n\n--- tail ---\n" + tail
-
-    chunks = [body[i:i + CHUNK] for i in range(0, len(body), CHUNK)] or [""]
+    # 3) The whole log, head first (the expanded reporter prints each failure's
+    # exception *before* the progress line that reports it) and the tail last
+    # (that is where a hang stops). If the log is longer than the annotation
+    # budget, the head and the tail win over the middle.
+    chunks = [raw[i:i + CHUNK] for i in range(0, len(raw), CHUNK)] or [""]
     total = len(chunks)
-    for number, chunk in enumerate(chunks[: MAX_ANNOTATIONS - 1], start=1):
-        emit(f"{title} [{number}/{total}]", chunk)
+    budget = MAX_ANNOTATIONS - 2  # index + failing names
+    if total > budget:
+        skipped = total - budget
+        chunks = chunks[: budget - 1] + [f"… ({skipped} chunk(s) skipped) …"] + [chunks[-1]]
+    for number, chunk in enumerate(chunks, start=1):
+        emit(f"{title} [{number}/{len(chunks)}]", chunk)
 
 
 if __name__ == "__main__":

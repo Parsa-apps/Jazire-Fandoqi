@@ -26,9 +26,11 @@ jobs:
             watchdog: 2m
           - file: test/integration_test/app_flow_test.dart
             watchdog: 2m
-          - file: tool/diag/h1_empty_hint_test.dart
+          - file: tool/diag/p1_elapse_test.dart
             watchdog: 2m
-          - file: tool/diag/h2_hint_slices_test.dart
+          - file: tool/diag/p2_timer_test.dart
+            watchdog: 2m
+          - file: tool/diag/p3_toast_test.dart
             watchdog: 2m
     name: ${{ matrix.file }}
     steps:
