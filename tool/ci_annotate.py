@@ -21,8 +21,9 @@ DETAIL_MARKER = re.compile(
     r"|PathNotFoundException"
     r"|Deletion failed)"
 )
-MAX_ANNOTATIONS = 8
+MAX_ANNOTATIONS = 6
 CHUNK = 7000
+TAIL_CHARS = 2600
 
 
 def escape(text):
@@ -85,14 +86,17 @@ def main():
     # exception *before* the progress line that reports it) and the tail last
     # (that is where a hang stops). If the log is longer than the annotation
     # budget, the head and the tail win over the middle.
+    # The end of the log is the most valuable part when something hangs, so it
+    # gets its own annotation; the remaining budget is spent on the head.
+    emit(f"{title} — tail", raw[-TAIL_CHARS:])
+
     chunks = [raw[i:i + CHUNK] for i in range(0, len(raw), CHUNK)] or [""]
-    total = len(chunks)
-    budget = MAX_ANNOTATIONS - 2  # index + failing names
-    if total > budget:
-        skipped = total - budget
-        chunks = chunks[: budget - 1] + [f"… ({skipped} chunk(s) skipped) …"] + [chunks[-1]]
+    skipped = 0
+    if len(chunks) > 2:
+        skipped = len(chunks) - 2
+        chunks = chunks[:2]
     for number, chunk in enumerate(chunks, start=1):
-        emit(f"{title} [{number}/{len(chunks)}]", chunk)
+        emit(f"{title} — log [{number}/{len(chunks)}]" + (f" (+{skipped} more)" if skipped and number == 1 else ""), chunk)
 
 
 if __name__ == "__main__":

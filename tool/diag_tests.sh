@@ -40,6 +40,13 @@ set +e
   echo "exit: $status (124 = killed by the $watchdog watchdog)"
   echo "elapsed: $(( $(date +%s) - started ))s"
   echo
+  echo "--- probe progress (last reached step) ---"
+  for progress in "$log_dir"/*progress*.log; do
+    [[ -f "$progress" ]] || continue
+    echo "== $(basename "$progress") =="
+    tail -n 80 "$progress"
+  done
+  echo
   echo "--- failing test names ---"
   grep -E '\[E\]$' "$log_file" \
     | sed -E 's/^[0-9]{2}:[0-9]{2} \+[0-9]+ -[0-9]+: //; s/ \[E\]$//' \

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -73,6 +75,21 @@ Future<void> _pump(WidgetTester tester) async {
   await tester.pump(const Duration(milliseconds: 100));
 }
 
+/// TEMPORARY diagnostic marks — deleted together with the diagnostic workflow.
+/// Each step is appended to diag-logs/mini_game_scaffold-progress.log so a hang
+/// still shows which action never returned (stdout of a hung test never lands
+/// in the CI log, but this file does).
+final List<String> _marks = <String>[];
+
+void _mark(String step) {
+  _marks.add(step);
+  try {
+    final file = File('diag-logs/mini_game_scaffold-progress.log');
+    if (!file.parent.existsSync()) file.parent.createSync(recursive: true);
+    file.writeAsStringSync('${_marks.join('\n')}\n');
+  } catch (_) {}
+}
+
 /// پایانِ تمیز هر تست: `flutter_animate` هنگام سوارشدن هر `Animate` یک تایمر
 /// تأخیری صفر می‌سازد؛ اگر تست پیش از سوختن آن تمام شود، چارچوب «تایمر معلق»
 /// را خطا می‌شمارد. یک تیک کوتاه همه را می‌سوزاند (و چون درخت ثابت است، تایمر
@@ -85,9 +102,11 @@ Future<void> _drainTimers(WidgetTester tester) async {
 /// کارت پایینی بیرون دید می‌افتد (لمس روی دکمهٔ «گذاشتم» می‌نشیند). پیش از
 /// هر لمس، ویجت را کامل داخل قاب می‌آوریم تا لمس واقعاً روی هدف بنشیند.
 Future<void> _tap(WidgetTester tester, Finder finder) async {
+  _mark('tap: ${finder.description}');
   await tester.ensureVisible(finder);
   await tester.pump();
   await tester.tap(finder);
+  _mark('tap done');
 }
 
 void main() {
@@ -105,7 +124,9 @@ void main() {
   });
 
   testWidgets('جریان کامل: پاسخ درست → دور بعد؛ اشتباه بدون شکست', (tester) async {
+    _mark('test1 start');
     await _pump(tester);
+    _mark('test1 mounted');
 
     // دور ۱ — اول یک اشتباه (گزینهٔ ۳) سپس درست (۲)
     expect(find.text('۱ + ۱ چند می‌شود؟'), findsOneWidget);
@@ -146,7 +167,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     // صفحهٔ نتیجه
+    _mark('test1: pump 1500 result');
     await tester.pump(const Duration(milliseconds: 1500));
+    _mark('test1: result pumped');
     expect(find.text('بازی آزمایشی 🧪'), findsOneWidget);
     expect(find.text('دور جدید 🔄'), findsOneWidget);
 
@@ -154,7 +177,9 @@ void main() {
   });
 
   testWidgets('مأموریت، مهارت و آمار بازی ثبت می‌شود', (tester) async {
+    _mark('test2 start');
     await _pump(tester);
+    _mark('test2 mounted');
 
     await _tap(tester, find.text('۲'));
     await tester.pump(const Duration(milliseconds: 400));
@@ -183,12 +208,16 @@ void main() {
 
   testWidgets('Hint ظریف بعد از ۱۰ ثانیه بی‌حرکتی فعال می‌شود (بدون کرش)',
       (tester) async {
+    _mark('test3 start');
     await _pump(tester);
+    _mark('test3 mounted');
     // تایمر Hint از postFrame شروع می‌شود. زمان را در گام‌های یک‌ثانیه‌ای
     // جلو می‌بریم (به‌جای یک elapse یازده‌ثانیه‌ای) تا هم تایمر Hint و هم
     // تایمرِ پنهان‌شدنِ پیام در قاب‌های جداگانه پردازش شوند.
     for (var i = 0; i < 11; i++) {
+      _mark('test3 hint pump ${i + 1} begin');
       await tester.pump(const Duration(seconds: 1));
+      _mark('test3 hint pump ${i + 1} done');
     }
     expect(find.text('۱ + ۱ چند می‌شود؟'), findsOneWidget);
     // فندقی راهنما را گفته و بازی پایدار مانده
@@ -201,7 +230,9 @@ void main() {
   });
 
   testWidgets('دور جدید دوباره از اول شروع می‌شود', (tester) async {
+    _mark('test4 start');
     await _pump(tester);
+    _mark('test4 mounted');
     // سه دور را کامل کن
     await _tap(tester, find.text('۲'));
     await tester.pump(const Duration(milliseconds: 1200));
