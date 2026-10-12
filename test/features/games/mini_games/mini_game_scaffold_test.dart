@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:jazireh_fandoghi/app/app_colors.dart';
@@ -55,6 +56,13 @@ Future<void> _pump(WidgetTester tester) async {
     MaterialApp(
       locale: const Locale('fa'),
       supportedLocales: const [Locale('fa')],
+      // همان نماینده‌های فارسیِ خودِ برنامه (main.dart)؛ بدون آن‌ها MaterialApp
+      // برای زبان «fa» هشدار می‌دهد و همهٔ تست‌های این فایل شکست می‌خورند.
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       home: MiniGameScaffold(
         spec: _spec,
         roundFactory: _fixedRounds,
