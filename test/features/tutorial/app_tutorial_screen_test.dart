@@ -5,6 +5,15 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:jazireh_fandoghi/core/game_data.dart';
 import 'package:jazireh_fandoghi/features/tutorial/app_tutorial_screen.dart';
 
+/// Advances past an animation that is started by the interaction just before
+/// it. The first tick of a freshly started controller is zero-length, so a
+/// single `pump(700ms)` would leave the page transition standing on page 1.
+Future<void> settleSlide(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 700));
+  await tester.pump(const Duration(milliseconds: 100));
+}
+
 void main() {
   setUp(() {
     GoogleFonts.config.allowRuntimeFetching = false;
@@ -34,7 +43,7 @@ void main() {
 
     // Skip means "jump to the final choice", not exit the tutorial.
     await tester.tap(find.byKey(const ValueKey('tutorial_skip')));
-    await tester.pump(const Duration(milliseconds: 700));
+    await settleSlide(tester);
     expect(find.text('ماجراجویی را شروع کن!'), findsOneWidget);
     expect(find.byKey(const ValueKey('tutorial_finish')), findsOneWidget);
 
@@ -56,7 +65,7 @@ void main() {
 
     // Skip to final slide and finish
     await tester.tap(find.byKey(const ValueKey('tutorial_skip')));
-    await tester.pump(const Duration(milliseconds: 700));
+    await settleSlide(tester);
     await tester.tap(find.byKey(const ValueKey('tutorial_finish')));
     await tester.pumpAndSettle();
 
@@ -83,7 +92,7 @@ void main() {
 
     // Go to next slide
     await tester.tap(find.byKey(const ValueKey('tutorial_next')));
-    await tester.pump(const Duration(milliseconds: 700));
+    await settleSlide(tester);
 
     // Second slide shows "2 از 2" and is the final slide
     expect(find.text('2 از 2'), findsOneWidget);

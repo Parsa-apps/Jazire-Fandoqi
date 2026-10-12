@@ -22,6 +22,8 @@ jobs:
             watchdog: 5m
           - file: tool/diag/hint_hang_test.dart
             watchdog: 5m
+          - file: tool/diag/hint_fine_test.dart
+            watchdog: 5m
     name: ${{ matrix.file }}
     steps:
       - name: Checkout
