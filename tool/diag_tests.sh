@@ -24,6 +24,9 @@ timeout --signal=TERM --kill-after=30s "$watchdog" \
 status=${PIPESTATUS[0]}
 set -e
 
+# این بخش فقط گزارش است؛ نباید با set -e اسکریپت را زودتر تمام کند (مثلاً وقتی
+# هیچ تستی شکست نخورده و grep نتیجه‌ای ندارد).
+set +e
 {
   echo
   echo "--- diagnostic ---"
@@ -37,6 +40,6 @@ set -e
     | sort -u
 } >> "$log_file"
 
-python3 tool/ci_annotate.py "$(basename "$file")" "$log_file" || true
+python3 tool/ci_annotate.py "$(basename "$file")" "$log_file"
 rm -f "$log_file"
 exit "$status"
