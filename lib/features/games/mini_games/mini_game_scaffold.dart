@@ -314,21 +314,31 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
   // ── UI ───────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: DecoratedBox(
-        decoration: BoxDecoration(gradient: widget.spec.gradient),
-        child: SafeArea(
-          child: _finished ? _buildResult() : _buildGame(),
-        ),
-      ),
+    _diagMark('build: enter finished=$_finished');
+    final Widget inner = _finished ? _buildResult() : _buildGame();
+    _diagMark('build: inner built');
+    final Widget body = DecoratedBox(
+      decoration: BoxDecoration(gradient: widget.spec.gradient),
+      child: SafeArea(child: inner),
     );
+    _diagMark('build: body built');
+    _diagMark('build: exit');
+    return Scaffold(body: body);
   }
 
   Widget _buildGame() {
     final r = round;
+    _diagMark('game: enter');
+    final header = _buildHeader();
+    _diagMark('game: header built');
+    final options =
+        r.multiSelect ? _buildMultiSelectOptions(r) : _buildOptions(r);
+    _diagMark('game: options built');
+    final scene = _buildScene(r);
+    _diagMark('game: scene built');
     return Column(
       children: [
-        _buildHeader(),
+        header,
         const SizedBox(height: 10),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -343,13 +353,9 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
           ),
         ),
         const SizedBox(height: 12),
-        _buildScene(r),
+        scene,
         const SizedBox(height: 14),
-        Expanded(
-          child: r.multiSelect
-              ? _buildMultiSelectOptions(r)
-              : _buildOptions(r),
-        ),
+        Expanded(child: options),
         const SizedBox(height: 8),
         Text(
           'دور ${PersianDigits.toFa(_roundIndex + 1)} از ${PersianDigits.toFa(_rounds.length)}',
