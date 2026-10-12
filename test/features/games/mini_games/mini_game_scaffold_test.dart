@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'package:jazireh_fandoghi/app/app_colors.dart';
 import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
@@ -82,7 +83,13 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
 }
 
 void main() {
-  setUp(GameData.resetForTesting);
+  setUp(() {
+    // مثل بقیهٔ تست‌های اپ: در تست منبع فونت آنلاین وجود ندارد، پس تلاش برای
+    // دانلود فونت باید خاموش باشد وگرنه GoogleFonts در فریم‌های بعدی خطای
+    // بی‌ربط (و در تایم‌لاین فِیک، تعلیق) می‌سازد.
+    GoogleFonts.config.allowRuntimeFetching = false;
+    GameData.resetForTesting();
+  });
 
   tearDown(() {
     FandoghiCoach.clear();
