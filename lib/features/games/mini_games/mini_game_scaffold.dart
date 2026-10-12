@@ -490,8 +490,15 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
                 runSpacing: 12,
                 alignment: WrapAlignment.center,
                 children: [
+                  // کارت‌های چندانتخابی همیشه ۱۰۴×۷۲ هستند؛ اسلات را
+                  // صریح اندازه می‌دهیم تا Wrap هر کارت را در یک ردیفِ
+                  // تمام‌عرض نگذارد (چند گزینه کنار هم، مثل طرح اصلی).
                   for (var i = 0; i < r.options.length; i++)
-                    _optionCard(r, i, isColorGame: false, wide: false),
+                    SizedBox(
+                      width: 104,
+                      height: 72,
+                      child: _optionCard(r, i, isColorGame: false, wide: false),
+                    ),
                 ],
               ),
             ),

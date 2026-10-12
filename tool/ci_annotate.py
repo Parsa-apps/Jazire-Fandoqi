@@ -72,7 +72,16 @@ def main():
         + ("\n".join(index_lines) or "(none)"),
     )
 
-    # 2) Per-failure detail, then the raw tail (shows where a hang stopped).
+    # 2) The unique failing test names (whole-suite runs), so the complete list
+    # survives even when the chunked detail is long.
+    marker = "--- failing test names ---"
+    if marker in lines:
+        names = lines[lines.index(marker) + 1:]
+        names = [ln for ln in names if ln.strip()]
+        if names:
+            emit(f"{title} — failing names ({len(names)})", "\n".join(names))
+
+    # 3) Per-failure detail, then the raw tail (shows where a hang stopped).
     blocks = detail_blocks(lines)
     tail = "\n".join(lines[-30:])
     body = "\n\n".join(blocks) if blocks else raw

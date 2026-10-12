@@ -63,7 +63,12 @@ void main() {
     // جزیره فندقی به کودک خوش‌آمد می‌گوید؛ تایمرِ حبابِ فندقی یک کانالِ
     // سراسری است و باید پیش از پایانِ تست آزاد شود، وگرنه به‌عنوان
     // «تایمر معلق بعد از تخریب درخت ویجت» گزارش می‌شود.
+    // تایمرهای یکبارهٔ صفحهٔ اصلی (حبابِ فندقی، بنرها و انیمیشن‌های
+    // زمان‌بندی‌شده) باید پیش از تخریبِ درخت تمام شوند؛ وگرنه flutter_test
+    // آن‌ها را «تایمر معلق بعد از تخریب درخت ویجت» می‌بیند.
+    await tester.pump(const Duration(seconds: 8));
     FandoghiCoach.clear();
+    FandoghiCoach.cancelSmartHint();
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
@@ -92,7 +97,9 @@ void main() {
     final startButton = find.text('بزن بریم بازی کنیم 🎮');
     await tester.scrollUntilVisible(startButton, 200);
     await tester.ensureVisible(startButton);
-    await tester.pump();
+    // دکمه با fadeIn(delay: 500ms) ظاهر می‌شود؛ تا پیش از کامل‌شدن
+    // انیمیشن، opacity صفر است و لمس آن از دست می‌رود (warnIfMissed).
+    await tester.pump(const Duration(milliseconds: 1000));
     await tester.tap(startButton);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));

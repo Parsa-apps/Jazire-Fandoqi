@@ -64,6 +64,15 @@ Future<void> _pump(WidgetTester tester) async {
   await tester.pump(const Duration(milliseconds: 100));
 }
 
+/// لمس ایمن: گزینه‌ها داخل ویوپورتِ اسکرول‌شدنی‌اند و در قابِ کوتاهِ تست،
+/// کارت پایینی بیرون دید می‌افتد (لمس روی دکمهٔ «گذاشتم» می‌نشیند). پیش از
+/// هر لمس، ویجت را کامل داخل قاب می‌آوریم تا لمس واقعاً روی هدف بنشیند.
+Future<void> _tap(WidgetTester tester, Finder finder) async {
+  await tester.ensureVisible(finder);
+  await tester.pump();
+  await tester.tap(finder);
+}
+
 void main() {
   setUp(GameData.resetForTesting);
 
@@ -77,12 +86,12 @@ void main() {
 
     // دور ۱ — اول یک اشتباه (گزینهٔ ۳) سپس درست (۲)
     expect(find.text('۱ + ۱ چند می‌شود؟'), findsOneWidget);
-    await tester.tap(find.text('۳'));
+    await _tap(tester, find.text('۳'));
     await tester.pump(const Duration(milliseconds: 300));
     // دور عوض نشده؛ کودک می‌تواند دوباره امتحان کند
     expect(find.text('۱ + ۱ چند می‌شود؟'), findsOneWidget);
 
-    await tester.tap(find.text('۲'));
+    await _tap(tester, find.text('۲'));
     await tester.pump(const Duration(milliseconds: 300));
     // XP: تلاش ۱ + درست ۲ = ۳ — تلاش هم پاداش دارد
     expect(GameData.xp, 3);
@@ -90,27 +99,27 @@ void main() {
     // دور ۲
     await tester.pump(const Duration(milliseconds: 1200));
     expect(find.text('کدام میوه است؟'), findsOneWidget);
-    await tester.tap(find.text('🍌'));
+    await _tap(tester, find.text('🍌'));
     await tester.pump(const Duration(milliseconds: 300));
 
     // دور ۳ — چندانتخابی
     await tester.pump(const Duration(milliseconds: 1200));
     expect(find.text('همهٔ میوه‌ها را بگذار داخل سبد'), findsOneWidget);
-    await tester.tap(find.text('🍎'));
+    await _tap(tester, find.text('🍎'));
     await tester.pump(const Duration(milliseconds: 200));
-    await tester.tap(find.text('🐶')); // مزاحم
+    await _tap(tester, find.text('🐶')); // مزاحم
     await tester.pump(const Duration(milliseconds: 200));
-    await tester.tap(find.text('گذاشتم! ۲ تا 🧺'));
+    await _tap(tester, find.text('گذاشتم! ۲ تا 🧺'));
     await tester.pump(const Duration(milliseconds: 400));
     // هنوز در همان دور — بازخورد مثبتِ «تقریباً»
     expect(find.text('همهٔ میوه‌ها را بگذار داخل سبد'), findsOneWidget);
 
     // انتخاب درست: میوه‌ها
-    await tester.tap(find.text('🐶')); // برداشتن مزاحم
+    await _tap(tester, find.text('🐶')); // برداشتن مزاحم
     await tester.pump(const Duration(milliseconds: 200));
-    await tester.tap(find.text('🍌'));
+    await _tap(tester, find.text('🍌'));
     await tester.pump(const Duration(milliseconds: 200));
-    await tester.tap(find.text('گذاشتم! ۲ تا 🧺'));
+    await _tap(tester, find.text('گذاشتم! ۲ تا 🧺'));
     await tester.pump(const Duration(milliseconds: 400));
 
     // صفحهٔ نتیجه
@@ -122,19 +131,19 @@ void main() {
   testWidgets('مأموریت، مهارت و آمار بازی ثبت می‌شود', (tester) async {
     await _pump(tester);
 
-    await tester.tap(find.text('۲'));
+    await _tap(tester, find.text('۲'));
     await tester.pump(const Duration(milliseconds: 400));
     await tester.pump(const Duration(milliseconds: 1200));
-    await tester.tap(find.text('🍌'));
+    await _tap(tester, find.text('🍌'));
     await tester.pump(const Duration(milliseconds: 400));
     await tester.pump(const Duration(milliseconds: 1200));
 
     // سبد: هر دو میوه
-    await tester.tap(find.text('🍎'));
+    await _tap(tester, find.text('🍎'));
     await tester.pump();
-    await tester.tap(find.text('🍌'));
+    await _tap(tester, find.text('🍌'));
     await tester.pump();
-    await tester.tap(find.text('گذاشتم! ۲ تا 🧺'));
+    await _tap(tester, find.text('گذاشتم! ۲ تا 🧺'));
     await tester.pump(const Duration(milliseconds: 1200));
 
     expect(GameData.playedGames, contains('بازی آزمایشی'));
@@ -148,8 +157,12 @@ void main() {
   testWidgets('Hint ظریف بعد از ۱۰ ثانیه بی‌حرکتی فعال می‌شود (بدون کرش)',
       (tester) async {
     await _pump(tester);
-    // تایمر Hint از postFrame شروع می‌شود
-    await tester.pump(const Duration(seconds: 11));
+    // تایمر Hint از postFrame شروع می‌شود. زمان را در گام‌های یک‌ثانیه‌ای
+    // جلو می‌بریم (به‌جای یک elapse یازده‌ثانیه‌ای) تا هم تایمر Hint و هم
+    // تایمرِ پنهان‌شدنِ پیام در قاب‌های جداگانه پردازش شوند.
+    for (var i = 0; i < 11; i++) {
+      await tester.pump(const Duration(seconds: 1));
+    }
     expect(find.text('۱ + ۱ چند می‌شود؟'), findsOneWidget);
     // فندقی راهنما را گفته و بازی پایدار مانده
     expect(tester.takeException(), isNull);
@@ -158,21 +171,21 @@ void main() {
   testWidgets('دور جدید دوباره از اول شروع می‌شود', (tester) async {
     await _pump(tester);
     // سه دور را کامل کن
-    await tester.tap(find.text('۲'));
+    await _tap(tester, find.text('۲'));
     await tester.pump(const Duration(milliseconds: 1200));
     await tester.pump(const Duration(milliseconds: 1200));
-    await tester.tap(find.text('🍌'));
+    await _tap(tester, find.text('🍌'));
     await tester.pump(const Duration(milliseconds: 1200));
     await tester.pump(const Duration(milliseconds: 1200));
-    await tester.tap(find.text('🍎'));
+    await _tap(tester, find.text('🍎'));
     await tester.pump(const Duration(milliseconds: 200));
-    await tester.tap(find.text('🍌'));
+    await _tap(tester, find.text('🍌'));
     await tester.pump(const Duration(milliseconds: 200));
-    await tester.tap(find.text('گذاشتم! ۲ تا 🧺'));
+    await _tap(tester, find.text('گذاشتم! ۲ تا 🧺'));
     await tester.pump(const Duration(milliseconds: 1200));
     await tester.pump(const Duration(milliseconds: 1200));
 
-    await tester.tap(find.text('دور جدید 🔄'));
+    await _tap(tester, find.text('دور جدید 🔄'));
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('۱ + ۱ چند می‌شود؟'), findsOneWidget);
   });

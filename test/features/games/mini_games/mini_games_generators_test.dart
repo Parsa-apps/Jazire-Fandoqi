@@ -31,9 +31,16 @@ void expectValidRounds(
     if (exactOptions != null) {
       expect(round.options.length, exactOptions);
     }
-    final correctCount =
-        round.options.where((o) => o.correct).length;
-    expect(correctCount, 1, reason: 'دقیقاً یک پاسخ درست: ${round.prompt}');
+    final correctCount = round.options.where((o) => o.correct).length;
+    if (round.multiSelect) {
+      // چندانتخابی (مثل سبد دسته‌بندی): چند عضو درست + چند مزاحم؛
+      // تعداد دقیق در تست خودِ آن بازی بررسی می‌شود.
+      expect(correctCount, greaterThanOrEqualTo(2),
+          reason: 'چندانتخابی باید چند پاسخ درست داشته باشد: ${round.prompt}');
+    } else {
+      expect(correctCount, 1,
+          reason: 'دقیقاً یک پاسخ درست: ${round.prompt}');
+    }
     final labels = round.options.map((o) => o.label).toSet();
     expect(labels.length, round.options.length,
         reason: 'گزینه تکراری ممنوع: ${round.prompt}');
@@ -134,8 +141,10 @@ void main() {
             round.options.firstWhere((o) => o.correct).label;
         final parts = round.scene.split('+');
         expect(parts.length, 2, reason: round.scene);
-        final left = parts[0].trim().split(' ').first.length;
-        final right = parts[1].trim().split(' ').first.length;
+        // شمارش ایموجی با rune: هر ایموجی این بازی یک code point است ولی
+        // در UTF-16 دو code unit دارد؛ «length» تعداد را دوبرابر می‌کرد.
+        final left = parts[0].trim().runes.length;
+        final right = parts[1].trim().runes.length;
         expect(PersianDigits.toFa(left + right), correct,
             reason: round.scene);
       }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,6 +15,14 @@ import 'package:jazireh_fandoghi/features/cartoons/online_cartoon_gate.dart';
 /// ═══════════════════════════════════════════════════════════════
 void main() {
   setUp(() {
+    final binding = TestWidgetsFlutterBinding.ensureInitialized();
+    // کانال SecureStore در محیط تست هندلر نیتیو ندارد؛ بدون mock، فراخوانیِ
+    // read داخل GameData.load هرگز complete نمی‌شود و «await GameData.reload()»
+    // تا ابد آویزان می‌ماند (همان الگویی که parent_pin_gate_test استفاده می‌کند).
+    binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('kudake_iran/secure_store'),
+      (call) async => null,
+    );
     GameData.resetForTesting();
     OnlineCartoonGate.resetForTesting();
   });
