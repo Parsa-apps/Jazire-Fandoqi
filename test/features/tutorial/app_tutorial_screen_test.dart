@@ -24,7 +24,7 @@ void main() {
       ),
     );
 
-    expect(find.text('من فندقی‌ام؛ راهنمای همیشگی تو'), findsOneWidget);
+    expect(find.text('به جزیره فندقی خوش آمدی'), findsOneWidget);
     expect(find.byKey(const ValueKey('tutorial_finish')), findsNothing);
 
     // Android/system back is deliberately blocked while the walkthrough runs.
@@ -35,13 +35,13 @@ void main() {
     // Skip means "jump to the final choice", not exit the tutorial.
     await tester.tap(find.byKey(const ValueKey('tutorial_skip')));
     await tester.pump(const Duration(milliseconds: 700));
-    expect(find.text('فندقی همیشه کنار تو می‌ماند'), findsOneWidget);
+    expect(find.text('ماجراجویی را شروع کن!'), findsOneWidget);
     expect(find.byKey(const ValueKey('tutorial_finish')), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('checked final choice suppresses future walkthroughs',
+  testWidgets('finishing tutorial always suppresses future walkthroughs',
       (tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -54,18 +54,18 @@ void main() {
       ),
     );
 
+    // Skip to final slide and finish
     await tester.tap(find.byKey(const ValueKey('tutorial_skip')));
     await tester.pump(const Duration(milliseconds: 700));
-    await tester.tap(find.byKey(const ValueKey('tutorial_do_not_show')));
-    await tester.pump();
     await tester.tap(find.byKey(const ValueKey('tutorial_finish')));
     await tester.pumpAndSettle();
 
     expect(GameData.tutorialDoNotShow, isTrue);
+    expect(GameData.onboardingSeen, isTrue);
     expect(find.text('جزیره'), findsOneWidget);
   });
 
-  testWidgets('unchecked final choice keeps replay enabled', (tester) async {
+  testWidgets('tutorial has exactly 2 slides', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: const AppTutorialScreen(),
@@ -77,12 +77,19 @@ void main() {
       ),
     );
 
-    await tester.tap(find.byKey(const ValueKey('tutorial_skip')));
-    await tester.pump(const Duration(milliseconds: 700));
-    await tester.tap(find.byKey(const ValueKey('tutorial_finish')));
-    await tester.pumpAndSettle();
+    // First slide shows "1 از 2"
+    expect(find.text('1 از 2'), findsOneWidget);
+    expect(find.text('به جزیره فندقی خوش آمدی'), findsOneWidget);
 
-    expect(GameData.tutorialDoNotShow, isFalse);
-    expect(find.text('جزیره'), findsOneWidget);
+    // Go to next slide
+    await tester.tap(find.byKey(const ValueKey('tutorial_next')));
+    await tester.pump(const Duration(milliseconds: 700));
+
+    // Second slide shows "2 از 2" and is the final slide
+    expect(find.text('2 از 2'), findsOneWidget);
+    expect(find.text('ماجراجویی را شروع کن!'), findsOneWidget);
+    expect(find.byKey(const ValueKey('tutorial_finish')), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 }

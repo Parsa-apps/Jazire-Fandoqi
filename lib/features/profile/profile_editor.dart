@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
 import '../../core/game_data.dart';
 
@@ -38,203 +40,346 @@ Future<void> showProfileEditor(BuildContext context) async {
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-    ),
+    backgroundColor: Colors.transparent,
     builder: (sheetContext) => StatefulBuilder(
-      builder: (context, setState) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          16,
-          20,
-          MediaQuery.viewInsetsOf(context).bottom + 24,
+      builder: (context, setState) => Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFFF5F0FF),
+              const Color(0xFFFFFBF5),
+              const Color(0xFFF0F8FF),
+            ],
+          ),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'پروفایل قهرمان کوچولو',
-                style: AppFonts.kids(
-                  color: const Color(0xFF4A2875),
-                  fontSize: 24,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'یکی از ۲۰ آواتار بامزه را انتخاب کنید',
-                style: AppFonts.vazirmatn(
-                  color: const Color(0xFF776A80),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                width: 100,
-                height: 100,
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF8B5CF6), Color(0xFFF472B6)],
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            22,
+            16,
+            22,
+            MediaQuery.viewInsetsOf(context).bottom + 24,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF8B5CF6).withOpacity(0.24),
-                      blurRadius: 18,
-                      offset: const Offset(0, 7),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.stars_rounded,
+                        size: 24,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'پروفایل قهرمان کوچولو',
+                      style: AppFonts.kids(
+                        color: const Color(0xFF4A2875),
+                        fontSize: 24,
+                      ),
                     ),
                   ],
                 ),
-                child: ClipOval(
-                  child: selectedAvatar.startsWith('assets/')
-                      ? Image.asset(selectedAvatar, fit: BoxFit.cover)
-                      : ColoredBox(
-                          color: const Color(0xFFF2ECFF),
-                          child: Center(
-                            child: Text(
-                              selectedAvatar,
-                              style: const TextStyle(fontSize: 44),
+                const SizedBox(height: 6),
+                Text(
+                  'یکی از ۲۰ آواتار بامزه را انتخاب کن!',
+                  style: AppFonts.vazirmatn(
+                    color: const Color(0xFF776A80),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                // ── Avatar preview with glow ──
+                Container(
+                  width: 108,
+                  height: 108,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF8B5CF6), Color(0xFFF472B6)],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                        blurRadius: 22,
+                        offset: const Offset(0, 8),
+                      ),
+                      BoxShadow(
+                        color: const Color(0xFFF472B6).withOpacity(0.15),
+                        blurRadius: 30,
+                        spreadRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: selectedAvatar.startsWith('assets/')
+                        ? Image.asset(selectedAvatar, fit: BoxFit.cover)
+                        : ColoredBox(
+                            color: const Color(0xFFF2ECFF),
+                            child: Center(
+                              child: Text(
+                                selectedAvatar,
+                                style: const TextStyle(fontSize: 44),
+                              ),
                             ),
                           ),
-                        ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 18),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: 20,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 5,
-                  mainAxisSpacing: 9,
-                  crossAxisSpacing: 9,
-                ),
-                itemBuilder: (context, index) {
-                  final asset = 'assets/avatars/avatar_$index.webp';
-                  final active = selectedAvatar == asset;
-                  return Semantics(
-                    button: true,
-                    selected: active,
-                    label: 'انتخاب آواتار ${_avatarNames[index]}',
-                    child: Tooltip(
-                      message: _avatarNames[index],
-                      child: GestureDetector(
-                        key: ValueKey('profile_avatar_$index'),
-                        onTap: () => setState(() => selectedAvatar = asset),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: active
-                                ? const Color(0xFFEDE4FF)
-                                : Colors.transparent,
-                            border: Border.all(
+                const SizedBox(height: 18),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: 20,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 5,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                  ),
+                  itemBuilder: (context, index) {
+                    final asset = 'assets/avatars/avatar_$index.webp';
+                    final active = selectedAvatar == asset;
+                    return Semantics(
+                      button: true,
+                      selected: active,
+                      label: 'انتخاب آواتار ${_avatarNames[index]}',
+                      child: Tooltip(
+                        message: _avatarNames[index],
+                        child: GestureDetector(
+                          key: ValueKey('profile_avatar_$index'),
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            setState(() => selectedAvatar = asset);
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeOutBack,
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
                               color: active
-                                  ? const Color(0xFF6C43D9)
-                                  : const Color(0xFFE2D9EA),
-                              width: active ? 3 : 1,
+                                  ? const Color(0xFFEDE4FF)
+                                  : Colors.transparent,
+                              border: Border.all(
+                                color: active
+                                    ? const Color(0xFF6C43D9)
+                                    : const Color(0xFFE2D9EA),
+                                width: active ? 3 : 1,
+                              ),
+                              boxShadow: active
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFF6C43D9)
+                                            .withOpacity(0.3),
+                                        blurRadius: 10,
+                                      ),
+                                    ]
+                                  : null,
                             ),
-                            boxShadow: active
-                                ? [
-                                    BoxShadow(
-                                      color: const Color(0xFF6C43D9)
-                                          .withOpacity(0.25),
-                                      blurRadius: 9,
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: ClipOval(
-                            child: Image.asset(asset, fit: BoxFit.cover),
+                            child: ClipOval(
+                              child: Image.asset(asset, fit: BoxFit.cover),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: name,
-                maxLength: 24,
-                decoration: const InputDecoration(
-                  labelText: 'نام کودک',
-                  prefixIcon: Icon(Icons.badge_rounded),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.cake_rounded,
-                    color: Color(0xFF6C43D9),
-                  ),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text(
-                      'سن کودک',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  Text(
-                    '$selectedAge سال',
-                    style: const TextStyle(
-                      color: Color(0xFF6C43D9),
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              Slider(
-                value: selectedAge.toDouble(),
-                min: 3,
-                max: 12,
-                divisions: 9,
-                activeColor: const Color(0xFF6C43D9),
-                label: '$selectedAge سال',
-                onChanged: (value) => setState(
-                  () => selectedAge = value.round(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton.icon(
-                  onPressed: () {
-                    GameData.updateProfile(
-                      name: name.text,
-                      avatarIcon: selectedAvatar,
-                      age: selectedAge,
                     );
-                    Navigator.pop(sheetContext);
                   },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF6C43D9),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    textStyle: AppFonts.kids(fontSize: 18),
-                  ),
-                  icon: const Icon(Icons.check_circle_rounded),
-                  label: const Text('ذخیره پروفایل'),
                 ),
-              ),
-            ],
+                const SizedBox(height: 20),
+                // ── Name field ──
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: AppColors.primary.withOpacity(0.15),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.06),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: name,
+                    maxLength: 24,
+                    decoration: InputDecoration(
+                      labelText: 'نام کودک (اختیاری)',
+                      hintText: 'بدون نام هم می‌تونی بازی کنی!',
+                      prefixIcon: Icon(Icons.badge_rounded, color: AppColors.primary),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.transparent,
+                      counterText: '',
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // ── Age slider ──
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: AppColors.primary.withOpacity(0.15),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.06),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.cake_rounded,
+                              color: AppColors.primary,
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'سن کودک',
+                              style: AppFonts.vazirmatn(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 15,
+                                color: const Color(0xFF3D3450),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.primary.withOpacity(0.12),
+                                  const Color(0xFFF472B6).withOpacity(0.12),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '$selectedAge سال',
+                              style: AppFonts.kids(
+                                color: AppColors.primary,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          activeTrackColor: AppColors.primary,
+                          inactiveTrackColor: AppColors.primary.withOpacity(0.15),
+                          thumbColor: AppColors.primary,
+                          overlayColor: AppColors.primary.withOpacity(0.15),
+                          trackHeight: 6,
+                        ),
+                        child: Slider(
+                          value: selectedAge.toDouble(),
+                          min: 3,
+                          max: 12,
+                          divisions: 9,
+                          label: '$selectedAge سال',
+                          onChanged: (value) => setState(
+                            () => selectedAge = value.round(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF6C43D9), Color(0xFF9B59B6)],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF6C43D9).withOpacity(0.3),
+                          blurRadius: 14,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        HapticFeedback.mediumImpact();
+                        GameData.updateProfile(
+                          name: name.text,
+                          avatarIcon: selectedAvatar,
+                          age: selectedAge,
+                        );
+                        Navigator.pop(sheetContext);
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        textStyle: AppFonts.kids(fontSize: 19),
+                      ),
+                      icon: const Icon(Icons.check_circle_rounded),
+                      label: const Text('ذخیره پروفایل'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

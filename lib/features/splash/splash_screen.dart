@@ -70,8 +70,10 @@ class _SplashState extends State<SplashScreen>
     _navigationTimer = Timer(const Duration(milliseconds: 1650), () {
       if (!mounted) return;
       HapticFeedback.lightImpact();
+      // آموزش فقط در اولین اجرا نمایش داده می‌شود؛ ورودهای بعدی
+      // مستقیم به صفحهٔ اصلی می‌روند.
       final destination =
-          GameData.tutorialDoNotShow ? '/gateway' : '/tutorial';
+          GameData.onboardingSeen ? '/gateway' : '/tutorial';
       // نسخه ۷: بعد از نصب آپدیت، «تازه‌های نسخه» یک‌بار و به‌صورت
       // خودکار نمایش داده می‌شود؛ سپس مقصد اصلی (دروازه یا آموزش).
       final showWhatsNew = GrowthStore.shouldShowWhatsNew;
@@ -105,11 +107,16 @@ class _SplashState extends State<SplashScreen>
           children: [
             Positioned.fill(
               child: Image.asset(
-                'assets/gateway/coral_island_bg.webp',
+                'assets/gateway/island_hero_bg.png',
                 fit: BoxFit.cover,
                 // فندقی و وسایل یادگیری‌اش پایین قاب هستند؛ با لنگر پایین
                 // روی نمایشگرهای کوتاه‌تر یا پهن‌تر هم بریده نمی‌شوند.
                 alignment: Alignment.bottomCenter,
+                errorBuilder: (_, __, ___) => Image.asset(
+                  'assets/gateway/coral_island_bg.webp',
+                  fit: BoxFit.cover,
+                  alignment: Alignment.bottomCenter,
+                ),
               ),
             ),
             Positioned.fill(

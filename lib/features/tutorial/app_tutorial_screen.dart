@@ -7,8 +7,8 @@ import 'package:flutter/services.dart';
 import '../../app/app_fonts.dart';
 import '../../core/game_data.dart';
 
-/// A full-screen, video-like walkthrough shown at app entry until the parent
-/// or child explicitly asks not to see it again.
+/// A full-screen, video-like walkthrough shown once at first app entry.
+/// Subsequent launches skip directly to the main page.
 class AppTutorialScreen extends StatefulWidget {
   const AppTutorialScreen({super.key});
 
@@ -25,86 +25,20 @@ class _AppTutorialScreenState extends State<AppTutorialScreen>
   static const List<_TutorialSlide> _slides = [
     _TutorialSlide(
       eyebrow: 'سلام قهرمان کوچولو! 👋',
-      title: 'من فندقی‌ام؛ راهنمای همیشگی تو',
+      title: 'به جزیره فندقی خوش آمدی',
       description:
-          'هرجا من را دیدی، یعنی یک دوست کنار توست تا مسیر را نشان بدهد، تشویقت کند و یادگیری را شیرین‌تر کند.',
-      tip: 'به پیام‌های فندقی نگاه کن؛ همیشه یک راهنمای کوتاه و مهربان دارد.',
-      asset: 'assets/mascot/fandoghi_baby_cheer.webp',
+          'من فندقی‌ام؛ دوست و راهنمای تو. روی جزیره‌ها و حباب‌های رنگی بزن تا وارد بازی، قصه، کارتون، لالایی و آموزش شوی. هر کارت یک ماجرای تازه است!',
+      tip: 'هرجا من را دیدی، یک راهنمای کوتاه و مهربان برایت دارم.',
+      asset: 'assets/mascot/fandoghi_welcome_hero.png',
       icon: Icons.favorite_rounded,
       colors: [Color(0xFF6C3BCE), Color(0xFF1E88E5), Color(0xFF00B8D4)],
-      features: ['راهنمای مهربان', 'تشویق و جایزه', 'همراه همه‌جا'],
-    ),
-    _TutorialSlide(
-      eyebrow: 'نقشهٔ جزیره 🏝️',
-      title: 'همه‌چیز از جزیره شروع می‌شود',
-      description:
-          'روی جزیره‌ها و حباب‌های رنگی بزن تا وارد بازی، قصه، کارتون، لالایی، آموزش یا پروفایل شوی. مسیرهای روشن آمادهٔ کشف‌کردن هستند.',
-      tip: 'اگر راه را گم کردی، دکمهٔ خانه یا برگشت تو را به جزیره برمی‌گرداند.',
-      asset: 'assets/gateway/fandoqi_island_world.png',
-      icon: Icons.map_rounded,
-      colors: [Color(0xFF00695C), Color(0xFF00A896), Color(0xFF56CFE1)],
-      features: ['لمس جزیره‌ها', 'حرکت بین دنیاها', 'بازگشت آسان'],
-    ),
-    _TutorialSlide(
-      eyebrow: 'کتابخانهٔ یادگیری 📚',
-      title: 'ببین، گوش کن، تمرین کن',
-      description:
-          'حروف، اعداد، رنگ‌ها، شکل‌ها، حیوانات، شغل‌ها، احساسات و مهارت‌های زندگی در کتابخانه منتظر تو هستند. هر کارت یک ماجرای آموزشی تازه است.',
-      tip: 'با تمرین کوتاه روزانه، ستاره می‌گیری و درس‌ها بهتر در ذهنت می‌مانند.',
-      asset: 'assets/illustrations/alphabet_world.webp',
-      icon: Icons.school_rounded,
-      colors: [Color(0xFF4527A0), Color(0xFF7B1FA2), Color(0xFFEC407A)],
-      features: ['حروف و اعداد', 'علوم و مفاهیم', 'مهارت زندگی'],
-    ),
-    _TutorialSlide(
-      eyebrow: 'بازی و جایزه 🎮',
-      title: 'بازی کن و جزیره‌ات را بساز',
-      description:
-          'در بازی‌های حافظه، پازل، نقاشی، مسابقهٔ ریاضی و شکار ستاره مهارتت را قوی کن. پاسخ درست برایت ستاره، سکه، استیکر و جایزه می‌آورد.',
-      tip: 'قفل بعضی بخش‌ها با پیشرفت یا کمک والدین باز می‌شود؛ عجله نکن و ادامه بده!',
-      asset: 'assets/illustrations/memory_cards.webp',
-      icon: Icons.sports_esports_rounded,
-      colors: [Color(0xFFAD1457), Color(0xFFF4511E), Color(0xFFFFB300)],
-      features: ['بازی‌های متنوع', 'ستاره و سکه', 'استیکر و جایزه'],
-    ),
-    _TutorialSlide(
-      eyebrow: 'زمان آرامش و قصه 🌙',
-      title: 'قصه، کارتون و لالایی هم داریم',
-      description:
-          'قصه‌ها را ورق بزن، کارتون دلخواهت را انتخاب کن و شب‌ها با لالایی‌های آرام همراه شو. نشان قلب، محتوای محبوبت را برای بعد نگه می‌دارد.',
-      tip: 'پخش کارتون به اینترنت نیاز دارد؛ بقیهٔ بخش‌های اصلی برای استفادهٔ آفلاین آماده‌اند.',
-      asset: 'assets/lullabies/lullaby_moon_stars.webp',
-      icon: Icons.auto_stories_rounded,
-      colors: [Color(0xFF172554), Color(0xFF3730A3), Color(0xFF7C3AED)],
-      features: ['قصه‌های تصویری', 'کارتون محبوب', 'لالایی آرام'],
-    ),
-    _TutorialSlide(
-      eyebrow: 'پروفایل من 🏆',
-      title: 'پیشرفتت را تماشا کن',
-      description:
-          'در پروفایل می‌توانی آواتار، مرحله، مهارت‌ها، مدال‌ها و آلبوم استیکرها را ببینی. هر تلاش کوچک، جزیرهٔ شخصی تو را زیباتر می‌کند.',
-      tip: 'هر روز چند دقیقه برگرد؛ مأموریت‌های روزانه جایزه‌های تازه دارند.',
-      asset: 'assets/premium/trophy.webp',
-      icon: Icons.emoji_events_rounded,
-      colors: [Color(0xFF7C2D12), Color(0xFFEA580C), Color(0xFFFACC15)],
-      features: ['نمودار مهارت', 'مدال‌ها', 'آلبوم استیکر'],
-    ),
-    _TutorialSlide(
-      eyebrow: 'فضای امن خانواده 🛡️',
-      title: 'بخش والدین، مراقب زمان و رشد توست',
-      description:
-          'مامان یا بابا می‌توانند زمان بازی، گزارش هفتگی، سلامت استفاده و تنظیمات را مدیریت کنند. بخش والدین با پین محافظت می‌شود و اطلاعات کودک روی دستگاه می‌ماند.',
-      tip: 'جزیره فندقی بدون تبلیغات مزاحم و با اولویت ایمنی کودک طراحی شده است.',
-      asset: 'assets/mascot/fandoghi_baby_proud.webp',
-      icon: Icons.health_and_safety_rounded,
-      colors: [Color(0xFF064E3B), Color(0xFF047857), Color(0xFF10B981)],
-      features: ['کنترل زمان', 'گزارش رشد', 'حریم خصوصی'],
+      features: ['بازی و یادگیری', 'قصه و کارتون', 'جایزه و ستاره'],
     ),
     _TutorialSlide(
       eyebrow: 'آماده‌ای؟ ✨',
-      title: 'فندقی همیشه کنار تو می‌ماند',
+      title: 'ماجراجویی را شروع کن!',
       description:
-          'حالا می‌توانی وارد جزیره شوی و ماجراجویی را شروع کنی. انتخاب زیر مشخص می‌کند این راهنما در ورودهای بعدی دوباره پخش شود یا نه.',
+          'حالا می‌توانی وارد جزیره شوی. بازی کن، یاد بگیر و جزیرهٔ خودت را بساز. فندقی همیشه کنار توست!',
       tip: 'هر وقت کمک خواستی، به فندقی و نشانه‌های رنگی صفحه نگاه کن.',
       asset: 'assets/mascot/fandoghi_baby_party.webp',
       icon: Icons.rocket_launch_rounded,
@@ -119,7 +53,6 @@ class _AppTutorialScreenState extends State<AppTutorialScreen>
   late final AnimationController _progressController;
   Timer? _slideTimer;
   int _index = 0;
-  bool _doNotShowAgain = false;
   bool _finishing = false;
 
   @override
@@ -185,8 +118,10 @@ class _AppTutorialScreenState extends State<AppTutorialScreen>
     setState(() => _finishing = true);
     HapticFeedback.mediumImpact();
     final shouldOfferProfile = !GameData.onboardingSeen;
+    // آموزش فقط یک‌بار نمایش داده می‌شود؛ ورودهای بعدی مستقیم
+    // به صفحهٔ اصلی می‌روند.
     await GameData.completeInitialGuide(
-      doNotShowTutorialAgain: _doNotShowAgain,
+      doNotShowTutorialAgain: true,
     );
     if (!mounted) return;
     Navigator.pushNamedAndRemoveUntil(
@@ -373,34 +308,6 @@ class _AppTutorialScreenState extends State<AppTutorialScreen>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Semantics(
-            label: 'این راهنما در ورودهای بعدی نمایش داده نشود',
-            child: CheckboxListTile(
-              key: const ValueKey('tutorial_do_not_show'),
-              value: _doNotShowAgain,
-              onChanged: (value) => setState(() => _doNotShowAgain = value ?? false),
-              activeColor: const Color(0xFF7B1FA2),
-              checkColor: Colors.white,
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-              title: Text(
-                'دوباره نمایش نده',
-                style: AppFonts.kids(
-                  color: const Color(0xFF32134F),
-                  fontSize: 20,
-                ),
-              ),
-              subtitle: Text(
-                'اگر تیک نزنید، در ورود بعدی دوباره پخش می‌شود.',
-                style: AppFonts.vazirmatn(
-                  color: const Color(0xFF6B527B),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
             child: _TutorialButton(
