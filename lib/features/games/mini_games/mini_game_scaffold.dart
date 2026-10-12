@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -29,6 +30,19 @@ import 'mini_game_models.dart';
 ///  - ثبت مرکزی XP/مهارت/مأموریت/مدال از طریق GameData
 ///  - جشن ارتقای «سطح جزیره» در پایان
 /// ═══════════════════════════════════════════════════════════════
+/// TEMPORARY diagnostic mark — removed together with the diagnostic workflow.
+/// Writes the current stage to a file so a hang still shows how far it got.
+int _diagMarkCount = 0;
+
+void _diagMark(String message) {
+  if (_diagMarkCount++ > 400) return;
+  try {
+    final file = File('diag-logs/mini_game_scaffold-lib-progress.log');
+    if (!file.parent.existsSync()) file.parent.createSync(recursive: true);
+    file.writeAsStringSync('$message\n', mode: FileMode.append);
+  } catch (_) {}
+}
+
 class MiniGameScaffold extends StatefulWidget {
   final MiniGameSpec spec;
 
@@ -82,21 +96,30 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
   @override
   void initState() {
     super.initState();
+    _diagMark('initState: enter');
     _rounds = widget.roundFactory();
+    _diagMark('initState: rounds built (${_rounds.length})');
     _pulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
     )..repeat(reverse: true);
+    _diagMark('initState: pulse controller ready');
     FandoghiCoach.enablePersistentPresence();
+    _diagMark('initState: persistent presence');
     GameData.recordGamePlayed(widget.spec.gameId);
+    _diagMark('initState: recordGamePlayed done');
     ActivityTracker.recordOpen(
       route: '/game/${widget.spec.gameId}',
       title: widget.spec.gameId,
     );
+    _diagMark('initState: recordOpen done');
     _levelAtStart = GameData.islandLevel;
+    _diagMark('initState: islandLevel=${GameData.islandLevel}');
     _armHint();
+    _diagMark('initState: hint armed');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      _diagMark('postFrame: intro coach');
       FandoghiCoach.instruction(widget.spec.introCoach);
     });
   }

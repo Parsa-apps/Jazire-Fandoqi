@@ -62,6 +62,7 @@ List<MiniGameRound> roundsWith(String hint) => <MiniGameRound>[
     ];
 
 Future<void> pumpGame(WidgetTester tester, String hint) async {
+  step('mount', 'pumpWidget begin');
   await tester.pumpWidget(
     MaterialApp(
       locale: const Locale('fa'),
@@ -77,7 +78,9 @@ Future<void> pumpGame(WidgetTester tester, String hint) async {
       ),
     ),
   );
+  step('mount', 'pumpWidget done');
   await tester.pump(const Duration(milliseconds: 100));
+  step('mount', 'first pump done');
 }
 
 String where(WidgetTester tester) {

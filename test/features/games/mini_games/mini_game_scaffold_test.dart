@@ -55,6 +55,7 @@ List<MiniGameRound> _fixedRounds() => <MiniGameRound>[
     ];
 
 Future<void> _pump(WidgetTester tester) async {
+  _mark('pump: pumpWidget begin');
   await tester.pumpWidget(
     MaterialApp(
       locale: const Locale('fa'),
@@ -72,7 +73,9 @@ Future<void> _pump(WidgetTester tester) async {
       ),
     ),
   );
+  _mark('pump: pumpWidget done');
   await tester.pump(const Duration(milliseconds: 100));
+  _mark('pump: first pump done');
 }
 
 /// TEMPORARY diagnostic marks — deleted together with the diagnostic workflow.
