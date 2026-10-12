@@ -77,8 +77,10 @@ Future<void> _pump(WidgetTester tester) async {
 /// تأخیری صفر می‌سازد؛ اگر تست پیش از سوختن آن تمام شود، چارچوب «تایمر معلق»
 /// را خطا می‌شمارد. یک تیک کوتاه همه را می‌سوزاند (و چون درخت ثابت است، تایمر
 /// تازه‌ای هم ساخته نمی‌شود).
+/// تایمرهای صفرو-یک‌صدمیلی‌ثانیه‌ای flutter_animate (از Animate تازه‌سوارشده)
+/// و تایمرهای پیام فندقی باید پیش از پایان تست اجرا شوند؛ ۵۰۰ میلی‌ثانیه کافی است.
 Future<void> _drainTimers(WidgetTester tester) async {
-  await tester.pump(const Duration(milliseconds: 20));
+  await tester.pump(const Duration(milliseconds: 500));
 }
 
 /// لمس ایمن: گزینه‌ها داخل ویوپورتِ اسکرول‌شدنی‌اند و در قابِ کوتاهِ تست،
