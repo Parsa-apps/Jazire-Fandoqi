@@ -107,8 +107,17 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     super.dispose();
   }
 
-  bool _isPaywalled(int index) =>
-      !_hasFullVersion && !ContentAccessPolicy.isAlphabetLessonFree(index);
+  /// قفل خرید در حالت کلاس اول با شمارهٔ **بسته** سنجیده می‌شود، نه با شمارهٔ
+  /// درس داخل بسته. قبلاً ایندکس درون‌بسته با سقف ۸ مقایسه می‌شد و چون بسته‌ها
+  /// هر کدام ۴ تا ۹ درس دارند، عملاً ۳۷ درس از ۳۸ درس برای کاربر رایگان باز
+  /// می‌ماند؛ حالا فقط دو بستهٔ اول (۸ درس) رایگان است.
+  bool _isPaywalled(int index) {
+    if (_hasFullVersion) return false;
+    if (_mode == _AlphabetMode.grade1) {
+      return !ContentAccessPolicy.isAlphabetBundleFree(_selectedBundleIndex);
+    }
+    return !ContentAccessPolicy.isAlphabetLessonFree(index);
+  }
 
   String _lessonKey(int bundleIndex, int lessonIndex) =>
       'g1-$bundleIndex-$lessonIndex';
@@ -1402,9 +1411,16 @@ class _TraceScreenState extends State<_TraceScreen>
     return 'alpha-$lessonIndex';
   }
 
-  bool _isPaywalledLesson(int index) =>
-      !widget.hasFullVersion &&
-      !ContentAccessPolicy.isAlphabetLessonFree(index);
+  /// همان قاعدهٔ صفحهٔ اصلی، برای مسیر نوشتن: در حالت کلاس اول رایگان‌بودن با
+  /// شمارهٔ بسته سنجیده می‌شود (دو بستهٔ اول) و در حالت الفبایی سنتی با
+  /// شمارهٔ نشانه (۸ نشانهٔ نخست).
+  bool _isPaywalledLesson(int index) {
+    if (widget.hasFullVersion) return false;
+    if (widget.grade1Mode) {
+      return !ContentAccessPolicy.isAlphabetBundleFree(widget.bundleIndex);
+    }
+    return !ContentAccessPolicy.isAlphabetLessonFree(index);
+  }
 
   void _selectLesson(int index) {
     if (index < 0 || index >= widget.lessons.length) return;

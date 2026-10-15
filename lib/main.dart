@@ -363,14 +363,20 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
             ),
         '/lullabies': (context) => const LullabyHubScreen(),
         '/home': (context) => const HomeScreen(),
-        '/drawing-album': (context) => const DrawingAlbumScreen(),
+        '/drawing-album': (context) => GameAccessGate(
+              gameName: 'آلبوم نقاشی',
+              child: const DrawingAlbumScreen(),
+            ),
         '/alphabet': (context) => const AlphabetAcademyGame(),
         '/memory_match': (context) => GameAccessGate(
               gameName: 'حافظه',
               child: const MemoryMatchGame(),
             ),
         '/bubble_pop': (context) => const BubblePopGame(),
-        '/star_catch': (context) => const StarCatchGame(),
+        '/star_catch': (context) => GameAccessGate(
+              gameName: 'ستاره‌گیری',
+              child: const StarCatchGame(),
+            ),
         '/colors_lab': (context) => const ColorsLabGame(),
         '/puzzle': (context) => GameAccessGate(
               gameName: 'پازل',
@@ -544,12 +550,16 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
           final topicId = name.substring('/life-skills/'.length);
           final topic = LifeSkillsData.byId(topicId);
           if (topic != null) {
+            // نیمهٔ اول دنیاهای مهارت زندگی با `id` سنجیده می‌شود، نه با
+            // عنوان؛ عنوان قابل ویرایش است و نباید قفل محتوا را جابه‌جا کند.
             return MaterialPageRoute(
               settings: settings,
-              builder: (_) => GameAccessGate(
-                gameName: topic.title,
-                child: LifeSkillsGame(topic: topic),
-              ),
+              builder: (_) => ContentAccessPolicy.isLifeSkillFree(topic.id)
+                  ? LifeSkillsGame(topic: topic)
+                  : GameAccessGate(
+                      gameName: topic.title,
+                      child: LifeSkillsGame(topic: topic),
+                    ),
             );
           }
         }

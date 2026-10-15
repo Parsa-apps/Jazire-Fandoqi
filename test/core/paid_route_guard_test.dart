@@ -11,6 +11,11 @@ void main() {
       "'/puzzle': (context) => GameAccessGate(",
       "'/pattern': (context) => GameAccessGate(",
       "'/island_builder': (context) => GameAccessGate(",
+      // این دو مسیر به نیمهٔ پولی منتقل شده‌اند؛ بدون محافظِ
+      // مقصد، از مسیرهای آزاد (نقشهٔ دستگاه‌ها، جست‌وجو و کارنامه) باز
+      // می‌ماندند و قفل فقط ظاهری بود.
+      "'/star_catch': (context) => GameAccessGate(",
+      "'/drawing-album': (context) => GameAccessGate(",
     ]) {
       expect(source, contains(route), reason: route);
     }
@@ -25,6 +30,11 @@ void main() {
   test('unlisted story ids do not inherit the free story-hub entitlement', () {
     final source = File('lib/main.dart').readAsStringSync();
     expect(source, contains("gameName: 'داستان ویژه'"));
+  });
+
+  test('life-skill worlds are checked by id against the central policy', () {
+    final source = File('lib/main.dart').readAsStringSync();
+    expect(source, contains('ContentAccessPolicy.isLifeSkillFree(topic.id)'));
   });
 
   test('dashboard and hub use the same game policy as route gates', () {

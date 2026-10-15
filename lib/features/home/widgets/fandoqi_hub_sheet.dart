@@ -159,7 +159,7 @@ class FandoqiHubs {
         emoji: '🟥',
         route: '/math/ten-frame',
         gameName: 'قاب ده‌تایی',
-        isFree: true,
+        isFree: false,
       ),
       HubActivity(
         title: 'تمساح بزرگ‌تر و کوچک‌تر',
@@ -175,7 +175,7 @@ class FandoqiHubs {
         emoji: '🕐',
         route: '/math/clock',
         gameName: 'ساعت',
-        isFree: true,
+        isFree: false,
       ),
       HubActivity(
         title: 'مسابقه سرعت و هوش ریاضی',
@@ -277,7 +277,7 @@ class FandoqiHubs {
         route: '/body_parts',
         image: 'assets/illustrations/body_cards.webp',
         gameName: 'بدن',
-        isFree: false,
+        isFree: true,
       ),
       HubActivity(
         title: 'مهارت‌های زندگی و سلامت',
@@ -285,7 +285,7 @@ class FandoqiHubs {
         emoji: '🧭',
         route: '/life-skills',
         gameName: 'مهارت زندگی',
-        isFree: false,
+        isFree: true,
       ),
       HubActivity(
         title: 'مفاهیم علوم و دنیای اطراف',
@@ -323,7 +323,7 @@ class FandoqiHubs {
         route: '/star_catch',
         image: 'assets/premium/star_catch_icon.webp',
         gameName: 'ستاره‌گیری',
-        isFree: true,
+        isFree: false,
       ),
       HubActivity(
         title: 'حافظه تصویری',
@@ -395,7 +395,7 @@ class FandoqiHubs {
         route: '/game/نقاشی',
         image: 'assets/illustrations/drawing_stickers.webp',
         gameName: 'نقاشی',
-        isFree: true,
+        isFree: false,
       ),
       HubActivity(
         title: 'آلبوم نقاشی من',
@@ -403,7 +403,7 @@ class FandoqiHubs {
         emoji: '🖼️',
         route: '/drawing-album',
         gameName: 'آلبوم نقاشی',
-        isFree: true,
+        isFree: false,
       ),
       HubActivity(
         title: 'آزمایشگاه ترکیب رنگ‌ها',
