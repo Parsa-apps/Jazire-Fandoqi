@@ -111,8 +111,8 @@ jobs:
             echo "::notice::ISLAND-B64-$n $(cat "$f")"
           done
           echo "::notice::ISLAND-B64-END chunks=$n"
-          # Same for the smoke suite, which intermittently fails to load.
-          flutter test --reporter expanded test/app_smoke_test.dart > smoke-output.txt 2>&1 || true
+          # Same for the report-card suite (runtime failure diagnosis).
+          flutter test --reporter expanded test/features/home/report_card_tab_test.dart > smoke-output.txt 2>&1 || true
           tail -c 6000 smoke-output.txt | base64 -w0 > smoke.b64
           split -b 900 smoke.b64 smoke-chunk-
           n=0
