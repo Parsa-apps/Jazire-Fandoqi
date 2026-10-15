@@ -83,10 +83,11 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
   void initState() {
     super.initState();
     _rounds = widget.roundFactory();
+    // کنترلر نبض فقط هنگام نمایش راهنما اجرا می‌شود (نه از فریم اول و بی‌پایان).
     _pulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
-    )..repeat(reverse: true);
+    );
     FandoghiCoach.enablePersistentPresence();
     GameData.recordGamePlayed(widget.spec.gameId);
     ActivityTracker.recordOpen(
@@ -111,6 +112,7 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
 
   void _armHint() {
     _hintTimer?.cancel();
+    _pulseCtrl.stop();
     if (_hintActive) setState(() => _hintActive = false);
     _hintTimer = Timer(_hintDelay, () {
       if (!mounted || _finished || _transitioning || _solvedIndex != null) {
@@ -118,8 +120,14 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
       }
       // Hint ظریف: فندقی راهنمایی می‌کند و پاسخ درست نرم می‌تپد.
       FandoghiCoach.say(round.hint);
-      setState(() => _hintActive = true);
+      _showHint();
     });
+  }
+
+  /// روشن‌کردن راهنما: فقط اینجا کنترلر نبض راه می‌افتد.
+  void _showHint() {
+    setState(() => _hintActive = true);
+    _pulseCtrl.repeat(reverse: true);
   }
 
   MiniGameRound get round => _rounds[_roundIndex];
@@ -164,10 +172,11 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
         duration: const Duration(seconds: 2),
       );
       // پس از سه تلاش، پاسخ درست نرم روشن می‌شود (بدون شکست).
-      if (_triesThisRound >= 3) {
-        setState(() => _hintActive = true);
-      }
       _armHint();
+      // پس از سه تلاش راهنما باید روشن بماند (بعد از _armHint که آن را خاموش می‌کند).
+      if (_triesThisRound >= 3) {
+        _showHint();
+      }
     }
   }
 
@@ -490,8 +499,15 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
                 runSpacing: 12,
                 alignment: WrapAlignment.center,
                 children: [
+                  // کارت‌های چندانتخابی همیشه ۱۰۴×۷۲ هستند؛ اسلات را
+                  // صریح اندازه می‌دهیم تا Wrap هر کارت را در یک ردیفِ
+                  // تمام‌عرض نگذارد (چند گزینه کنار هم، مثل طرح اصلی).
                   for (var i = 0; i < r.options.length; i++)
-                    _optionCard(r, i, isColorGame: false, wide: false),
+                    SizedBox(
+                      width: 104,
+                      height: 72,
+                      child: _optionCard(r, i, isColorGame: false, wide: false),
+                    ),
                 ],
               ),
             ),
@@ -585,22 +601,25 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
       child: child,
     );
 
-    if (showHintPulse) {
-      // Hint ظریف: پاسخ درست نرم می‌تپد — بدون دادن جواب کلامی
-      interactive = AnimatedBuilder(
-        animation: _pulseCtrl,
-        builder: (context, _) {
-          final t = 1 + _pulseCtrl.value * 0.07;
-          return Transform.scale(scale: t, child: interactive);
-        },
-      );
-    } else if (isSolved) {
+    if (isSolved) {
       interactive = interactive
           .animate()
           .scale(end: const Offset(1.06, 1.06), duration: 240.ms)
           .then()
           .scale(end: const Offset(1, 1), duration: 180.ms);
     }
+
+    // قابِ نبض از همان فریم اول سوار است و فقط مقیاسش با فعال‌شدن Hint عوض
+    // می‌شود؛ این‌طور فعال‌شدن راهنما هیچ ویجتی را سوار/پیاده نمی‌کند.
+    // فقط وقتی راهنما روشن است قاب نبض سوار می‌شود؛ بقیهٔ کارت‌ها بدون آن ساخته می‌شوند.
+    if (!showHintPulse) return interactive;
+    interactive = AnimatedBuilder(
+      animation: _pulseCtrl,
+      builder: (context, _) {
+        final t = showHintPulse ? 1 + _pulseCtrl.value * 0.07 : 1.0;
+        return Transform.scale(scale: t, child: interactive);
+      },
+    );
 
     return interactive;
   }

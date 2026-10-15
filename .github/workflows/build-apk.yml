@@ -94,6 +94,15 @@ jobs:
           name: kudake_iran_v3.0.0_apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
+      - name: Upload QA gate log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-gate-log
+          path: qa-gate-log/
+          if-no-files-found: ignore
+          retention-days: 3
+
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:

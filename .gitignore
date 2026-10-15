@@ -61,3 +61,7 @@ promo/aurora/tmp/
 
 # فایل‌های خام تولید صدا (بَچ‌های برش‌نخورده) — خروجی نهایی در assets/audio/words است
 .audio_work/
+
+# لاگ‌های موقت تشخیصی CI
+diag-logs/
+qa-gate-log/

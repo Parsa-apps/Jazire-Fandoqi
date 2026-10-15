@@ -37,8 +37,20 @@ void main() {
     expect(find.byKey(const ValueKey('profile_offer_accept')), findsOneWidget);
     expect(find.byKey(const ValueKey('profile_offer_later')), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('profile_offer_later')));
+    // محتوای دیالوگ اسکرول‌شدنی است و در قابِ کوتاهِ تست، دکمهٔ «فعلاً نه»
+    // پایین‌تر از دید می‌افتد؛ بدون ensureVisible لمس روی آن نمی‌نشیند و
+    // دیالوگ باز می‌ماند.
+    final later = find.byKey(const ValueKey('profile_offer_later'));
+    await tester.ensureVisible(later);
+    await tester.pump();
+    await tester.tap(later);
+    // The dismissal animation only starts ticking on the frame after the tap,
+    // so the route is still on screen after a single pump: advance a couple of
+    // bounded frames (the island behind the dialog animates forever, which
+    // rules out pumpAndSettle) and then assert it is gone.
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('یک سؤال کوچک، با اجازهٔ شما 🌰'), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -54,7 +66,10 @@ void main() {
       ),
     );
     await tester.pump(const Duration(milliseconds: 500));
-    await tester.tap(find.byKey(const ValueKey('profile_offer_accept')));
+    final accept = find.byKey(const ValueKey('profile_offer_accept'));
+    await tester.ensureVisible(accept);
+    await tester.pump();
+    await tester.tap(accept);
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('یکی از ۲۰ آواتار بامزه را انتخاب کنید'), findsOneWidget);

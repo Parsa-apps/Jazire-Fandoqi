@@ -102,7 +102,7 @@ Future<void> showProfileEditor(BuildContext context) async {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'یکی از ۲۰ آواتار بامزه را انتخاب کن!',
+                  'یکی از ۲۰ آواتار بامزه را انتخاب کنید',
                   style: AppFonts.vazirmatn(
                     color: const Color(0xFF776A80),
                     fontSize: 13,

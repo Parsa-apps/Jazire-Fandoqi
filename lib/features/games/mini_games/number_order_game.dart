@@ -31,37 +31,33 @@ class NumberOrderGame extends StatelessWidget {
   );
 
   /// ساخت دورها — خالص و قابل تست واحد.
-  /// هر جلسه ۵ عدد تصادفی از بازهٔ ۱ تا ۲۰ (بدون تکرار).
+  ///
+  /// هر جلسه ۱۵ عدد یکتا از بازهٔ ۱ تا ۲۰ انتخاب و مرتب می‌شود؛
+  /// هر دور یک دستهٔ سه‌تاییِ متوالی (از کوچک به بزرگ) را نشان می‌دهد
+  /// و کوچک‌ترینِ آن دسته پاسخ درست است. دسته‌ها تکرار نمی‌شوند، هر
+  /// دور همیشه ۳ گزینه دارد (هیچ دورِ تک‌گزینه‌ای ساخته نمی‌شود) و
+  /// توالی پاسخ‌های درست صعودی است.
   static List<MiniGameRound> buildRounds({Random? rng}) {
     final random = rng ?? Random();
     final pool = List<int>.generate(20, (i) => i + 1)..shuffle(random);
-    final numbers = pool.take(5).toList();
-    final remaining = <int>[...numbers]..shuffle(random);
+    final numbers = pool.take(15).toList()..sort();
+    const batchSize = 3;
     final rounds = <MiniGameRound>[];
-    final collected = <int>[];
-
-    while (remaining.isNotEmpty) {
-      final smallest = remaining.reduce(min);
+    for (var i = 0; i + batchSize <= numbers.length; i += batchSize) {
+      final batch = numbers.sublist(i, i + batchSize);
+      final smallest = batch.first;
       final options = <MiniGameOption>[
-        for (final n in remaining)
+        for (final n in batch)
           MiniGameOption(PersianDigits.toFa(n), correct: n == smallest),
       ]..shuffle(random);
-      final leftScene = remaining
-          .map(PersianDigits.toFa)
-          .join('   ');
-      final doneScene = collected.isEmpty
-          ? 'از کوچک‌ترین شروع کن!'
-          : 'پیدا شد: ${collected.map(PersianDigits.toFa).join('،')}';
       rounds.add(MiniGameRound(
         prompt: 'حالا کوچک‌ترین عدد کدام است؟',
-        scene: '$doneScene\n$leftScene',
+        scene: '🪜 از کوچک‌ترین شروع کن!',
         sceneFontSize: 38,
         sceneIsText: true,
         options: options,
         hint: 'بین این عددها، «${PersianDigits.toFa(smallest)}» از همه کوچک‌تر است 😉',
       ));
-      remaining.remove(smallest);
-      collected.add(smallest);
     }
     return rounds;
   }

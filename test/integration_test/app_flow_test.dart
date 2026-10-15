@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
 import 'package:jazireh_fandoghi/core/game_data.dart';
 import 'package:jazireh_fandoghi/core/growth/growth_store.dart';
 import 'package:jazireh_fandoghi/features/gateway/app_gateway_screen.dart';
@@ -59,6 +60,15 @@ void main() {
     expect(find.byType(AppGatewayScreen), findsOneWidget);
     expect(tester.takeException(), isNull);
 
+    // جزیره فندقی به کودک خوش‌آمد می‌گوید؛ تایمرِ حبابِ فندقی یک کانالِ
+    // سراسری است و باید پیش از پایانِ تست آزاد شود، وگرنه به‌عنوان
+    // «تایمر معلق بعد از تخریب درخت ویجت» گزارش می‌شود.
+    // تایمرهای یکبارهٔ صفحهٔ اصلی (حبابِ فندقی، بنرها و انیمیشن‌های
+    // زمان‌بندی‌شده) باید پیش از تخریبِ درخت تمام شوند؛ وگرنه flutter_test
+    // آن‌ها را «تایمر معلق بعد از تخریب درخت ویجت» می‌بیند.
+    await tester.pump(const Duration(seconds: 8));
+    FandoghiCoach.clear();
+    FandoghiCoach.cancelSmartHint();
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
@@ -81,11 +91,16 @@ void main() {
 
     // با زدن «بزن بریم بازی کنیم» به مقصد اصلی (آموزش) می‌رود
     // دکمه داخل ListView تنب است و پایین صفحه می‌افتد؛ اول اسکرول می‌کنیم.
-    await tester.scrollUntilVisible(
-      find.text('بزن بریم بازی کنیم 🎮'),
-      200,
-    );
-    await tester.tap(find.text('بزن بریم بازی کنیم 🎮'));
+    // `scrollUntilVisible` تا «ساخته‌شدن» ویجت اسکرول می‌کند و ممکن است دکمه
+    // هنوز بیرون قاب باشد، پس با `ensureVisible` کامل داخل قاب می‌آید؛ وگرنه
+    // لمس روی دکمه نمی‌افتد و ناوبری انجام نمی‌شود.
+    final startButton = find.text('بزن بریم بازی کنیم 🎮');
+    await tester.scrollUntilVisible(startButton, 200);
+    await tester.ensureVisible(startButton);
+    // دکمه با fadeIn(delay: 500ms) ظاهر می‌شود؛ تا پیش از کامل‌شدن
+    // انیمیشن، opacity صفر است و لمس آن از دست می‌رود (warnIfMissed).
+    await tester.pump(const Duration(milliseconds: 1000));
+    await tester.tap(startButton);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
 
