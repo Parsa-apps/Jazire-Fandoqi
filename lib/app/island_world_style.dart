@@ -81,4 +81,12 @@ abstract final class IslandWorldAssets {
   static const String fandoghiWave = 'assets/mascot/fandoghi_wave_v2.webp';
   static const String fandoghiCelebrate =
       'assets/mascot/fandoghi_celebrate_v2.webp';
+
+  /// تزئیناتِ اختصاصیِ دنیای جزیره (سبک خمیریِ هم‌خانواده با سکوها،
+  /// با پس‌زمینهٔ واقعاً شفاف و بهینه‌شده برای حجم کمِ APK)
+  static const String decorPalmTree = 'assets/theme_map/decor_palm_tree.webp';
+  static const String decorBlossomTree =
+      'assets/theme_map/decor_blossom_tree.webp';
+  static const String decorRainbow = 'assets/theme_map/decor_rainbow.webp';
+  static const String decorBalloon = 'assets/theme_map/decor_balloon.webp';
 }

@@ -133,9 +133,12 @@ class _SkyOceanPainter extends CustomPainter {
       }
       canvas.restore();
     }
+    _paintDistantIslands(canvas, size, skyFade, ambientPhase);
     _paintWaves(canvas, size, ambientPhase);
     if (ambientAnimation != null) {
       _paintWaterGlimmers(canvas, size, ambientPhase);
+      _paintLightRays(canvas, size, ambientPhase);
+      _paintDeepFish(canvas, size, ambientPhase);
     }
   }
 
@@ -290,6 +293,133 @@ class _SkyOceanPainter extends CustomPainter {
       ),
       p,
     );
+  }
+
+  /// دو جزیرهٔ دوردست روی خط افق — حسِ «دنیای بزرگ‌تر» می‌دهند و با
+  /// محو شدن آسمان (نزدیک شدن به زیر آب) خودشان هم محو می‌شوند.
+  void _paintDistantIslands(
+    Canvas canvas,
+    Size size,
+    double fade,
+    double phase,
+  ) {
+    final horizonY = size.height * _horizon;
+    if (fade < 0.08 || horizonY < 8 || horizonY > size.height - 4) return;
+    // پارالاکس خیلی آرام: با اسکرول کمتر از سکوها جابه‌جا می‌شوند
+    final drift = -scrollOffset * 0.015;
+    _distantIsland(
+      canvas,
+      Offset(size.width * 0.15 + drift, horizonY),
+      size.width * 0.13,
+      fade,
+    );
+    _distantIsland(
+      canvas,
+      Offset(size.width * 0.76 + drift * 1.4, horizonY),
+      size.width * 0.09,
+      fade,
+    );
+  }
+
+  void _distantIsland(Canvas canvas, Offset base, double w, double fade) {
+    final green = Paint()
+      ..color = const Color(0xFF3D9970).withOpacity(0.38 * fade);
+    final sea = Paint()
+      ..color = const Color(0xFF1F7A8C).withOpacity(0.32 * fade);
+    // گنبد سبز جزیره
+    final dome = Path()
+      ..moveTo(base.dx - w, base.dy)
+      ..quadraticBezierTo(base.dx, base.dy - w * 0.66, base.dx + w, base.dy)
+      ..close();
+    canvas.drawPath(dome, green);
+    // بازتاب روی آب
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(base.dx, base.dy + 3),
+        width: w * 2.15,
+        height: 7,
+      ),
+      sea,
+    );
+    // نخل کوچک روی جزیره
+    final palmPaint = Paint()
+      ..color = const Color(0xFF2E7D5B).withOpacity(0.55 * fade)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.2
+      ..strokeCap = StrokeCap.round;
+    final trunkTop = Offset(base.dx + w * 0.05, base.dy - w * 0.52);
+    canvas.drawLine(
+      Offset(base.dx, base.dy - w * 0.30),
+      trunkTop,
+      palmPaint,
+    );
+    for (final angle in [-2.6, -1.9, -1.2, -0.5]) {
+      canvas.drawLine(
+        trunkTop,
+        trunkTop + Offset(cos(angle) * w * 0.20, sin(angle) * w * 0.20),
+        palmPaint,
+      );
+    }
+  }
+
+  /// پرتوهای نورِ خورشید که وقتی کودک به عمق دریا می‌رسد، از سطح آب
+  /// به پایین می‌تابند. هرچه عمیق‌تر، پررنگ‌تر (تا سقف ملایم).
+  void _paintLightRays(Canvas canvas, Size size, double phase) {
+    if (progress < 0.45) return;
+    var strength = ((progress - 0.45) / 0.55).clamp(0.0, 1.0);
+    if (cycle == DayCycle.night) strength *= 0.35;
+    if (strength <= 0.01) return;
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.055 * strength);
+    for (var i = 0; i < 3; i++) {
+      final topX = size.width * (0.14 + 0.30 * i) +
+          sin(phase * 2 * pi + i * 1.8) * 12;
+      final beam = Path()
+        ..moveTo(topX, -4)
+        ..lineTo(topX + size.width * 0.10, -4)
+        ..lineTo(topX + size.width * 0.24, size.height * 0.72)
+        ..lineTo(topX + size.width * 0.07, size.height * 0.72)
+        ..close();
+      canvas.drawPath(beam, paint);
+    }
+  }
+
+  /// دو ماهیِ سایه‌نما در عمق — فقط وقتی واقعاً پایین نقشه‌ایم دیده
+  /// می‌شوند تا حس فرود به دنیای زیر آب کامل شود.
+  void _paintDeepFish(Canvas canvas, Size size, double phase) {
+    if (progress < 0.55) return;
+    final strength = ((progress - 0.55) / 0.45).clamp(0.0, 1.0);
+    final paint = Paint()
+      ..color = const Color(0xFF0D4A66).withOpacity(0.22 * strength);
+    final travel1 = ((phase * 0.5 + 0.10) % 1.2) - 0.1;
+    _deepFish(canvas, Offset(travel1 * size.width, size.height * 0.46), 36,
+        paint, false);
+    final travel2 = ((phase * 0.35 + 0.55) % 1.2) - 0.1;
+    _deepFish(canvas, Offset(size.width - travel2 * size.width, size.height * 0.66),
+        25, paint, true);
+  }
+
+  void _deepFish(
+    Canvas canvas,
+    Offset center,
+    double len,
+    Paint paint,
+    bool flip,
+  ) {
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    if (flip) canvas.scale(-1, 1);
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset.zero, width: len, height: len * 0.4),
+      paint,
+    );
+    final tail = Path()
+      ..moveTo(-len * 0.40, 0)
+      ..lineTo(-len * 0.72, -len * 0.26)
+      ..lineTo(-len * 0.72, len * 0.26)
+      ..close();
+    canvas.drawPath(tail, paint);
+    canvas.restore();
   }
 
   /// موج‌های افقی ملایم روی اقیانوس با حرکت بسیار آهسته

@@ -82,6 +82,10 @@ class IslandNode extends StatefulWidget {
 
   final bool locked;
 
+  /// تأخیرِ ورود پلکانی وقتی نقشه اولین بار ساخته می‌شود تا سکوها
+  /// یکی‌یکی و با ریتم روی آب بنشینند، نه همه با هم و ناگهانی.
+  final Duration entranceDelay;
+
   const IslandNode({
     super.key,
     required this.asset,
@@ -93,6 +97,7 @@ class IslandNode extends StatefulWidget {
     this.labelColor = const Color(0xFF2E4756),
     this.badge,
     this.locked = false,
+    this.entranceDelay = Duration.zero,
   });
 
   @override
@@ -103,6 +108,10 @@ class _IslandNodeState extends State<IslandNode>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pressCtrl;
   late final Animation<double> _press;
+  late final AnimationController _enterCtrl;
+  late final Animation<double> _enter;
+  late final AnimationController _burstCtrl;
+  late final Animation<double> _burst;
 
   @override
   void initState() {
@@ -117,11 +126,45 @@ class _IslandNodeState extends State<IslandNode>
       curve: Curves.easeOut,
       reverseCurve: Curves.easeOutBack,
     );
+
+    // ورود پلکانیِ سکو روی نقشه
+    _enterCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 620),
+    );
+    _enter = CurvedAnimation(parent: _enterCtrl, curve: Curves.easeOutCubic);
+    if (widget.entranceDelay > Duration.zero) {
+      Future.delayed(widget.entranceDelay, () {
+        if (mounted) _enterCtrl.forward();
+      });
+    } else {
+      _enterCtrl.forward();
+    }
+
+    // انفجار کوتاه ستاره‌ها هنگام لمس
+    _burstCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 480),
+    );
+    _burst = CurvedAnimation(parent: _burstCtrl, curve: Curves.easeOutCubic);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // احترام به تنظیم «کاهش حرکت» سیستم: ورود بدون انیمیشن کامل شود
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (reduceMotion && _enterCtrl.value < 1) {
+      _enterCtrl.value = 1;
+    }
   }
 
   @override
   void dispose() {
     _pressCtrl.dispose();
+    _enterCtrl.dispose();
+    _burstCtrl.dispose();
     super.dispose();
   }
 
@@ -132,6 +175,7 @@ class _IslandNodeState extends State<IslandNode>
     }
     HapticFeedback.mediumImpact();
     AudioService.select();
+    _burstCtrl.forward(from: 0);
     widget.onTap();
   }
 
@@ -147,17 +191,24 @@ class _IslandNodeState extends State<IslandNode>
       onTapCancel: () => _pressCtrl.reverse(),
       onTap: _handleTap,
       child: AnimatedBuilder(
-        animation: Listenable.merge([widget.floatAnimation, _press]),
+        animation: Listenable.merge([widget.floatAnimation, _press, _enter]),
         builder: (context, child) {
           final phase = (widget.floatAnimation.value + widget.floatPhase) % 1.0;
           final bob = sin(phase * 2 * pi);
-          return Transform.translate(
-            offset: Offset(0, bob * 6),
-            child: Transform.rotate(
-              angle: bob * 0.012,
-              child: Transform.scale(
-                scale: 1.0 - _press.value * 0.07,
-                child: child,
+          final enterT = _enter.value;
+          // ورود فنری: سکو از کمی پایین‌تر و کوچک‌تر می‌آید و در انتها
+          // یک جهش لطیف دارد؛ حس «نشستن روی آب» می‌دهد.
+          final popScale = 0.80 + 0.20 * Curves.easeOutBack.transform(enterT);
+          return Opacity(
+            opacity: enterT.clamp(0.0, 1.0),
+            child: Transform.translate(
+              offset: Offset(0, bob * 6 + (1 - enterT) * 22),
+              child: Transform.rotate(
+                angle: bob * 0.012,
+                child: Transform.scale(
+                  scale: (1.0 - _press.value * 0.07) * popScale,
+                  child: child,
+                ),
               ),
             ),
           );
@@ -181,6 +232,22 @@ class _IslandNodeState extends State<IslandNode>
         child: Stack(
           clipBehavior: Clip.none,
           children: [
+            // سایهٔ نرم و پهن زیر جزیره تا روی سطح آب «نشسته» به نظر
+            // بیاید و از پس‌زمینه جدا شود (عمق بصری).
+            Positioned(
+              left: w * 0.16,
+              right: w * 0.16,
+              bottom: -h * 0.02,
+              height: h * 0.08,
+              child: const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    colors: [Color(0x2E00455A), Color(0x0000455A)],
+                  ),
+                ),
+              ),
+            ),
+
             Positioned.fill(
               child: widget.locked
                   ? ColorFiltered(
@@ -229,6 +296,25 @@ class _IslandNodeState extends State<IslandNode>
                 right: w * 0.04,
                 child: _countBadge(widget.badge!),
               ),
+
+            // ✨ انفجار کوتاه ستاره‌ها از نقطهٔ لنگر پلاک، هنگام لمس
+            Positioned.fill(
+              child: IgnorePointer(
+                child: AnimatedBuilder(
+                  animation: _burst,
+                  builder: (context, _) => CustomPaint(
+                    painter: _TapSparklePainter(
+                      progress: _burst.value,
+                      center: Offset(
+                        w * (pill?.cx ?? 0.5),
+                        h * (pill?.cy ?? 0.45),
+                      ),
+                      radius: w * 0.30,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -334,7 +420,17 @@ class _IslandNodeState extends State<IslandNode>
 
 /// 🌰 قهرمان نقشه — شخصیت فندقی اصلی، بالای صفحه و بزرگ‌تر از همه،
 /// با هالهٔ طلایی و تکان دائمی تا فوراً به چشم بیاید.
-class HeroFandoq extends StatelessWidget {
+///
+/// فندقی فقط بالا و پایین نمی‌رود؛ «زنده» است:
+///   • تنفس آرام و پیوسته (بزرگ و کوچک شدن بسیار ملایم)
+///   • در انتهای هر چرخهٔ شناوری، یک پرش کوچکِ شاد با فشردگی فنری
+///   • هنگام لمس: پرشِ جشن و تاب خوردن، هم‌زمان با پیام مربی
+///   • ستاره‌های طلاییِ چشمک‌زن دور هاله
+///
+/// همهٔ حرکت‌ها از همان کنترلر شناوریِ مشترک نقشه خوانده می‌شوند و
+/// فقط واکنش لمس یک کنترلر کوتاهِ اختصاصی دارد. با تنظیم «کاهش
+/// حرکت» سیستم، حرکت‌های اضافه خاموش می‌شوند.
+class HeroFandoq extends StatefulWidget {
   /// هالهٔ طلایی چند برابرِ خودِ فندقی است؛ ویجت به همین اندازه جا می‌گیرد
   static const double haloFactor = 1.4;
 
@@ -350,34 +446,91 @@ class HeroFandoq extends StatelessWidget {
   });
 
   @override
+  State<HeroFandoq> createState() => _HeroFandoqState();
+}
+
+class _HeroFandoqState extends State<HeroFandoq>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _cheerCtrl;
+  late final Animation<double> _cheer;
+  bool _reduceMotion = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _cheerCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 560),
+    );
+    _cheer = CurvedAnimation(parent: _cheerCtrl, curve: Curves.easeOut);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+  }
+
+  @override
+  void dispose() {
+    _cheerCtrl.dispose();
+    super.dispose();
+  }
+
+  void _handleTap() {
+    HapticFeedback.mediumImpact();
+    AudioService.select();
+    if (!_reduceMotion) _cheerCtrl.forward(from: 0);
+    widget.onTap();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final width = widget.width;
     return Semantics(
       button: true,
       label: 'فندقی؛ برای شنیدن پیام لمس کن',
       child: GestureDetector(
-        onTap: () {
-          HapticFeedback.mediumImpact();
-          AudioService.select();
-          onTap();
-        },
+        onTap: _handleTap,
         child: AnimatedBuilder(
-          animation: floatAnimation,
+          animation: Listenable.merge([widget.floatAnimation, _cheer]),
           builder: (context, child) {
-            final bob = sin(floatAnimation.value * 2 * pi);
+            final v = widget.floatAnimation.value;
+            final bob = sin(v * 2 * pi);
+            // تنفس: دو چرخهٔ ملایم در هر شناوریِ کامل
+            final breath = _reduceMotion ? 1.0 : 1 + 0.018 * sin(v * 4 * pi);
+            // پرش کوچکِ شاد در انتهای هر چرخهٔ شناوری
+            var hop = 0.0;
+            if (!_reduceMotion && v > 0.78 && v < 0.94) {
+              hop = sin((v - 0.78) / 0.16 * pi);
+            }
+            // واکنش لمس: پرش جشن + تابِ رو به اتمام
+            final cheerT = _cheer.value;
+            final cheerHop = sin(cheerT * pi) * -13.0;
+            final cheerTilt = sin(cheerT * 2 * pi) * 0.05 * (1 - cheerT);
+            final squashY = 1 - hop * 0.05 - sin(cheerT * pi) * 0.04;
             return Transform.translate(
-              offset: Offset(0, bob * 9),
-              child: Transform.rotate(angle: bob * 0.03, child: child),
+              offset: Offset(0, bob * 9 - hop * 8 + cheerHop),
+              child: Transform.rotate(
+                angle: bob * 0.03 + cheerTilt,
+                child: Transform.scale(
+                  scaleX: breath * (1 + hop * 0.03),
+                  scaleY: breath * squashY,
+                  alignment: Alignment.bottomCenter,
+                  child: child,
+                ),
+              ),
             );
           },
           child: SizedBox(
-            width: width * haloFactor,
-            height: width * haloFactor,
+            width: width * HeroFandoq.haloFactor,
+            height: width * HeroFandoq.haloFactor,
             child: Stack(
               alignment: Alignment.center,
               children: [
                 Container(
-                  width: width * haloFactor,
-                  height: width * haloFactor,
+                  width: width * HeroFandoq.haloFactor,
+                  height: width * HeroFandoq.haloFactor,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
@@ -406,6 +559,14 @@ class HeroFandoq extends StatelessWidget {
                     excludeFromSemantics: true,
                   ),
                 ),
+                // ستاره‌های چشمک‌زن دور هاله
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                      painter: _HeroSparklePainter(widget.floatAnimation),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -413,6 +574,43 @@ class HeroFandoq extends StatelessWidget {
       ),
     );
   }
+}
+
+/// ستاره‌های طلایی و سفید دور هالهٔ فندقی که با فاز متفاوت چشمک
+/// می‌زنند؛ روی همان کنترلر شناوری سوارند و هزینهٔ جدا ندارند.
+class _HeroSparklePainter extends CustomPainter {
+  final Animation<double> animation;
+
+  _HeroSparklePainter(this.animation) : super(repaint: animation);
+
+  static const List<List<double>> _spots = [
+    // [x نسبی, y نسبی, اندازهٔ پایه]
+    [0.15, 0.30, 4.5],
+    [0.85, 0.26, 5.0],
+    [0.09, 0.56, 3.6],
+    [0.91, 0.54, 4.0],
+    [0.25, 0.11, 3.8],
+    [0.74, 0.10, 4.4],
+  ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final t = animation.value;
+    for (var i = 0; i < _spots.length; i++) {
+      final spot = _spots[i];
+      final twinkle = (sin(t * 4 * pi + i * 1.9) + 1) / 2;
+      final center = Offset(spot[0] * size.width, spot[1] * size.height);
+      final radius = spot[2] * (0.6 + twinkle * 0.7);
+      final color = i.isEven ? const Color(0xFFFFC93C) : Colors.white;
+      canvas.drawPath(
+        _sparklePath(center, radius),
+        Paint()..color = color.withOpacity(0.25 + twinkle * 0.6),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_HeroSparklePainter old) => old.animation != animation;
 }
 
 /// 🫧 حباب یادگیری زیرِ آب — برادر کوچک‌ترِ [IslandNode].
@@ -550,4 +748,64 @@ class _BubbleNodeState extends State<BubbleNode>
       ),
     );
   }
+}
+
+/// ✨ انفجار ستارهٔ لمس: ده ستارهٔ چهارپر که از نقطهٔ لنگرِ پلاک به
+/// بیرون پخش و هم‌زمان محو می‌شوند، همراه یک حلقهٔ نورانیِ ظریف.
+/// کوتاه و بدون چشمکِ تند است تا برای چشم کودک آزاردهنده نباشد.
+class _TapSparklePainter extends CustomPainter {
+  final double progress;
+  final Offset center;
+  final double radius;
+
+  const _TapSparklePainter({
+    required this.progress,
+    required this.center,
+    required this.radius,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (progress <= 0 || progress >= 1) return;
+    final fade = 1 - progress;
+
+    // حلقهٔ نورِ در حال گسترش
+    canvas.drawCircle(
+      center,
+      radius * 0.75 * progress + 6,
+      Paint()
+        ..color = const Color(0xFFFFD54F).withOpacity(0.45 * fade)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
+    );
+
+    for (var i = 0; i < 10; i++) {
+      final angle = (i / 10) * 2 * pi + 0.35;
+      final dist = radius * progress;
+      final pos = Offset(
+        center.dx + cos(angle) * dist,
+        center.dy + sin(angle) * dist - progress * 12,
+      );
+      final r = 1.5 + fade * 4.2;
+      final color = i.isEven ? const Color(0xFFFFC93C) : Colors.white;
+      canvas.drawPath(
+        _sparklePath(pos, r),
+        Paint()..color = color.withOpacity(0.9 * fade),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_TapSparklePainter old) =>
+      old.progress != progress || old.center != center;
+}
+
+/// ستارهٔ چهارپرِ کلاسیکِ بازی‌های کودک (الماسِ خمیده).
+Path _sparklePath(Offset center, double radius) {
+  return Path()
+    ..moveTo(center.dx, center.dy - radius)
+    ..quadraticBezierTo(center.dx, center.dy, center.dx + radius, center.dy)
+    ..quadraticBezierTo(center.dx, center.dy, center.dx, center.dy + radius)
+    ..quadraticBezierTo(center.dx, center.dy, center.dx - radius, center.dy)
+    ..quadraticBezierTo(center.dx, center.dy, center.dx, center.dy - radius);
 }
