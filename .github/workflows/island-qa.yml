@@ -122,14 +122,11 @@ jobs:
           flutter build apk --release > build-output.txt 2>&1
           status=$?
           echo "::notice::flutter build apk exit=$status"
-          tail -c 9000 build-output.txt | base64 -w0 > build.b64
-          split -b 900 build.b64 build-chunk-
-          n=0
-          for f in build-chunk-*; do
-            n=$((n+1))
-            echo "::notice::BUILD-B64-$n $(cat "$f")"
+          wc -c build-output.txt
+          tail -45 build-output.txt | while IFS= read -r line; do
+            clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
+            echo "::error::BUILD-TAIL $clean"
           done
-          echo "::notice::BUILD-B64-END chunks=$n"
           exit $status
 
       - name: Upload APK
