@@ -30,7 +30,7 @@ void main() {
       IslandWorldAssets.fandoghiCelebrate,
     );
 
-    await tester.pumpWidget(const SizedBox.shrink());
+    await _disposeAnimatedTree(tester);
   });
 
   testWidgets('non-success feedback keeps the animated character widget',
@@ -47,8 +47,17 @@ void main() {
     expect(find.byType(FandoghiHazelnutCharacter), findsOneWidget);
     expect(find.byType(Image), findsNothing);
 
-    await tester.pumpWidget(const SizedBox.shrink());
+    await _disposeAnimatedTree(tester);
   });
+}
+
+/// پایانِ تمیز تست: تایمر پنهان‌سازی پیام فندقی و تایمرهای تأخیری
+/// flutter_animate نباید معلق بمانند (خطای «تایمر معلق» چارچوب تست).
+Future<void> _disposeAnimatedTree(WidgetTester tester) async {
+  await tester.pumpWidget(const SizedBox.shrink());
+  FandoghiCoach.cancelSmartHint();
+  FandoghiCoach.disablePersistentPresence();
+  await tester.pump(const Duration(seconds: 6));
 }
 
 AssetImage _assetImageFrom(ImageProvider<Object> provider) {

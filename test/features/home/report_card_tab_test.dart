@@ -34,7 +34,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('کارنامه پیشرفت تحصیلی'), findsOneWidget);
-    expect(find.text('${PersianDigits.toFa(80)}٪'), findsOneWidget);
+    // دقت کلی داخل جملهٔ هدر می‌آید («میزان دقت و تسلط کلی: ۸۰٪ ⭐»).
+    expect(find.textContaining('${PersianDigits.toFa(80)}٪'), findsOneWidget);
     expect(find.text('فارسی و الفبا'), findsOneWidget);
     expect(find.text('${PersianDigits.toFa(50)}٪'), findsOneWidget);
     expect(

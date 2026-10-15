@@ -247,71 +247,76 @@ class _LibraryCard extends StatelessWidget {
     return Semantics(
       button: true,
       label: entry.title,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: IslandWorldPalette.paper,
-            borderRadius: BorderRadius.circular(IslandWorldMetrics.cardRadius),
-            border: Border.all(
-              color: entry.color.withOpacity(0.36),
-              width: 1.5,
+      onTap: onTap,
+      // متن‌های داخل کارت نباید به برچسب دکمه اضافه شوند؛ برچسب دقیقاً
+      // عنوان کارت می‌ماند (مثل خانه‌های نوار ناوبری).
+      child: ExcludeSemantics(
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: IslandWorldPalette.paper,
+              borderRadius: BorderRadius.circular(IslandWorldMetrics.cardRadius),
+              border: Border.all(
+                color: entry.color.withOpacity(0.36),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: entry.color.withOpacity(0.13),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: entry.color.withOpacity(0.13),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: entry.color.withOpacity(0.14),
-                  shape: BoxShape.circle,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: entry.color.withOpacity(0.14),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(entry.emoji, style: const TextStyle(fontSize: 34)),
                 ),
-                alignment: Alignment.center,
-                child: Text(entry.emoji, style: const TextStyle(fontSize: 34)),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                entry.title,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppFonts.kids(
-                  color: IslandWorldPalette.ink,
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w800,
-                  height: 1.2,
+                const SizedBox(height: 8),
+                Text(
+                  entry.title,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.kids(
+                    color: IslandWorldPalette.ink,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w800,
+                    height: 1.2,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                entry.subtitle,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppFonts.vazirmatn(
-                  color: IslandWorldPalette.mutedInk,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  height: 1.3,
+                const SizedBox(height: 4),
+                Text(
+                  entry.subtitle,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.vazirmatn(
+                    color: IslandWorldPalette.mutedInk,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    height: 1.3,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              Icon(
-                Icons.arrow_back_rounded,
-                color: entry.color,
-                size: 18,
-              ),
-            ],
+                const SizedBox(height: 6),
+                Icon(
+                  Icons.arrow_back_rounded,
+                  color: entry.color,
+                  size: 18,
+                ),
+              ],
+            ),
           ),
         ),
       ),

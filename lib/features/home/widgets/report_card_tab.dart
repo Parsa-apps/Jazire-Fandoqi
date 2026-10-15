@@ -425,7 +425,7 @@ class ReportCardTab extends ConsumerWidget {
                       ],
                     ),
                     Text(
-                      '${(progress * 100).toInt()}٪',
+                      '${PersianDigits.toFa((progress * 100).toInt())}٪',
                       style: AppFonts.vazirmatn(
                         fontSize: 12,
                         fontWeight: FontWeight.w900,

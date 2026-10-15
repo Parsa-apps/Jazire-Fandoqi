@@ -44,12 +44,15 @@ diag_tests() {
   python3 - "$log_file" <<'PYEOF' || true
 import sys
 lines = open(sys.argv[1], encoding="utf-8", errors="replace").read().splitlines()
-fails = [l.strip() for l in lines if l.strip().endswith("[E]") or "Some tests failed" in l or "Test failed." in l]
 def esc(t):
     return t.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
-print(f"::error title=diag tests::fail-markers={len(fails)} total-lines={len(lines)}", flush=True)
-for i, l in enumerate(fails[:8]):
-    print(f"::error title=diag test fail {i+1}/{len(fails)}::{esc(l)}", flush=True)
+# For each failing test ([E] progress line), publish the exception block that
+# the expanded reporter printed just above it.
+idxs = [i for i, l in enumerate(lines) if l.rstrip().endswith("[E]")]
+print(f"::error title=diag tests::fail-markers={len(idxs)} total-lines={len(lines)}", flush=True)
+for n, i in enumerate(idxs[:4], start=1):
+    block = lines[max(0, i - 45):i + 2]
+    print(f"::error title=diag test exception {n}/{len(idxs)}::{esc(chr(10).join(block))}", flush=True)
 PYEOF
   rm -f "$log_file"
   return "$status"
