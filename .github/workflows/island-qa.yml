@@ -40,28 +40,36 @@ jobs:
       - name: Flutter analyze
         run: |
           set +e
-          flutter analyze --machine > analyze-machine.txt 2>&1
+          flutter analyze > analyze.txt 2>&1
           status=$?
           # Republish findings as check annotations so they are visible
           # in the API/UI even when raw job logs cannot be downloaded.
           # Findings in the redesigned island files come first.
-          total=$(grep -c '|' analyze-machine.txt || true)
-          echo "::notice::flutter analyze exit=$status pipe-lines=$total"
+          total=$(grep -c ' • ' analyze.txt || true)
+          summary=$(tail -1 analyze.txt | tr -d '%' | cut -c1-200)
+          echo "::notice::flutter analyze exit=$status findings=$total summary=$summary"
           emit() {
             local n=0
-            while IFS='|' read -r severity _type code path line col _len msg; do
-              case "$severity" in
-                ERROR)   level=error ;;
-                WARNING) level=warning ;;
+            while IFS= read -r raw; do
+              sev=$(printf '%s' "$raw" | awk -F' • ' '{print $1}' | xargs)
+              msg=$(printf '%s' "$raw" | awk -F' • ' '{print $2}')
+              loc=$(printf '%s' "$raw" | awk -F' • ' '{print $3}')
+              code=$(printf '%s' "$raw" | awk -F' • ' '{print $4}')
+              file=$(printf '%s' "$loc" | rev | cut -d: -f3- | rev)
+              line=$(printf '%s' "$loc" | rev | cut -d: -f2 | rev)
+              col=$(printf '%s' "$loc" | rev | cut -d: -f1 | rev)
+              case "$sev" in
+                error)   level=error ;;
+                warning) level=warning ;;
                 *)       level=notice ;;
               esac
-              relpath="${path#"$GITHUB_WORKSPACE"/}"
+              relpath="${file#"$GITHUB_WORKSPACE"/}"
               echo "::$level file=$relpath,line=$line,col=$col::$code $msg"
               n=$((n+1)); [ "$n" -ge 22 ] && break
             done
           }
-          grep -E 'island_map|island_world_style|island_node_test' analyze-machine.txt | emit || true
-          grep -vE 'island_map|island_world_style|island_node_test' analyze-machine.txt | emit || true
+          grep ' • ' analyze.txt | grep -E 'island_map|island_world_style|island_node_test' | emit || true
+          grep ' • ' analyze.txt | grep -vE 'island_map|island_world_style|island_node_test' | emit || true
           exit $status
 
       - name: Flutter test
