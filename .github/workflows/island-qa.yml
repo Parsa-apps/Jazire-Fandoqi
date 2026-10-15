@@ -99,10 +99,17 @@ jobs:
             clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
             echo "::error::$clean"
           done
-          grep -A 10 'island_node_test.dart.*\[E\]' test-output.txt | head -44 | while IFS= read -r line; do
-            clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
-            echo "::error::$clean"
+          # Full island-test output, base64-chunked into notices so the
+          # exact failure text survives the trip through the API.
+          flutter test --reporter expanded test/features/home/island_node_test.dart > island-test-output.txt 2>&1 || true
+          base64 -w0 island-test-output.txt > island-test.b64
+          split -b 900 island-test.b64 island-chunk-
+          n=0
+          for f in island-chunk-*; do
+            n=$((n+1))
+            echo "::notice::ISLAND-B64-$n $(cat "$f")"
           done
+          echo "::notice::ISLAND-B64-END chunks=$n"
           grep -E 'Some tests failed|All tests passed' test-output.txt | tail -1 | while IFS= read -r line; do
             clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
             echo "::notice::$clean"
