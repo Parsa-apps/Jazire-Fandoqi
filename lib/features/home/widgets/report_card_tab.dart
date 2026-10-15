@@ -35,7 +35,7 @@ class ReportCardTab extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // هدر کارنامه
-              _buildHeader(rate),
+              _buildHeader(context, rate),
 
               const SizedBox(height: 16),
 
@@ -123,12 +123,16 @@ class ReportCardTab extends ConsumerWidget {
                         color: IslandWorldPalette.deepOcean,
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        'مشاهده گزارش تفصیلی والدین',
-                        style: AppFonts.vazirmatn(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w900,
-                          color: IslandWorldPalette.deepOcean,
+                      Flexible(
+                        child: Text(
+                          'مشاهده گزارش تفصیلی والدین',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppFonts.vazirmatn(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            color: IslandWorldPalette.deepOcean,
+                          ),
                         ),
                       ),
                     ],
@@ -142,7 +146,7 @@ class ReportCardTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(int rate) {
+  Widget _buildHeader(BuildContext context, int rate) {
     final header = Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -425,7 +429,7 @@ class ReportCardTab extends ConsumerWidget {
                       ],
                     ),
                     Text(
-                      '${(progress * 100).toInt()}٪',
+                      '${PersianDigits.toFa((progress * 100).toInt())}٪',
                       style: AppFonts.vazirmatn(
                         fontSize: 12,
                         fontWeight: FontWeight.w900,

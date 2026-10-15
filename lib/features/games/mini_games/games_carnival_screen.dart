@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../../app/app_colors.dart';
 import '../../../app/app_fonts.dart';
 import '../../../app/design_tokens.dart';
+import '../../../app/island_world_style.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
@@ -13,6 +14,7 @@ import '../../../core/growth/persian_digits.dart';
 import '../../../core/monetization.dart';
 import '../../../core/xp_system.dart';
 import '../../../shared/widgets/child_touch_target.dart';
+import '../../../shared/widgets/island_kit.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// 🎪 شهر بازی‌های تازه — هاب ۱۰ بازی جدید (نسخه ۷.۰.۰)
@@ -190,28 +192,39 @@ class _GamesCarnivalScreenState extends State<GamesCarnivalScreen> {
           ChildTouchTarget(
             onTap: () => Navigator.pop(context),
             child: Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(9),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(AppRadii.md),
-                border: Border.all(color: Colors.white30),
+                color: IslandWorldPalette.paper,
+                shape: BoxShape.circle,
+                border: Border.all(color: IslandWorldPalette.honey, width: 2),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x33000000),
+                    blurRadius: 7,
+                    offset: Offset(0, 3),
+                  ),
+                ],
               ),
               child: const Icon(
                 Icons.arrow_back_rounded,
-                color: Colors.white,
-                size: 20,
+                color: IslandWorldPalette.ink,
+                size: 21,
               ),
             ),
           ),
           const SizedBox(width: 8),
-          const Expanded(
-            child: Text(
-              'شهر بازی‌های تازه 🎪',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
+          Expanded(
+            child: IslandPanel(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              radius: 20,
+              child: Text(
+                'شهر بازی‌های تازه 🎪',
+                textAlign: TextAlign.center,
+                style: AppFonts.kids(
+                  color: IslandWorldPalette.ink,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ),
@@ -229,62 +242,62 @@ class _GamesCarnivalScreenState extends State<GamesCarnivalScreen> {
         final level = GameData.islandLevel;
         final progress = GameData.islandLevelProgress;
         final remaining = GameData.xpToNextIslandLevel;
-        return Container(
-          margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.14),
-            borderRadius: BorderRadius.circular(AppRadii.xl),
-            border: Border.all(color: Colors.white24),
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  const Text('🐿️', style: TextStyle(fontSize: 26)),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      XpSystem.levelLabel(level),
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+          child: IslandPanel(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    const Text('🐿️', style: TextStyle(fontSize: 26)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        XpSystem.levelLabel(level),
+                        style: AppFonts.vazirmatn(
+                          color: IslandWorldPalette.ink,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${PersianDigits.toFa(GameData.xp)} تجربه',
                       style: AppFonts.vazirmatn(
-                        color: Colors.white,
-                        fontSize: 15,
+                        color: const Color(0xFF8A6D00),
+                        fontSize: 14,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                  ),
-                  Text(
-                    '${PersianDigits.toFa(GameData.xp)} تجربه',
-                    style: AppFonts.vazirmatn(
-                      color: const Color(0xFFFFF176),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadii.pill),
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween<double>(begin: 0, end: progress),
-                  duration: const Duration(milliseconds: 600),
-                  builder: (context, value, _) => LinearProgressIndicator(
-                    value: value,
-                    minHeight: 12,
-                    backgroundColor: Colors.white.withOpacity(0.22),
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      Color(0xFFFFD700),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: 0, end: progress),
+                    duration: const Duration(milliseconds: 600),
+                    builder: (context, value, _) => LinearProgressIndicator(
+                      value: value,
+                      minHeight: 12,
+                      backgroundColor: const Color(0xFFFFE9A8),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        Color(0xFFFFB300),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                '${PersianDigits.toFa(remaining)} تجربه تا سطح بعد',
-                style: AppFonts.vazirmatn(color: Colors.white70, fontSize: 12),
-              ),
-            ],
+                const SizedBox(height: 6),
+                Text(
+                  '${PersianDigits.toFa(remaining)} تجربه تا سطح بعد',
+                  style: AppFonts.vazirmatn(
+                    color: IslandWorldPalette.ink.withOpacity(0.6),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -313,7 +326,13 @@ class _GamesCarnivalScreenState extends State<GamesCarnivalScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.13),
+          // کارت کاغذی جزیره با هالهٔ رنگیِ خودِ بازی: هویت هر بازی
+          // از رنگش پیداست، ولی جنس کارت در همهٔ شهر یکی است.
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFFFFDF7), Color(0xFFFFF6E0)],
+          ),
           borderRadius: BorderRadius.circular(AppRadii.xl),
           border: Border.all(color: game.glow.withOpacity(0.65), width: 2),
           boxShadow: [
@@ -330,12 +349,22 @@ class _GamesCarnivalScreenState extends State<GamesCarnivalScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(game.emoji, style: const TextStyle(fontSize: 40)),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: game.glow.withOpacity(0.14),
+                      border:
+                          Border.all(color: game.glow.withOpacity(0.35)),
+                    ),
+                    child: Text(game.emoji,
+                        style: const TextStyle(fontSize: 34)),
+                  ),
                   const SizedBox(height: 6),
                   Text(
                     game.title,
                     style: AppFonts.vazirmatn(
-                      color: Colors.white,
+                      color: IslandWorldPalette.ink,
                       fontSize: 16,
                       fontWeight: FontWeight.w900,
                     ),
@@ -345,7 +374,7 @@ class _GamesCarnivalScreenState extends State<GamesCarnivalScreen> {
                     game.subtitle,
                     textAlign: TextAlign.center,
                     style: AppFonts.vazirmatn(
-                      color: Colors.white70,
+                      color: IslandWorldPalette.ink.withOpacity(0.55),
                       fontSize: 11,
                     ),
                   ),
@@ -387,29 +416,47 @@ class _GamesCarnivalScreenState extends State<GamesCarnivalScreen> {
 }
 
 /// نشان قفل نسخهٔ کامل — روی کارت‌های پریمیوم (تا زمان خرید).
+/// قفلِ واقعی با آیکون قفل و متن صریح، هم‌سبک با نشان هاب‌ها.
 class _LockBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.35),
-        borderRadius: BorderRadius.circular(AppRadii.xl),
-      ),
-      alignment: Alignment.center,
-      child: const Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('👑', style: TextStyle(fontSize: 30)),
-          SizedBox(height: 4),
-          Text(
-            'نسخهٔ کامل',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-            ),
+    return Semantics(
+      label: 'با نسخه کامل',
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF294552).withOpacity(0.45),
+          borderRadius: BorderRadius.circular(AppRadii.xl),
+        ),
+        alignment: Alignment.center,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFB300),
+            borderRadius: BorderRadius.circular(99),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x33000000),
+                blurRadius: 6,
+                offset: Offset(0, 2),
+              ),
+            ],
           ),
-        ],
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.lock_rounded, color: Colors.white, size: 15),
+              SizedBox(width: 5),
+              Text(
+                'نسخه کامل',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

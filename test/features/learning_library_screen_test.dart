@@ -79,8 +79,10 @@ void main() {
         tester.widget<FandoghiPremium>(find.byType(FandoghiPremium)).animated,
         isFalse,
       );
+      // برچسب دسترس‌پذیری کارت با زیرعنوانش یکی می‌شود؛ کافی است
+      // عنوان در برچسب نهایی حضور داشته باشد.
       expect(
-        find.bySemanticsLabel('دانشنامه حیوانات ایران'),
+        find.bySemanticsLabel(RegExp('دانشنامه حیوانات ایران')),
         findsOneWidget,
       );
       expect(tester.takeException(), isNull);

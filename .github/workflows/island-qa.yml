@@ -1,0 +1,155 @@
+name: Island QA - analyze, test, build
+
+# Verification for the island redesign:
+#   1. Full-repo analyze report (non-gating: the repo carries hundreds
+#      of pre-existing info-level lints; findings are republished as
+#      check annotations because raw job logs are not always readable).
+#   2. Hard gate: the redesigned island code must be analyzer-clean.
+#   3. Full test-suite report (non-gating, findings republished).
+#   4. Hard gate: island + home smoke tests must pass.
+#   5. Release APK build (debug-signed here; the store workflow owns
+#      the signed release pipeline).
+on:
+  push:
+    branches: ['arena/**']
+  workflow_dispatch:
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.3'
+          channel: 'stable'
+          cache: true
+
+      - name: Create local.properties
+        run: |
+          echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
+          echo "sdk.dir=$ANDROID_HOME" >> android/local.properties
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Flutter analyze (full report)
+        run: |
+          set +e
+          flutter analyze > analyze.txt 2>&1
+          # Republish findings as check annotations so they are visible
+          # in the API/UI even when raw job logs cannot be downloaded.
+          total=$(grep -c ' • ' analyze.txt || true)
+          errors=$(grep -c '^ *error •' analyze.txt || true)
+          warnings=$(grep -c '^ *warning •' analyze.txt || true)
+          island=$(grep ' • ' analyze.txt | grep -cE 'island_map|island_world_style|island_node_test|island_kit|fandoqi_hub_sheet|mini_game_scaffold|full_version_paywall|profile_editor' || true)
+          echo "::notice::analyze total=$total errors=$errors warnings=$warnings island-findings=$island"
+          emit() {
+            local n=0
+            while IFS= read -r raw; do
+              sev=$(printf '%s' "$raw" | awk -F' • ' '{print $1}' | xargs)
+              msg=$(printf '%s' "$raw" | awk -F' • ' '{print $2}')
+              loc=$(printf '%s' "$raw" | awk -F' • ' '{print $3}')
+              code=$(printf '%s' "$raw" | awk -F' • ' '{print $4}')
+              file=$(printf '%s' "$loc" | rev | cut -d: -f3- | rev)
+              line=$(printf '%s' "$loc" | rev | cut -d: -f2 | rev)
+              col=$(printf '%s' "$loc" | rev | cut -d: -f1 | rev)
+              case "$sev" in
+                error)   level=error ;;
+                warning) level=warning ;;
+                *)       level=notice ;;
+              esac
+              relpath="${file#"$GITHUB_WORKSPACE"/}"
+              echo "::$level file=$relpath,line=$line,col=$col::$code $msg"
+              n=$((n+1)); [ "$n" -ge 22 ] && break
+            done
+          }
+          grep ' • ' analyze.txt | grep -E '^ *error •' | emit || true
+          grep ' • ' analyze.txt | grep -E '^ *warning •' | emit || true
+          grep ' • ' analyze.txt | grep -E 'island_map|island_world_style|island_node_test' | emit || true
+          # Report only — the hard gate is the scoped step below.
+          true
+
+      # Hard gate: the redesigned island code must be analyzer-clean.
+      # Mission 2 extends the scope with the shared design kit, the hub
+      # sheet (honest lock state) and their tests.
+      - name: Flutter analyze (island scope gate)
+        run: |
+          set +e
+          flutter analyze \
+            lib/features/home/widgets/island_map \
+            lib/features/home/widgets/fandoqi_hub_sheet.dart \
+            lib/features/games/mini_games/games_carnival_screen.dart \
+            lib/features/games/colors_lab/colors_lab_game.dart \
+            lib/features/games/pattern/pattern_game.dart \
+            lib/features/shop/game_access_gate.dart \
+            lib/shared/widgets/island_kit.dart \
+            lib/app/island_world_style.dart \
+            lib/app/island_page_transition.dart \
+            test/features/home/island_node_test.dart \
+            test/features/home/hub_island_node_test.dart \
+            test/features/home/hero_fandoq_test.dart \
+            test/shared/island_kit_test.dart \
+            > gate-analyze.txt 2>&1
+          status=$?
+          cat gate-analyze.txt
+          # Republish findings as annotations (raw logs are not always
+          # reachable), then keep the original verdict.
+          grep ' • ' gate-analyze.txt | head -40 | while IFS= read -r line; do
+            clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
+            echo "::error::gate-analyze: $clean"
+          done
+          exit $status
+
+      - name: Flutter test (full suite report)
+        run: |
+          set +e
+          flutter test --reporter expanded > test-output.txt 2>&1
+          status=$?
+          echo "::notice::flutter test (full suite) exit=$status"
+          grep -E '\[E\]' test-output.txt | head -30 | while IFS= read -r line; do
+            clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
+            echo "::error::$clean"
+          done
+          grep -E 'Some tests failed|All tests passed' test-output.txt | tail -1 | while IFS= read -r line; do
+            clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
+            echo "::notice::$clean"
+          done
+          # Report only — the island gate below is what must stay green.
+          true
+
+      # Hard gate: island redesign tests + home smoke suite.
+      # Mission 2 adds the design-kit, hub-lock and mini-game scaffold
+      # suites so the shared visual layer can never silently regress.
+      - name: Flutter test (island gate)
+        run: >-
+          flutter test
+          test/features/home/island_node_test.dart
+          test/features/home/island_hero_character_test.dart
+          test/features/home/hub_access_policy_test.dart
+          test/features/home/hub_island_node_test.dart
+          test/features/home/hero_fandoq_test.dart
+          test/shared/island_kit_test.dart
+          test/features/games/mini_games/mini_game_scaffold_test.dart
+          test/app_smoke_test.dart
+
+      # Note: on GitHub Actions the project's Gradle build also runs
+      # tool/ci_quality_gate.sh (analyze + full test suite) before
+      # assembling, by design (see android/app/build.gradle).
+      - name: Build APK (Release)
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: island-qa-apk
+          path: build/app/outputs/flutter-apk/app-release.apk

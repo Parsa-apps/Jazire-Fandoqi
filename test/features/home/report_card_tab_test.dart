@@ -34,7 +34,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('کارنامه پیشرفت تحصیلی'), findsOneWidget);
-    expect(find.text('${PersianDigits.toFa(80)}٪'), findsOneWidget);
+    // درصد تسلط داخل جملهٔ هدر نمایش داده می‌شود، نه به‌صورت متن جدا
+    expect(find.textContaining('${PersianDigits.toFa(80)}٪'), findsOneWidget);
     expect(find.text('فارسی و الفبا'), findsOneWidget);
     expect(find.text('${PersianDigits.toFa(50)}٪'), findsOneWidget);
     expect(

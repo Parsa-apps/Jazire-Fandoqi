@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
+import '../../app/island_world_style.dart';
 import '../../core/content_access_policy.dart';
 import '../../core/growth/growth.dart';
 import '../../core/monetization.dart';
+import '../../shared/widgets/island_kit.dart';
 import '../../shared/widgets/parent_pin_gate.dart';
 import 'full_version_paywall.dart';
 
@@ -49,14 +51,53 @@ class _GameAccessGateState extends State<GameAccessGate>
     final blockedRoute = '/game/${widget.gameName}';
     if (ParentControls.isRouteBlocked(blockedRoute) || ParentControls.isBedtimeNow) {
       return Scaffold(
-        appBar: AppBar(title: const Text('فعلاً استراحت')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(28),
-            child: Text(
-              ParentControls.blockReason(blockedRoute),
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, height: 1.6),
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFFAEE7FF), Color(0xFFE8F9FF)],
+            ),
+          ),
+          child: SafeArea(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(28),
+                child: IslandPanel(
+                  padding: const EdgeInsets.fromLTRB(22, 24, 22, 18),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('🌙', style: TextStyle(fontSize: 44)),
+                      const SizedBox(height: 10),
+                      Text(
+                        'فعلاً استراحت',
+                        style: AppFonts.kids(
+                          color: IslandWorldPalette.ink,
+                          fontSize: 22,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        ParentControls.blockReason(blockedRoute),
+                        textAlign: TextAlign.center,
+                        style: AppFonts.vazirmatn(
+                          color: IslandWorldPalette.ink.withOpacity(0.75),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          height: 1.6,
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      IslandKidButton(
+                        label: 'برگشت به جزیره',
+                        icon: Icons.home_rounded,
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -69,10 +110,43 @@ class _GameAccessGateState extends State<GameAccessGate>
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFFF5F0FF), Color(0xFFFFF8F0)],
+              colors: [Color(0xFFAEE7FF), Color(0xFFE8F9FF)],
             ),
           ),
-          child: const Center(child: CircularProgressIndicator()),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedBuilder(
+                  animation: _floatCtrl,
+                  builder: (_, __) => Transform.translate(
+                    offset: Offset(0, -5 * _floatCtrl.value),
+                    child: Image.asset(
+                      IslandWorldAssets.fandoghiWave,
+                      width: 84,
+                      fit: BoxFit.contain,
+                      excludeFromSemantics: true,
+                      errorBuilder: (_, __, ___) =>
+                          const Text('🐿️', style: TextStyle(fontSize: 56)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'جزیره داره آماده می‌شه…',
+                  style: AppFonts.kids(
+                    color: IslandWorldPalette.ink,
+                    fontSize: 18,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                const CircularProgressIndicator(
+                  color: Color(0xFFFFB300),
+                  strokeWidth: 3,
+                ),
+              ],
+            ),
+          ),
         ),
       );
     }
@@ -116,7 +190,7 @@ class _GameAccessGateState extends State<GameAccessGate>
                               ],
                             ),
                           ),
-                          child: Icon(
+                          child: const Icon(
                             Icons.lock_rounded,
                             size: 72,
                             color: AppColors.primary,
@@ -159,39 +233,18 @@ class _GameAccessGateState extends State<GameAccessGate>
                   const SizedBox(height: 28),
                   SizedBox(
                     width: double.infinity,
-                    height: 56,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF7048C8), Color(0xFF9B59B6)],
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF7048C8).withOpacity(0.25),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: FilledButton.icon(
-                        onPressed: () async {
-                          final allowed = await requestParentAccess(context);
-                          if (!allowed || !mounted) return;
-                          await showFullVersionPaywall(context, featureName: widget.gameName);
-                          await _check();
-                        },
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          textStyle: AppFonts.kids(fontSize: 18),
-                        ),
-                        icon: const Icon(Icons.family_restroom_rounded),
-                        label: const Text('مامان / بابا بیاید'),
-                      ),
+                    child: IslandKidButton(
+                      label: 'مامان / بابا بیاید',
+                      icon: Icons.family_restroom_rounded,
+                      onPressed: () async {
+                        final allowed = await requestParentAccess(context);
+                        if (!allowed || !context.mounted) return;
+                        await showFullVersionPaywall(
+                          context,
+                          featureName: widget.gameName,
+                        );
+                        await _check();
+                      },
                     ),
                   ),
                   const SizedBox(height: 14),

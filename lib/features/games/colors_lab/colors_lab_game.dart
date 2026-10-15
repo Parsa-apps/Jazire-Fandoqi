@@ -11,10 +11,8 @@ import '../../../core/fandoghi_coach.dart';
 import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
-import '../../../shared/widgets/child_touch_target.dart';
 import '../../../shared/widgets/fandoghi_premium.dart';
-import '../../../shared/widgets/premium_button.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import '../../../shared/widgets/island_kit.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 /// ────────────────────────────────────────────────────────────
@@ -166,27 +164,17 @@ class _ColorsLabGameState extends State<ColorsLabGame> {
     final options = _roundOptions;
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-          child: Row(
-            children: [
-              ChildTouchTarget(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(AppRadii.md), border: Border.all(color: Colors.white30)),
-                  child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(child: Text('آزمایشگاه رنگ 🧪 — دور ${_round + 1}/${_mixes.length}', textAlign: TextAlign.center, style: AppFonts.vazirmatn(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900))),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadii.pill), boxShadow: AppShadows.soft),
-                child: Text('$_correct/6', style: AppFonts.vazirmatn(fontSize: 12, fontWeight: FontWeight.w900, color: const Color(0xFF6C5CE7))),
-              ),
-            ],
-          ),
+        IslandGameHeader(
+          title: 'آزمایشگاه رنگ 🧪 — دور ${_round + 1}/${_mixes.length}',
+          onBack: () => Navigator.pop(context),
+          trailing: [
+            IslandStatChip(
+              icon: Icons.check_rounded,
+              color: const Color(0xFF6C5CE7),
+              value: '$_correct/${_mixes.length}',
+              semanticLabel: '$_correct پاسخ درست',
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         const FandoghiPremium(size: 48, mood: FandoghiMood.happy, showParticles: false),
@@ -345,12 +333,14 @@ class _ColorsLabGameState extends State<ColorsLabGame> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(color: Colors.white.withOpacity(0.10), borderRadius: BorderRadius.circular(AppRadii.lg), border: Border.all(color: Colors.white24)),
-              child: Column(children: [Text('$_correct درست از ${_mixes.length} — قاطی کردن بلدی!', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)), Text('امتیاز: $_score', style: TextStyle(color: Colors.white70, fontSize: 13))]),
+              child: Column(children: [Text('$_correct درست از ${_mixes.length} — قاطی کردن بلدی!', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)), Text('امتیاز: $_score', style: const TextStyle(color: Colors.white70, fontSize: 13))]),
             ),
             const SizedBox(height: 20),
-            SizedBox(width: double.infinity, child: PremiumButton(text: 'بازی دوباره 🔄', icon: Icons.replay_rounded, onPressed: () { HapticFeedback.mediumImpact(); setState(() { _round = 0; _roundOptions = _buildOptions(); _score = 0; _correct = 0; _locked = false; _finished = false; _selected = null; }); })),
-            const SizedBox(height: 10),
-            SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.home_rounded, size: 18, color: Colors.white), label: Text('برگشت به خانه', style: AppFonts.vazirmatn(color: Colors.white)), style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), side: const BorderSide(color: Colors.white54), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg))))),
+            IslandResultButtons(
+              replayLabel: 'بازی دوباره',
+              onReplay: () { HapticFeedback.mediumImpact(); setState(() { _round = 0; _roundOptions = _buildOptions(); _score = 0; _correct = 0; _locked = false; _finished = false; _selected = null; }); },
+              onHome: () => Navigator.pop(context),
+            ),
           ],
         ),
       ),

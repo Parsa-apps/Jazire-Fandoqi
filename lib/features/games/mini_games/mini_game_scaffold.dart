@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../app/app_fonts.dart';
 import '../../../app/design_tokens.dart';
+import '../../../app/island_world_style.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/fandoghi_models.dart';
@@ -14,6 +15,7 @@ import '../../../core/growth/growth.dart';
 import '../../../core/growth/persian_digits.dart';
 import '../../../core/xp_system.dart';
 import '../../../shared/widgets/child_touch_target.dart';
+import '../../../shared/widgets/island_kit.dart';
 import '../../../shared/widgets/fandoghi_premium.dart';
 import '../../../shared/widgets/premium/particle_celebration.dart';
 import '../../../shared/widgets/premium_button.dart';
@@ -303,8 +305,20 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
     return Scaffold(
       body: DecoratedBox(
         decoration: BoxDecoration(gradient: widget.spec.gradient),
-        child: SafeArea(
-          child: _finished ? _buildResult() : _buildGame(),
+        child: Stack(
+          children: [
+            // لایهٔ «دنیای جزیره» روی گرادیان اختصاصی هر بازی: نور نرم
+            // بالا و حباب‌های لطیف پایین، تا همهٔ بازی‌ها با اینکه
+            // رنگ خودشان را دارند، از یک دنیا آمده باشند.
+            const Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(painter: _MiniGameAmbiencePainter()),
+              ),
+            ),
+            SafeArea(
+              child: _finished ? _buildResult() : _buildGame(),
+            ),
+          ],
         ),
       ),
     );
@@ -318,13 +332,17 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
         const SizedBox(height: 10),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            r.prompt,
-            textAlign: TextAlign.center,
-            style: AppFonts.vazirmatn(
-              color: Colors.white,
-              fontSize: 21,
-              fontWeight: FontWeight.w900,
+          child: IslandPanel(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+            child: Text(
+              r.prompt,
+              textAlign: TextAlign.center,
+              style: AppFonts.vazirmatn(
+                color: IslandWorldPalette.ink,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                height: 1.35,
+              ),
             ),
           ),
         ),
@@ -347,67 +365,98 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
   }
 
   Widget _buildHeader() {
+    final progress = _rounds.isEmpty
+        ? 0.0
+        : ((_roundIndex + (_solvedIndex != null ? 1 : 0)) / _rounds.length)
+            .clamp(0.0, 1.0);
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-      child: Row(
+      child: Column(
         children: [
-          ChildTouchTarget(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(AppRadii.md),
-                border: Border.all(color: Colors.white30),
+          Row(
+            children: [
+              ChildTouchTarget(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  padding: const EdgeInsets.all(9),
+                  decoration: BoxDecoration(
+                    color: IslandWorldPalette.paper,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: IslandWorldPalette.honey,
+                      width: 2,
+                    ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x33000000),
+                        blurRadius: 7,
+                        offset: Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: IslandWorldPalette.ink,
+                    size: 21,
+                  ),
+                ),
               ),
-              child: const Icon(
-                Icons.arrow_back_rounded,
-                color: Colors.white,
-                size: 20,
+              const SizedBox(width: 8),
+              Expanded(
+                child: IslandPanel(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  radius: 20,
+                  child: Text(
+                    widget.spec.title,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppFonts.kids(
+                      color: IslandWorldPalette.ink,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              widget.spec.title,
-              textAlign: TextAlign.center,
-              style: AppFonts.vazirmatn(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(AppRadii.pill),
-              boxShadow: AppShadows.soft,
-            ),
-            child: Text(
-              '✓ ${PersianDigits.toFa(_firstTryCorrect)}/${PersianDigits.toFa(_rounds.length)}',
-              style: AppFonts.vazirmatn(
-                fontSize: 13,
-                fontWeight: FontWeight.w900,
+              const SizedBox(width: 8),
+              IslandStatChip(
+                icon: Icons.check_rounded,
                 color: const Color(0xFF6C5CE7),
+                value:
+                    '${PersianDigits.toFa(_firstTryCorrect)}/${PersianDigits.toFa(_rounds.length)}',
+                semanticLabel:
+                    '${PersianDigits.toFa(_firstTryCorrect)} پاسخ درست از ${PersianDigits.toFa(_rounds.length)}',
               ),
-            ),
+              const SizedBox(width: 6),
+              IslandStatChip(
+                icon: Icons.star_rounded,
+                color: const Color(0xFFFFB300),
+                value: PersianDigits.toFa(_score),
+                semanticLabel: 'امتیاز ${PersianDigits.toFa(_score)}',
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.amber.withOpacity(0.9),
-              borderRadius: BorderRadius.circular(AppRadii.pill),
-            ),
-            child: Text(
-              '${PersianDigits.toFa(_score)} ⭐',
-              style: AppFonts.vazirmatn(
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
+          const SizedBox(height: 10),
+          // نوار پیشرفتِ مسیر بازی: کودک بدون خواندن می‌بیند چقدر مانده.
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(99),
+              child: Container(
+                height: 9,
+                color: Colors.white.withOpacity(0.28),
+                alignment: Alignment.centerRight,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 450),
+                  curve: Curves.easeOutCubic,
+                  width: MediaQuery.of(context).size.width * progress,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(99),
+                    gradient: IslandWorldGradients.honeyButton,
+                  ),
+                ),
               ),
             ),
           ),
@@ -424,9 +473,16 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.12),
+          color: Colors.white.withOpacity(0.16),
           borderRadius: BorderRadius.circular(AppRadii.xl),
-          border: Border.all(color: Colors.white24),
+          border: Border.all(color: Colors.white.withOpacity(0.38)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x22000000),
+              blurRadius: 12,
+              offset: Offset(0, 5),
+            ),
+          ],
         ),
         child: r.sceneIsText
             ? FittedBox(
@@ -683,29 +739,28 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
                 ),
               ),
               const SizedBox(height: 10),
-              Container(
+              IslandPanel(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.10),
-                  borderRadius: BorderRadius.circular(AppRadii.lg),
-                  border: Border.all(color: Colors.white24),
+                  horizontal: 18,
+                  vertical: 12,
                 ),
                 child: Column(
                   children: [
                     Text(
                       '${PersianDigits.toFa(_firstTryCorrect)} درست از ${PersianDigits.toFa(total)}',
                       style: AppFonts.vazirmatn(
-                        color: Colors.white,
+                        color: IslandWorldPalette.ink,
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       'امتیاز: ${PersianDigits.toFa(_score)} — تجربه: +${PersianDigits.toFa(XpSystem.xpPerGameFinish)}',
-                      style: const TextStyle(color: Colors.white70, fontSize: 13),
+                      style: AppFonts.vazirmatn(
+                        color: IslandWorldPalette.ink.withOpacity(0.65),
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ),
@@ -742,8 +797,8 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
-                child: PremiumButton(
-                  text: 'دور جدید 🔄',
+                child: IslandKidButton(
+                  label: 'دور جدید',
                   icon: Icons.replay_rounded,
                   onPressed: _replay,
                 ),
@@ -751,20 +806,12 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
               const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
-                child: OutlinedButton.icon(
+                child: IslandKidButton(
+                  label: 'برگشت به خانه',
+                  icon: Icons.home_rounded,
+                  primary: false,
+                  accent: const Color(0xFF6C5CE7),
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.home_rounded, size: 18, color: Colors.white),
-                  label: Text(
-                    'برگشت به خانه',
-                    style: AppFonts.vazirmatn(color: Colors.white),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    side: const BorderSide(color: Colors.white54),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadii.lg),
-                    ),
-                  ),
                 ),
               ),
             ],
@@ -773,4 +820,45 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
       ),
     );
   }
+}
+
+/// لایهٔ محیطیِ ثابت روی گرادیان هر بازی: هالهٔ نور نرم در بالا و
+/// حباب‌های لطیف در پایین — ارزان (بدون انیمیشن و بازنقاشی) و
+/// مستقل از رنگ اختصاصی بازی، تا حس «یک دنیای واحد» حفظ شود.
+class _MiniGameAmbiencePainter extends CustomPainter {
+  const _MiniGameAmbiencePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final glow = Paint()
+      ..color = Colors.white.withOpacity(0.10)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 40);
+    canvas.drawCircle(
+      Offset(size.width * 0.85, size.height * 0.02),
+      size.width * 0.42,
+      glow,
+    );
+    canvas.drawCircle(
+      Offset(size.width * 0.08, size.height * 0.16),
+      size.width * 0.26,
+      glow,
+    );
+
+    final bubble = Paint()..style = PaintingStyle.fill;
+    const spots = <(double, double, double, double)>[
+      (0.10, 0.90, 15, 0.10),
+      (0.22, 0.96, 9, 0.13),
+      (0.86, 0.88, 18, 0.09),
+      (0.94, 0.97, 8, 0.14),
+      (0.68, 0.95, 11, 0.10),
+      (0.40, 0.93, 7, 0.12),
+    ];
+    for (final (fx, fy, r, o) in spots) {
+      bubble.color = Colors.white.withOpacity(o);
+      canvas.drawCircle(Offset(size.width * fx, size.height * fy), r, bubble);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

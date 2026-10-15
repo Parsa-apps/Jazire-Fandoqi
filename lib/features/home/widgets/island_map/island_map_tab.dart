@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +19,7 @@ import '../../../profile/profile_editor.dart';
 import '../../../stage_map/stage_map_screen.dart';
 import '../daily_gifts_dialog.dart';
 import '../fandoqi_hub_sheet.dart';
+import 'island_decorations.dart';
 import 'island_map_background.dart';
 import 'island_node.dart';
 
@@ -235,7 +238,22 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
                 padding: const EdgeInsets.fromLTRB(10, 6, 10, 0),
                 child: Column(
                   children: [
-                    _buildTopBar(),
+                    // ورود نرم نوار بالا: از بالا می‌لغزد و ظاهر می‌شود
+                    TweenAnimationBuilder<double>(
+                      tween: Tween<double>(begin: 0, end: 1),
+                      duration: _reduceMotion
+                          ? Duration.zero
+                          : const Duration(milliseconds: 550),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, t, child) => Opacity(
+                        opacity: t,
+                        child: Transform.translate(
+                          offset: Offset(0, -10 * (1 - t)),
+                          child: child,
+                        ),
+                      ),
+                      child: _buildTopBar(),
+                    ),
                     if (GameData.classroomLightMode) ...[
                       const SizedBox(height: 8),
                       _classroomDoors(),
@@ -250,6 +268,31 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
         ],
       ),
     );
+  }
+
+  /// سکویی که «مسیر امروز» کودک به آن اشاره می‌کند؛ فندقی با چراغ
+  /// طلایی همان را نشان می‌دهد تا شروع بازی نیاز به خواندن نداشته
+  /// باشد. نگاشت مسیر به سکو محافظه‌کارانه است: خواندن/نوشتن به
+  /// سکوی فارسی، قصه به قصه‌ها و بقیه به سکوی مرکزی بازی‌ها.
+  String _suggestedAssetForToday() {
+    final route = TodayPath.forChild().route;
+    if (route.startsWith('/stories')) {
+      return 'assets/theme_map/island_tales.png';
+    }
+    if (route.startsWith('/cartoons')) {
+      return 'assets/theme_map/island_cartoon.png';
+    }
+    if (route.startsWith('/lullabies')) {
+      return 'assets/theme_map/island_lullaby.png';
+    }
+    if (route == '/alphabet' ||
+        route.startsWith('/dictation') ||
+        route.startsWith('/vocabulary') ||
+        route.startsWith('/sound_match') ||
+        route.startsWith('/game/الفبا')) {
+      return 'assets/theme_map/island_story.png';
+    }
+    return 'assets/theme_map/island_game.png';
   }
 
   // ─── محتوای نقشه: سکوها، پل‌ها و ناحیهٔ زیرِ آب ─────────────
@@ -318,6 +361,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
         side: -1,
         widthMul: 1.06,
         phase: 0.40,
+        badge: 'جدید',
         onTap: () => _go('/games-carnival'),
       ),
       _Slot(
@@ -418,6 +462,23 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
           ),
         ),
 
+        // ── تزئینات زندهٔ دنیا: رنگین‌کمان، بالن، درخت‌ها و ذرات نور ──
+        // زیر پل‌ها و سکوها می‌نشینند تا دنیا پر و کامل به نظر برسد،
+        // ولی هیچ‌وقت روی ناحیهٔ لمس بازی‌ها نمی‌افتند.
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          height: mapH,
+          // تزئینات خودشان لایهٔ لمسیِ جدا دارند (واکنش گل و درخت)؛
+          // ذرات نور داخلشان IgnorePointer است و مزاحم اسکرول نیست.
+          child: IslandDecorations(
+            width: w,
+            mapHeight: mapH,
+            floatAnimation: _floatCtrl,
+          ),
+        ),
+
         // ── پل‌ها زیر سکوها کشیده می‌شوند تا دو سرشان زیر چمن پنهان شود ──
         for (var i = 0; i < rects.length - 1; i++)
           _connectingBridge(rects[i], rects[i + 1]),
@@ -459,6 +520,9 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
               floatPhase: slots[i].phase,
               floatAnimation: _floatCtrl,
               onTap: slots[i].onTap,
+              badge: slots[i].badge,
+              entranceDelay: Duration(milliseconds: 70 * i),
+              highlight: slots[i].asset == _suggestedAssetForToday(),
             ),
           ),
 
@@ -472,6 +536,10 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
             children: [
               Positioned.fill(
                 child: FloatingBubbles(animation: _bubbleCtrl),
+              ),
+              // ماهی‌ها، جلبک‌ها، مرجان و ستارهٔ دریاییِ کف دریا
+              Positioned.fill(
+                child: UnderwaterDecor(animation: _bubbleCtrl),
               ),
               Positioned(
                 left: 0,
@@ -622,29 +690,48 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
     );
   }
 
+  /// شناوریِ بسیار ملایم دکمه‌های کناری روی همان ضرب‌آهنگ نقشه،
+  /// با فاز مخالف هم تا ریتم صفحه یکدست و زنده بماند.
+  Widget _floatingSide({required double phase, required Widget child}) {
+    return AnimatedBuilder(
+      animation: _floatCtrl,
+      builder: (context, inner) {
+        final bob = sin(((_floatCtrl.value + phase) % 1.0) * 2 * pi);
+        return Transform.translate(offset: Offset(0, bob * 2.5), child: inner);
+      },
+      child: child,
+    );
+  }
+
   /// دکمه‌های شناور کنارهٔ صفحه: هدیهٔ روزانه و کتابخانه
   Widget _buildSideButtons() {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _sideButton(
-          icon: Icons.card_giftcard_rounded,
-          color: const Color(0xFFE91E63),
-          tooltip: 'هدیهٔ روزانه',
-          onTap: _openGifts,
+        _floatingSide(
+          phase: 0.0,
+          child: _sideButton(
+            icon: Icons.card_giftcard_rounded,
+            color: const Color(0xFFE91E63),
+            tooltip: 'هدیهٔ روزانه',
+            onTap: _openGifts,
+          ),
         ),
         const SizedBox(height: 10),
-        _sideButton(
-          icon: Icons.menu_book_rounded,
-          color: const Color(0xFF00897B),
-          tooltip: 'کتابخانه',
-          onTap: () {
-            if (widget.onOpenBackpack != null) {
-              widget.onOpenBackpack!();
-            } else {
-              _go('/learning-library');
-            }
-          },
+        _floatingSide(
+          phase: 0.5,
+          child: _sideButton(
+            icon: Icons.menu_book_rounded,
+            color: const Color(0xFF00897B),
+            tooltip: 'کتابخانه',
+            onTap: () {
+              if (widget.onOpenBackpack != null) {
+                widget.onOpenBackpack!();
+              } else {
+                _go('/learning-library');
+              }
+            },
+          ),
         ),
       ],
     );
@@ -704,8 +791,13 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
               vertical: compact ? 4 : 6,
             ),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.94),
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFFFFFDF7), Color(0xFFFFF0C9)],
+              ),
               borderRadius: BorderRadius.circular(26),
+              border: Border.all(color: const Color(0xFFFFB300), width: 1.6),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.12),
@@ -782,6 +874,8 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.94),
                   shape: BoxShape.circle,
+                  border: Border.all(
+                      color: const Color(0xFFFFCC80), width: 1.5),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.12),
@@ -802,6 +896,8 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.94),
                   shape: BoxShape.circle,
+                  border: Border.all(
+                      color: const Color(0xFFFFCC80), width: 1.5),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.12),
@@ -922,12 +1018,17 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
   }) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: compact ? 5 : 9,
-        vertical: compact ? 5 : 6,
+        horizontal: compact ? 5 : 8,
+        vertical: compact ? 4 : 5,
       ),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.94),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFFFFDF7), Color(0xFFFFF3D6)],
+        ),
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color.withOpacity(0.45), width: 1.4),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.12),
@@ -939,8 +1040,27 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: compact ? 15 : 17),
-          SizedBox(width: compact ? 2 : 3),
+          // مدال رنگی دور آیکون — هم‌خانواده با پلاک‌های جزیره
+          Container(
+            padding: const EdgeInsets.all(3.5),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [color.withOpacity(0.85), color],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withOpacity(0.4),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(icon, color: Colors.white, size: compact ? 12 : 14),
+          ),
+          SizedBox(width: compact ? 3 : 5),
           Text(
             PersianDigits.toFa(value),
             style: AppFonts.kids(
@@ -969,6 +1089,10 @@ class _Slot {
 
   final double widthMul;
   final double phase;
+
+  /// نشان گوشهٔ سکو (مثلاً «جدید») — اختیاری
+  final String? badge;
+
   final VoidCallback onTap;
 
   const _Slot({
@@ -979,5 +1103,6 @@ class _Slot {
     required this.widthMul,
     required this.phase,
     required this.onTap,
+    this.badge,
   });
 }
