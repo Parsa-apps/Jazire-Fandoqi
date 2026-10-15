@@ -38,7 +38,22 @@ jobs:
         run: flutter pub get
 
       - name: Flutter analyze
-        run: flutter analyze
+        run: |
+          set +e
+          flutter analyze --machine > analyze-machine.txt 2>&1
+          status=$?
+          # Republish findings as check annotations so they are visible
+          # in the API/UI even when raw job logs cannot be downloaded.
+          while IFS='|' read -r severity _type code path line col _len msg; do
+            case "$severity" in
+              ERROR)   level=error ;;
+              WARNING) level=warning ;;
+              *)       level=notice ;;
+            esac
+            echo "::$level file=$path,line=$line,col=$col::$code $msg"
+          done < analyze-machine.txt
+          echo "flutter analyze exit code: $status"
+          exit $status
 
       - name: Flutter test
         run: flutter test
