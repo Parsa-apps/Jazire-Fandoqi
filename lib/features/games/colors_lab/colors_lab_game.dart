@@ -333,7 +333,7 @@ class _ColorsLabGameState extends State<ColorsLabGame> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(color: Colors.white.withOpacity(0.10), borderRadius: BorderRadius.circular(AppRadii.lg), border: Border.all(color: Colors.white24)),
-              child: Column(children: [Text('$_correct درست از ${_mixes.length} — قاطی کردن بلدی!', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)), Text('امتیاز: $_score', style: TextStyle(color: Colors.white70, fontSize: 13))]),
+              child: Column(children: [Text('$_correct درست از ${_mixes.length} — قاطی کردن بلدی!', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)), Text('امتیاز: $_score', style: const TextStyle(color: Colors.white70, fontSize: 13))]),
             ),
             const SizedBox(height: 20),
             IslandResultButtons(

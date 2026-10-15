@@ -193,9 +193,9 @@ class _PatternGameState extends State<PatternGame> {
           ],
         ),
         const SizedBox(height: 30),
-        Text(
+        const Text(
           'بعدی کدام است؟',
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
             fontSize: 22,
             fontWeight: FontWeight.w900,
@@ -297,7 +297,7 @@ class _PatternGameState extends State<PatternGame> {
               child: Column(
                 children: [
                   Text('$_correct درست از ۶ الگو', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
-                  Text('امتیاز: $_score', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                  Text('امتیاز: $_score', style: const TextStyle(color: Colors.white70, fontSize: 13)),
                 ],
               ),
             ),

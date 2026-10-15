@@ -190,7 +190,7 @@ class _GameAccessGateState extends State<GameAccessGate>
                               ],
                             ),
                           ),
-                          child: Icon(
+                          child: const Icon(
                             Icons.lock_rounded,
                             size: 72,
                             color: AppColors.primary,
@@ -238,7 +238,7 @@ class _GameAccessGateState extends State<GameAccessGate>
                       icon: Icons.family_restroom_rounded,
                       onPressed: () async {
                         final allowed = await requestParentAccess(context);
-                        if (!allowed || !mounted) return;
+                        if (!allowed || !context.mounted) return;
                         await showFullVersionPaywall(
                           context,
                           featureName: widget.gameName,
