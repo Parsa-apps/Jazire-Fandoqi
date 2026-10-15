@@ -99,6 +99,10 @@ jobs:
             clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
             echo "::error::$clean"
           done
+          grep -E 'EXCEPTION CAUGHT|was thrown|Expected:|Actual:|Which:|Timer is still pending|overflowed|Failed assertion|MissingPluginException|Bad state:|Test failed' test-output.txt | head -25 | while IFS= read -r line; do
+            clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
+            echo "::error::$clean"
+          done
           grep -E 'Some tests failed|All tests passed' test-output.txt | tail -1 | while IFS= read -r line; do
             clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
             echo "::notice::$clean"
@@ -113,3 +117,43 @@ jobs:
         with:
           name: island-qa-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
+  # One-off baseline: run the test files that fail in files untouched
+  # by the island redesign against the pre-change commit, to prove
+  # whether those failures pre-date the redesign.
+  baseline-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pre-change commit
+        uses: actions/checkout@v4
+        with:
+          ref: f9bb102f53a788616b369d5a1a30e57992d88f0a
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.3'
+          channel: 'stable'
+          cache: true
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Run suspect test files on the base commit
+        run: |
+          set +e
+          flutter test --reporter expanded \
+            test/shared/fandoghi_coach_overlay_test.dart \
+            test/features/learning_library_screen_test.dart \
+            test/features/gateway/profile_offer_test.dart \
+            test/features/home/report_card_tab_test.dart \
+            test/integration_test/app_flow_test.dart \
+            > baseline-output.txt 2>&1
+          status=$?
+          echo "::notice::baseline flutter test exit=$status"
+          grep -E '\[E\]|Some tests failed|All tests passed' baseline-output.txt | head -30 | while IFS= read -r line; do
+            clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
+            echo "::error::$clean"
+          done
+          # This job only gathers baseline evidence; it never gates.
+          true
