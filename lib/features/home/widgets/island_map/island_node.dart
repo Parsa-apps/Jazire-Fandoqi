@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../app/app_fonts.dart';
+import '../../../../app/island_world_style.dart';
 import '../../../../core/audio_service.dart';
 
 /// موقعیت دکمهٔ شیشه‌ایِ خالی که داخل خودِ تصویر هر سکو کشیده شده است.
@@ -352,7 +353,7 @@ class HeroFandoq extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'فندقی',
+      label: 'فندقی؛ برای شنیدن پیام لمس کن',
       child: GestureDetector(
         onTap: () {
           HapticFeedback.mediumImpact();
@@ -388,10 +389,22 @@ class HeroFandoq extends StatelessWidget {
                   ),
                 ),
                 Image.asset(
-                  'assets/theme_map/hero_fandoq.png',
+                  IslandWorldAssets.fandoghiWave,
                   width: width,
                   fit: BoxFit.contain,
                   filterQuality: FilterQuality.medium,
+                  excludeFromSemantics: true,
+                  cacheWidth: (width * MediaQuery.devicePixelRatioOf(context))
+                      .round()
+                      .clamp(1, 622)
+                      .toInt(),
+                  errorBuilder: (_, __, ___) => Image.asset(
+                    'assets/theme_map/hero_fandoq.png',
+                    width: width,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.medium,
+                    excludeFromSemantics: true,
+                  ),
                 ),
               ],
             ),

@@ -75,6 +75,12 @@ void main() {
     expect(find.text('کوله‌پشتی'), findsOneWidget);
     expect(find.text('کارنامه'), findsOneWidget);
     expect(find.text('پروفایل'), findsOneWidget);
+    // هر مقصد نوار پایین باید نام و نقش دکمهٔ قابل‌دسترس داشته باشد.
+    expect(find.bySemanticsLabel('دستاوردها'), findsOneWidget);
+    expect(find.bySemanticsLabel('کوله‌پشتی'), findsOneWidget);
+    expect(find.bySemanticsLabel('خانه'), findsOneWidget);
+    expect(find.bySemanticsLabel('کارنامه'), findsOneWidget);
+    expect(find.bySemanticsLabel('پروفایل'), findsOneWidget);
 
     // کنترل مستقل و همیشه‌در‌دسترس موسیقی
     expect(find.byKey(const Key('music-volume-control')), findsOneWidget);

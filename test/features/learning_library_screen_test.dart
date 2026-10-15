@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
 import 'package:jazireh_fandoghi/features/gateway/learning_library_screen.dart';
+import 'package:jazireh_fandoghi/shared/widgets/fandoghi_premium.dart';
 
 Future<void> _disposeAnimatedTree(WidgetTester tester) async {
   await tester.pumpWidget(const SizedBox.shrink());
@@ -50,4 +51,41 @@ void main() {
 
     await _disposeAnimatedTree(tester);
   });
+
+  testWidgets(
+    'embedded backpack lays out on a narrow phone with reduced motion',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 568);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: MediaQuery(
+            data: MediaQueryData(
+              size: Size(320, 568),
+              disableAnimations: true,
+            ),
+            child: LearningLibraryScreen(embedded: true),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('کوله‌پشتی یادگیری 🎒'), findsOneWidget);
+      expect(find.text('دانشنامه حیوانات ایران'), findsOneWidget);
+      expect(
+        tester.widget<FandoghiPremium>(find.byType(FandoghiPremium)).animated,
+        isFalse,
+      );
+      expect(
+        find.bySemanticsLabel('دانشنامه حیوانات ایران'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+
+      await _disposeAnimatedTree(tester);
+    },
+  );
 }

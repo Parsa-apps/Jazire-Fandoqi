@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
-import '../../app/design_tokens.dart';
+import '../../app/island_world_style.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/fandoghi_models.dart';
 import '../../shared/widgets/child_touch_target.dart';
@@ -30,42 +29,42 @@ class _LearningLibraryScreenState extends State<LearningLibraryScreen> {
       subtitle: '۳۰ حیوان، زیستگاه و نکته‌های جالب',
       emoji: '🦁',
       route: '/animals',
-      color: Color(0xFF00B894),
+      color: IslandWorldPalette.foliage,
     ),
     _LibraryEntry(
       title: 'دنیای اعداد',
       subtitle: 'شمارش با سیب و گردو از ۱ تا ۲۰',
       emoji: '🔢',
       route: '/numbers',
-      color: Color(0xFFEF6C00),
+      color: IslandWorldPalette.deepOcean,
     ),
     _LibraryEntry(
       title: 'شغل‌های قهرمانانه',
       subtitle: 'با ۲۰ شغل و آدم‌های مفید آشنا شو',
       emoji: '👷',
       route: '/jobs',
-      color: Color(0xFF1976D2),
+      color: IslandWorldPalette.wood,
     ),
     _LibraryEntry(
       title: 'مفاهیم اولیه',
       subtitle: 'فصل‌ها، هوا، شب و روز و اندازه‌ها',
       emoji: '🌈',
       route: '/concepts',
-      color: Color(0xFFFF8E53),
+      color: IslandWorldPalette.coral,
     ),
     _LibraryEntry(
       title: 'دنیای احساسات',
       subtitle: 'شناخت احساس و تمرین نفس آرام',
       emoji: '💛',
       route: '/sel',
-      color: Color(0xFFFF6B6B),
+      color: IslandWorldPalette.rose,
     ),
     _LibraryEntry(
       title: 'مهارت زندگی',
       subtitle: 'ترافیک، بهداشت، پول تومان و ایران',
       emoji: '🧭',
       route: '/life-skills',
-      color: Color(0xFF00897B),
+      color: IslandWorldPalette.ocean,
     ),
   ];
 
@@ -97,83 +96,124 @@ class _LearningLibraryScreenState extends State<LearningLibraryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final animationsDisabled =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    const gridCardAspectRatio = 0.88;
+    final cardWidth = (MediaQuery.of(context).size.width - 44) / 2;
+    final aspectRatioExtent = cardWidth / gridCardAspectRatio;
+    final cardMainAxisExtent =
+        aspectRatioExtent < 190 ? 190.0 : aspectRatioExtent;
+
     return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: AppGradients.nightSky),
-        child: SafeArea(
-          child: Column(
-            children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-                  child: Row(
-                    children: [
-                      if (!widget.embedded) ...[
-                        ChildTouchTarget(
-                          onTap: () => Navigator.pop(context),
-                          child: const Icon(
-                            Icons.arrow_back_rounded,
-                            color: Colors.white,
-                            size: 28,
+      backgroundColor: IslandWorldPalette.paper,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                decoration: BoxDecoration(
+                  gradient: IslandWorldGradients.sky,
+                  borderRadius:
+                      BorderRadius.circular(IslandWorldMetrics.cardRadius),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.84),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: IslandWorldPalette.deepOcean.withOpacity(0.12),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        if (widget.embedded)
+                          const SizedBox(width: 64)
+                        else
+                          ChildTouchTarget(
+                            onTap: () => Navigator.pop(context),
+                            child: const Icon(
+                              Icons.arrow_back_rounded,
+                              color: IslandWorldPalette.deepOcean,
+                              size: 28,
+                            ),
+                          ),
+                        Expanded(
+                          child: Text(
+                            widget.embedded
+                                ? 'کوله‌پشتی یادگیری 🎒'
+                                : 'کتابخانه یادگیری 📚',
+                            textAlign: TextAlign.center,
+                            style: AppFonts.kids(
+                              color: IslandWorldPalette.ink,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              height: 1.2,
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 64),
                       ],
-                      Expanded(
-                        child: Text(
-                          widget.embedded ? 'کوله‌پشتی یادگیری 🎒' : 'کتابخانه یادگیری 📚',
-                          textAlign: TextAlign.center,
-                          style: AppFonts.vazirmatn(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
+                    ),
+                    const SizedBox(height: 4),
+                    FandoghiPremium(
+                      size: 64,
+                      mood: FandoghiMood.excited,
+                      showParticles: false,
+                      animated: !animationsDisabled,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'یادگیری پریمیوم، آفلاین و کودکانه',
+                      textAlign: TextAlign.center,
+                      style: AppFonts.vazirmatn(
+                        color: IslandWorldPalette.deepOcean,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
                       ),
-                      if (!widget.embedded) const SizedBox(width: 32),
-                    ],
-                  ),
-                ),
-              const SizedBox(height: 4),
-              const FandoghiPremium(
-                size: 64,
-                mood: FandoghiMood.excited,
-                showParticles: false,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'یادگیری پریمیوم، آفلاین و کودکانه',
-                style: AppFonts.vazirmatn(
-                  color: Colors.white70,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: GridView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                  physics: const BouncingScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 0.88,
-                  ),
-                  itemCount: _entries.length,
-                  itemBuilder: (context, index) {
-                    final entry = _entries[index];
-                    return _LibraryCard(
-                      entry: entry,
-                      onTap: () => _open(entry.route),
-                    ).animate(delay: (index * 70).ms).fadeIn(duration: 350.ms).scale(
-                          begin: const Offset(0.9, 0.9),
-                          curve: Curves.easeOutBack,
-                        );
-                  },
+            ),
+            Expanded(
+              child: GridView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                physics: const BouncingScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  mainAxisExtent: cardMainAxisExtent,
                 ),
+                itemCount: _entries.length,
+                itemBuilder: (context, index) {
+                  final entry = _entries[index];
+                  final card = _LibraryCard(
+                    entry: entry,
+                    onTap: () => _open(entry.route),
+                  );
+                  if (animationsDisabled) return card;
+
+                  return card
+                      .animate(delay: (index * 70).ms)
+                      .fadeIn(duration: IslandWorldMetrics.routeTransition)
+                      .scale(
+                        begin: const Offset(0.9, 0.9),
+                        duration: IslandWorldMetrics.routeTransition,
+                        curve: Curves.easeOutBack,
+                      );
+                },
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -210,53 +250,67 @@ class _LibraryCard extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.95),
-            borderRadius: BorderRadius.circular(AppRadii.xl),
-            border: Border.all(color: entry.color.withOpacity(0.45), width: 2),
-            boxShadow: AppShadows.colored(entry.color, opacity: 0.22),
+            color: IslandWorldPalette.paper,
+            borderRadius: BorderRadius.circular(IslandWorldMetrics.cardRadius),
+            border: Border.all(
+              color: entry.color.withOpacity(0.36),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: entry.color.withOpacity(0.13),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 62,
-                height: 62,
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
                   color: entry.color.withOpacity(0.14),
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
-                child: Text(entry.emoji, style: const TextStyle(fontSize: 36)),
+                child: Text(entry.emoji, style: const TextStyle(fontSize: 34)),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Text(
                 entry.title,
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: AppFonts.vazirmatn(
-                  color: AppColors.textPrimary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
+                style: AppFonts.kids(
+                  color: IslandWorldPalette.ink,
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w800,
+                  height: 1.2,
                 ),
               ),
-              const SizedBox(height: 5),
+              const SizedBox(height: 4),
               Text(
                 entry.subtitle,
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: AppFonts.vazirmatn(
-                  color: AppColors.textSecondary,
+                  color: IslandWorldPalette.mutedInk,
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
-                  height: 1.4,
+                  height: 1.3,
                 ),
               ),
-              const SizedBox(height: 8),
-              Icon(Icons.arrow_back_rounded, color: entry.color, size: 20),
+              const SizedBox(height: 6),
+              Icon(
+                Icons.arrow_back_rounded,
+                color: entry.color,
+                size: 18,
+              ),
             ],
           ),
         ),

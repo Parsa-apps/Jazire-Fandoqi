@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
+import '../../app/island_world_style.dart';
 import '../home/home_screen.dart';
 import '../profile/profile_editor.dart';
 
@@ -50,20 +50,20 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                const Color(0xFFF5F0FF),
-                const Color(0xFFFFF8F0),
-                const Color(0xFFF0F8FF),
+                IslandWorldPalette.paper,
+                IslandWorldPalette.skyMist,
+                const Color(0xFFF4F9EC),
               ],
             ),
-            borderRadius: BorderRadius.circular(32),
+            borderRadius: BorderRadius.circular(IslandWorldMetrics.cardRadius),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.15),
+                color: IslandWorldPalette.deepOcean.withOpacity(0.15),
                 blurRadius: 30,
                 offset: const Offset(0, 12),
               ),
               BoxShadow(
-                color: AppColors.mapAccent.withOpacity(0.1),
+                color: IslandWorldPalette.foliage.withOpacity(0.1),
                 blurRadius: 20,
                 offset: const Offset(0, -4),
               ),
@@ -85,22 +85,32 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        AppColors.mapAccent.withOpacity(0.3),
-                        AppColors.primary.withOpacity(0.1),
+                        IslandWorldPalette.ocean.withOpacity(0.3),
+                        IslandWorldPalette.foliage.withOpacity(0.1),
                         Colors.transparent,
                       ],
                     ),
                   ),
-                  child: Image.asset(
-                    'assets/mascot/fandoghi_welcome_hero.png',
-                    width: 120,
-                    height: 120,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Image.asset(
-                      'assets/mascot/fandoghi_baby_shy.webp',
+                  child: IgnorePointer(
+                    child: Image.asset(
+                      IslandWorldAssets.fandoghiWave,
                       width: 120,
                       height: 120,
                       fit: BoxFit.contain,
+                      filterQuality: FilterQuality.medium,
+                      excludeFromSemantics: true,
+                      cacheWidth:
+                          (120 * MediaQuery.devicePixelRatioOf(context))
+                              .round()
+                              .clamp(120, 360)
+                              .toInt(),
+                      errorBuilder: (_, __, ___) => Image.asset(
+                        'assets/mascot/fandoghi_baby_shy.webp',
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.contain,
+                        excludeFromSemantics: true,
+                      ),
                     ),
                   ),
                 ),
@@ -109,7 +119,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
                   'یک سؤال کوچک، با اجازهٔ شما 🌰',
                   textAlign: TextAlign.center,
                   style: AppFonts.kids(
-                    color: const Color(0xFF4A2875),
+                    color: IslandWorldPalette.deepOcean,
                     fontSize: 26,
                     height: 1.25,
                   ),
@@ -119,7 +129,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
                   'آیا مایل هستید همین حالا نام و مشخصات کودکتان را وارد کنید؟',
                   textAlign: TextAlign.center,
                   style: AppFonts.vazirmatn(
-                    color: const Color(0xFF392F43),
+                    color: IslandWorldPalette.ink,
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                     height: 1.7,
@@ -129,21 +139,25 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.08),
+                    color: IslandWorldPalette.sky.withOpacity(0.10),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: AppColors.primary.withOpacity(0.15),
+                      color: IslandWorldPalette.softOutline,
                     ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.shield_outlined, size: 20, color: Color(0xFF7048C8)),
+                      const Icon(
+                        Icons.shield_outlined,
+                        size: 20,
+                        color: IslandWorldPalette.deepOcean,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'کاملاً اختیاری — اطلاعات فقط روی همین دستگاه می‌ماند.',
                           style: AppFonts.vazirmatn(
-                            color: const Color(0xFF5E4B70),
+                            color: IslandWorldPalette.ink,
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             height: 1.5,
@@ -156,16 +170,16 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
                 const SizedBox(height: 22),
                 SizedBox(
                   width: double.infinity,
-                  height: 56,
+                  height: IslandWorldMetrics.primaryActionHeight,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF7048C8), Color(0xFF9B59B6)],
+                      gradient: IslandWorldGradients.honeyButton,
+                      borderRadius: BorderRadius.circular(
+                        IslandWorldMetrics.buttonRadius,
                       ),
-                      borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF7048C8).withOpacity(0.3),
+                          color: IslandWorldPalette.honey.withOpacity(0.32),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -179,9 +193,12 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
                       },
                       style: FilledButton.styleFrom(
                         backgroundColor: Colors.transparent,
+                        foregroundColor: IslandWorldPalette.ink,
                         shadowColor: Colors.transparent,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(
+                            IslandWorldMetrics.buttonRadius,
+                          ),
                         ),
                         textStyle: AppFonts.kids(fontSize: 19),
                       ),
@@ -201,10 +218,15 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
                       Navigator.pop(dialogContext, false);
                     },
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF604B70),
-                      side: const BorderSide(color: Color(0xFFC9B9D8), width: 1.5),
+                      foregroundColor: IslandWorldPalette.ink,
+                      side: const BorderSide(
+                        color: IslandWorldPalette.softOutline,
+                        width: 1.5,
+                      ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(
+                          IslandWorldMetrics.buttonRadius,
+                        ),
                       ),
                       textStyle: AppFonts.kids(fontSize: 18),
                     ),

@@ -306,7 +306,7 @@ class _GamesCarnivalScreenState extends State<GamesCarnivalScreen> {
   }
 
   Widget _buildCard(_CarnivalGame game) {
-    final locked = _checkedPurchase && !_hasFullVersion && !game.isFree;
+    final locked = !game.isFree && (!_checkedPurchase || !_hasFullVersion);
     return ChildTouchTarget(
       onTap: () => _open(game),
       minSize: 96,

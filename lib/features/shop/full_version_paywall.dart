@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -29,7 +27,7 @@ String normalizePaywallDigits(String input) {
 /// پیشنهاد ۴۱ — پرداخت امن درون‌برنامه‌ای + اعتماد والد
 /// نام فروشگاه عمداً در UI نمی‌آید: اپ روی چند فروشگاه منتشر می‌شود و
 /// درگاه درست هنگام اجرا از روی بستهٔ نصب‌کننده انتخاب می‌شود.
-Future<void> showFullVersionPaywall(BuildContext context, {String? featureName}) async {
+Future<bool> showFullVersionPaywall(BuildContext context, {String? featureName}) async {
   final bought = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
@@ -44,6 +42,7 @@ Future<void> showFullVersionPaywall(BuildContext context, {String? featureName})
       backgroundColor: Color(0xFF16803C),
     ));
   }
+  return bought == true;
 }
 
 class _FullVersionSheetPremium extends StatefulWidget {
@@ -203,7 +202,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                           showParticles: true,
                         ),
                         SizedBox(width: 12),
-                        Expanded(child: _TypingPrice()),
+                        const Expanded(child: _StorePriceNotice()),
                       ],
                     ),
                   )
@@ -266,9 +265,9 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadii.lg)),
                           child: Column(
                             children: [
-                              Text('قیمت نسخه کامل', style: TextStyle(fontSize: 10, color: Colors.black54, fontWeight: FontWeight.w700)),
+                              Text('قیمت نهایی', style: TextStyle(fontSize: 10, color: Colors.black54, fontWeight: FontWeight.w700)),
                               const SizedBox(height: 2),
-                              Text('مشاهده قیمت', style: AppFonts.vazirmatn(fontSize: 13, fontWeight: FontWeight.w900, color: AppColors.primary)),
+                              Text('در پرداخت فروشگاه', style: AppFonts.vazirmatn(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.primary)),
                               const Icon(Icons.storefront_rounded, size: 16, color: AppColors.primary),
                             ],
                           ),
@@ -348,93 +347,35 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
 
 }
 
-class _TypingPrice extends StatelessWidget {
-  const _TypingPrice();
-
-  static const _numericPrice = '49/000';
-  static const _writtenPrice = 'چهل و نه هزار تومان';
+class _StorePriceNotice extends StatelessWidget {
+  const _StorePriceNotice();
 
   @override
-  Widget build(BuildContext context) {
-    final totalCharacters = _numericPrice.length + _writtenPrice.length;
-
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: totalCharacters.toDouble()),
-      duration: const Duration(milliseconds: 2600),
-      curve: Curves.linear,
-      builder: (context, value, child) {
-        final visibleCharacters = value.floor();
-        final numericCount = min(visibleCharacters, _numericPrice.length);
-        final writtenCount = min(
-          max(visibleCharacters - _numericPrice.length, 0),
-          _writtenPrice.length,
-        );
-        final isComplete = visibleCharacters >= totalCharacters;
-        final cursorVisible = !isComplete && (value * 3).floor().isEven;
-        final typingNumeric = visibleCharacters <= _numericPrice.length;
-
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              height: 50,
-              child: Center(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    '${_numericPrice.substring(0, numericCount)}'
-                    '${typingNumeric && cursorVisible ? '▌' : ''}',
-                    maxLines: 1,
-                    textAlign: TextAlign.center,
-                    textDirection: TextDirection.ltr,
-                    style: AppFonts.vazirmatn(
-                      fontSize: 40,
-                      height: 1,
-                      fontWeight: FontWeight.w900,
-                      color: const Color(0xFF6C43D9),
-                      shadows: const [
-                        Shadow(
-                          color: Color(0x33FF9F1C),
-                          blurRadius: 10,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+  Widget build(BuildContext context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'قیمت نسخهٔ کامل',
+            textAlign: TextAlign.center,
+            style: AppFonts.vazirmatn(
+              fontSize: 19,
+              fontWeight: FontWeight.w900,
+              color: const Color(0xFF6C43D9),
             ),
-            const SizedBox(height: 4),
-            SizedBox(
-              height: 34,
-              child: Center(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    '${_writtenPrice.substring(0, writtenCount)}'
-                    '${!typingNumeric && cursorVisible ? '▌' : ''}',
-                    maxLines: 1,
-                    textAlign: TextAlign.center,
-                    textDirection: TextDirection.rtl,
-                    style: AppFonts.vazirmatn(
-                      fontSize: 20,
-                      height: 1.35,
-                      fontWeight: FontWeight.w900,
-                      color: const Color(0xFF5A348B),
-                    ),
-                  ),
-                ),
-              ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            'مبلغ نهایی را فروشگاه در پنجرهٔ پرداخت نشان می‌دهد.',
+            textAlign: TextAlign.center,
+            style: AppFonts.vazirmatn(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              height: 1.45,
+              color: const Color(0xFF5A348B),
             ),
-          ],
-        );
-      },
-    ).animate().shimmer(
-          delay: 2700.ms,
-          duration: 900.ms,
-          color: const Color(0x99FFD54F),
-        );
-  }
+          ),
+        ],
+      );
 }
 
 class _PremiumBenefit extends StatelessWidget {

@@ -365,13 +365,25 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
         '/home': (context) => const HomeScreen(),
         '/drawing-album': (context) => const DrawingAlbumScreen(),
         '/alphabet': (context) => const AlphabetAcademyGame(),
-        '/memory_match': (context) => const MemoryMatchGame(),
+        '/memory_match': (context) => GameAccessGate(
+              gameName: 'حافظه',
+              child: const MemoryMatchGame(),
+            ),
         '/bubble_pop': (context) => const BubblePopGame(),
         '/star_catch': (context) => const StarCatchGame(),
         '/colors_lab': (context) => const ColorsLabGame(),
-        '/puzzle': (context) => const PuzzleGame(),
-        '/math_race': (context) => const MathRaceGame(),
-        '/pattern': (context) => const PatternGame(),
+        '/puzzle': (context) => GameAccessGate(
+              gameName: 'پازل',
+              child: const PuzzleGame(),
+            ),
+        '/math_race': (context) => GameAccessGate(
+              gameName: 'مسابقه',
+              child: const MathRaceGame(),
+            ),
+        '/pattern': (context) => GameAccessGate(
+              gameName: 'الگو',
+              child: const PatternGame(),
+            ),
         // ── نسخه ۷: شهر بازی‌های تازه — ۵ بازی رایگان + ۵ بازی نسخهٔ کامل ──
         // همه از GameAccessGate رد می‌شوند تا ساعت خواب و فیلتر والدین
         // برای بازی‌های جدید هم دقیقاً مثل بازی‌های قبلی اعمال شود.
@@ -427,7 +439,10 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
               gameName: 'بدن',
               child: const BodyPartsGame(),
             ),
-        '/island_builder': (context) => const IslandBuilderGame(),
+        '/island_builder': (context) => GameAccessGate(
+              gameName: 'جزیره‌ساز',
+              child: const IslandBuilderGame(),
+            ),
         '/buddy_chat': (context) => const BuddyChatScreen(),
         '/stickers': (context) => const StickerAlbumScreen(),
         '/parent': (context) => const ParentHub(),
@@ -492,7 +507,7 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
           return MaterialPageRoute(
             settings: settings,
             builder: (_) => GameAccessGate(
-              gameName: 'داستان',
+              gameName: 'داستان ویژه',
               child: StoryScreen(storyId: storyId),
             ),
           );
@@ -556,15 +571,22 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
         // فاز ۲۲-۲۸: آکادمی‌های محتوایی (/academy/numbers, /academy/colors ...)
         if (name.startsWith('/academy/')) {
           final topicId = name.substring('/academy/'.length);
-          final launch = settings.arguments;
-          final isGameLaunch = launch is GameLaunch;
+          final suppliedLaunch = settings.arguments;
+          final launch = suppliedLaunch is GameLaunch ? suppliedLaunch : null;
+          final isFreeTopic = ContentAccessPolicy.isAcademyTopicFree(topicId);
           return MaterialPageRoute(
             settings: settings,
-            builder: (_) => AcademyGame(
-              topicId: topicId,
-              stageId: isGameLaunch ? launch.stageId : null,
-              stageNumber: isGameLaunch ? launch.stageNumber : null,
-            ),
+            builder: (_) {
+              final academy = AcademyGame(
+                topicId: topicId,
+                stageId: launch?.stageId,
+                stageNumber: launch?.stageNumber,
+              );
+              if (isFreeTopic) return academy;
+              // شماره‌های ۱ تا ۲۰ و موضوعات پریمیوم از مسیر مستقیم هم
+              // نباید از قفل سطح محتوا عبور کنند؛ ۱ تا ۱۰ رایگان از /numbers است.
+              return GameAccessGate(gameName: 'آکادمی', child: academy);
+            },
           );
         }
         return null;
