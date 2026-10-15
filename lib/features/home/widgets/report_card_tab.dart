@@ -35,7 +35,7 @@ class ReportCardTab extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // هدر کارنامه
-              _buildHeader(rate),
+              _buildHeader(context, rate),
 
               const SizedBox(height: 16),
 
@@ -142,7 +142,7 @@ class ReportCardTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(int rate) {
+  Widget _buildHeader(BuildContext context, int rate) {
     final header = Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(

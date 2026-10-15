@@ -14,7 +14,6 @@ diag_analyze() {
   set +e
   flutter analyze --no-fatal-warnings --no-fatal-infos 2>&1 | tee "$log_file"
   local status=${PIPESTATUS[0]}
-  set -e
   cp "$log_file" "qa-gate-log/Flutter_analyzer.log"
   python3 - "$log_file" <<'PYEOF' || true
 import sys
@@ -38,7 +37,6 @@ diag_tests() {
   timeout --signal=TERM --kill-after=30s 12m \
     flutter test --reporter expanded --timeout 2m 2>&1 | tee "$log_file"
   local status=${PIPESTATUS[0]}
-  set -e
   cp "$log_file" "qa-gate-log/Flutter_tests.log"
   if command -v python3 >/dev/null 2>&1 && [[ -f tool/ci_annotate.py ]]; then
     python3 tool/ci_annotate.py 'Flutter automated tests failed' "$log_file" || true

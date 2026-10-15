@@ -825,7 +825,7 @@ class _DashboardState extends ConsumerState<DashboardTab>
   /// ردیف افقی بازی‌های رایگان برای شروع فوری بدون پرداخت.
   Widget _buildQuickGamesRow() {
     final quickTiles = _allGames
-        .where((tile) => _freeGames.contains(tile.gameName))
+        .where((tile) => ContentAccessPolicy.isGameFree(tile.gameName))
         .take(6)
         .toList();
     return SizedBox(
