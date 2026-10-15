@@ -11,6 +11,7 @@ import '../../core/growth/smart_conversion.dart';
 import '../../core/monetization.dart';
 import '../../core/security/privacy_protection.dart';
 import '../../shared/widgets/fandoghi_premium.dart';
+import '../../shared/widgets/island_kit.dart';
 import '../../shared/widgets/parent_pin_gate.dart';
 
 String normalizePaywallDigits(String input) {
@@ -167,14 +168,23 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
   Widget build(BuildContext context) => Theme(
         data: ThemeData.light(useMaterial3: true).copyWith(textTheme: ThemeData.light(useMaterial3: true).textTheme.apply(bodyColor: const Color(0xFF2D3436), displayColor: const Color(0xFF2D3436))),
         child: Container(
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.xl)), boxShadow: AppShadows.strong),
+          decoration: BoxDecoration(
+            // پوستهٔ کاغذیِ دنیای جزیره، هم‌زبان با بقیهٔ صفحه‌ها
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFFFFFDF7), Color(0xFFFFF6E0)],
+            ),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.xl)),
+            boxShadow: AppShadows.strong,
+          ),
           child: SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(2))),
+                  Container(width: 40, height: 4, decoration: BoxDecoration(color: const Color(0xFFFFC94D), borderRadius: BorderRadius.circular(2))),
                   const SizedBox(height: 16),
                   // هدر قیمت: لوگوی فندقی و قیمت با افکت تایپ
                   Container(
@@ -300,20 +310,35 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                   const SizedBox(height: 18),
                   SizedBox(
                     width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: _loading ? null : _buy,
-                      icon: _loading
-                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.lock_open_rounded, color: Colors.white, size: 20),
-                      label: Text(_loading ? 'در حال اتصال امن...' : 'خرید نسخه کامل', style: AppFonts.vazirmatn(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size.fromHeight(56),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg)),
-                        shadowColor: AppColors.primary.withOpacity(0.4),
-                        elevation: 8,
-                      ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: double.infinity,
+                          child: IslandKidButton(
+                            label: _loading
+                                ? 'در حال اتصال امن...'
+                                : 'خرید نسخه کامل',
+                            icon: Icons.lock_open_rounded,
+                            onPressed: _loading ? null : _buy,
+                          ),
+                        ),
+                        if (_loading)
+                          const Align(
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: Padding(
+                              padding: EdgeInsetsDirectional.only(end: 20),
+                              child: SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Color(0xFF5D3A12),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ).animate().scale(delay: 300.ms, duration: 400.ms, curve: Curves.easeOutBack),
                   const SizedBox(height: 10),

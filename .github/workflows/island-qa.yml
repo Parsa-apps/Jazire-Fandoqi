@@ -51,7 +51,7 @@ jobs:
           total=$(grep -c ' • ' analyze.txt || true)
           errors=$(grep -c '^ *error •' analyze.txt || true)
           warnings=$(grep -c '^ *warning •' analyze.txt || true)
-          island=$(grep ' • ' analyze.txt | grep -cE 'island_map|island_world_style|island_node_test' || true)
+          island=$(grep ' • ' analyze.txt | grep -cE 'island_map|island_world_style|island_node_test|island_kit|fandoqi_hub_sheet|mini_game_scaffold|full_version_paywall|profile_editor' || true)
           echo "::notice::analyze total=$total errors=$errors warnings=$warnings island-findings=$island"
           emit() {
             local n=0
@@ -80,12 +80,18 @@ jobs:
           true
 
       # Hard gate: the redesigned island code must be analyzer-clean.
+      # Mission 2 extends the scope with the shared design kit, the hub
+      # sheet (honest lock state) and their tests.
       - name: Flutter analyze (island scope gate)
         run: >-
           flutter analyze
           lib/features/home/widgets/island_map
+          lib/features/home/widgets/fandoqi_hub_sheet.dart
+          lib/shared/widgets/island_kit.dart
           lib/app/island_world_style.dart
           test/features/home/island_node_test.dart
+          test/features/home/hub_island_node_test.dart
+          test/shared/island_kit_test.dart
 
       - name: Flutter test (full suite report)
         run: |
@@ -105,12 +111,17 @@ jobs:
           true
 
       # Hard gate: island redesign tests + home smoke suite.
+      # Mission 2 adds the design-kit, hub-lock and mini-game scaffold
+      # suites so the shared visual layer can never silently regress.
       - name: Flutter test (island gate)
         run: >-
           flutter test
           test/features/home/island_node_test.dart
           test/features/home/island_hero_character_test.dart
           test/features/home/hub_access_policy_test.dart
+          test/features/home/hub_island_node_test.dart
+          test/shared/island_kit_test.dart
+          test/features/games/mini_games/mini_game_scaffold_test.dart
           test/app_smoke_test.dart
 
       # Note: on GitHub Actions the project's Gradle build also runs

@@ -1,8 +1,10 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../app/island_world_style.dart';
+import '../../../../core/audio_service.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// 🌴 لایهٔ تزئیناتِ زندهٔ نقشهٔ جزیره
@@ -117,6 +119,10 @@ class IslandDecorations extends StatelessWidget {
 
 /// یک تزئین شناور: بالا و پایین رفتنِ سینوسیِ ملایم + تابِ بسیار کم،
 /// با سایهٔ بیضیِ نرم زیرِ پایه تا عنصر روی آب «نشسته» به نظر بیاید.
+///
+/// تزئینات «زنده»‌اند: با لمس، یک جهش فنریِ کوتاه و چند ستارهٔ نور
+/// نشان می‌دهند (با صدای لمس ملایم). کاملاً اختیاری‌اند و چون بیرون
+/// از مسیر بازی‌ها قرار دارند، هیچ‌وقت مزاحم ورود به بازی نمی‌شوند.
 class _FloatingDecor extends StatelessWidget {
   final String asset;
   final Animation<double> animation;
@@ -153,35 +159,156 @@ class _FloatingDecor extends StatelessWidget {
         child: Transform(
           transform: Matrix4.diagonal3Values(mirrored ? -1.0 : 1.0, 1, 1),
           alignment: Alignment.center,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              if (withShadow)
-                const Positioned(
-                  left: 18,
-                  right: 18,
-                  bottom: -4,
-                  height: 16,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: RadialGradient(
-                        colors: [Color(0x2B00455A), Color(0x0000455A)],
+          child: _InteractiveDecor(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                if (withShadow)
+                  const Positioned(
+                    left: 18,
+                    right: 18,
+                    bottom: -4,
+                    height: 16,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          colors: [Color(0x2B00455A), Color(0x0000455A)],
+                        ),
                       ),
                     ),
                   ),
+                Image.asset(
+                  asset,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.medium,
+                  excludeFromSemantics: true,
                 ),
-              Image.asset(
-                asset,
-                fit: BoxFit.contain,
-                filterQuality: FilterQuality.medium,
-                excludeFromSemantics: true,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+}
+
+/// لایهٔ واکنش لمسی تزئینات: فشردگی و جهش فنری + پاشش کوتاه ستاره.
+/// یک کنترلر کوتاهِ اختصاصی دارد و فقط هنگام لمس اجرا می‌شود.
+class _InteractiveDecor extends StatefulWidget {
+  final Widget child;
+
+  const _InteractiveDecor({required this.child});
+
+  @override
+  State<_InteractiveDecor> createState() => _InteractiveDecorState();
+}
+
+class _InteractiveDecorState extends State<_InteractiveDecor>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _reactCtrl;
+  late final Animation<double> _scaleAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _reactCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 460),
+    );
+    _scaleAnim = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 1.0, end: 0.90)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 25,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 0.90, end: 1.07)
+            .chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 45,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.07, end: 1.0)
+            .chain(CurveTween(curve: Curves.easeOutBack)),
+        weight: 30,
+      ),
+    ]).animate(_reactCtrl);
+  }
+
+  @override
+  void dispose() {
+    _reactCtrl.dispose();
+    super.dispose();
+  }
+
+  void _react() {
+    HapticFeedback.lightImpact();
+    AudioService.tap();
+    _reactCtrl.forward(from: 0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _react,
+      child: AnimatedBuilder(
+        animation: _reactCtrl,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnim.value,
+            alignment: Alignment.bottomCenter,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                child ?? const SizedBox.shrink(),
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                      painter: _DecorBurstPainter(_reactCtrl.value),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+/// پاشش ستارهٔ واکنش تزئین: چند ستارهٔ کوچک که از مرکز عنصر پخش و
+/// محو می‌شوند؛ کوتاه و لطیف، بدون چشمک تند.
+class _DecorBurstPainter extends CustomPainter {
+  final double progress;
+
+  const _DecorBurstPainter(this.progress);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (progress <= 0 || progress >= 1 || size.isEmpty) return;
+    final center = Offset(size.width / 2, size.height * 0.38);
+    final fade = 1 - progress;
+    final maxDist = size.width * 0.42;
+    for (var i = 0; i < 8; i++) {
+      final angle = (i / 8) * 2 * pi + 0.5;
+      final dist = maxDist * progress;
+      final pos = Offset(
+        center.dx + cos(angle) * dist,
+        center.dy + sin(angle) * dist * 0.8 - progress * 10,
+      );
+      final r = 1.4 + fade * 3.6;
+      final color = i.isEven ? const Color(0xFFFFC93C) : Colors.white;
+      canvas.drawPath(
+        _sparklePath(pos, r),
+        Paint()..color = color.withOpacity(0.85 * fade),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DecorBurstPainter old) => old.progress != progress;
 }
 
 /// بالن با رانش افقیِ آرام — برخلاف بقیهٔ تزئینات بیشتر «سفر» می‌کند
@@ -202,11 +329,13 @@ class _BalloonDecor extends StatelessWidget {
           child: child,
         );
       },
-      child: Image.asset(
-        IslandWorldAssets.decorBalloon,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.medium,
-        excludeFromSemantics: true,
+      child: _InteractiveDecor(
+        child: Image.asset(
+          IslandWorldAssets.decorBalloon,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.medium,
+          excludeFromSemantics: true,
+        ),
       ),
     );
   }

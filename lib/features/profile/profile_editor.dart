@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
 import '../../core/game_data.dart';
+import '../../shared/widgets/island_kit.dart';
 
 const List<String> _avatarNames = [
   'روباه کوچولو',
@@ -43,17 +44,17 @@ Future<void> showProfileEditor(BuildContext context) async {
     backgroundColor: Colors.transparent,
     builder: (sheetContext) => StatefulBuilder(
       builder: (context, setState) => Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
+          // پوستهٔ کاغذیِ دنیای جزیره، هم‌زبان با بقیهٔ صفحه‌ها
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              const Color(0xFFF5F0FF),
-              const Color(0xFFFFFBF5),
-              const Color(0xFFF0F8FF),
+              Color(0xFFFFFDF7),
+              Color(0xFFFFF6E0),
             ],
           ),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         ),
         child: Padding(
           padding: EdgeInsets.fromLTRB(
@@ -340,42 +341,17 @@ Future<void> showProfileEditor(BuildContext context) async {
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
-                  height: 56,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF6C43D9), Color(0xFF9B59B6)],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF6C43D9).withOpacity(0.3),
-                          blurRadius: 14,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: FilledButton.icon(
-                      onPressed: () {
-                        HapticFeedback.mediumImpact();
-                        GameData.updateProfile(
-                          name: name.text,
-                          avatarIcon: selectedAvatar,
-                          age: selectedAge,
-                        );
-                        Navigator.pop(sheetContext);
-                      },
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        textStyle: AppFonts.kids(fontSize: 19),
-                      ),
-                      icon: const Icon(Icons.check_circle_rounded),
-                      label: const Text('ذخیره پروفایل'),
-                    ),
+                  child: IslandKidButton(
+                    label: 'ذخیره پروفایل',
+                    icon: Icons.check_circle_rounded,
+                    onPressed: () {
+                      GameData.updateProfile(
+                        name: name.text,
+                        avatarIcon: selectedAvatar,
+                        age: selectedAge,
+                      );
+                      Navigator.pop(sheetContext);
+                    },
                   ),
                 ),
               ],

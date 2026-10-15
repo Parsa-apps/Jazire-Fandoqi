@@ -86,6 +86,11 @@ class IslandNode extends StatefulWidget {
   /// یکی‌یکی و با ریتم روی آب بنشینند، نه همه با هم و ناگهانی.
   final Duration entranceDelay;
 
+  /// چراغ راهنمای فندقی: این سکو «پیشنهاد امروز» است و با یک حلقهٔ
+  /// طلاییِ تپنده و ستارهٔ کوچک مشخص می‌شود تا کودک بدون خواندن
+  /// متن هم بداند از کجا شروع کند.
+  final bool highlight;
+
   const IslandNode({
     super.key,
     required this.asset,
@@ -98,6 +103,7 @@ class IslandNode extends StatefulWidget {
     this.badge,
     this.locked = false,
     this.entranceDelay = Duration.zero,
+    this.highlight = false,
   });
 
   @override
@@ -295,6 +301,76 @@ class _IslandNodeState extends State<IslandNode>
                 top: h * 0.02,
                 right: w * 0.04,
                 child: _countBadge(widget.badge!),
+              ),
+
+            // ⭐ چراغ راهنمای «پیشنهاد امروز»: حلقهٔ طلایی تپنده + ستاره
+            if (widget.highlight)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: AnimatedBuilder(
+                    animation: widget.floatAnimation,
+                    builder: (context, _) {
+                      final pulse = (sin((widget.floatAnimation.value +
+                                      widget.floatPhase) *
+                                  4 *
+                                  pi) +
+                              1) /
+                          2;
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Positioned(
+                            left: -7,
+                            right: -7,
+                            top: -7,
+                            bottom: -7,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                borderRadius:
+                                    BorderRadius.circular(w * 0.20),
+                                border: Border.all(
+                                  color: const Color(0xFFFFC93C)
+                                      .withOpacity(0.30 + pulse * 0.45),
+                                  width: 3,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: -h * 0.045 - pulse * 5,
+                            left: 0,
+                            right: 0,
+                            child: Center(
+                              child: Container(
+                                padding: const EdgeInsets.all(3),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: const Color(0xFFFFC93C),
+                                    width: 2,
+                                  ),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Color(0x33000000),
+                                      blurRadius: 5,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  Icons.star_rounded,
+                                  color: const Color(0xFFFFB300),
+                                  size: (w * 0.10).clamp(15.0, 26.0),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
               ),
 
             // ✨ انفجار کوتاه ستاره‌ها از نقطهٔ لنگر پلاک، هنگام لمس

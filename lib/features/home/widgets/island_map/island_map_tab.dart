@@ -270,6 +270,31 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
     );
   }
 
+  /// سکویی که «مسیر امروز» کودک به آن اشاره می‌کند؛ فندقی با چراغ
+  /// طلایی همان را نشان می‌دهد تا شروع بازی نیاز به خواندن نداشته
+  /// باشد. نگاشت مسیر به سکو محافظه‌کارانه است: خواندن/نوشتن به
+  /// سکوی فارسی، قصه به قصه‌ها و بقیه به سکوی مرکزی بازی‌ها.
+  String _suggestedAssetForToday() {
+    final route = TodayPath.forChild().route;
+    if (route.startsWith('/stories')) {
+      return 'assets/theme_map/island_tales.png';
+    }
+    if (route.startsWith('/cartoons')) {
+      return 'assets/theme_map/island_cartoon.png';
+    }
+    if (route.startsWith('/lullabies')) {
+      return 'assets/theme_map/island_lullaby.png';
+    }
+    if (route == '/alphabet' ||
+        route.startsWith('/dictation') ||
+        route.startsWith('/vocabulary') ||
+        route.startsWith('/sound_match') ||
+        route.startsWith('/game/الفبا')) {
+      return 'assets/theme_map/island_story.png';
+    }
+    return 'assets/theme_map/island_game.png';
+  }
+
   // ─── محتوای نقشه: سکوها، پل‌ها و ناحیهٔ زیرِ آب ─────────────
   Widget _buildMapContent(double w, double mapH, DayCycle cycle) {
     // سکوها عمداً درشت‌اند: برچسب‌ها نسبت به عرضِ سکو اندازه می‌گیرند،
@@ -445,12 +470,12 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
           left: 0,
           right: 0,
           height: mapH,
-          child: IgnorePointer(
-            child: IslandDecorations(
-              width: w,
-              mapHeight: mapH,
-              floatAnimation: _floatCtrl,
-            ),
+          // تزئینات خودشان لایهٔ لمسیِ جدا دارند (واکنش گل و درخت)؛
+          // ذرات نور داخلشان IgnorePointer است و مزاحم اسکرول نیست.
+          child: IslandDecorations(
+            width: w,
+            mapHeight: mapH,
+            floatAnimation: _floatCtrl,
           ),
         ),
 
@@ -497,6 +522,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
               onTap: slots[i].onTap,
               badge: slots[i].badge,
               entranceDelay: Duration(milliseconds: 70 * i),
+              highlight: slots[i].asset == _suggestedAssetForToday(),
             ),
           ),
 

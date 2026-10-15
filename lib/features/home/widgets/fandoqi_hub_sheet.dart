@@ -500,6 +500,11 @@ class _FandoqiHubSheetWidgetState extends State<_FandoqiHubSheetWidget>
   late final AnimationController _floatCtrl;
   late final AnimationController _bubbleCtrl;
 
+  /// آیا کاربر نسخهٔ کامل را دارد؟ برای اینکه نشان «قفل» روی سکوها
+  /// دقیقاً همان چیزی را بگوید که هنگام لمس اتفاق می‌افتد: کسی که
+  /// نسخهٔ کامل خریده، هیچ قفلی نمی‌بیند.
+  bool _hasFullVersion = false;
+
   @override
   void initState() {
     super.initState();
@@ -511,6 +516,11 @@ class _FandoqiHubSheetWidgetState extends State<_FandoqiHubSheetWidget>
       vsync: this,
       duration: const Duration(seconds: 12),
     )..repeat();
+    Monetization.hasFullVersion().then((owned) {
+      if (mounted && owned != _hasFullVersion) {
+        setState(() => _hasFullVersion = owned);
+      }
+    });
   }
 
   @override
@@ -651,7 +661,12 @@ class _FandoqiHubSheetWidgetState extends State<_FandoqiHubSheetWidget>
                                 floatPhase: (i * 0.23) % 1.0,
                                 floatAnimation: _floatCtrl,
                                 accent: hub.primaryColor,
-                                locked: !hub.activities[i].isFree,
+                                // قفلِ مؤثر = دقیقاً همان شرطِ مسیر اجرا:
+                                // رایگانِ واقعی نیست و نسخهٔ کامل هم نداریم.
+                                locked: !(hub.activities[i].isFree &&
+                                        ContentAccessPolicy.isGameFree(
+                                            hub.activities[i].gameName)) &&
+                                    !_hasFullVersion,
                                 onTap: () =>
                                     _launchActivity(context, hub.activities[i]),
                               ),

@@ -142,7 +142,7 @@ class _HubIslandNodeState extends State<HubIslandNode>
 
     return Semantics(
       button: true,
-      label: widget.label,
+      label: widget.locked ? '${widget.label}، با نسخه کامل' : widget.label,
       child: SizedBox(
         width: w,
         height: h,
@@ -283,10 +283,10 @@ class _HubIslandNodeState extends State<HubIslandNode>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.lock, color: Colors.white, size: 12),
+            const Icon(Icons.lock_rounded, color: Colors.white, size: 12),
             const SizedBox(width: 3),
             Text(
-              'ویژه',
+              'نسخه کامل',
               style: AppFonts.kids(fontSize: 11, color: Colors.white),
             ),
           ],
