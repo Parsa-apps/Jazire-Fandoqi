@@ -1,11 +1,12 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../app/app_fonts.dart';
 import '../../../../app/island_world_style.dart';
 import '../../../../core/audio_service.dart';
-import '../../../../core/game_data.dart';
+import '../../../profile/profile_editor.dart';
+import '../../../stage_map/stage_map_screen.dart';
+import '../fandoqi_hub_sheet.dart';
 import 'adventure_island_painter.dart';
 import 'adventure_island_hero.dart';
 
@@ -44,6 +45,31 @@ class _AdventureIslandMapState extends State<AdventureIslandMap> with TickerProv
     Navigator.pushNamed(context, route);
   }
 
+  void _openHub(HubData hub) {
+    HapticFeedback.lightImpact();
+    AudioService.select();
+    showFandoqiHubSheet(context, hub);
+  }
+
+  void _openProfile() {
+    HapticFeedback.lightImpact();
+    AudioService.select();
+    showProfileEditor(context);
+  }
+
+  void _openStageMap() {
+    HapticFeedback.mediumImpact();
+    AudioService.select();
+    if (widget.onOpenStageMap != null) {
+      widget.onOpenStageMap!();
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const StageMapScreen()),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
@@ -77,25 +103,48 @@ class _AdventureIslandMapState extends State<AdventureIslandMap> with TickerProv
                     ),
                   ),
 
-                  // Interactive landmarks
-                  _buildRegionTitle(w, mapHeight * 0.1, 'ساحل سرگرمی', IslandWorldPalette.ocean),
-                  _buildLandmark(w * 0.25, mapHeight * 0.15, '🎪', 'بازی‌های تازه', '/games-carnival', IslandWorldPalette.rose, mapHeight),
-                  _buildLandmark(w * 0.7, mapHeight * 0.22, '🫧', 'حباب‌ترکان', '/bubble_pop', IslandWorldPalette.sky, mapHeight),
-                  _buildLandmark(w * 0.3, mapHeight * 0.28, '⭐', 'ستاره‌گیری', '/star_catch', IslandWorldPalette.honey, mapHeight),
-                  
-                  _buildRegionTitle(w, mapHeight * 0.35, 'کارگاه خلاقیت', IslandWorldPalette.lavender),
-                  _buildLandmark(w * 0.65, mapHeight * 0.40, '🎨', 'دفتر نقاشی', '/game/نقاشی', IslandWorldPalette.coral, mapHeight),
-                  _buildLandmark(w * 0.25, mapHeight * 0.46, '🧪', 'آزمایشگاه رنگ', '/game/رنگ‌ها', IslandWorldPalette.sky, mapHeight),
-                  _buildLandmark(w * 0.75, mapHeight * 0.52, '🧩', 'پازل', '/game/پازل', IslandWorldPalette.honey, mapHeight),
-                  
-                  _buildRegionTitle(w, mapHeight * 0.60, 'جنگل ریاضی', IslandWorldPalette.foliageDeep),
-                  _buildLandmark(w * 0.3, mapHeight * 0.65, '🏎️', 'مسابقه ریاضی', '/game/مسابقه ریاضی', IslandWorldPalette.rose, mapHeight),
-                  _buildLandmark(w * 0.7, mapHeight * 0.71, '🕒', 'ساعت', '/game/ساعت', IslandWorldPalette.sky, mapHeight),
-                  _buildLandmark(w * 0.25, mapHeight * 0.77, '🐊', 'تمساح مقایسه', '/game/تمساح', IslandWorldPalette.foliage, mapHeight),
+                  // ── ۶ هاب یادگیری جزیره فندقی + پروفایل ──
+                  _buildRegionTitle(w, mapHeight * 0.06, 'جزیرهٔ یادگیری', IslandWorldPalette.ocean),
+                  _buildLandmark(
+                    w * 0.28, mapHeight * 0.12, '📖', 'فارسی',
+                    () => _openHub(FandoqiHubs.farsi), IslandWorldPalette.honey,
+                  ),
+                  _buildLandmark(
+                    w * 0.72, mapHeight * 0.20, '🔤', 'حروف',
+                    () => _openHub(FandoqiHubs.lettersAndSounds), IslandWorldPalette.sky,
+                  ),
 
-                  _buildRegionTitle(w, mapHeight * 0.85, 'روستای الفبا', IslandWorldPalette.success),
-                  _buildLandmark(w * 0.75, mapHeight * 0.90, '🔤', 'حروف فارسی', '/game/الفبا', IslandWorldPalette.honey, mapHeight),
-                  _buildLandmark(w * 0.25, mapHeight * 0.96, '📖', 'قصه‌ها', '/stories', IslandWorldPalette.ocean, mapHeight),
+                  _buildRegionTitle(w, mapHeight * 0.30, 'کارگاه دانش', IslandWorldPalette.lavender),
+                  _buildLandmark(
+                    w * 0.30, mapHeight * 0.36, '🧮', 'ریاضی',
+                    () => _openHub(FandoqiHubs.math), IslandWorldPalette.lavender,
+                  ),
+                  _buildLandmark(
+                    w * 0.70, mapHeight * 0.44, '🔬', 'علوم',
+                    () => _openHub(FandoqiHubs.science), IslandWorldPalette.ocean,
+                  ),
+
+                  _buildRegionTitle(w, mapHeight * 0.54, 'ساحل سرگرمی', IslandWorldPalette.rose),
+                  _buildLandmark(
+                    w * 0.30, mapHeight * 0.60, '🎮', 'بازی‌ها',
+                    () => _openHub(FandoqiHubs.games), IslandWorldPalette.coral,
+                  ),
+                  _buildLandmark(
+                    w * 0.70, mapHeight * 0.68, '🎨', 'هنر',
+                    () => _openHub(FandoqiHubs.art), IslandWorldPalette.rose,
+                  ),
+                  _buildLandmark(
+                    w * 0.28, mapHeight * 0.76, '🎪', 'بازی‌های تازه',
+                    () => _go('/games-carnival'), IslandWorldPalette.honey,
+                  ),
+                  _buildLandmark(
+                    w * 0.72, mapHeight * 0.84, '🗺️', 'مراحل',
+                    _openStageMap, IslandWorldPalette.foliage,
+                  ),
+                  _buildLandmark(
+                    w * 0.5, mapHeight * 0.90, '🌟', 'پروفایل من',
+                    _openProfile, IslandWorldPalette.success,
+                  ),
 
                   // The main character as the guide
                   Positioned(
@@ -161,7 +210,7 @@ class _AdventureIslandMapState extends State<AdventureIslandMap> with TickerProv
     );
   }
 
-  Widget _buildLandmark(double x, double y, String emoji, String title, String route, Color color, double mapH) {
+  Widget _buildLandmark(double x, double y, String emoji, String title, VoidCallback onTap, Color color) {
     return Positioned(
       top: y,
       left: x - 50,
@@ -169,7 +218,7 @@ class _AdventureIslandMapState extends State<AdventureIslandMap> with TickerProv
         emoji: emoji,
         title: title,
         color: color,
-        onTap: () => _go(route),
+        onTap: onTap,
       ),
     );
   }

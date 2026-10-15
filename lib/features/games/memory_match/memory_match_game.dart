@@ -15,7 +15,7 @@ import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
 import '../../../shared/widgets/fandoghi_premium.dart';
 import '../../../shared/widgets/illustration_tile.dart';
-import '../../../shared/widgets/particle_celebration.dart';
+import '../../../shared/widgets/premium/particle_celebration.dart';
 
 /// ═══════════════════════════════════════════════
 /// 🧠 MEMORY MATCH — Card Flip Game
