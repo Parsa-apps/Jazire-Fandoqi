@@ -49,7 +49,9 @@ void main() {
         entranceDelay: const Duration(milliseconds: 300),
       ),
     );
-    await tester.pump(const Duration(milliseconds: 1200));
+    // فریم اول تایمر تأخیر را رد می‌کند، فریم دوم خود انیمیشن ورود را
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 800));
 
     final opacity = tester.widget<Opacity>(
       find.descendant(
@@ -108,7 +110,7 @@ void main() {
     final images = tester.widgetList<Image>(find.byType(Image)).toList();
     expect(images, hasLength(1));
     expect(
-      (images.single.image as AssetImage).assetName,
+      _assetNameOf(images.single.image),
       IslandWorldAssets.fandoghiWave,
     );
 
@@ -120,6 +122,13 @@ void main() {
     await tester.pump(const Duration(milliseconds: 700));
     await tester.pumpWidget(const SizedBox.shrink());
   });
+}
+
+/// نام دارایی از روی ImageProvider — با cacheWidth، پروایدر واقعی
+/// ResizeImage است و باید یک لایه باز شود.
+String _assetNameOf(ImageProvider<Object> provider) {
+  if (provider is ResizeImage) return _assetNameOf(provider.imageProvider);
+  return (provider as AssetImage).assetName;
 }
 
 class _NodeHarness extends StatefulWidget {
