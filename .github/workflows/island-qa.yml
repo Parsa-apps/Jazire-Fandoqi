@@ -87,7 +87,23 @@ jobs:
           test/features/home/island_node_test.dart
 
       - name: Flutter test
-        run: flutter test
+        run: |
+          set +e
+          flutter test --reporter expanded > test-output.txt 2>&1
+          status=$?
+          # Republish failing tests as check annotations so they are
+          # visible in the API/UI even when raw job logs cannot be
+          # downloaded. The step still gates on the real exit code.
+          echo "::notice::flutter test exit=$status"
+          grep -E '\[E\]' test-output.txt | head -30 | while IFS= read -r line; do
+            clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
+            echo "::error::$clean"
+          done
+          grep -E 'Some tests failed|All tests passed' test-output.txt | tail -1 | while IFS= read -r line; do
+            clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
+            echo "::notice::$clean"
+          done
+          exit $status
 
       - name: Build APK (Release)
         run: flutter build apk --release
