@@ -9,7 +9,7 @@
 
 | واقعیت | وضعیت |
 |---|---|
-| مخزن `farshadkurd/kudake_iran` | **عمومی** (تأیید شده با `gh repo view --json isPrivate`) |
+| مخزن `Parsa-apps/Jazire-Fandoqi` | **عمومی** (تأیید شده با `gh repo view --json isPrivate`) |
 | `android/key.properties` | حاوی `storePassword` و `keyPassword` به‌صورت **متن ساده** — commit شده و در تاریخ git موجود |
 | `android/release.keystore` | فایل باینری keystore — commit شده و قابل دانلود |
 | CI (GitHub Actions) | بیلد release را با همین کلید امضا می‌کند و APK/AAB امضاشده را به‌عنوان artifact در همان مخزن عمومی آپلود می‌کند |
@@ -86,8 +86,8 @@ keytool -genkeypair -v \
 pip install git-filter-repo        # یا: brew install git-filter-repo
 
 # ۲) پشتیبان‌گیری:
-cd /path/to/kudake_iran
-git bundle create ../kudake_backup.bundle --all
+cd /path/to/Jazire-Fandoqi
+git bundle create ../jazire_fandoqi_backup.bundle --all
 
 # ۳) حذف دو فایل از «کل تاریخ» همهٔ شاخه‌ها و تگ‌ها:
 git filter-repo --invert-paths \
@@ -119,11 +119,11 @@ git log --all --oneline -- android/key.properties android/release.keystore   # �
 ### ۵-۱. ذخیرهٔ Secrets
 
 ```bash
-gh secret set KEYSTORE_B64 --repo farshadkurd/kudake_iran \
+gh secret set KEYSTORE_B64 --repo Parsa-apps/Jazire-Fandoqi \
   --body "$(base64 -w0 android/release.keystore.new)"
-gh secret set KEYSTORE_PASSWORD  --repo farshadkurd/kudake_iran --body '<رمز>'
-gh secret set KEY_ALIAS          --repo farshadkurd/kudake_iran --body 'fandoghi'
-gh secret set KEY_PASSWORD       --repo farshadkurd/kudake_iran --body '<رمز>'
+gh secret set KEYSTORE_PASSWORD  --repo Parsa-apps/Jazire-Fandoqi --body '<رمز>'
+gh secret set KEY_ALIAS          --repo Parsa-apps/Jazire-Fandoqi --body 'fandoghi'
+gh secret set KEY_PASSWORD       --repo Parsa-apps/Jazire-Fandoqi --body '<رمز>'
 ```
 (keystore فایل باینری است؛ به‌صورت base64 در secret می‌رود.)
 

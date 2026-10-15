@@ -14,7 +14,7 @@
 cp ci/build-apk.proposed.yml .github/workflows/build-apk.yml
 git add .github/workflows/build-apk.yml
 git commit -m "ci: add analyze/test, split-per-abi + universal APK, obfuscation (H3)"
-git push origin arena/019ffc40-kudake-iran
+git push origin arena/xxxx-jazire-fandoqi
 ```
 
 پس از اعمال و سبز شدن CI، این پوشه (`ci/`) را می‌توان حذف کرد.

@@ -1,9 +1,9 @@
-# PROJECT CONTEXT — kudake_iran (جزیره فندقی)
+# PROJECT CONTEXT — جزیره فندقی (Parsa-apps/Jazire-Fandoqi)
 
 تو در حال ادامه توسعه پروژه Flutter اپ آموزش کودکان «جزیره فندقی» هستی.
 
 مخزن:
-farshadkurd/kudake_iran
+Parsa-apps/Jazire-Fandoqi
 
 تکنولوژی:
 - Flutter

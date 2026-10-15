@@ -69,11 +69,11 @@ refusing to allow a GitHub App to create or update workflow
 بعد از رفع مجوزها، من secrets را تنظیم می‌کنم؛ یا خودتان می‌توانید با این دستورات (از محل بکاپ) انجام دهید:
 
 ```bash
-gh secret set KEYSTORE_B64      --repo farshadkurd/kudake_iran \
+gh secret set KEYSTORE_B64      --repo Parsa-apps/Jazire-Fandoqi \
   --body "$(base64 -w0 /home/user/keystore_backup/release.keystore)"
-gh secret set KEYSTORE_PASSWORD --repo farshadkurd/kudake_iran --body '<مقدار storePassword در key.properties بکاپ>'
-gh secret set KEY_ALIAS         --repo farshadkurd/kudake_iran --body 'fandoghi'
-gh secret set KEY_PASSWORD      --repo farshadkurd/kudake_iran --body '<مقدار keyPassword در key.properties بکاپ>'
+gh secret set KEYSTORE_PASSWORD --repo Parsa-apps/Jazire-Fandoqi --body '<مقدار storePassword در key.properties بکاپ>'
+gh secret set KEY_ALIAS         --repo Parsa-apps/Jazire-Fandoqi --body 'fandoghi'
+gh secret set KEY_PASSWORD      --repo Parsa-apps/Jazire-Fandoqi --body '<مقدار keyPassword در key.properties بکاپ>'
 ```
 (مقادیر رمز در `/home/user/keystore_backup/key.properties` موجود است؛ عمداً در این گزارش درج نمی‌شوند.)
 
