@@ -82,6 +82,11 @@ def main():
         if names:
             emit(f"{title} — failing names ({len(names)})", "\n".join(names))
 
+    # 2.5) Failure detail blocks (exception + Expected/Actual + stack), so a
+    # red run is diagnosable from annotations alone, without raw logs.
+    for number, block in enumerate(detail_blocks(lines)[:3], start=1):
+        emit(f"{title} — detail [{number}]", block[:CHUNK])
+
     # 3) The whole log, head first (the expanded reporter prints each failure's
     # exception *before* the progress line that reports it) and the tail last
     # (that is where a hang stops). If the log is longer than the annotation
