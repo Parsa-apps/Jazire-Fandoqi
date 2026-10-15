@@ -50,7 +50,8 @@ jobs:
               WARNING) level=warning ;;
               *)       level=notice ;;
             esac
-            echo "::$level file=$path,line=$line,col=$col::$code $msg"
+            relpath="${path#"$GITHUB_WORKSPACE"/}"
+            echo "::$level file=$relpath,line=$line,col=$col::$code $msg"
           done < analyze-machine.txt
           echo "flutter analyze exit code: $status"
           exit $status
