@@ -83,11 +83,17 @@ class _HeroHarnessState extends State<_HeroHarness>
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        body: Center(
-          child: HeroFandoq(
-            width: 140,
-            floatAnimation: _floatCtrl,
-            onTap: widget.onTap,
+        // محیط تست ممکن است «کاهش حرکت» را فعال گزارش کند؛ اینجا صریحاً
+        // حرکت را روشن می‌کنیم چون رفتارِ مورد آزمون همین است. (در خودِ
+        // برنامه، خاموشیِ سیستم محترم شمرده می‌شود.)
+        body: MediaQuery(
+          data: const MediaQueryData(disableAnimations: false),
+          child: Center(
+            child: HeroFandoq(
+              width: 140,
+              floatAnimation: _floatCtrl,
+              onTap: widget.onTap,
+            ),
           ),
         ),
       ),
