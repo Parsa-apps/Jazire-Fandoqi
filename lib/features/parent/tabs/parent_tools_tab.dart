@@ -326,7 +326,9 @@ class _ParentToolsTabState extends State<ParentToolsTab> {
         const SizedBox(height: 16),
         Center(
           child: Text(
-            '${AppLegal.productName} • نسخه ${GrowthStore.appVersion}',
+            // ارقام فارسی، مثل صفحهٔ «درباره» و اسplash؛ عدد لاتین در رابط
+            // فارسی برنامه ناهماهنگ به نظر می‌رسد.
+            '${AppLegal.productName} • نسخه ${PersianDigits.toFa(GrowthStore.appVersion)}',
             style: AppFonts.vazirmatn(fontSize: 11, color: Colors.grey),
           ),
         ),
@@ -500,7 +502,7 @@ class _ParentToolsTabState extends State<ParentToolsTab> {
       return '${l['source'] ?? 'runtime'}: $safe';
     }).join('\n');
     final text = 'گزارش سلامت ${AppLegal.productName}\n'
-        'نسخه: ${GrowthStore.appVersion}\n---\n$summary\n(${logs.length} خطا)';
+        'نسخه: ${PersianDigits.toFa(GrowthStore.appVersion)}\n---\n$summary\n(${logs.length} خطا)';
     final uri = Uri.parse(
       'https://t.me/share/url?url=${Uri.encodeComponent(AppLegal.productName)}&text=${Uri.encodeComponent(text)}',
     );
