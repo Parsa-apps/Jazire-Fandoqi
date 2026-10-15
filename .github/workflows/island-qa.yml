@@ -74,7 +74,8 @@ jobs:
               n=$((n+1)); [ "$n" -ge 22 ] && break
             done
           }
-          grep ' • ' analyze.txt | grep -E '^ *(error|warning) •' | emit || true
+          grep ' • ' analyze.txt | grep -E '^ *error •' | emit || true
+          grep ' • ' analyze.txt | grep -E '^ *warning •' | emit || true
           grep ' • ' analyze.txt | grep -E 'island_map|island_world_style|island_node_test' | emit || true
           grep ' • ' analyze.txt | grep -vE 'island_map|island_world_style|island_node_test' | emit || true
 
