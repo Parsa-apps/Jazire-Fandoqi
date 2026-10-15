@@ -99,7 +99,7 @@ jobs:
             clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
             echo "::error::$clean"
           done
-          grep -E 'EXCEPTION CAUGHT|was thrown|Expected:|Actual:|Which:|Timer is still pending|overflowed|Failed assertion|MissingPluginException|Bad state:|Test failed' test-output.txt | head -25 | while IFS= read -r line; do
+          grep -A 10 'island_node_test.dart.*\[E\]' test-output.txt | head -44 | while IFS= read -r line; do
             clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
             echo "::error::$clean"
           done
