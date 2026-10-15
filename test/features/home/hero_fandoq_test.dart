@@ -16,6 +16,9 @@ void main() {
     expect(_heroAsset(tester), IslandWorldAssets.fandoghiWave);
 
     await tester.tap(find.byType(HeroFandoq));
+    // فریم واسط: رویداد لمس پردازش و کنترلر جشن تازه شروع می‌شود؛
+    // بدون آن، فریم بعدی هنوز elapsed صفر را نشان می‌دهد.
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 120));
 
     expect(taps, 1);
