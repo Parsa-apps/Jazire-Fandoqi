@@ -125,7 +125,7 @@ WaveDecoration(
 
 ```dart
 NeonText(
-  text: 'آموزش فندقی',
+  text: 'جزیره فندقی',
   glowColor: Color(0xFF6C5CE7),
   glowRadius: 8,
   isAnimated: true,
