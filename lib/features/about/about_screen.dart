@@ -10,11 +10,13 @@ import '../../core/billing_service.dart';
 import '../../core/growth/growth_store.dart';
 import '../../core/growth/persian_digits.dart';
 import '../../core/growth/whats_new.dart';
+import '../../core/monetization.dart';
 import '../../core/store_listing.dart';
 import '../../core/store_rating_service.dart';
 import '../../core/store_vendor.dart';
 import '../../shared/widgets/parsa_gold_aura.dart';
 import '../../shared/widgets/parsa_website_card.dart';
+import '../../shared/widgets/parent_pin_gate.dart';
 import '../../shared/widgets/theme_selector_widget.dart';
 
 /// Publisher, support and privacy information for parents and store review.
@@ -66,6 +68,65 @@ class AboutScreen extends StatelessWidget {
     } on PlatformException {
       return false;
     }
+  }
+
+  /// بازیابی خرید نسخهٔ کامل از فروشگاه.
+  ///
+  /// فقط والد (با پین) اجازهٔ اجرایش را دارد، دقیقاً مثل خودِ خرید. نتیجه
+  /// فقط از فروشگاه می‌آید؛ هیچ خرید یا دسترسی‌ای ساخته نمی‌شود.
+  Future<void> _restorePurchase(BuildContext context) async {
+    final approved = await requestParentAccess(context);
+    if (!approved || !context.mounted) return;
+
+    var ok = false;
+    try {
+      ok = await Monetization.restoreFullVersion();
+    } catch (e) {
+      debugPrint('about: بازیابی خرید با خطای غیرمنتظره مواجه شد: $e');
+    }
+    if (!context.mounted) return;
+
+    final message = ok
+        ? 'نسخهٔ کامل روی این دستگاه فعال شد.'
+        : (Monetization.lastPurchaseError.isNotEmpty
+            ? Monetization.lastPurchaseError
+            : 'خرید فعالی برای بازیابی پیدا نشد.');
+
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: const Color(0xFF16803C),
+        ),
+      );
+      return;
+    }
+    // ناموفقی باید دیده شود؛ اسنک‌بارِ تنها ممکن است از دست برود — همان
+    // تجربه‌ای که در صفحهٔ پرداخت به دیالوگ تبدیل شد.
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          'بازیابی خرید',
+          style: AppFonts.vazirmatn(fontWeight: FontWeight.w800),
+        ),
+        content: Text(
+          message,
+          style: AppFonts.vazirmatn(fontSize: 14, height: 1.6),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(
+              'باشه',
+              style: AppFonts.vazirmatn(color: AppColors.primary),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -154,7 +215,9 @@ class AboutScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   const Text(
-                    'متن کامل سیاست حریم خصوصی در فایل PRIVACY_POLICY_FA.md، همین برنامه و صفحه انتشار قرار می‌گیرد.',
+                    // نام فایل داخلی هرگز در رابط کاربریِ منتشرشده نشت نکند؛
+                    // والد فقط باید بداند متن کامل کجاست.
+                    'متن کامل سیاست حریم خصوصی در همین برنامه و نیز در صفحهٔ انتشار برنامه در فروشگاه در دسترس است.',
                     style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 12,
@@ -202,6 +265,24 @@ class AboutScreen extends StatelessWidget {
               onTap: () => _showFeedbackDialog(context),
             ),
           ),
+          const SizedBox(height: 12),
+          // بازیابی خرید نسخهٔ کامل — مسیر مستقیم برای والدی که برنامه را
+          // حذف و دوباره نصب کرده است. در نسخهٔ ۶.۲.۶ این ورودی در همین صفحه
+          // بود و در ۷.۱ حذف شد؛ بدون آن، والدِ خریدار فقط با باز کردن یک
+          // قفل به صفحهٔ خرید می‌رسد. پشت دروازهٔ والد است، مثل خودِ خرید.
+          Card(
+            child: ListTile(
+              leading:
+                  const Icon(Icons.restore_rounded, color: AppColors.primary),
+              title: Text(
+                'بازیابی خرید نسخهٔ کامل',
+                style: AppFonts.vazirmatn(fontWeight: FontWeight.w800),
+              ),
+              subtitle: const Text('اگر قبلاً نسخهٔ کامل را خریده‌اید'),
+              trailing: const Icon(Icons.chevron_left_rounded),
+              onTap: () => _restorePurchase(context),
+            ),
+          ),
           const SizedBox(height: 16),
           Card(
             child: Column(
@@ -234,9 +315,11 @@ class AboutScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           // نسخه از منبع واحد نسخهٔ اپ (همان Splash و پنل والدین) می‌آید.
+          // کلمهٔ «پریمیوم» اینجا گمراه‌کننده بود: نصب برنامه رایگان است و
+          // نسخهٔ کامل با خرید یک‌باره روی همان دستگاه فعال می‌شود.
           Center(
             child: Text(
-              'جزیره فندقی • نسخه ${PersianDigits.toFa(GrowthStore.appVersion)} پریمیوم\n'
+              'جزیره فندقی • نسخه ${PersianDigits.toFa(GrowthStore.appVersion)} • نصب رایگان\n'
               'ساخته‌شده با دقت برای کودکان ایران',
               textAlign: TextAlign.center,
               style: const TextStyle(
