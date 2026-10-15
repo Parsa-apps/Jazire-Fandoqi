@@ -295,7 +295,7 @@ class _SplashState extends State<SplashScreen>
                       const SizedBox(height: 8),
                       Text(
                         'نسخه ${_toPersianDigits(GrowthStore.appVersion)}'
-                        ' — تابستان ${_toPersianDigits('1405')}',
+                        ' — پاییز ${_toPersianDigits('1405')}',
                         textAlign: TextAlign.center,
                         textDirection: TextDirection.rtl,
                         style: AppFonts.vazirmatn(

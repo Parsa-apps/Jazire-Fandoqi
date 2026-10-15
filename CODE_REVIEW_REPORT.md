@@ -179,7 +179,7 @@ Hive.initFlutter() → openBox() → AudioService.init() (شامل ستاپ TTS)
 ### نقاط ضعف
 1. **🔴 بحرانی: نشت کلید امضا** (بخش C1) — عملاً انتشار امن را بی‌معنی می‌کند.
 2. **CI هیچ تستی اجرا نمی‌کند:** در `build-apk.yml` نه `flutter analyze` هست نه `flutter test`. اسکریپت محلی `build.sh` هر دو را دارد ولی پایپ‌لاین گیت‌هاب از آن استفاده نمی‌کند. یعنی یک PR شکسته می‌تواند APK بسازد.
-3. **نام‌گذاری آرتیفکت CI قدیمی است:** `kudake_iran_v3.0.0_apk` در حالی که نسخه واقعی `6.2.0+13` است.
+3. **نام‌گذاری آرتیفکت CI قدیمی است:** `kudake_iran_v3.0.0_apk` در حالی که نسخه واقعی `6.2.0+13` است. — ✅ برطرف شد (نسخهٔ ۷.۱): آرتیفکت‌ها اکنون `jazire_fandoqi_v7.1.0_apk` و `jazire_fandoqi_v7.1.0_aab` هستند.
 4. **Flutter پین‌شده روی `3.24.3`** (سپتامبر ۲۰۲۴) — در اوت ۲۰۲۶ یعنی ~۲ سال عقب‌تر از stable. وابستگی قدیمی انتخاب و برش عکس حذف شده؛ کامنت NDK همچنان نیازمند بازبینی در ارتقای بعدی است. هرچه این بدهی بزرگ‌تر شود، مهاجرت سخت‌تر می‌شود.
 5. **`--obfuscate --split-debug-info` در CI نیست** (فقط در `build_optimized.sh` محلی) → کرش‌های release قابل symbolicate نیستند و باینری بدون obfuscation توزیع می‌شود.
 6. **گزارش کرش صرفاً محلی است:** هیچ ابزار remote (مثل Sentry) وجود ندارد؛ در تولید از کرش‌های واقعی بی‌خبر می‌مانید.
@@ -309,7 +309,7 @@ Hive.initFlutter() → openBox() → AudioService.init() (شامل ستاپ TTS)
 
 | # | مشکل | راه‌حل |
 |---|---|---|
-| L1 | ناهماهنگی نام‌ها: ریپازیتوری `kudake_iran`، پکیج Dart `jazireh_fandoghi`، applicationId `amoozesh_fandoghi`، نام CI «کودک دانا v3» | یکپارچه‌سازی برند در اسناد و CI |
+| L1 | ناهماهنگی نام‌ها: ریپازیتوری `kudake_iran`، پکیج Dart `jazireh_fandoghi`، applicationId `amoozesh_fandoghi`، نام CI با برند قدیمی و نسخهٔ v3 | یکپارچه‌سازی برند در اسناد و CI — ✅ بخش CI در نسخهٔ ۷.۱ انجام شد: ورک‌فلو «Build APK & AAB - جزیره فندقی v7.1» و آرتیفکت‌های `jazire_fandoqi_v7.1.0_*` |
 | L2 | باقی‌مانده‌هایی مثل `assets/audio/numbers/.gitkeep` | حذف |
 | L3 | پیکربندی آیکون دو جا (`launcher_icons.yaml` + داخل pubspec) | یکی کردن |
 | L4 | `flutter pub run flutter_launcher_icons` در build.sh (نحو قدیمی) | `dart run flutter_launcher_icons` |

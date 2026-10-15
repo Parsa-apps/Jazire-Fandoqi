@@ -7,6 +7,9 @@ import '../../app/app_colors.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import '../../core/app_legal.dart';
 import '../../core/billing_service.dart';
+import '../../core/growth/growth_store.dart';
+import '../../core/growth/persian_digits.dart';
+import '../../core/growth/whats_new.dart';
 import '../../core/store_listing.dart';
 import '../../core/store_rating_service.dart';
 import '../../core/store_vendor.dart';
@@ -205,11 +208,13 @@ class AboutScreen extends StatelessWidget {
               children: [
                 ListTile(
                   leading: const Icon(Icons.auto_awesome_rounded, color: AppColors.primary),
+                  // عنوان و خلاصه از همان منبع صفحهٔ «تازه‌ها» خوانده می‌شود تا
+                  // با هر آپدیت خودبه‌خود هم‌نسخه بماند (نه عدد ثابت قدیمی).
                   title: Text(
-                    'تازه‌های نسخه ۶.۲',
+                    'تازه‌های نسخه ${WhatsNew.version}',
                     style: AppFonts.vazirmatn(fontWeight: FontWeight.w800),
                   ),
-                  subtitle: const Text('مهارت زندگی، گزارش هفتگی، پروفایل خواهر/برادر و…'),
+                  subtitle: const Text(WhatsNew.versionName),
                   trailing: const Icon(Icons.chevron_left_rounded),
                   onTap: () => Navigator.pushNamed(context, '/whats-new'),
                 ),
@@ -228,11 +233,13 @@ class AboutScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const Center(
+          // نسخه از منبع واحد نسخهٔ اپ (همان Splash و پنل والدین) می‌آید.
+          Center(
             child: Text(
-              'جزیره فندقی • نسخه ۶.۲.۰ پریمیوم\nساخته‌شده با دقت برای کودکان ایران',
+              'جزیره فندقی • نسخه ${PersianDigits.toFa(GrowthStore.appVersion)} پریمیوم\n'
+              'ساخته‌شده با دقت برای کودکان ایران',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.textSecondary,
                 height: 1.7,
                 fontSize: 12,

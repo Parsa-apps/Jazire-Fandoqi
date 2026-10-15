@@ -1,6 +1,6 @@
 # جزیره فندقی — اپلیکیشن آفلاین آموزشی کودکان
 
-[![Flutter quality and release build](https://github.com/farshadkurd/kudake_iran/actions/workflows/build-apk.yml/badge.svg)](https://github.com/farshadkurd/kudake_iran/actions/workflows/build-apk.yml)
+[![Build APK & AAB - جزیره فندقی v7.1](https://github.com/Parsa-apps/Jazire-Fandoqi/actions/workflows/build-apk.yml/badge.svg)](https://github.com/Parsa-apps/Jazire-Fandoqi/actions/workflows/build-apk.yml)
 
 ## نسخه ۷.۱.۰+۲۱ — «گواهی افتخار و شفافیت آنلاین»
 
