@@ -105,7 +105,7 @@ class IslandNode extends StatefulWidget {
 }
 
 class _IslandNodeState extends State<IslandNode>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _pressCtrl;
   late final Animation<double> _press;
   late final AnimationController _enterCtrl;
