@@ -13,7 +13,7 @@ import '../gateway/learning_library_screen.dart';
 import '../profile/profile_screen.dart';
 import '../stage_map/stage_map_screen.dart';
 import 'widgets/achievements_tab.dart';
-import 'widgets/island_map/island_map_tab.dart';
+import 'widgets/adventure_island/adventure_island_map.dart';
 import 'widgets/report_card_tab.dart';
 
 /// ═══════════════════════════════════════════════
@@ -36,10 +36,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     _musicVolume = GameData.musicVolume;
-    _tabWidgets[2] = IslandMapTab(
+    _tabWidgets[2] = AdventureIslandMap(
       onOpenStageMap: () => _openStageMapScreen(),
-      onOpenBackpack: () => _selectTab(1),
-      onOpenAchievements: () => _selectTab(0),
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -324,14 +322,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final Widget widget = switch (index) {
       0 => const AchievementsTab(),
       1 => const LearningLibraryScreen(embedded: true),
-      2 => IslandMapTab(
+      2 => AdventureIslandMap(
           onOpenStageMap: () => _openStageMapScreen(),
-          onOpenBackpack: () => _selectTab(1),
-          onOpenAchievements: () => _selectTab(0),
         ),
       3 => const ReportCardTab(),
       4 => const ProfileScreen(embedded: true),
-      _ => IslandMapTab(
+      _ => AdventureIslandMap(
           onOpenStageMap: () => _openStageMapScreen(),
         ),
     };

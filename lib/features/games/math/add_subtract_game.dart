@@ -158,7 +158,10 @@ class _AddSubtractGameState extends State<AddSubtractGame> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF3E0),
-      body: SafeArea(child: _finished ? _result() : _game()),
+      body: DecoratedBox(
+        decoration: const BoxDecoration(gradient: AppGradients.sunset),
+        child: SafeArea(child: _finished ? _result() : _game()),
+      ),
     );
   }
 
