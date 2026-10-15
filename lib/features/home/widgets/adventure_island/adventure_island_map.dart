@@ -6,6 +6,7 @@ import '../../../../app/island_world_style.dart';
 import '../../../../core/audio_service.dart';
 import '../../../profile/profile_editor.dart';
 import '../../../stage_map/stage_map_screen.dart';
+import '../daily_gifts_dialog.dart';
 import '../fandoqi_hub_sheet.dart';
 import 'adventure_island_painter.dart';
 import 'adventure_island_hero.dart';
@@ -68,6 +69,12 @@ class _AdventureIslandMapState extends State<AdventureIslandMap> with TickerProv
         MaterialPageRoute(builder: (_) => const StageMapScreen()),
       );
     }
+  }
+
+  void _openGifts() {
+    showDailyGiftsDialog(context, onRewardClaimed: () {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -172,7 +179,71 @@ class _AdventureIslandMapState extends State<AdventureIslandMap> with TickerProv
               ),
             ),
           ),
+
+          // دکمه‌های شناور کنارهٔ صفحه: هدیهٔ روزانه و کتابخانه
+          Positioned(
+            right: 10,
+            bottom: 22,
+            child: SafeArea(top: false, child: _buildSideButtons()),
+          ),
         ],
+      ),
+    );
+  }
+
+  /// دکمه‌های شناور کنارهٔ صفحه: هدیهٔ روزانه و کتابخانه
+  Widget _buildSideButtons() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _sideButton(
+          icon: Icons.card_giftcard_rounded,
+          color: const Color(0xFFE91E63),
+          tooltip: 'هدیهٔ روزانه',
+          onTap: _openGifts,
+        ),
+        const SizedBox(height: 10),
+        _sideButton(
+          icon: Icons.menu_book_rounded,
+          color: const Color(0xFF00897B),
+          tooltip: 'کتابخانه',
+          onTap: () => _go('/learning-library'),
+        ),
+      ],
+    );
+  }
+
+  Widget _sideButton({
+    required IconData icon,
+    required Color color,
+    required String tooltip,
+    required VoidCallback onTap,
+  }) {
+    return Semantics(
+      button: true,
+      label: tooltip,
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          AudioService.tap();
+          onTap();
+        },
+        child: Container(
+          padding: const EdgeInsets.all(11),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.95),
+            shape: BoxShape.circle,
+            border: Border.all(color: color.withOpacity(0.35), width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.16),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Icon(icon, color: color, size: 22),
+        ),
       ),
     );
   }
