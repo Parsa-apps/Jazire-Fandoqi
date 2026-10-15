@@ -73,6 +73,11 @@ def main():
         + ("\n".join(index_lines) or "(none)"),
     )
 
+    # Preserve actionable diagnostics before spending the budget on noisy logs.
+    diagnostics = [ln for ln in lines if re.search(r"error\s*•|Expected:|Actual:|overflowed|relevant error-causing widget|report_card_tab\.dart:", ln)]
+    if diagnostics:
+        emit(f"{title} — diagnostics", "\n".join(diagnostics)[:3500])
+
     # 2) The unique failing test names (whole-suite runs), so the complete list
     # survives even when the chunked detail is long.
     marker = "--- failing test names ---"

@@ -123,12 +123,14 @@ class ReportCardTab extends ConsumerWidget {
                         color: IslandWorldPalette.deepOcean,
                       ),
                       const SizedBox(width: 8),
-                      Text(
+                      Flexible(
+                        child: Text(
                         'مشاهده گزارش تفصیلی والدین',
                         style: AppFonts.vazirmatn(
                           fontSize: 14,
                           fontWeight: FontWeight.w900,
                           color: IslandWorldPalette.deepOcean,
+                        ),
                         ),
                       ),
                     ],
@@ -410,20 +412,25 @@ class ReportCardTab extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
+                    Expanded(
+                      child: Row(
                       children: [
                         Text(s.$2, style: const TextStyle(fontSize: 16)),
                         const SizedBox(width: 6),
-                        Text(
+                        Flexible(
+                          child: Text(
                           s.$1,
                           style: AppFonts.vazirmatn(
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
                             color: IslandWorldPalette.ink,
                           ),
+                          ),
                         ),
                       ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     Text(
                       '${PersianDigits.toFa((progress * 100).toInt())}٪',
                       style: AppFonts.vazirmatn(
