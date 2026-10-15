@@ -44,16 +44,24 @@ jobs:
           status=$?
           # Republish findings as check annotations so they are visible
           # in the API/UI even when raw job logs cannot be downloaded.
-          while IFS='|' read -r severity _type code path line col _len msg; do
-            case "$severity" in
-              ERROR)   level=error ;;
-              WARNING) level=warning ;;
-              *)       level=notice ;;
-            esac
-            relpath="${path#"$GITHUB_WORKSPACE"/}"
-            echo "::$level file=$relpath,line=$line,col=$col::$code $msg"
-          done < analyze-machine.txt
-          echo "flutter analyze exit code: $status"
+          # Findings in the redesigned island files come first.
+          total=$(grep -c '|' analyze-machine.txt || true)
+          echo "::notice::flutter analyze exit=$status pipe-lines=$total"
+          emit() {
+            local n=0
+            while IFS='|' read -r severity _type code path line col _len msg; do
+              case "$severity" in
+                ERROR)   level=error ;;
+                WARNING) level=warning ;;
+                *)       level=notice ;;
+              esac
+              relpath="${path#"$GITHUB_WORKSPACE"/}"
+              echo "::$level file=$relpath,line=$line,col=$col::$code $msg"
+              n=$((n+1)); [ "$n" -ge 22 ] && break
+            done
+          }
+          grep -E 'island_map|island_world_style|island_node_test' analyze-machine.txt | emit || true
+          grep -vE 'island_map|island_world_style|island_node_test' analyze-machine.txt | emit || true
           exit $status
 
       - name: Flutter test
