@@ -14,7 +14,7 @@
 ## فایل پیشنهادی: `.github/workflows/build-apk.yml`
 
 ```yaml
-name: Build APK & AAB - جزیره فندقی v3
+name: Build APK & AAB - جزیره فندقی v7.1
 
 on:
   push:
