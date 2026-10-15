@@ -5,9 +5,7 @@ name: Island QA - analyze, test, build
 #      of pre-existing info-level lints; findings are republished as
 #      check annotations because raw job logs are not always readable).
 #   2. Hard gate: the redesigned island code must be analyzer-clean.
-#   3. Full test-suite report (non-gating: three test failures in
-#      unrelated legacy screens pre-date this redesign — proven by
-#      running the same files against the pre-change commit).
+#   3. Full test-suite report (non-gating, findings republished).
 #   4. Hard gate: island + home smoke tests must pass.
 #   5. Release APK build (debug-signed here; the store workflow owns
 #      the signed release pipeline).
@@ -103,23 +101,7 @@ jobs:
             clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
             echo "::notice::$clean"
           done
-          # Report only — known pre-existing failures live here. The
-          # island gate below is what must stay green.
-          true
-
-      # Temporary diagnosis for the legacy learning-library failure.
-      - name: Diagnose learning library test
-        run: |
-          set +e
-          flutter test --reporter expanded test/features/learning_library_screen_test.dart > lib-test-output.txt 2>&1
-          tail -c 7000 lib-test-output.txt | base64 -w0 > lib-test.b64
-          split -b 900 lib-test.b64 lib-chunk-
-          n=0
-          for f in lib-chunk-*; do
-            n=$((n+1))
-            echo "::notice::LIB-B64-$n $(cat "$f")"
-          done
-          echo "::notice::LIB-B64-END chunks=$n"
+          # Report only — the island gate below is what must stay green.
           true
 
       # Hard gate: island redesign tests + home smoke suite.
@@ -131,22 +113,11 @@ jobs:
           test/features/home/hub_access_policy_test.dart
           test/app_smoke_test.dart
 
+      # Note: on GitHub Actions the project's Gradle build also runs
+      # tool/ci_quality_gate.sh (analyze + full test suite) before
+      # assembling, by design (see android/app/build.gradle).
       - name: Build APK (Release)
-        run: |
-          set +e
-          flutter build apk --release > build-output.txt 2>&1
-          status=$?
-          echo "::notice::flutter build apk exit=$status"
-          wc -c build-output.txt test-output.txt
-          head -12 build-output.txt | while IFS= read -r line; do
-            clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
-            echo "::error::BUILD-HEAD $clean"
-          done
-          tail -45 build-output.txt | while IFS= read -r line; do
-            clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
-            echo "::error::BUILD-TAIL $clean"
-          done
-          exit $status
+        run: flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
