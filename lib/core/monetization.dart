@@ -13,9 +13,9 @@ import 'security/secure_store.dart';
 ///    (کافه‌بازار یا مایکت) — بازیابی خرید با تأیید امضای RSA رسید.
 ///  - بعد از تأیید استور، گرنت + توکن رسید در SecureStore (Android Keystore)
 ///    ذخیره می‌شود؛ دستکاری فایل Hive دیگر نمی‌تواند پریمیوم جعل کند.
-///  - در حالت آفلاین، فقط گرنت Keystore معتبر است (فلگ متنی قدیمی در
-///    release هیچ‌وقت مستقیم قبول نمی‌شود؛ فقط برای مهاجرت یک‌بارهٔ
-///    کاربران قبلی همراه با توکن رسید واقعی).
+///  - در حالت آفلاین، فقط گرنت Keystore که پیش‌تر با پاسخ معتبر فروشگاه
+///    ذخیره شده قبول می‌شود. فلگ و توکن قدیمی Hive به‌تنهایی هرگز مرجع نیستند؛
+///    کاربران قدیمی باید هنگام اتصال از خود فروشگاه بازیابی کنند.
 class Monetization {
   static const String _fullVersionKey = 'has_full_version';
   static const String _receiptTokenKey = 'full_version_receipt_token';
@@ -41,18 +41,18 @@ class Monetization {
     if (restored.success) {
       if (restored.purchaseToken?.isNotEmpty ?? false) {
         await _storeGrant(token: restored.purchaseToken!, orderId: restored.orderId);
+        await _clearLegacyKeys();
         return true;
       }
       // استور در دسترس است ولی خریدی ثبت نشده → قطعاً پریمیوم نیست،
       // حتی اگر کسی فایل‌ها را با فلگ جعلی دستکاری کرده باشد.
       return false;
     }
-    // ۲) استور در دسترس نیست → آفلاین: فقط گرنت Keystore معتبر است
-    //    (مقاوم در برابر دستکاری فایل).
-    if (await _isGranted()) return true;
-    // ۳) مهاجرت یک‌بارهٔ کاربران قبلی (فقط حالت آفلاین): فلگ + توکن رسید
-    //    باهم لازم است؛ فلگ تنها جعلی محسوب و پاک می‌شود.
-    return _migrateLegacyGrant();
+    // ۲) استور پاسخ معتبر نداده → فقط گرنتی که قبلاً در Keystore ذخیره
+    //    شده پذیرفته می‌شود. دادهٔ قدیمی Hive قابل‌ویرایش است و شکلِ ظاهری
+    //    یک توکن هم اثبات امضای فروشگاه نیست؛ بنابراین هیچ‌کدام به‌تنهایی
+    //    نباید در release دسترسی پولی بدهند.
+    return _isGranted();
   }
 
   static Future<bool> activateFullVersion(BillingResult result) async {
@@ -113,34 +113,11 @@ class Monetization {
     return token != null && token.isNotEmpty;
   }
 
-  /// مهاجرت از فلگ متنی قدیمی (قبل از ۶.۳). فقط وقتی هر دو شرط برقرار
-  /// باشد: فلگ true و توکن رسیدی که شبیه توکن واقعی فروشگاه است.
-  /// فلگ تنها (بدون توکن) جعلی است و پاک می‌شود.
-  static Future<bool> _migrateLegacyGrant() async {
-    final flag = await HivePlayerStore.readValue(_fullVersionKey);
-    final token = await HivePlayerStore.readValue(_receiptTokenKey) as String?;
-    if (flag is bool && flag && _looksLikeReceipt(token)) {
-      final orderId = await HivePlayerStore.readValue(_receiptOrderKey) as String?;
-      await _storeGrant(token: token!, orderId: orderId);
-      await _clearLegacyKeys();
-      return true;
-    }
-    if (flag is bool && flag) {
-      // فلگ بدون رسید → دستکاری؛ اعتماد نکن.
-      await _clearLegacyKeys();
-    }
-    return false;
-  }
-
-  static bool _looksLikeReceipt(String? token) {
-    if (token == null) return false;
-    if (token.length < 24 || token.length > 512) return false;
-    // توکن‌های خرید فروشگاه‌ها رشته‌های بلند base64-مانند هستند.
-    return RegExp(r'^[A-Za-z0-9\-_=.:]+$').hasMatch(token);
-  }
-
+  /// پاک‌سازی داده‌های قدیمی فقط پس از تأیید موفق از خود فروشگاه؛ این
+  /// مقادیر هرگز برای اعطای entitlement در release استفاده نمی‌شوند.
   static Future<void> _clearLegacyKeys() async {
     await HivePlayerStore.writeValue(_fullVersionKey, false);
     await HivePlayerStore.writeValue(_receiptTokenKey, '');
+    await HivePlayerStore.writeValue(_receiptOrderKey, '');
   }
 }

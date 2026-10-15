@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-
-import '../../app/app_colors.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
+
+import '../../app/island_world_style.dart';
 import '../../core/audio_service.dart';
 import '../../core/fandoghi_coach.dart';
 import 'fandoghi_hazelnut_character.dart';
@@ -120,11 +120,7 @@ class _CoachToast extends StatelessWidget {
               SizedBox(
                 width: 44,
                 height: 44,
-                child: FandoghiHazelnutCharacter(
-                  size: 44,
-                  mood: message.mood,
-                  isTalking: true,
-                ),
+                child: _buildCharacter(context),
               ),
               const SizedBox(width: 10),
               Flexible(
@@ -149,6 +145,27 @@ class _CoachToast extends StatelessWidget {
               curve: Curves.easeOutBack,
             ),
       ),
+    );
+  }
+
+  Widget _buildCharacter(BuildContext context) {
+    final fallback = FandoghiHazelnutCharacter(
+      size: 44,
+      mood: message.mood,
+      isTalking: true,
+    );
+    if (message.tone != FandoghiCoachTone.success) return fallback;
+
+    return Image.asset(
+      IslandWorldAssets.fandoghiCelebrate,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.medium,
+      excludeFromSemantics: true,
+      cacheWidth: (44 * MediaQuery.devicePixelRatioOf(context))
+          .round()
+          .clamp(44, 192)
+          .toInt(),
+      errorBuilder: (_, __, ___) => fallback,
     );
   }
 }

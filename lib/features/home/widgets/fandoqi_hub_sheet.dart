@@ -4,7 +4,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../app/app_fonts.dart';
 import '../../../app/app_theme.dart';
+import '../../../app/island_world_style.dart';
 import '../../../core/audio_service.dart';
+import '../../../core/content_access_policy.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_launch.dart';
 import '../../../core/growth/growth.dart';
@@ -450,6 +452,8 @@ class FandoqiHubs {
 /// و همان انیمیشن‌ها. یعنی کودک هرجای برنامه برود، در همان جزیره است.
 /// ═══════════════════════════════════════════════════════════════
 void showFandoqiHubSheet(BuildContext context, HubData hub) {
+  final animationsDisabled =
+      MediaQuery.maybeOf(context)?.disableAnimations ?? false;
   HapticFeedback.mediumImpact();
   AudioService.select();
   FandoghiCoach.instruction(hub.coachGreeting);
@@ -458,10 +462,15 @@ void showFandoqiHubSheet(BuildContext context, HubData hub) {
     PageRouteBuilder(
       opaque: false,
       barrierColor: Colors.black26,
-      transitionDuration: const Duration(milliseconds: 320),
-      reverseTransitionDuration: const Duration(milliseconds: 220),
+      transitionDuration: animationsDisabled
+          ? Duration.zero
+          : IslandWorldMetrics.routeTransition,
+      reverseTransitionDuration: animationsDisabled
+          ? Duration.zero
+          : const Duration(milliseconds: 220),
       pageBuilder: (_, __, ___) => _FandoqiHubSheetWidget(hub: hub),
       transitionsBuilder: (_, anim, __, child) {
+        if (animationsDisabled) return child;
         final curved = CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
         return FadeTransition(
           opacity: curved,
@@ -505,6 +514,24 @@ class _FandoqiHubSheetWidgetState extends State<_FandoqiHubSheetWidget>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final animationsDisabled =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (animationsDisabled) {
+      _floatCtrl
+        ..stop()
+        ..value = 0;
+      _bubbleCtrl
+        ..stop()
+        ..value = 0;
+    } else {
+      if (!_floatCtrl.isAnimating) _floatCtrl.repeat();
+      if (!_bubbleCtrl.isAnimating) _bubbleCtrl.repeat();
+    }
+  }
+
+  @override
   void dispose() {
     _floatCtrl.dispose();
     _bubbleCtrl.dispose();
@@ -522,12 +549,18 @@ class _FandoqiHubSheetWidgetState extends State<_FandoqiHubSheetWidget>
       return;
     }
 
-    if (!act.isFree && !await Monetization.hasFullVersion()) {
+    final isFree =
+        act.isFree && ContentAccessPolicy.isGameFree(act.gameName);
+    if (!isFree && !await Monetization.hasFullVersion()) {
       SmartConversion.noteLockedTap();
-      if (context.mounted) {
-        await showFullVersionPaywall(context, featureName: act.gameName);
+      if (!context.mounted) return;
+      final unlocked =
+          await showFullVersionPaywall(context, featureName: act.gameName);
+      if (!context.mounted ||
+          !unlocked ||
+          !await Monetization.hasFullVersion()) {
+        return;
       }
-      return;
     }
 
     if (context.mounted) {
@@ -549,6 +582,8 @@ class _FandoqiHubSheetWidgetState extends State<_FandoqiHubSheetWidget>
   @override
   Widget build(BuildContext context) {
     final hub = widget.hub;
+    final animationsDisabled =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     final size = MediaQuery.of(context).size;
     final w = size.width;
 
@@ -576,16 +611,20 @@ class _FandoqiHubSheetWidgetState extends State<_FandoqiHubSheetWidget>
               scrollOffset: 0,
               cycle: AppTheme.currentCycle,
               progress: 0.55,
+              ambientAnimation: _bubbleCtrl,
             ),
           ),
           Positioned.fill(
-            child: FloatingBubbles(animation: _bubbleCtrl, count: 12),
+            child: FloatingBubbles(
+              animation: _bubbleCtrl,
+              count: IslandWorldMetrics.ambientSparkleBudget,
+            ),
           ),
 
           SafeArea(
             child: Column(
               children: [
-                _header(hub),
+                _header(hub, animationsDisabled: animationsDisabled),
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
@@ -657,7 +696,25 @@ class _FandoqiHubSheetWidgetState extends State<_FandoqiHubSheetWidget>
   }
 
   /// تابلوی بالای صفحه: مسکات هاب + نام + دکمهٔ بازگشت
-  Widget _header(HubData hub) {
+  Widget _header(HubData hub, {required bool animationsDisabled}) {
+    final mascot = Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        color: hub.primaryColor.withOpacity(0.14),
+        shape: BoxShape.circle,
+      ),
+      child: Image.asset(
+        hub.mascotImage,
+        fit: BoxFit.contain,
+        excludeFromSemantics: true,
+        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+      ),
+    );
+    final mascotWithMotion = animationsDisabled
+        ? mascot
+        : mascot.animate().scale(duration: 400.ms, curve: Curves.elasticOut);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
       child: Row(
@@ -672,7 +729,7 @@ class _FandoqiHubSheetWidgetState extends State<_FandoqiHubSheetWidget>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFFDF7),
+                color: IslandWorldPalette.paper,
                 borderRadius: BorderRadius.circular(22),
                 border: Border.all(color: hub.primaryColor, width: 2.5),
                 boxShadow: const [
@@ -685,19 +742,7 @@ class _FandoqiHubSheetWidgetState extends State<_FandoqiHubSheetWidget>
               ),
               child: Row(
                 children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: hub.primaryColor.withOpacity(0.14),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Image.asset(
-                      hub.mascotImage,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                    ),
-                  ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
+                  mascotWithMotion,
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -706,7 +751,7 @@ class _FandoqiHubSheetWidgetState extends State<_FandoqiHubSheetWidget>
                       overflow: TextOverflow.ellipsis,
                       style: AppFonts.kids(
                         fontSize: 19,
-                        color: const Color(0xFF2E4756),
+                        color: IslandWorldPalette.ink,
                       ),
                     ),
                   ),
@@ -724,24 +769,29 @@ class _FandoqiHubSheetWidgetState extends State<_FandoqiHubSheetWidget>
     required VoidCallback onTap,
     required Color color,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 46,
-        height: 46,
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFFDF7),
-          shape: BoxShape.circle,
-          border: Border.all(color: color, width: 2.5),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x33000000),
-              blurRadius: 8,
-              offset: Offset(0, 3),
-            ),
-          ],
+    return Semantics(
+      button: true,
+      label: 'بازگشت به نقشه',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          width: IslandWorldMetrics.minimumTouchTarget,
+          height: IslandWorldMetrics.minimumTouchTarget,
+          decoration: BoxDecoration(
+            color: IslandWorldPalette.paper,
+            shape: BoxShape.circle,
+            border: Border.all(color: color, width: 2.5),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x33000000),
+                blurRadius: 8,
+                offset: Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Icon(icon, color: color, size: 24),
         ),
-        child: Icon(icon, color: color, size: 24),
       ),
     );
   }

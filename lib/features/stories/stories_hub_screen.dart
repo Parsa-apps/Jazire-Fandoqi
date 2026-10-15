@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
 import '../../app/app_theme.dart';
+import '../../app/island_world_style.dart';
 import '../../core/audio_service.dart';
 import '../../core/content_access_policy.dart';
 import '../../core/fandoghi_coach.dart';
@@ -30,9 +31,10 @@ class StoriesHubScreen extends StatefulWidget {
 }
 
 class _StoriesHubScreenState extends State<StoriesHubScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   late final AnimationController _floatController;
+  late final AnimationController _ambientController;
 
   double _scrollOffset = 0;
   bool _hasFullVersion = false;
@@ -44,6 +46,10 @@ class _StoriesHubScreenState extends State<StoriesHubScreen>
       vsync: this,
       duration: const Duration(seconds: 5),
     )..repeat();
+    _ambientController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 12),
+    )..repeat();
     _scrollController.addListener(_onScroll);
     _refreshEntitlement();
 
@@ -53,11 +59,30 @@ class _StoriesHubScreenState extends State<StoriesHubScreen>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final animationsDisabled =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (animationsDisabled) {
+      _floatController
+        ..stop()
+        ..value = 0;
+      _ambientController
+        ..stop()
+        ..value = 0;
+    } else {
+      if (!_floatController.isAnimating) _floatController.repeat();
+      if (!_ambientController.isAnimating) _ambientController.repeat();
+    }
+  }
+
+  @override
   void dispose() {
     _scrollController
       ..removeListener(_onScroll)
       ..dispose();
     _floatController.dispose();
+    _ambientController.dispose();
     super.dispose();
   }
 
@@ -133,6 +158,7 @@ class _StoriesHubScreenState extends State<StoriesHubScreen>
               scrollOffset: _scrollOffset,
               cycle: cycle,
               progress: _scrollProgress * 0.62,
+              ambientAnimation: _ambientController,
             ),
           ),
           Positioned.fill(
@@ -202,14 +228,14 @@ class _StoryTopBar extends StatelessWidget {
         height: 64,
         padding: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFFFDF8EA).withOpacity(0.94),
-          borderRadius: BorderRadius.circular(25),
-          border: Border.all(color: const Color(0xFFFFC857), width: 2),
+          color: IslandWorldPalette.paper.withOpacity(0.96),
+          borderRadius: BorderRadius.circular(IslandWorldMetrics.cardRadius),
+          border: Border.all(color: IslandWorldPalette.honey, width: 2),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF5B3B1E).withOpacity(0.2),
-              blurRadius: 15,
-              offset: const Offset(0, 6),
+              color: IslandWorldPalette.ink.withOpacity(0.16),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
@@ -220,20 +246,23 @@ class _StoryTopBar extends StatelessWidget {
               onPressed: onBack,
               tooltip: 'بازگشت',
               style: IconButton.styleFrom(
-                backgroundColor: const Color(0xFF7E57C2),
+                backgroundColor: IslandWorldPalette.deepOcean,
                 foregroundColor: Colors.white,
-                minimumSize: const Size(48, 48),
+                minimumSize: const Size.square(
+                  IslandWorldMetrics.minimumTouchTarget,
+                ),
               ),
               icon: const Icon(Icons.arrow_forward_rounded, size: 25),
             ),
             const SizedBox(width: 9),
-            ClipOval(
-              child: Image.asset(
-                'assets/mascot/fandoghi_baby.webp',
-                width: 45,
-                height: 45,
-                fit: BoxFit.cover,
-              ),
+            Image.asset(
+              IslandWorldAssets.fandoghiWave,
+              width: 45,
+              height: 45,
+              cacheWidth:
+                  (45 * MediaQuery.devicePixelRatioOf(context)).round(),
+              fit: BoxFit.contain,
+              excludeFromSemantics: true,
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -242,7 +271,7 @@ class _StoryTopBar extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppFonts.kids(
-                  color: const Color(0xFF3B2B52),
+                  color: IslandWorldPalette.ink,
                   fontSize: 23,
                 ),
               ),
@@ -251,23 +280,23 @@ class _StoryTopBar extends StatelessWidget {
               constraints: const BoxConstraints(minWidth: 66),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
               decoration: BoxDecoration(
-                color: const Color(0xFFE6F7DF),
+                color: IslandWorldPalette.foliageLight.withOpacity(0.24),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF8BC34A)),
+                border: Border.all(color: IslandWorldPalette.foliage),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(
                     Icons.auto_stories_rounded,
-                    color: Color(0xFF558B2F),
+                    color: IslandWorldPalette.foliageDeep,
                     size: 19,
                   ),
                   const SizedBox(width: 4),
                   Text(
                     '$completedCount/$totalCount',
                     style: AppFonts.kids(
-                      color: const Color(0xFF3E6D21),
+                      color: IslandWorldPalette.foliageDeep,
                       fontSize: 15,
                     ),
                   ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
+import '../../core/content_access_policy.dart';
 import '../../core/growth/growth.dart';
 import '../../core/monetization.dart';
 import '../../shared/widgets/parent_pin_gate.dart';
@@ -18,30 +19,6 @@ class GameAccessGate extends StatefulWidget {
 
 class _GameAccessGateState extends State<GameAccessGate>
     with SingleTickerProviderStateMixin {
-  static const _free = {
-    'الفبا',
-    'اعداد',
-    'رنگ‌ها',
-    'ستاره‌گیری',
-    'حباب‌ترکان',
-    'نقاشی',
-    'چوب‌خط',
-    'ارزش مکانی',
-    'محور اعداد',
-    'تقارن',
-    'قاب ده‌تایی',
-    'تمساح',
-    'ساعت',
-    'جمع',
-    'املا',
-    // ── نسخه ۷: بازی‌های رایگان شهر بازی‌های تازه ──
-    'شهر بازی‌ها',
-    'حرف اول',
-    'شمارش خوش',
-    'بزرگ و کوچک',
-    'ترتیب اعداد',
-    'متفاوت را پیدا کن',
-  };
   bool? _allowed;
   late final AnimationController _floatCtrl;
 
@@ -62,7 +39,8 @@ class _GameAccessGateState extends State<GameAccessGate>
   }
 
   Future<void> _check() async {
-    final allowed = _free.contains(widget.gameName) || await Monetization.hasFullVersion();
+    final allowed = ContentAccessPolicy.isGameFree(widget.gameName) ||
+        await Monetization.hasFullVersion();
     if (mounted) setState(() => _allowed = allowed);
   }
 

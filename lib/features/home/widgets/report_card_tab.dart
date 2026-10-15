@@ -3,10 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../app/app_colors.dart';
 import '../../../app/app_fonts.dart';
+import '../../../app/island_world_style.dart';
 import '../../../core/audio_service.dart';
-import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../core/growth/growth.dart';
 import '../../../presentation/providers/game_state_provider.dart';
@@ -27,7 +26,7 @@ class ReportCardTab extends ConsumerWidget {
     final minutes = GameData.todayPlayMinutes;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7F9),
+      backgroundColor: IslandWorldPalette.paper,
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
@@ -48,7 +47,7 @@ class ReportCardTab extends ConsumerWidget {
                       emoji: '🎯',
                       title: 'پاسخ‌های درست',
                       value: PersianDigits.toFa(GameData.totalCorrect),
-                      color: const Color(0xFF2E7D32),
+                      color: IslandWorldPalette.success,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -57,7 +56,7 @@ class ReportCardTab extends ConsumerWidget {
                       emoji: '⏱️',
                       title: 'زمان یادگیری امروز',
                       value: '${PersianDigits.toFa(minutes)} دقیقه',
-                      color: const Color(0xFF0277BD),
+                      color: IslandWorldPalette.deepOcean,
                     ),
                   ),
                 ],
@@ -78,7 +77,9 @@ class ReportCardTab extends ConsumerWidget {
               const SizedBox(height: 20),
 
               // گواهینامه‌ها و مدارک پایان دوره
-              _sectionTitle('📜 کارنامه‌ها و گواهی‌های افتخار'),
+              _sectionTitle(
+                '📜 کارنامه‌ها و گواهی‌های افتخار',
+              ),
               const SizedBox(height: 8),
               _buildCertificatesTile(context),
 
@@ -98,12 +99,17 @@ class ReportCardTab extends ConsumerWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFF00ACC1), width: 1.5),
+                    color: IslandWorldPalette.skyMist,
+                    borderRadius: BorderRadius.circular(
+                      IslandWorldMetrics.buttonRadius,
+                    ),
+                    border: Border.all(
+                      color: IslandWorldPalette.deepOcean.withOpacity(0.3),
+                      width: 1.5,
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF00ACC1).withOpacity(0.15),
+                        color: IslandWorldPalette.deepOcean.withOpacity(0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -112,14 +118,17 @@ class ReportCardTab extends ConsumerWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.analytics_rounded, color: Color(0xFF00838F)),
+                      const Icon(
+                        Icons.analytics_rounded,
+                        color: IslandWorldPalette.deepOcean,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'مشاهده گزارش تفصیلی والدین',
                         style: AppFonts.vazirmatn(
                           fontSize: 14,
                           fontWeight: FontWeight.w900,
-                          color: const Color(0xFF00838F),
+                          color: IslandWorldPalette.deepOcean,
                         ),
                       ),
                     ],
@@ -134,18 +143,17 @@ class ReportCardTab extends ConsumerWidget {
   }
 
   Widget _buildHeader(int rate) {
-    return Container(
+    final header = Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF00838F), Color(0xFF00ACC1)],
-        ),
-        borderRadius: BorderRadius.circular(28),
+        gradient: IslandWorldGradients.sky,
+        borderRadius: BorderRadius.circular(IslandWorldMetrics.cardRadius),
+        border: Border.all(color: Colors.white.withOpacity(0.84), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF00ACC1).withOpacity(0.35),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            color: IslandWorldPalette.deepOcean.withOpacity(0.14),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -155,7 +163,7 @@ class ReportCardTab extends ConsumerWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.25),
+              color: IslandWorldPalette.honey.withOpacity(0.28),
               shape: BoxShape.circle,
             ),
             child: const Center(
@@ -169,10 +177,10 @@ class ReportCardTab extends ConsumerWidget {
               children: [
                 Text(
                   'کارنامه پیشرفت تحصیلی',
-                  style: AppFonts.vazirmatn(
+                  style: AppFonts.kids(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
-                    color: Colors.white,
+                    color: IslandWorldPalette.ink,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -181,7 +189,7 @@ class ReportCardTab extends ConsumerWidget {
                   style: AppFonts.vazirmatn(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white.withOpacity(0.92),
+                    color: IslandWorldPalette.deepOcean.withOpacity(0.86),
                   ),
                 ),
               ],
@@ -189,7 +197,20 @@ class ReportCardTab extends ConsumerWidget {
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.1);
+    );
+
+    final animationsDisabled =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (animationsDisabled) return header;
+
+    return header
+        .animate()
+        .fadeIn(duration: IslandWorldMetrics.routeTransition)
+        .slideY(
+          begin: -0.08,
+          duration: IslandWorldMetrics.routeTransition,
+          curve: Curves.easeOutCubic,
+        );
   }
 
   Widget _buildStatCard({
@@ -201,12 +222,12 @@ class ReportCardTab extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+        color: IslandWorldPalette.paper,
+        borderRadius: BorderRadius.circular(IslandWorldMetrics.buttonRadius),
+        border: Border.all(color: color.withOpacity(0.28), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: IslandWorldPalette.ink.withOpacity(0.06),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -219,7 +240,11 @@ class ReportCardTab extends ConsumerWidget {
           const SizedBox(height: 6),
           Text(
             title,
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.bold),
+            style: AppFonts.vazirmatn(
+              fontSize: 11,
+              color: IslandWorldPalette.mutedInk,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 2),
           Text(
@@ -241,7 +266,7 @@ class ReportCardTab extends ConsumerWidget {
       style: AppFonts.vazirmatn(
         fontSize: 15.5,
         fontWeight: FontWeight.w900,
-        color: const Color(0xFF2C3E50),
+        color: IslandWorldPalette.ink,
       ),
     );
   }
@@ -254,17 +279,17 @@ class ReportCardTab extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [Color(0xFF7C4DFF), Color(0xFF42A5F5)],
+        gradient: IslandWorldGradients.meadow,
+        borderRadius: BorderRadius.circular(IslandWorldMetrics.cardRadius),
+        border: Border.all(
+          color: IslandWorldPalette.foliage.withOpacity(0.38),
+          width: 1.5,
         ),
-        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF7C4DFF).withOpacity(0.35),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
+            color: IslandWorldPalette.foliageDeep.withOpacity(0.12),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -279,7 +304,7 @@ class ReportCardTab extends ConsumerWidget {
                 child: Text(
                   'سطح جزیره: ${PersianDigits.toFa(level)} — ${GameData.islandLevelTitle}',
                   style: AppFonts.vazirmatn(
-                    color: Colors.white,
+                    color: IslandWorldPalette.ink,
                     fontSize: 16,
                     fontWeight: FontWeight.w900,
                   ),
@@ -288,7 +313,7 @@ class ReportCardTab extends ConsumerWidget {
               Text(
                 '${PersianDigits.toFa(GameData.xp)} تجربه',
                 style: AppFonts.vazirmatn(
-                  color: const Color(0xFFFFF176),
+                  color: IslandWorldPalette.deepOcean,
                   fontSize: 14,
                   fontWeight: FontWeight.w900,
                 ),
@@ -297,19 +322,23 @@ class ReportCardTab extends ConsumerWidget {
           ),
           const SizedBox(height: 10),
           ClipRRect(
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(IslandWorldMetrics.buttonRadius),
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 12,
-              backgroundColor: Colors.white.withOpacity(0.25),
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(Color(0xFFFFD700)),
+              backgroundColor: IslandWorldPalette.softOutline,
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                IslandWorldPalette.foliageDeep,
+              ),
             ),
           ),
           const SizedBox(height: 6),
           Text(
             '${PersianDigits.toFa(remaining)} تجربه تا سطح بعد — با بازی و یادگیری جمع می‌شود',
-            style: AppFonts.vazirmatn(color: Colors.white70, fontSize: 12),
+            style: AppFonts.vazirmatn(
+              color: IslandWorldPalette.mutedInk,
+              fontSize: 12,
+            ),
           ),
         ],
       ),
@@ -318,22 +347,53 @@ class ReportCardTab extends ConsumerWidget {
 
   Widget _buildSubjectsProgress() {
     final subjects = [
-      ('فارسی و الفبا', '🔤', (GameData.skills['alphabet'] ?? 0) / 20.0, const Color(0xFFD35400)),
-      ('ریاضی و شمارش', '🔢', (GameData.skills['math'] ?? 0) / 20.0, const Color(0xFF8E44AD)),
-      ('علوم و حیوانات', '🦁', (GameData.skills['animals'] ?? 0) / 20.0, const Color(0xFF27AE60)),
-      ('هنر و نقاشی', '🎨', (GameData.skills['colors'] ?? 0) / 20.0, const Color(0xFFE74C3C)),
-      ('مهارت‌های زندگی', '🧭', (GameData.skills['concepts'] ?? 0) / 20.0, const Color(0xFF00897B)),
-      ('هوش و منطق', '🕵️', (GameData.skills['logic'] ?? 0) / 20.0, const Color(0xFF5E35B1)),
+      (
+        'فارسی و الفبا',
+        '🔤',
+        (GameData.skills['alphabet'] ?? 0) / 20.0,
+        IslandWorldPalette.wood,
+      ),
+      (
+        'ریاضی و شمارش',
+        '🔢',
+        (GameData.skills['math'] ?? 0) / 20.0,
+        IslandWorldPalette.deepOcean,
+      ),
+      (
+        'علوم و حیوانات',
+        '🦁',
+        (GameData.skills['animals'] ?? 0) / 20.0,
+        IslandWorldPalette.foliage,
+      ),
+      (
+        'هنر و نقاشی',
+        '🎨',
+        (GameData.skills['colors'] ?? 0) / 20.0,
+        IslandWorldPalette.coral,
+      ),
+      (
+        'مهارت‌های زندگی',
+        '🧭',
+        (GameData.skills['concepts'] ?? 0) / 20.0,
+        IslandWorldPalette.ocean,
+      ),
+      (
+        'هوش و منطق',
+        '🕵️',
+        (GameData.skills['logic'] ?? 0) / 20.0,
+        IslandWorldPalette.lavender,
+      ),
     ];
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        color: IslandWorldPalette.paper,
+        borderRadius: BorderRadius.circular(IslandWorldMetrics.cardRadius),
+        border: Border.all(color: IslandWorldPalette.softOutline),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: IslandWorldPalette.ink.withOpacity(0.06),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -341,7 +401,7 @@ class ReportCardTab extends ConsumerWidget {
       ),
       child: Column(
         children: subjects.map((s) {
-          final progress = s.$3.clamp(0.0, 1.0);
+          final progress = s.$3.clamp(0.0, 1.0).toDouble();
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Column(
@@ -359,24 +419,25 @@ class ReportCardTab extends ConsumerWidget {
                           style: AppFonts.vazirmatn(
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
-                            color: const Color(0xFF2C3E50),
+                            color: IslandWorldPalette.ink,
                           ),
                         ),
                       ],
                     ),
                     Text(
                       '${(progress * 100).toInt()}٪',
-                      style: TextStyle(
+                      style: AppFonts.vazirmatn(
                         fontSize: 12,
                         fontWeight: FontWeight.w900,
-                        color: s.$4,
+                        color: IslandWorldPalette.ink,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 6),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius:
+                      BorderRadius.circular(IslandWorldMetrics.buttonRadius),
                   child: LinearProgressIndicator(
                     value: progress,
                     minHeight: 8,
@@ -405,12 +466,12 @@ class ReportCardTab extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFFFB300), width: 1.5),
+          color: IslandWorldPalette.paper,
+          borderRadius: BorderRadius.circular(IslandWorldMetrics.buttonRadius),
+          border: Border.all(color: IslandWorldPalette.softOutline),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: IslandWorldPalette.deepOcean.withOpacity(0.08),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),
@@ -422,7 +483,7 @@ class ReportCardTab extends ConsumerWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF8E1),
+                color: IslandWorldPalette.skyMist,
                 borderRadius: BorderRadius.circular(14),
               ),
               child: const Center(
@@ -439,18 +500,25 @@ class ReportCardTab extends ConsumerWidget {
                     style: AppFonts.vazirmatn(
                       fontSize: 14,
                       fontWeight: FontWeight.w900,
-                      color: const Color(0xFF2C3E50),
+                      color: IslandWorldPalette.ink,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     'دریافت مدرک پایان دوره‌های آموزشی با نام کودک',
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                    style: AppFonts.vazirmatn(
+                      fontSize: 11,
+                      color: IslandWorldPalette.mutedInk,
+                    ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: Color(0xFFFFB300)),
+            const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 16,
+              color: IslandWorldPalette.deepOcean,
+            ),
           ],
         ),
       ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../app/app_fonts.dart';
+import '../../app/island_world_style.dart';
 import '../../core/game_data.dart';
 
 /// A full-screen, video-like walkthrough shown once at first app entry.
@@ -29,9 +30,13 @@ class _AppTutorialScreenState extends State<AppTutorialScreen>
       description:
           'من فندقی‌ام؛ دوست و راهنمای تو. روی جزیره‌ها و حباب‌های رنگی بزن تا وارد بازی، قصه، کارتون، لالایی و آموزش شوی. هر کارت یک ماجرای تازه است!',
       tip: 'هرجا من را دیدی، یک راهنمای کوتاه و مهربان برایت دارم.',
-      asset: 'assets/mascot/fandoghi_welcome_hero.png',
+      asset: IslandWorldAssets.fandoghiWave,
       icon: Icons.favorite_rounded,
-      colors: [Color(0xFF6C3BCE), Color(0xFF1E88E5), Color(0xFF00B8D4)],
+      colors: [
+        IslandWorldPalette.deepOcean,
+        Color(0xFF225E7E),
+        IslandWorldPalette.foliageDeep,
+      ],
       features: ['بازی و یادگیری', 'قصه و کارتون', 'جایزه و ستاره'],
     ),
     _TutorialSlide(
@@ -40,9 +45,13 @@ class _AppTutorialScreenState extends State<AppTutorialScreen>
       description:
           'حالا می‌توانی وارد جزیره شوی. بازی کن، یاد بگیر و جزیرهٔ خودت را بساز. فندقی همیشه کنار توست!',
       tip: 'هر وقت کمک خواستی، به فندقی و نشانه‌های رنگی صفحه نگاه کن.',
-      asset: 'assets/mascot/fandoghi_baby_party.webp',
+      asset: IslandWorldAssets.fandoghiCelebrate,
       icon: Icons.rocket_launch_rounded,
-      colors: [Color(0xFF4A148C), Color(0xFF7B1FA2), Color(0xFFE91E63)],
+      colors: [
+        IslandWorldPalette.foliageDeep,
+        Color(0xFF396C42),
+        Color(0xFF206C71),
+      ],
       features: ['یادگیری', 'بازی', 'ماجراجویی'],
       isFinal: true,
     ),
@@ -69,6 +78,20 @@ class _AppTutorialScreenState extends State<AppTutorialScreen>
       duration: _slideDuration,
     );
     _startSlideClock();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final animationsDisabled =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (animationsDisabled) {
+      _ambientController
+        ..stop()
+        ..value = 0.2;
+    } else if (!_ambientController.isAnimating) {
+      _ambientController.repeat();
+    }
   }
 
   @override
@@ -101,7 +124,9 @@ class _AppTutorialScreenState extends State<AppTutorialScreen>
     // A skip can cross several lazily-built pages. Jump directly so the final
     // choice and its matching artwork always appear together; neighbouring
     // slides retain the premium animated transition.
-    if ((target - previousIndex).abs() > 1) {
+    final animationsDisabled =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (animationsDisabled || (target - previousIndex).abs() > 1) {
       _pageController.jumpToPage(target);
     } else {
       _pageController.animateToPage(
@@ -134,13 +159,21 @@ class _AppTutorialScreenState extends State<AppTutorialScreen>
   @override
   Widget build(BuildContext context) {
     final slide = _slides[_index];
-    final animationsDisabled = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final animationsDisabled =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final backdropColors = slide.colors
+        .map(
+          (color) => Color.lerp(color, Colors.black, 0.22)!.withOpacity(0.80),
+        )
+        .toList(growable: false);
 
     return WillPopScope(
       onWillPop: () async => false,
       child: Scaffold(
         body: AnimatedContainer(
-          duration: const Duration(milliseconds: 900),
+          duration: animationsDisabled
+              ? Duration.zero
+              : const Duration(milliseconds: 900),
           curve: Curves.easeInOutCubic,
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -151,6 +184,42 @@ class _AppTutorialScreenState extends State<AppTutorialScreen>
           ),
           child: Stack(
             children: [
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Image.asset(
+                    IslandWorldAssets.mapHero,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.topCenter,
+                    filterQuality: FilterQuality.medium,
+                    excludeFromSemantics: true,
+                    cacheWidth:
+                        (MediaQuery.of(context).size.width *
+                                MediaQuery.devicePixelRatioOf(context))
+                            .round()
+                            .clamp(1, 768)
+                            .toInt(),
+                    errorBuilder: (_, __, ___) =>
+                        const ColoredBox(color: Colors.transparent),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: AnimatedContainer(
+                    duration: animationsDisabled
+                        ? Duration.zero
+                        : const Duration(milliseconds: 650),
+                    curve: Curves.easeInOutCubic,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topRight,
+                        end: Alignment.bottomLeft,
+                        colors: backdropColors,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
               Positioned.fill(
                 child: IgnorePointer(
                   child: AnimatedBuilder(
@@ -376,6 +445,12 @@ class _SlideBody extends StatelessWidget {
                         height: visualSize,
                         fit: BoxFit.contain,
                         filterQuality: FilterQuality.high,
+                        excludeFromSemantics: true,
+                        cacheWidth:
+                            (visualSize * MediaQuery.devicePixelRatioOf(context))
+                                .round()
+                                .clamp(1, 666)
+                                .toInt(),
                         errorBuilder: (_, __, ___) => Icon(
                           slide.icon,
                           color: Colors.white,
@@ -405,7 +480,7 @@ class _SlideBody extends StatelessWidget {
                 slide.eyebrow,
                 textAlign: TextAlign.center,
                 style: AppFonts.kids(
-                  color: const Color(0xFFFFF0A8),
+                  color: Colors.white,
                   fontSize: compact ? 17 : 20,
                   shadows: const [Shadow(color: Colors.black26, blurRadius: 5)],
                 ),
@@ -442,7 +517,7 @@ class _SlideBody extends StatelessWidget {
                       (feature) => Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.17),
+                          color: Colors.black.withOpacity(0.22),
                           borderRadius: BorderRadius.circular(18),
                           border: Border.all(color: Colors.white30),
                         ),
@@ -509,7 +584,9 @@ class _TutorialButton extends StatelessWidget {
       padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 18, vertical: 13)),
       shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(22))),
       textStyle: WidgetStatePropertyAll(AppFonts.kids(fontSize: 21)),
-      foregroundColor: WidgetStatePropertyAll(filled ? const Color(0xFF42135E) : Colors.white),
+      foregroundColor: WidgetStatePropertyAll(
+        filled ? IslandWorldPalette.deepOcean : Colors.white,
+      ),
       backgroundColor: WidgetStatePropertyAll(filled ? Colors.white : Colors.white.withOpacity(0.14)),
       side: WidgetStatePropertyAll(BorderSide(color: Colors.white.withOpacity(filled ? 0.0 : 0.55), width: 1.5)),
       elevation: WidgetStatePropertyAll(filled ? 7 : 0),
@@ -554,7 +631,7 @@ class _DreamyBackgroundPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    for (var i = 0; i < 14; i++) {
+    for (var i = 0; i < IslandWorldMetrics.ambientSparkleBudget; i++) {
       final phase = progress * math.pi * 2 + i * 0.73;
       final x = (i * 83.0 + math.sin(phase) * 34) % (size.width + 50) - 25;
       final y = (i * 127.0 - progress * size.height * (0.3 + (i % 3) * 0.1)) %

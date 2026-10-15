@@ -45,5 +45,56 @@ void main() {
       expect(ContentAccessPolicy.isNumberFree(11), isFalse);
       expect(ContentAccessPolicy.isNumberFree(0), isFalse);
     });
+
+    test('free game hubs are centrally allowlisted and premium games fail closed', () {
+      for (final game in <String>[
+        'اشکال',
+        'مسابقه',
+        'شهر بازی‌ها',
+        'حرف اول',
+        'شمارش خوش',
+        'بزرگ و کوچک',
+        'ترتیب اعداد',
+        'متفاوت را پیدا کن',
+        'داستان',
+        'لالایی',
+      ]) {
+        expect(ContentAccessPolicy.isGameFree(game), isTrue, reason: game);
+      }
+
+      for (final game in <String>[
+        'حافظه',
+        'پازل',
+        'الگو',
+        'جزیره‌ساز',
+        'کلمه‌ساز',
+        'جمع تصویری',
+        'حیوانات',
+        'واژگان',
+        'داستان ویژه',
+      ]) {
+        expect(ContentAccessPolicy.isGameFree(game), isFalse, reason: game);
+      }
+      expect(ContentAccessPolicy.isGameFree(' ناشناخته '), isFalse);
+    });
+
+    test('direct academy routes are free only for explicitly free topics', () {
+      expect(ContentAccessPolicy.isAcademyTopicFree('colors'), isTrue);
+      expect(ContentAccessPolicy.isAcademyTopicFree('shapes'), isTrue);
+      for (final topic in <String>[
+        'numbers',
+        'animals',
+        'fruits',
+        'body',
+        'jobs',
+        'emotions',
+        'concepts',
+        'unknown',
+        'COLORS',
+      ]) {
+        expect(ContentAccessPolicy.isAcademyTopicFree(topic), isFalse,
+            reason: topic);
+      }
+    });
   });
 }

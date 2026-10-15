@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -46,4 +48,13 @@ void main() {
     expect(result.message, contains('سندباکس'));
   });
 
+  test('plain legacy Hive receipt data is not a release entitlement', () {
+    final source = File('lib/core/monetization.dart').readAsStringSync();
+
+    // kReleaseMode is compile-time in Flutter tests, so protect this release
+    // security rule with a source-level contract test as well.
+    expect(source, contains('return _isGranted();'));
+    expect(source, isNot(contains('_migrateLegacyGrant')));
+    expect(source, isNot(contains('_looksLikeReceipt')));
+  });
 }

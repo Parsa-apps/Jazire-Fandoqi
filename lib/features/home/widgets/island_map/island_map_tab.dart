@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/app_colors.dart';
 import '../../../../app/app_fonts.dart';
 import '../../../../app/app_theme.dart';
+import '../../../../app/island_world_style.dart';
 import '../../../../core/audio_service.dart';
 import '../../../../core/fandoghi_coach.dart';
 import '../../../../core/game_data.dart';
@@ -64,6 +65,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
   late final ScrollController _scrollCtrl;
 
   double _scrollOffset = 0;
+  bool _reduceMotion = false;
 
   /// ارتفاع کل نقشه نسبت به ارتفاع صفحه — نقشه حدود ۲٫۵ صفحه بلند است
   static const double _mapHeightFactor = 3.41;
@@ -86,6 +88,26 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) FandoghiCoach.welcome();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (reduceMotion == _reduceMotion) return;
+    _reduceMotion = reduceMotion;
+
+    if (reduceMotion) {
+      _floatCtrl
+        ..stop()
+        ..value = 0;
+      _bubbleCtrl
+        ..stop()
+        ..value = 0;
+    } else {
+      _floatCtrl.repeat();
+      _bubbleCtrl.repeat();
+    }
   }
 
   /// پیشرفت سفر از ۰ (بالای نقشه) تا ۱ (انتهای زیرِ آب)
@@ -162,6 +184,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
               scrollOffset: _scrollOffset,
               cycle: cycle,
               progress: _progress,
+              ambientAnimation: _bubbleCtrl,
             ),
           ),
 
@@ -186,7 +209,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
                     child: SizedBox(
                       height: mapH,
                       width: w,
-                      child: _buildMapContent(w, mapH),
+                      child: _buildMapContent(w, mapH, cycle),
                     ),
                   ),
                 );
@@ -230,7 +253,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
   }
 
   // ─── محتوای نقشه: سکوها، پل‌ها و ناحیهٔ زیرِ آب ─────────────
-  Widget _buildMapContent(double w, double mapH) {
+  Widget _buildMapContent(double w, double mapH, DayCycle cycle) {
     // سکوها عمداً درشت‌اند: برچسب‌ها نسبت به عرضِ سکو اندازه می‌گیرند،
     // پس سکوی بزرگ‌تر یعنی متنِ کارتونی و درشتِ خوانا برای بچهٔ کوچک.
     final islandW = (w * 0.56).clamp(150.0, 250.0);
@@ -333,9 +356,68 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
 
     final signW = (w * 0.72).clamp(210.0, 340.0);
 
+    final mapHeroHeight = w * (1376 / 768);
+    final mapNightShade = switch (cycle) {
+      DayCycle.night => const Color(0x550B1C45),
+      DayCycle.sunset => const Color(0x18FF8D59),
+      _ => Colors.transparent,
+    };
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
+        // دیورامای عمودیِ جزیره در ابتدای مسیر؛ تصویر روی نقاط قابل‌لمس
+        // قرار نمی‌گیرد و فقط صحنهٔ پس‌زمینه را غنی‌تر می‌کند.
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          height: mapHeroHeight,
+          child: IgnorePointer(
+            child: RepaintBoundary(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(
+                    IslandWorldAssets.mapHero,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.topCenter,
+                    filterQuality: FilterQuality.medium,
+                    cacheWidth: (w * MediaQuery.devicePixelRatioOf(context))
+                        .round()
+                        .clamp(1, 768)
+                        .toInt(),
+                    errorBuilder: (_, __, ___) =>
+                        const ColoredBox(color: AppColors.mapBackground),
+                  ),
+                  ColoredBox(color: mapNightShade),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: mapHeroHeight * 0.16,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            (cycle == DayCycle.night
+                                    ? const Color(0xFF163451)
+                                    : const Color(0xFF58C7D5))
+                                .withOpacity(0.24),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+
         // ── پل‌ها زیر سکوها کشیده می‌شوند تا دو سرشان زیر چمن پنهان شود ──
         for (var i = 0; i < rects.length - 1; i++)
           _connectingBridge(rects[i], rects[i + 1]),

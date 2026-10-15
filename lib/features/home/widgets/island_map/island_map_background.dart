@@ -20,12 +20,17 @@ class IslandMapBackground extends StatelessWidget {
   /// از آسمان به سمت عمق دریا فرود می‌آید.
   final double progress;
 
+  /// یک کنترلر مشترک برای حرکت کم‌هزینهٔ ابر، پرنده و برق آب.
+  /// اختیاری است تا هاب‌های قدیمی هم بدون تغییر سازنده باقی بمانند.
+  final Animation<double>? ambientAnimation;
+
   final DayCycle cycle;
 
   const IslandMapBackground({
     super.key,
     required this.scrollOffset,
     required this.cycle,
+    this.ambientAnimation,
     this.progress = 0,
   });
 
@@ -37,6 +42,7 @@ class IslandMapBackground extends StatelessWidget {
           scrollOffset: scrollOffset,
           cycle: cycle,
           progress: progress,
+          ambientAnimation: ambientAnimation,
         ),
         size: Size.infinite,
       ),
@@ -48,12 +54,14 @@ class _SkyOceanPainter extends CustomPainter {
   final double scrollOffset;
   final DayCycle cycle;
   final double progress;
+  final Animation<double>? ambientAnimation;
 
   _SkyOceanPainter({
     required this.scrollOffset,
     required this.cycle,
     required this.progress,
-  });
+    required this.ambientAnimation,
+  }) : super(repaint: ambientAnimation);
 
   /// خط افق: بالای نقشه پایینِ کادر است و هرچه پایین‌تر می‌رویم بالا می‌آید
   double get _horizon => (1.15 - progress * 1.30).clamp(-0.15, 1.15);
@@ -86,6 +94,7 @@ class _SkyOceanPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
+    final ambientPhase = ambientAnimation?.value ?? 0.0;
 
     // ── ۱. گرادیان آسمان → سطح دریا → عمق ──
     final hz = _horizon;
@@ -116,10 +125,18 @@ class _SkyOceanPainter extends CustomPainter {
       canvas.save();
       canvas.clipRect(Rect.fromLTWH(0, 0, size.width, size.height * hz + 4));
       _paintSun(canvas, size, skyFade);
-      _paintClouds(canvas, size, skyFade);
+      _paintClouds(canvas, size, skyFade, ambientPhase);
+      // در چرخهٔ شب، آسمان عمداً بدون پرنده و پروانه می‌ماند.
+      if (ambientAnimation != null && cycle != DayCycle.night) {
+        _paintBirds(canvas, size, skyFade, ambientPhase);
+        _paintButterflies(canvas, size, skyFade, ambientPhase);
+      }
       canvas.restore();
     }
-    _paintWaves(canvas, size);
+    _paintWaves(canvas, size, ambientPhase);
+    if (ambientAnimation != null) {
+      _paintWaterGlimmers(canvas, size, ambientPhase);
+    }
   }
 
   /// خورشید (یا ماه در شب) گوشهٔ بالا با هالهٔ نرم
@@ -165,13 +182,12 @@ class _SkyOceanPainter extends CustomPainter {
     canvas.restore();
   }
 
-  /// ابرهای پفکی با پارالاکس آرام نسبت به اسکرول
-  void _paintClouds(Canvas canvas, Size size, double fade) {
+  /// ابرهای حجیم با شناوری آرام و پارالاکس وابسته به اسکرول
+  void _paintClouds(Canvas canvas, Size size, double fade, double phase) {
     final paint = Paint()
       ..color = Colors.white
           .withOpacity((cycle == DayCycle.night ? 0.30 : 0.82) * fade);
 
-    // موقعیت‌های نسبی ثابت تا ابرها هر فریم نپرند
     const spots = <List<double>>[
       // [x نسبی, y نسبی, مقیاس, ضریب پارالاکس]
       [0.16, 0.045, 1.00, 0.10],
@@ -181,12 +197,84 @@ class _SkyOceanPainter extends CustomPainter {
       [0.10, 0.255, 0.78, 0.19],
     ];
 
-    // بازهٔ چرخش عمودی: ابرها به‌جای تمام‌شدن، از پایین دوباره بالا می‌آیند
     final span = size.height + 320;
-    for (final s in spots) {
-      var dy = (s[1] * size.height) - scrollOffset * s[3];
+    for (var i = 0; i < spots.length; i++) {
+      final spot = spots[i];
+      final driftX = sin(phase * 2 * pi + i * 1.4) * size.width * 0.018;
+      final driftY = cos(phase * 2 * pi + i * 0.9) * 5;
+      var dy = (spot[1] * size.height) - scrollOffset * spot[3] + driftY;
       dy = ((dy + 160) % span + span) % span - 160;
-      _cloud(canvas, Offset(s[0] * size.width, dy), 46 * s[2], paint);
+      _cloud(
+        canvas,
+        Offset(spot[0] * size.width + driftX, dy),
+        46 * spot[2],
+        paint,
+      );
+    }
+  }
+
+  /// سه پرندهٔ کوچک که آرام از آسمان می‌گذرند؛ بیرون از جزیره پنهان‌اند.
+  void _paintBirds(Canvas canvas, Size size, double fade, double phase) {
+    if (fade < 0.18) return;
+    final birdColor =
+        cycle == DayCycle.night ? Colors.white : const Color(0xFF316A7A);
+    final paint = Paint()
+      ..color = birdColor.withOpacity(
+        (cycle == DayCycle.night ? 0.42 : 0.34) * fade,
+      )
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.2
+      ..strokeCap = StrokeCap.round;
+
+    for (var i = 0; i < 3; i++) {
+      final travel = (phase * 0.18 + i / 3) % 1.0;
+      final x = travel * (size.width + 72) - 36;
+      final y = size.height * (i.isEven ? 0.13 : 0.175) +
+          sin(phase * 2 * pi + i * 1.8) * 7;
+      final scale = i.isEven ? 0.72 : 0.90;
+      final bird = Path()
+        ..moveTo(x - 8 * scale, y)
+        ..quadraticBezierTo(x - 4 * scale, y - 6 * scale, x, y)
+        ..quadraticBezierTo(x + 4 * scale, y - 6 * scale, x + 8 * scale, y);
+      canvas.drawPath(bird, paint);
+    }
+  }
+
+  /// دو پروانهٔ دوردست؛ بال‌زدن فقط با تغییر ظرافتِ اندازه انجام می‌شود.
+  void _paintButterflies(Canvas canvas, Size size, double fade, double phase) {
+    if (fade < 0.26) return;
+    for (var i = 0; i < 2; i++) {
+      final t = phase * 2 * pi + (i == 0 ? 0.0 : pi);
+      final xOffset = i == 0 ? 0.0 : 0.57;
+      final x = ((phase * 0.11 + xOffset) % 1.0) * size.width;
+      final y = size.height * (i == 0 ? 0.27 : 0.36) + sin(t) * 12;
+      final wing = 3.2 + (sin(t * 3).abs() * 2.0);
+      final wingColor =
+          i == 0 ? const Color(0xFFFFD166) : const Color(0xFFF48FB1);
+      final paint = Paint()..color = wingColor.withOpacity(0.62 * fade);
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(x - wing * 0.65, y),
+          width: wing,
+          height: wing * 1.5,
+        ),
+        paint,
+      );
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(x + wing * 0.65, y),
+          width: wing,
+          height: wing * 1.5,
+        ),
+        paint,
+      );
+      canvas.drawLine(
+        Offset(x, y - 2.2),
+        Offset(x, y + 2.2),
+        Paint()
+          ..color = const Color(0xFF6E5840).withOpacity(0.52 * fade)
+          ..strokeWidth = 1.1,
+      );
     }
   }
 
@@ -204,8 +292,8 @@ class _SkyOceanPainter extends CustomPainter {
     );
   }
 
-  /// موج‌های افقی ملایم روی سطح اقیانوس
-  void _paintWaves(Canvas canvas, Size size) {
+  /// موج‌های افقی ملایم روی اقیانوس با حرکت بسیار آهسته
+  void _paintWaves(Canvas canvas, Size size, double ambientPhase) {
     final top = size.height * _horizon;
     if (top > size.height) return;
     final paint = Paint()
@@ -220,14 +308,15 @@ class _SkyOceanPainter extends CustomPainter {
       final path = Path();
       final amp = 5.0 + (i % 3) * 2.0;
       final wave = size.width / 3.2;
-      final phase = (i.isEven ? 0.0 : wave / 2) - scrollOffset * 0.05;
+      final motion =
+          (i.isEven ? 0.0 : wave / 2) - scrollOffset * 0.05 + ambientPhase * wave;
       path.moveTo(-wave, y);
       for (var x = -wave; x < size.width + wave; x += wave) {
         path.relativeQuadraticBezierTo(wave / 4, -amp, wave / 2, 0);
         path.relativeQuadraticBezierTo(wave / 4, amp, wave / 2, 0);
       }
       canvas.save();
-      canvas.translate(phase % wave, 0);
+      canvas.translate((motion % wave + wave) % wave, 0);
       canvas.drawPath(path, paint);
       canvas.restore();
       y += 78;
@@ -235,12 +324,37 @@ class _SkyOceanPainter extends CustomPainter {
     }
   }
 
+  /// برق‌های کوچک و کم‌تعداد روی سطح آب
+  void _paintWaterGlimmers(Canvas canvas, Size size, double phase) {
+    final top = (size.height * _horizon).clamp(0.0, size.height).toDouble();
+    if (_horizon > 1.0) return;
+    const offsets = <double>[0.0, 0.173, 0.346, 0.519, 0.692, 0.865, 0.038];
+    const lanes = <double>[0.08, 0.19, 0.30, 0.41];
+    for (var i = 0; i < offsets.length; i++) {
+      final travel = (phase * 0.42 + offsets[i]) % 1.0;
+      final x = travel * size.width;
+      final y = top + size.height * lanes[i % lanes.length] +
+          sin(phase * 2 * pi + i * 1.3) * 5;
+      if (y > size.height) continue;
+      final pulse = (sin(phase * 2 * pi + i * 1.7) + 1) / 2;
+      final opacity = (cycle == DayCycle.night ? 0.08 : 0.12 + pulse * 0.12);
+      final paint = Paint()
+        ..color = Colors.white.withOpacity(opacity)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.8
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(Offset(x - 7, y), Offset(x + 7, y), paint);
+    }
+  }
+
   @override
   bool shouldRepaint(_SkyOceanPainter old) =>
-      // فقط وقتی اسکرول محسوس جابه‌جا شد دوباره بکش
+      // کنترلر repaint را مستقیم به CustomPainter می‌فرستد؛ این شرط‌ها
+      // برای تغییر اندازه، اسکرول و چرخهٔ روز هستند.
       (old.scrollOffset - scrollOffset).abs() > 1.5 ||
       (old.progress - progress).abs() > 0.002 ||
-      old.cycle != cycle;
+      old.cycle != cycle ||
+      old.ambientAnimation != ambientAnimation;
 }
 
 /// حباب‌های ریزِ شناور که حس زیرِ آب بودن بخش پایانی نقشه را می‌سازند.
@@ -248,7 +362,7 @@ class FloatingBubbles extends StatelessWidget {
   final Animation<double> animation;
   final int count;
 
-  const FloatingBubbles({super.key, required this.animation, this.count = 14});
+  const FloatingBubbles({super.key, required this.animation, this.count = 10});
 
   @override
   Widget build(BuildContext context) {

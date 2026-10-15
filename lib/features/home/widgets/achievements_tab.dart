@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/app_fonts.dart';
+import '../../../app/island_world_style.dart';
 import '../../../core/achievement_system.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
@@ -32,7 +33,7 @@ class _AchievementsTabState extends ConsumerState<AchievementsTab> {
     final unlockedCount = GameData.achievements.length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FA),
+      backgroundColor: IslandWorldPalette.paper,
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
@@ -101,18 +102,17 @@ class _AchievementsTabState extends ConsumerState<AchievementsTab> {
   }
 
   Widget _buildHeader(int unlocked, int total) {
-    return Container(
+    final header = Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFFB300), Color(0xFFFF8F00)],
-        ),
-        borderRadius: BorderRadius.circular(28),
+        gradient: IslandWorldGradients.sky,
+        borderRadius: BorderRadius.circular(IslandWorldMetrics.cardRadius),
+        border: Border.all(color: Colors.white.withOpacity(0.82), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFF8F00).withOpacity(0.35),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            color: IslandWorldPalette.deepOcean.withOpacity(0.14),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -122,7 +122,7 @@ class _AchievementsTabState extends ConsumerState<AchievementsTab> {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.25),
+              color: IslandWorldPalette.honey.withOpacity(0.28),
               shape: BoxShape.circle,
             ),
             child: const Center(
@@ -136,10 +136,10 @@ class _AchievementsTabState extends ConsumerState<AchievementsTab> {
               children: [
                 Text(
                   'تالار افتخارات من',
-                  style: AppFonts.vazirmatn(
+                  style: AppFonts.kids(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
-                    color: Colors.white,
+                    color: IslandWorldPalette.ink,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -148,7 +148,7 @@ class _AchievementsTabState extends ConsumerState<AchievementsTab> {
                   style: AppFonts.vazirmatn(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white.withOpacity(0.9),
+                    color: IslandWorldPalette.ink.withOpacity(0.82),
                   ),
                 ),
               ],
@@ -156,7 +156,20 @@ class _AchievementsTabState extends ConsumerState<AchievementsTab> {
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.1);
+    );
+
+    final animationsDisabled =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (animationsDisabled) return header;
+
+    return header
+        .animate()
+        .fadeIn(duration: IslandWorldMetrics.routeTransition)
+        .slideY(
+          begin: -0.08,
+          duration: IslandWorldMetrics.routeTransition,
+          curve: Curves.easeOutCubic,
+        );
   }
 
   Widget _sectionTitle(String title) {
@@ -165,7 +178,7 @@ class _AchievementsTabState extends ConsumerState<AchievementsTab> {
       style: AppFonts.vazirmatn(
         fontSize: 16,
         fontWeight: FontWeight.w900,
-        color: const Color(0xFF2C3E50),
+        color: IslandWorldPalette.ink,
       ),
     );
   }
@@ -198,20 +211,22 @@ class _AchievementsTabState extends ConsumerState<AchievementsTab> {
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(22),
+              color: isUnlocked
+                  ? IslandWorldPalette.honey.withOpacity(0.14)
+                  : IslandWorldPalette.paper,
+              borderRadius: BorderRadius.circular(IslandWorldMetrics.cardRadius),
               border: Border.all(
                 color: isUnlocked
-                    ? const Color(0xFFFFB300)
-                    : Colors.grey.shade300,
+                    ? IslandWorldPalette.honey
+                    : IslandWorldPalette.softOutline,
                 width: isUnlocked ? 2 : 1,
               ),
               boxShadow: [
                 BoxShadow(
                   color: isUnlocked
-                      ? const Color(0xFFFFB300).withOpacity(0.2)
-                      : Colors.black.withOpacity(0.04),
-                  blurRadius: 8,
+                      ? IslandWorldPalette.honey.withOpacity(0.16)
+                      : IslandWorldPalette.ink.withOpacity(0.06),
+                  blurRadius: isUnlocked ? 10 : 6,
                   offset: const Offset(0, 3),
                 ),
               ],
@@ -223,7 +238,9 @@ class _AchievementsTabState extends ConsumerState<AchievementsTab> {
                   ach.emoji,
                   style: TextStyle(
                     fontSize: 32,
-                    color: isUnlocked ? null : Colors.grey.withOpacity(0.4),
+                    color: isUnlocked
+                        ? null
+                        : IslandWorldPalette.mutedInk.withOpacity(0.4),
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -236,8 +253,8 @@ class _AchievementsTabState extends ConsumerState<AchievementsTab> {
                     fontSize: 13,
                     fontWeight: FontWeight.w900,
                     color: isUnlocked
-                        ? const Color(0xFF2C3E50)
-                        : Colors.grey.shade500,
+                        ? IslandWorldPalette.ink
+                        : IslandWorldPalette.mutedInk,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -246,7 +263,9 @@ class _AchievementsTabState extends ConsumerState<AchievementsTab> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: isUnlocked ? const Color(0xFF4CAF50) : Colors.grey,
+                    color: isUnlocked
+                        ? IslandWorldPalette.success
+                        : IslandWorldPalette.mutedInk,
                   ),
                 ),
               ],

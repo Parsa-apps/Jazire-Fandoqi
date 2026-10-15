@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/app_fonts.dart';
 import '../../../core/ai_system.dart';
 import '../../../core/audio_service.dart';
+import '../../../core/content_access_policy.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../core/growth/growth.dart';
@@ -60,20 +61,6 @@ class _DashboardState extends ConsumerState<DashboardTab>
     super.dispose();
   }
 
-  static const _freeGames = {
-    'الفبا',
-    'اعداد',
-    'رنگ‌ها',
-    'ستاره‌گیری',
-    'حباب‌ترکان',
-    'نقاشی',
-    'قاب ده‌تایی',
-    'تمساح',
-    'ساعت',
-    'جمع',
-    'املا',
-  };
-
   Future<void> _openGame(String route, String gameName) async {
     HapticFeedback.heavyImpact();
     AudioService.select();
@@ -84,12 +71,13 @@ class _DashboardState extends ConsumerState<DashboardTab>
       );
       return;
     }
-    if (!_freeGames.contains(gameName) && !await Monetization.hasFullVersion()) {
+    if (!ContentAccessPolicy.isGameFree(gameName) &&
+        !await Monetization.hasFullVersion()) {
       SmartConversion.noteLockedTap();
-      if (mounted) {
-        await showFullVersionPaywall(context, featureName: gameName);
-      }
-      return;
+      if (!mounted) return;
+      final unlocked =
+          await showFullVersionPaywall(context, featureName: gameName);
+      if (!mounted || !unlocked || !await Monetization.hasFullVersion()) return;
     }
     if (mounted) {
       ActivityTracker.recordOpen(route: route, title: gameName);
