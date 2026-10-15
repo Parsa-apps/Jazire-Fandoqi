@@ -107,6 +107,21 @@ jobs:
           # island gate below is what must stay green.
           true
 
+      # Temporary diagnosis for the legacy learning-library failure.
+      - name: Diagnose learning library test
+        run: |
+          set +e
+          flutter test --reporter expanded test/features/learning_library_screen_test.dart > lib-test-output.txt 2>&1
+          tail -c 7000 lib-test-output.txt | base64 -w0 > lib-test.b64
+          split -b 900 lib-test.b64 lib-chunk-
+          n=0
+          for f in lib-chunk-*; do
+            n=$((n+1))
+            echo "::notice::LIB-B64-$n $(cat "$f")"
+          done
+          echo "::notice::LIB-B64-END chunks=$n"
+          true
+
       # Hard gate: island redesign tests + home smoke suite.
       - name: Flutter test (island gate)
         run: >-

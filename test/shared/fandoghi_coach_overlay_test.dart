@@ -31,6 +31,10 @@ void main() {
     );
 
     await tester.pumpWidget(const SizedBox.shrink());
+    // تایمر پنهان‌شدن پیام مربی (۳ ثانیه) باید پیش از پایان تست تخلیه
+    // شود؛ همان الگوی کمکیِ app_smoke_test.
+    FandoghiCoach.clear();
+    await tester.pump(const Duration(seconds: 6));
   });
 
   testWidgets('non-success feedback keeps the animated character widget',
@@ -48,6 +52,8 @@ void main() {
     expect(find.byType(Image), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());
+    FandoghiCoach.clear();
+    await tester.pump(const Duration(seconds: 6));
   });
 }
 
