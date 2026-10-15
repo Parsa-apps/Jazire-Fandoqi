@@ -122,7 +122,11 @@ jobs:
           flutter build apk --release > build-output.txt 2>&1
           status=$?
           echo "::notice::flutter build apk exit=$status"
-          wc -c build-output.txt
+          wc -c build-output.txt test-output.txt
+          head -12 build-output.txt | while IFS= read -r line; do
+            clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
+            echo "::error::BUILD-HEAD $clean"
+          done
           tail -45 build-output.txt | while IFS= read -r line; do
             clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
             echo "::error::BUILD-TAIL $clean"
