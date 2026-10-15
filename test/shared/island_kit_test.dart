@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:jazireh_fandoghi/app/island_page_transition.dart';
 import 'package:jazireh_fandoghi/features/home/widgets/island_map/island_node.dart';
 import 'package:jazireh_fandoghi/shared/widgets/island_kit.dart';
 
@@ -116,6 +117,102 @@ void main() {
       ),
       findsOneWidget,
     );
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('game header shows title and fires back', (tester) async {
+    var backs = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: IslandGameHeader(
+            title: 'الگویاب 🧠 — دور ۱/۶',
+            onBack: () => backs++,
+            trailing: const [
+              IslandStatChip(
+                icon: Icons.star_rounded,
+                color: Color(0xFFFFB300),
+                value: '۵',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('الگویاب 🧠 — دور ۱/۶'), findsOneWidget);
+    expect(find.text('۵'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.arrow_back_rounded));
+    await tester.pump();
+    expect(backs, 1);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('result buttons fire replay and home', (tester) async {
+    var replays = 0;
+    var homes = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: IslandResultButtons(
+            onReplay: () => replays++,
+            onHome: () => homes++,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('بازی دوباره'));
+    await tester.pump();
+    await tester.tap(find.text('برگشت به خانه'));
+    await tester.pump();
+
+    expect(replays, 1);
+    expect(homes, 1);
+
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('island page transition lands on the destination',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(
+          pageTransitionsTheme: const PageTransitionsTheme(
+            builders: {
+              TargetPlatform.android: IslandPageTransitionsBuilder(),
+            },
+          ),
+        ),
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => const Scaffold(body: Text('مقصد جزیره')),
+                ),
+              ),
+              child: const Text('برو'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('برو'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.text('مقصد جزیره'), findsOneWidget);
+    expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });

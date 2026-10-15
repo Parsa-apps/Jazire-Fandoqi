@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
 import 'design_tokens.dart';
+import 'island_page_transition.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
 
 /// =======================================================
@@ -275,10 +276,11 @@ class AppTheme {
         labelStyle: TextStyle(fontSize: 16 * textScale),
       ),
 
-      // Page Transitions Premium
+      // Page Transitions Premium — ورود آرامِ دنیای جزیره در اندروید؛
+      // در iOS حرکت بومی کوپرتینو حفظ می‌شود.
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
-          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.android: IslandPageTransitionsBuilder(),
           TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
         },
       ),

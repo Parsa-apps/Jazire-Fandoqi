@@ -351,3 +351,132 @@ Future<T?> showIslandDialog<T>({
     },
   );
 }
+
+/// هدر استاندارد صفحهٔ بازی روی هر پس‌زمینه‌ای: دکمهٔ بازگشتِ دایره‌ای
+/// کاغذی + عنوان روی پنل جزیره + چیپ‌های آماری دلخواه در انتها. همهٔ
+/// بازی‌ها — مستقل و مشترک — از همین هدر استفاده می‌کنند تا کودک در
+/// هر بازی جای بازگشت و عنوان را بدون فکرکردن پیدا کند.
+class IslandGameHeader extends StatelessWidget {
+  final String title;
+  final VoidCallback onBack;
+  final List<Widget> trailing;
+
+  const IslandGameHeader({
+    super.key,
+    required this.title,
+    required this.onBack,
+    this.trailing = const [],
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      child: Row(
+        children: [
+          Semantics(
+            button: true,
+            label: 'بازگشت',
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                HapticFeedback.lightImpact();
+                AudioService.tap();
+                onBack();
+              },
+              child: Container(
+                width: IslandWorldMetrics.minimumTouchTarget,
+                height: IslandWorldMetrics.minimumTouchTarget,
+                decoration: BoxDecoration(
+                  color: IslandWorldPalette.paper,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: IslandWorldPalette.honey,
+                    width: 2,
+                  ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x33000000),
+                      blurRadius: 7,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: IslandWorldPalette.ink,
+                  size: 21,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: IslandPanel(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              radius: 20,
+              child: Text(
+                title,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppFonts.kids(
+                  color: IslandWorldPalette.ink,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+          for (final chip in trailing) ...[
+            const SizedBox(width: 6),
+            chip,
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// دکمه‌های استاندارد صفحهٔ نتیجهٔ بازی: «دوباره» اصلی و «برگشت به
+/// خانه» فرعی — با همان رفتار لمسی و صدای بقیهٔ دنیای جزیره.
+class IslandResultButtons extends StatelessWidget {
+  final VoidCallback onReplay;
+  final VoidCallback onHome;
+  final String replayLabel;
+
+  const IslandResultButtons({
+    super.key,
+    required this.onReplay,
+    required this.onHome,
+    this.replayLabel = 'بازی دوباره',
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: IslandKidButton(
+            label: replayLabel,
+            icon: Icons.replay_rounded,
+            onPressed: onReplay,
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: IslandKidButton(
+            label: 'برگشت به خانه',
+            icon: Icons.home_rounded,
+            primary: false,
+            accent: const Color(0xFF6C5CE7),
+            onPressed: onHome,
+          ),
+        ),
+      ],
+    );
+  }
+}

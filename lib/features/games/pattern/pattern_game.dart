@@ -13,9 +13,8 @@ import '../../../core/fandoghi_coach.dart';
 import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
-import '../../../shared/widgets/child_touch_target.dart';
 import '../../../shared/widgets/fandoghi_premium.dart';
-import '../../../shared/widgets/premium_button.dart';
+import '../../../shared/widgets/island_kit.dart';
 
 /// ────────────────────────────────────────────────────────────
 /// 🧠 فاز ۳۷: الگویاب (Pattern & Logic)
@@ -175,33 +174,23 @@ class _PatternGameState extends State<PatternGame> {
     final options = _roundOptions;
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-          child: Row(
-            children: [
-              ChildTouchTarget(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(AppRadii.md), border: Border.all(color: Colors.white30)),
-                  child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(child: Text('الگویاب 🧠 — دور ${_round + 1}/۶', textAlign: TextAlign.center, style: AppFonts.vazirmatn(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900))),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadii.pill), boxShadow: AppShadows.soft),
-                child: Text('$_correct/6', style: AppFonts.vazirmatn(fontSize: 13, fontWeight: FontWeight.w900, color: const Color(0xFF6C5CE7))),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                decoration: BoxDecoration(color: Colors.amber.withOpacity(0.9), borderRadius: BorderRadius.circular(AppRadii.pill)),
-                child: Text('$_score ⭐', style: AppFonts.vazirmatn(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.white)),
-              ),
-            ],
-          ),
+        IslandGameHeader(
+          title: 'الگویاب 🧠 — دور ${_round + 1}/۶',
+          onBack: () => Navigator.pop(context),
+          trailing: [
+            IslandStatChip(
+              icon: Icons.check_rounded,
+              color: const Color(0xFF6C5CE7),
+              value: '$_correct/6',
+              semanticLabel: '$_correct پاسخ درست از ۶',
+            ),
+            IslandStatChip(
+              icon: Icons.star_rounded,
+              color: const Color(0xFFFFB300),
+              value: '$_score',
+              semanticLabel: 'امتیاز $_score',
+            ),
+          ],
         ),
         const SizedBox(height: 30),
         Text(
@@ -313,9 +302,11 @@ class _PatternGameState extends State<PatternGame> {
               ),
             ),
             const SizedBox(height: 20),
-            SizedBox(width: double.infinity, child: PremiumButton(text: 'دور جدید 🔄', icon: Icons.replay_rounded, onPressed: () { HapticFeedback.mediumImpact(); setState(() { _round = 0; _score = 0; _correct = 0; _locked = false; _finished = false; _selected = null; _newPattern(); _roundOptions = _buildOptions(); }); })),
-            const SizedBox(height: 10),
-            SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.home_rounded, size: 18, color: Colors.white), label: Text('برگشت به خانه', style: AppFonts.vazirmatn(color: Colors.white)), style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), side: const BorderSide(color: Colors.white54), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg))))),
+            IslandResultButtons(
+              replayLabel: 'دور جدید',
+              onReplay: () { HapticFeedback.mediumImpact(); setState(() { _round = 0; _score = 0; _correct = 0; _locked = false; _finished = false; _selected = null; _newPattern(); _roundOptions = _buildOptions(); }); },
+              onHome: () => Navigator.pop(context),
+            ),
           ],
         ),
       ),

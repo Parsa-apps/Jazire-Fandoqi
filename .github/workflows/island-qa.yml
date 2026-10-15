@@ -88,8 +88,12 @@ jobs:
           lib/features/home/widgets/island_map
           lib/features/home/widgets/fandoqi_hub_sheet.dart
           lib/features/games/mini_games/games_carnival_screen.dart
+          lib/features/games/colors_lab/colors_lab_game.dart
+          lib/features/games/pattern/pattern_game.dart
+          lib/features/shop/game_access_gate.dart
           lib/shared/widgets/island_kit.dart
           lib/app/island_world_style.dart
+          lib/app/island_page_transition.dart
           test/features/home/island_node_test.dart
           test/features/home/hub_island_node_test.dart
           test/features/home/hero_fandoq_test.dart
