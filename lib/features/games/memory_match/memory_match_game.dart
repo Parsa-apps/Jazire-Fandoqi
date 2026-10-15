@@ -354,277 +354,214 @@ class _MemoryState extends State<MemoryMatchGame>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF1A1A2E), Color(0xFF16213E), Color(0xFF0F3460)],
+      backgroundColor: const Color(0xFF1B1B2F),
+      body: ConfettiOverlay(
+        isActive: _showCelebration,
+        onComplete: () {},
+        child: SafeArea(
+          child: _started
+              ? (_gameOver ? _buildGameOver() : _buildGame())
+              : _buildStartScreen(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGame() {
+    int cols = 3;
+    if (_cards.length > 12) cols = 4;
+    if (_cards.length <= 4) cols = 2;
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              _glassBtn(Icons.arrow_back_rounded, () {
+                _stopCountdown();
+                Navigator.pop(context);
+              }),
+              const Spacer(),
+              _statBadge(
+                '$_timeLeft',
+                Icons.timer_rounded,
+                _timeLeft < 10 ? Colors.red : Colors.white,
+              ),
+              const SizedBox(width: 8),
+              _statBadge('$_score', Icons.star_rounded, Colors.amber),
+            ],
           ),
         ),
-        child: Stack(
-          children: [
-            SafeArea(
-              child: Column(
-                children: [
-                  // Top bar
-                  _buildTopBar(),
-
-                  if (!_started) _buildStartScreen(),
-
-                  if (_started && !_gameOver) ...[
-                    // Stats bar
-                    _buildStatsBar(),
-                    const SizedBox(height: 16),
-                    // Game grid
-                    Expanded(child: _buildGrid()),
-                  ],
-                ],
+        // فاز ۳۱: نمایش حرکت‌ها و کمبو با دیزاین مدرن‌تر
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'حرکت‌ها: $_moves',
+                style: AppFonts.vazirmatn(
+                  color: Colors.white70,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
-
-            // Celebration
-            ParticleCelebration(trigger: _showCelebration),
-
-            // Game over
-            if (_gameOver) _buildGameOver(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          _glassBtn(Icons.arrow_back_rounded, () => Navigator.pop(context)),
-          const Spacer(),
-          Text(
-            '🧠 بازی حافظه',
-            style: AppFonts.vazirmatn(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: 18,
-            ),
-          ),
-          const Spacer(),
-          _glassBtn(Icons.refresh_rounded, () {
-            if (_started) _startGame(_selectedLevel);
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatsBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          _statChip('⏱', '$_timeLeft', _timeLeft <= 15 ? Colors.red : Colors.white),
-          _statChip('🎯', '$_moves حرکت', Colors.white),
-          _statChip('⭐', '$_score', Colors.amber),
-          if (_combo > 1) _statChip('🔥', '${_combo}x', Colors.orange),
-        ],
-      ),
-    );
-  }
-
-  Widget _statChip(String icon, String value, Color color) {
-    return Expanded(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 3),
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(icon, style: const TextStyle(fontSize: 14)),
-            const SizedBox(width: 4),
-            Text(
-              value,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGrid() {
-    final crossCount = _cards.length <= 8 ? 4 : 4;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: GridView.builder(
-        physics: const BouncingScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: crossCount,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          childAspectRatio: 0.85,
-        ),
-        itemCount: _cards.length,
-        itemBuilder: (ctx, i) => _buildCard(i),
-      ),
-    );
-  }
-
-  Widget _buildCard(int index) {
-    final card = _cards[index];
-    return GestureDetector(
-      onTap: () => _onCardTap(index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOutBack,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          gradient: card.isMatched
-              ? const LinearGradient(
-                  colors: [Color(0xFF00B894), Color(0xFF55EFC4)],
-                )
-              : card.isFlipped
-                  ? const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
-                    )
-                  : const LinearGradient(
-                      colors: [Color(0xFF2D3436), Color(0xFF636E72)],
+              if (_combo > 1)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.withOpacity(0.5)),
+                  ),
+                  child: Text(
+                    '$_combo جفت پیاپی! 🔥',
+                    style: AppFonts.vazirmatn(
+                      color: Colors.orange,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
                     ),
-          border: card.isMatched
-              ? Border.all(color: const Color(0xFF00B894), width: 2)
-              : card.isFlipped
-                  ? Border.all(color: Colors.white.withOpacity(0.3), width: 2)
-                  : Border.all(color: Colors.white.withOpacity(0.08), width: 1),
-          boxShadow: [
-            if (card.isFlipped || card.isMatched)
-              BoxShadow(
-                color: (card.isMatched ? const Color(0xFF00B894) : AppColors.primary)
-                    .withOpacity(0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: _CardFlipWidget(
-            isFlipped: card.isFlipped || card.isMatched,
-            front: _buildCardFront(card),
-            back: _buildCardBack(),
+                  ),
+                ).animate().scale(duration: 300.ms, curve: Curves.elasticOut),
+            ],
           ),
         ),
-      ),
-    )
-        .animate(
-          delay: Duration(milliseconds: 100 * index),
-          onPlay: (c) => c.forward(),
-        )
-        .scale(
-          begin: const Offset(0, 0),
-          end: const Offset(1, 1),
-          duration: 500.ms,
-          curve: Curves.elasticOut,
-        );
-  }
+        const SizedBox(height: 10),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final w = constraints.maxWidth;
+              final h = constraints.maxHeight;
+              final pad = 24.0;
+              final spacing = 12.0;
 
-  Widget _buildCardFront(_CardData card) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        gradient: card.isMatched
-            ? const LinearGradient(
-                colors: [Color(0xFF00B894), Color(0xFF55EFC4)],
-              )
-            : const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
-              ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          children: [
-            Expanded(
-              child: IllustrationTile(
-                asset: _memoryAsset,
-                index: card.imageIndex,
-                semanticLabel: card.name,
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              card.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppFonts.vazirmatn(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-                fontSize: 11,
-              ),
-            ),
-            if (card.isMatched)
-              const Icon(Icons.check_circle, color: Colors.white, size: 18),
-          ],
+              final rows = (_cards.length / cols).ceil();
+              final availableW = w - (pad * 2) - (spacing * (cols - 1));
+              final availableH = h - (pad * 2) - (spacing * (rows - 1));
+
+              final cardW = availableW / cols;
+              final cardH = availableH / rows;
+              final size = min(cardW, cardH).clamp(60.0, 110.0);
+
+              return Center(
+                child: SizedBox(
+                  width: (size * cols) + (spacing * (cols - 1)),
+                  height: (size * rows) + (spacing * (rows - 1)),
+                  child: GridView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: cols,
+                      crossAxisSpacing: spacing,
+                      mainAxisSpacing: spacing,
+                      childAspectRatio: 1,
+                    ),
+                    itemCount: _cards.length,
+                    itemBuilder: (context, index) {
+                      return _buildCard(index, size);
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
         ),
-      ),
+        const SizedBox(height: 20),
+      ],
     );
   }
 
-  Widget _buildCardBack() {
-    return Container(
+  Widget _buildCard(int index, double size) {
+    final card = _cards[index];
+    
+    // Front face (hidden)
+    final front = Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF2D3436),
-            const Color(0xFF636E72),
-          ],
-        ),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: AppShadows.soft,
+        border: Border.all(color: Colors.white24, width: 2),
       ),
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '❓',
-              style: TextStyle(fontSize: 32, color: Colors.white.withOpacity(0.3)),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              '?',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                color: Colors.white.withOpacity(0.2),
-              ),
-            ),
-          ],
+        child: Text(
+          '?',
+          style: TextStyle(
+            fontSize: size * 0.4,
+            color: Colors.white70,
+            fontWeight: FontWeight.bold,
+          ),
         ),
+      ),
+    );
+
+    // Back face (revealed)
+    final back = Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: card.isMatched
+            ? [BoxShadow(color: Colors.green.withOpacity(0.5), blurRadius: 15, spreadRadius: 2)]
+            : AppShadows.soft,
+        border: Border.all(
+          color: card.isMatched ? Colors.green : Colors.transparent,
+          width: card.isMatched ? 3 : 0,
+        ),
+      ),
+      child: Center(
+        child: Text(
+          card.emoji,
+          style: TextStyle(fontSize: size * 0.5),
+        ),
+      ),
+    );
+
+    return GestureDetector(
+      onTap: () => _onCardTap(index),
+      child: _CardFlipWidget(
+        isFlipped: card.isFlipped || card.isMatched,
+        front: front,
+        back: back,
+      ),
+    );
+  }
+
+  Widget _statBadge(String text, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: TextStyle(
+              color: color,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildStartScreen() {
-    return Expanded(
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF2C195A), Color(0xFF1B1B2F)],
+        ),
+      ),
       child: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -906,7 +843,7 @@ class _CardFlipWidget extends StatelessWidget {
           },
         );
       },
-      child: isFlipped
+      child: !isFlipped
           ? Container(key: const ValueKey('front'), child: front)
           : Container(key: const ValueKey('back'), child: back),
     );

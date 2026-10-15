@@ -297,13 +297,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     return Scaffold(
       backgroundColor: const Color(0xFFE65100),
       body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFBF360C), Color(0xFFE65100), Color(0xFFFFB74D)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+        decoration: const BoxDecoration(gradient: AppGradients.sunset),
         child: SafeArea(
           child: Column(
             children: [
