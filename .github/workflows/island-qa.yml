@@ -83,21 +83,32 @@ jobs:
       # Mission 2 extends the scope with the shared design kit, the hub
       # sheet (honest lock state) and their tests.
       - name: Flutter analyze (island scope gate)
-        run: >-
-          flutter analyze
-          lib/features/home/widgets/island_map
-          lib/features/home/widgets/fandoqi_hub_sheet.dart
-          lib/features/games/mini_games/games_carnival_screen.dart
-          lib/features/games/colors_lab/colors_lab_game.dart
-          lib/features/games/pattern/pattern_game.dart
-          lib/features/shop/game_access_gate.dart
-          lib/shared/widgets/island_kit.dart
-          lib/app/island_world_style.dart
-          lib/app/island_page_transition.dart
-          test/features/home/island_node_test.dart
-          test/features/home/hub_island_node_test.dart
-          test/features/home/hero_fandoq_test.dart
-          test/shared/island_kit_test.dart
+        run: |
+          set +e
+          flutter analyze \
+            lib/features/home/widgets/island_map \
+            lib/features/home/widgets/fandoqi_hub_sheet.dart \
+            lib/features/games/mini_games/games_carnival_screen.dart \
+            lib/features/games/colors_lab/colors_lab_game.dart \
+            lib/features/games/pattern/pattern_game.dart \
+            lib/features/shop/game_access_gate.dart \
+            lib/shared/widgets/island_kit.dart \
+            lib/app/island_world_style.dart \
+            lib/app/island_page_transition.dart \
+            test/features/home/island_node_test.dart \
+            test/features/home/hub_island_node_test.dart \
+            test/features/home/hero_fandoq_test.dart \
+            test/shared/island_kit_test.dart \
+            > gate-analyze.txt 2>&1
+          status=$?
+          cat gate-analyze.txt
+          # Republish findings as annotations (raw logs are not always
+          # reachable), then keep the original verdict.
+          grep ' • ' gate-analyze.txt | head -40 | while IFS= read -r line; do
+            clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
+            echo "::error::gate-analyze: $clean"
+          done
+          exit $status
 
       - name: Flutter test (full suite report)
         run: |
