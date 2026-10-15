@@ -30,7 +30,7 @@ void main() {
   test('no internal file name leaks into the about screen', () {
     final fileNames = RegExp(
       r'[A-Za-z0-9_\-]+\.(md|txt|json|yaml|yml|dart|kt|gradle|properties)',
-    ).allMatches(userFacingText).map((m) => m.group(0)).toSet();
+    ).allMatches(userFacingText).map((m) => m.group(0)!).toSet();
 
     expect(fileNames, isEmpty,
         reason: 'نامِ فایل داخلی نباید در رابط کاربریِ منتشرشده دیده شود:\n'
@@ -61,8 +61,10 @@ void main() {
 
 /// همهٔ رشته‌های داخل کد را بیرون می‌کشد (تک‌گیومه و دوگیومه).
 List<String> _stringLiterals(String source) {
+  // رشتهٔ سه‌گیومهٔ خام: داخلش می‌شود هم «'» و هم «"» را بدون escape
+  // نگه داشت. (رشتهٔ خام دوتایی با «\"» زودتر از حد بسته می‌شد.)
   final pattern = RegExp(
-    r"'(?:[^'\\\n]|\\.)*'|\"(?:[^\"\\\n]|\\.)*\"",
+    r'''(?:'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*")''',
   );
   return pattern
       .allMatches(source)
