@@ -87,10 +87,12 @@ jobs:
           flutter analyze
           lib/features/home/widgets/island_map
           lib/features/home/widgets/fandoqi_hub_sheet.dart
+          lib/features/games/mini_games/games_carnival_screen.dart
           lib/shared/widgets/island_kit.dart
           lib/app/island_world_style.dart
           test/features/home/island_node_test.dart
           test/features/home/hub_island_node_test.dart
+          test/features/home/hero_fandoq_test.dart
           test/shared/island_kit_test.dart
 
       - name: Flutter test (full suite report)
@@ -120,6 +122,7 @@ jobs:
           test/features/home/island_hero_character_test.dart
           test/features/home/hub_access_policy_test.dart
           test/features/home/hub_island_node_test.dart
+          test/features/home/hero_fandoq_test.dart
           test/shared/island_kit_test.dart
           test/features/games/mini_games/mini_game_scaffold_test.dart
           test/app_smoke_test.dart

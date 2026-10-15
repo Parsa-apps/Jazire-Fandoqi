@@ -539,6 +539,14 @@ class _HeroFandoqState extends State<HeroFandoq>
       duration: const Duration(milliseconds: 560),
     );
     _cheer = CurvedAnimation(parent: _cheerCtrl, curve: Curves.easeOut);
+    // لباس جشن از قبل بارگذاری می‌شود تا اولین لمس بدون چشمک عوض شود.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      precacheImage(
+        const AssetImage(IslandWorldAssets.fandoghiCelebrate),
+        context,
+      );
+    });
   }
 
   @override
@@ -558,6 +566,55 @@ class _HeroFandoqState extends State<HeroFandoq>
     AudioService.select();
     if (!_reduceMotion) _cheerCtrl.forward(from: 0);
     widget.onTap();
+  }
+
+  /// پلک‌ها روی هندسهٔ واقعی تصویر دست‌تکان (۶۲۲×۶۳۶) سوار می‌شوند:
+  /// مرکز چشم‌ها در ۴۲٪ و ۶۸٪ عرض و ۵۲٪ ارتفاع تصویر است. پلک در
+  /// ۶٪ اول هر چرخهٔ شناوری یک بار پایین و بالا می‌رود (مثلث نرم).
+  Widget _blinkLids(double width) {
+    final v = widget.floatAnimation.value;
+    final blink = v < 0.03
+        ? v / 0.03
+        : v < 0.06
+            ? (0.06 - v) / 0.03
+            : 0.0;
+    if (blink <= 0) return const SizedBox.shrink();
+    final imgH = width * 636 / 622;
+    final box = width * HeroFandoq.haloFactor;
+    final imgLeft = (box - width) / 2;
+    final imgTop = (box - imgH) / 2;
+    final eyeW = width * 0.155;
+    final eyeH = imgH * 0.175;
+    Widget lid(double centerFx) {
+      return Positioned(
+        left: imgLeft + centerFx * width - eyeW / 2,
+        top: imgTop + 0.522 * imgH - eyeH / 2,
+        width: eyeW,
+        height: eyeH * blink,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFFCE9250), Color(0xFFB57A3E)],
+            ),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(eyeW / 2),
+              bottomRight: Radius.circular(eyeW / 2),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Positioned.fill(
+      child: Stack(
+        children: [
+          lid(0.424),
+          lid(0.677),
+        ],
+      ),
+    );
   }
 
   @override
@@ -617,24 +674,43 @@ class _HeroFandoqState extends State<HeroFandoq>
                     ),
                   ),
                 ),
-                Image.asset(
-                  IslandWorldAssets.fandoghiWave,
-                  width: width,
-                  fit: BoxFit.contain,
-                  filterQuality: FilterQuality.medium,
-                  excludeFromSemantics: true,
-                  cacheWidth: (width * MediaQuery.devicePixelRatioOf(context))
-                      .round()
-                      .clamp(1, 622)
-                      .toInt(),
-                  errorBuilder: (_, __, ___) => Image.asset(
-                    'assets/theme_map/hero_fandoq.png',
-                    width: width,
-                    fit: BoxFit.contain,
-                    filterQuality: FilterQuality.medium,
-                    excludeFromSemantics: true,
-                  ),
+                // هنگام لمس، فندقی برای لحظه‌ای لباس جشن واقعی‌اش را
+                // می‌پوشد (دارایی شفاف موجود)، بعد به حالت دست‌تکان برمی‌گردد.
+                AnimatedBuilder(
+                  animation: _cheer,
+                  builder: (context, _) {
+                    final celebrating = _cheer.value > 0 && _cheer.value < 1;
+                    return Image.asset(
+                      celebrating
+                          ? IslandWorldAssets.fandoghiCelebrate
+                          : IslandWorldAssets.fandoghiWave,
+                      width: width,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.medium,
+                      excludeFromSemantics: true,
+                      cacheWidth:
+                          (width * MediaQuery.devicePixelRatioOf(context))
+                              .round()
+                              .clamp(1, 666)
+                              .toInt(),
+                      errorBuilder: (_, __, ___) => Image.asset(
+                        'assets/theme_map/hero_fandoq.png',
+                        width: width,
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.medium,
+                        excludeFromSemantics: true,
+                      ),
+                    );
+                  },
                 ),
+                // پلک‌زدن: دو پلک هم‌رنگ موی بالای چشم که ابتدای هر چرخهٔ
+                // شناوری (۵ ثانیه) یک بار کوتاه پایین می‌آیند. مختصات چشم‌ها
+                // از خودِ دارایی واقعی خوانده شده است.
+                if (!_reduceMotion)
+                  AnimatedBuilder(
+                    animation: widget.floatAnimation,
+                    builder: (context, _) => _blinkLids(width),
+                  ),
                 // ستاره‌های چشمک‌زن دور هاله
                 Positioned.fill(
                   child: IgnorePointer(

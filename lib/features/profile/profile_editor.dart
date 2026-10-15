@@ -354,6 +354,19 @@ Future<void> showProfileEditor(BuildContext context) async {
                     },
                   ),
                 ),
+                const SizedBox(height: 8),
+                // پروفایل کاملاً اختیاری است: ردکردن باید به‌اندازهٔ
+                // ذخیره‌کردن واضح و در دسترس باشد.
+                SizedBox(
+                  width: double.infinity,
+                  child: IslandKidButton(
+                    label: 'بعداً',
+                    icon: Icons.schedule_rounded,
+                    primary: false,
+                    accent: AppColors.primary,
+                    onPressed: () => Navigator.pop(sheetContext),
+                  ),
+                ),
               ],
             ),
           ),
