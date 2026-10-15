@@ -14,7 +14,6 @@ import '../../../core/play_limit.dart';
 import '../../../shared/widgets/fandoghi_premium.dart';
 import '../../../shared/widgets/island_kit.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 
 /// ────────────────────────────────────────────────────────────
 /// 🧪 فاز ۲۳: آزمایشگاه رنگ فندقی — ترکیب رنگ‌ها
