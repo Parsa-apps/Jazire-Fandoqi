@@ -77,7 +77,7 @@ done
 
 # manifest نهایی: در APK باینری است (رشته‌ها در string pool با UTF-8 یا
 # UTF-16LE) و در AAB متنی است. هر دو با strings خوانده می‌شوند.
-MANIFEST_RAW="$(unzip -p "$ARTIFACT" "$MANIFEST_ENTRY" 2>/dev/null || true)"
+MANIFEST_RAW="$(unzip -p "$ARTIFACT" "$MANIFEST_ENTRY" 2>/dev/null | tr -d '\0' || true)"
 MANIFEST_TEXT="$(printf '%s' "$MANIFEST_RAW" | strings -a || true)"
 MANIFEST_TEXT+=$'\n'"$(printf '%s' "$MANIFEST_RAW" | strings -el || true)"
 
