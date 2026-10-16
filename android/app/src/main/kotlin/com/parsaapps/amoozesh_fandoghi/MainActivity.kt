@@ -1,5 +1,6 @@
 package com.parsaapps.amoozesh_fandoghi
 
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.net.Uri
@@ -97,10 +98,8 @@ class MainActivity : FlutterFragmentActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         // 🌐 نمایش فایل‌های HTML پیوست‌شده (لایو والپیپر و اپ جادویی) داخل اپ
-        flutterEngine.platformViewsRegistry.registerViewFactory(
-            "html_webview",
-            HtmlWebViewFactory(applicationContext),
-        )
+        flutterEngine.platformViewsController.registry
+            .registerViewFactory("html_webview", HtmlWebViewFactory(applicationContext))
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
             .setMethodCallHandler { call, result ->
                 if (call.method in billingMethods && !productionBillingAllowed) {
