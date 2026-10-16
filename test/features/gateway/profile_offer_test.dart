@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../support/paywall_test_store.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,6 +9,7 @@ import 'package:jazireh_fandoghi/core/game_data.dart';
 import 'package:jazireh_fandoghi/features/gateway/app_gateway_screen.dart';
 
 void main() {
+  setUpUnpurchasedStore();
   setUp(() {
     GoogleFonts.config.allowRuntimeFetching = false;
     GameData.resetForTesting();

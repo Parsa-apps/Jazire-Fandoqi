@@ -92,7 +92,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.xl)),
-        title: Row(children: [Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.error_outline_rounded, color: Colors.red)), const SizedBox(width: 10), Text('پرداخت کامل نشد', style: AppFonts.vazirmatn(fontWeight: FontWeight.w900))]),
+        title: Row(children: [Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.error_outline_rounded, color: Colors.red)), const SizedBox(width: 10), Expanded(child: Text('پرداخت کامل نشد', style: AppFonts.vazirmatn(fontWeight: FontWeight.w900)))]),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,

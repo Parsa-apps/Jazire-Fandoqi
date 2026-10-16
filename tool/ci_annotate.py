@@ -23,7 +23,7 @@ DETAIL_MARKER = re.compile(
 )
 MAX_ANNOTATIONS = 6
 CHUNK = 7000
-TAIL_CHARS = 2600
+TAIL_CHARS = 6000
 
 
 def escape(text):

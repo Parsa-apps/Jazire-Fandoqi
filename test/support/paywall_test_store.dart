@@ -75,3 +75,14 @@ class PaywallTestStore {
     SecureStore.resetForTesting();
   }
 }
+
+/// Ordinary widget tests have no Android store. Give them an explicit
+/// unpurchased native response instead of depending on a debug-only entitlement
+/// shortcut or leaving the real platform channel/timeout running in FakeAsync.
+void setUpUnpurchasedStore() {
+  late PaywallTestStore store;
+  setUp(() {
+    store = PaywallTestStore()..install();
+  });
+  tearDown(() => store.dispose());
+}

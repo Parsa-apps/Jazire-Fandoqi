@@ -1069,11 +1069,15 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                           icon: const Icon(Icons.volume_up_rounded, size: 18),
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          'صدای نشانه',
-                          style: AppFonts.balooBhaijaan2(
-                            color: Colors.white70,
-                            fontSize: 12,
+                        Flexible(
+                          child: Text(
+                            'صدای نشانه',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppFonts.balooBhaijaan2(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),

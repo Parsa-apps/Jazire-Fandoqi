@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../support/paywall_test_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
 import 'package:jazireh_fandoghi/core/game_data.dart';
@@ -22,6 +23,7 @@ Future<void> _disposeAnimatedTree(WidgetTester tester) async {
 }
 
 void main() {
+  setUpUnpurchasedStore();
   setUp(() {
     GameData.resetForTesting();
   });
