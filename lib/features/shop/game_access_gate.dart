@@ -15,19 +15,17 @@ class GameAccessGate extends StatefulWidget {
   const GameAccessGate({
     super.key,
     required this.gameName,
-    required Widget child,
+    required Widget this.child,
     this.isFree,
-  }) : child = child,
-       childBuilder = null;
+  }) : childBuilder = null;
 
   /// Construct destinations with side effects only after access is granted.
   const GameAccessGate.lazy({
     super.key,
     required this.gameName,
-    required Widget Function() childBuilder,
+    required Widget Function() this.childBuilder,
     this.isFree,
-  }) : child = null,
-       childBuilder = childBuilder;
+  }) : child = null;
 
   final String gameName;
   /// Content routes supply their item policy explicitly. A story/world title

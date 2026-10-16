@@ -319,7 +319,7 @@ class AboutScreen extends StatelessWidget {
           // نسخهٔ کامل با خرید یک‌باره روی همان دستگاه فعال می‌شود.
           Center(
             child: Text(
-              'جزیره فندقی • نسخه ${PersianDigits.toFa(GrowthStore.appVersion)} • نصب رایگان\n'
+              'جزیره فندقی • نسخه ${PersianDigits.toFa(GrowthStore.appVersion)}${WhatsNew.buildNumber} • نصب رایگان\n'
               'ساخته‌شده با دقت برای کودکان ایران',
               textAlign: TextAlign.center,
               style: const TextStyle(

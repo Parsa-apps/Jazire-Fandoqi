@@ -51,6 +51,11 @@ void main() {
         reason: 'بازیابی باید پشت دروازهٔ والد باشد، دقیقاً مثل خودِ خرید.');
   });
 
+  test('the about screen identifies both the version and build number', () {
+    expect(source, contains('PersianDigits.toFa(GrowthStore.appVersion)'));
+    expect(source, contains('WhatsNew.buildNumber'));
+  });
+
   test('the about screen never links to the publisher website', () {
     // برنامه‌های درون‌پرداختِ مایکت نباید کاربر را به سایت ناشر ببرند.
     expect(source.contains('websiteUrl'), isFalse);
