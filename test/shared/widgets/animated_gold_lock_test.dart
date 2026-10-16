@@ -169,15 +169,19 @@ void main() {
   testWidgets('lock has an honest localized accessible image label',
       (tester) async {
     final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
-    await tester.pumpWidget(_host(const AnimatedGoldLock(animated: false)));
-    expect(
-      tester.getSemantics(find.byType(AnimatedGoldLock)),
-      matchesSemantics(
-        label: 'قفل؛ با نسخهٔ کامل باز می‌شود',
-        isImage: true,
-      ),
-    );
+    try {
+      await tester.pumpWidget(_host(const AnimatedGoldLock(animated: false)));
+      expect(
+        tester.getSemantics(find.byType(AnimatedGoldLock)),
+        matchesSemantics(
+          label: 'قفل؛ با نسخهٔ کامل باز می‌شود',
+          isImage: true,
+        ),
+      );
+    } finally {
+      // Flutter 3.24 verifies handles before package:test tearDown callbacks.
+      semantics.dispose();
+    }
   });
 
   testWidgets('tapping the gold overlay still reaches the paid card handler',
