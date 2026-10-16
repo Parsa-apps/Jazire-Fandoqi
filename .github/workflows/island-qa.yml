@@ -113,7 +113,7 @@ jobs:
       - name: Flutter test (full suite report)
         run: |
           set +e
-          flutter test --reporter expanded > test-output.txt 2>&1
+          timeout 180s flutter test --reporter expanded > test-output.txt 2>&1
           status=$?
           echo "::notice::flutter test (full suite) exit=$status"
           if [ "$status" -ne 0 ]; then

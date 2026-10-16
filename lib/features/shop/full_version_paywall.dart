@@ -233,7 +233,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                       children: [
                         const Icon(Icons.verified_rounded, size: 14, color: Color(0xFF00B894)),
                         const SizedBox(width: 6),
-                        Text(widget.featureName == null ? 'همه بازی‌ها + داستان‌ها + کارتون‌ها' : '«${widget.featureName}» + همه دنیاها', style: AppFonts.vazirmatn(fontSize: 12, fontWeight: FontWeight.w800, color: const Color(0xFF00695C))),
+                        Flexible(child: Text(widget.featureName == null ? 'همه بازی‌ها + داستان‌ها + کارتون‌ها' : '«${widget.featureName}» + همه دنیاها', style: AppFonts.vazirmatn(fontSize: 12, fontWeight: FontWeight.w800, color: const Color(0xFF00695C)))),
                       ],
                     ),
                   ),
@@ -252,14 +252,16 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 6,
+                                crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                     decoration: BoxDecoration(color: const Color(0xFFFFD700), borderRadius: BorderRadius.circular(AppRadii.pill)),
                                     child: Text('پرداخت یک‌باره', style: AppFonts.vazirmatn(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.black87)),
                                   ),
-                                  const SizedBox(width: 8),
                                   Text('بدون تمدید ماهانه', style: AppFonts.vazirmatn(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w700)),
                                 ],
                               ),
@@ -342,8 +344,9 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                     ),
                   ).animate().scale(delay: 300.ms, duration: 400.ms, curve: Curves.easeOutBack),
                   const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       const Icon(Icons.refresh_rounded, size: 14, color: AppColors.primary),
                       TextButton(

@@ -49,7 +49,7 @@ def detail_blocks(lines):
             j = i + 1
             while j < n and len(block) < 34:
                 nxt = lines[j]
-                if PROGRESS.match(nxt) and "[E]" not in nxt:
+                if DETAIL_MARKER.search(nxt) or (PROGRESS.match(nxt) and "[E]" not in nxt):
                     break
                 block.append(nxt)
                 j += 1
@@ -84,7 +84,20 @@ def main():
 
     # 2.5) Failure detail blocks (exception + Expected/Actual + stack), so a
     # red run is diagnosable from annotations alone, without raw logs.
-    for number, block in enumerate(detail_blocks(lines)[:12], start=1):
+    roots = []
+    seen = set()
+    for block in detail_blocks(lines):
+        head = "\n".join(block.splitlines()[:10])
+        if "Multiple exceptions (" in head:
+            continue
+        key = re.sub(r"\b\d+\b", "#", head)
+        if key not in seen:
+            seen.add(key)
+            roots.append(block)
+    if roots:
+        summary = "\n\n".join("\n".join(block.splitlines()[:10]) for block in roots)
+        emit(f"{title} — root causes ({len(roots)})", summary[:CHUNK])
+    for number, block in enumerate(roots[:3], start=1):
         emit(f"{title} — detail [{number}]", block[:CHUNK])
 
     # 3) The whole log, head first (the expanded reporter prints each failure's

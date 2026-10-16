@@ -558,13 +558,15 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
             children: [
               const Text('📦', style: TextStyle(fontSize: 16)),
               const SizedBox(width: 6),
-              Text(
-                'بسته‌های آموزشی کتاب فارسی اول دبستان:',
-                style: AppFonts.balooBhaijaan2(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                ),
+              Expanded(
+                child: Text(
+                  'بسته‌های آموزشی کتاب فارسی اول دبستان:',
+                  style: AppFonts.balooBhaijaan2(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+              ),
               ),
             ],
           ),
@@ -1205,13 +1207,15 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
             children: [
               const Text('📝', style: TextStyle(fontSize: 18)),
               const SizedBox(width: 8),
-              Text(
-                'شکل‌های مختلف نشانه در کلمه (اشکال چهارگانه):',
-                style: AppFonts.balooBhaijaan2(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                ),
+              Expanded(
+                child: Text(
+                  'شکل‌های مختلف نشانه در کلمه (اشکال چهارگانه):',
+                  style: AppFonts.balooBhaijaan2(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+              ),
               ),
             ],
           ),
