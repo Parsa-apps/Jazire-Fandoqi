@@ -10,7 +10,7 @@
 # «پنهان‌کردن دکمهٔ پرداخت» هرگز کافی نیست.
 #
 # بدون هیچ وابستگی بیرونی (فقط unzip + strings) کار می‌کند؛ اگر aapt2 در
-# دسترس باشد، بررسی manifest را دقیق‌تر هم می‌کند.
+# دسترس باشد، بررسی manifest دقیق‌تر هم می‌شود.
 #
 # خروجی: در صورت موفقیت exit=0، در صورت نقض جداسازی exit=1.
 # =============================================================================
@@ -34,7 +34,7 @@ fi
 
 FAILED=0
 ok()   { printf '✅ %s\n' "$1"; }
-bad()  { printf '❌ %s\n' "$1"; FAILED=1; }
+bad()  { printf '❌ %s\n' "$1"; printf '::error title=Store isolation::%s\n' "$1"; FAILED=1; }
 info() { printf 'ℹ️  %s\n' "$1"; }
 
 # ── نشانه‌های فنی هر SDK ────────────────────────────────────────────────────
@@ -45,76 +45,79 @@ BAZAAR_PACKAGE="com.farsitel.bazaar"
 MYKET_DEX_MARKER="ir/myket/billingclient"
 MYKET_PERMISSION="ir.mservices.market.BILLING"
 MYKET_PACKAGE="ir.mservices.market"
-MYKET_SERVICE="ir.mservices.market.InAppBillingService"
 
-# ── استخراج متن از DEX و manifest ───────────────────────────────────────────
-is_bundle=false
-[[ "$ARTIFACT" == *.aab || "$ARTIFACT" == *.bundle ]] && is_bundle=true
+# ── پیدا کردن manifest و dexها داخل آرتیفکت ───────────────────────────────
+# در APK: manifest باینری در ریشهٔ فایل و dexها در `classes*.dex`.
+# در AAB: manifest به‌صورت XML متنی در `base/manifest/AndroidManifest.xml`
+# و dexها در `base/dex/classes*.dex`. پس مسیرها را از فهرست خودِ آرتیفکت
+# می‌خوانیم و به مسیرِ ثابت فرض نمی‌کنیم.
+ARCHIVE_LIST="$(unzip -l "$ARTIFACT" 2>/dev/null || true)"
 
-if $is_bundle; then
-  DEX_PATTERN='base/dex/*.dex'
-else
-  DEX_PATTERN='classes*.dex'
+MANIFEST_ENTRY="$(awk '{print $NF}' <<<"$ARCHIVE_LIST" \
+  | grep -E '(^|/)AndroidManifest\.xml$' | head -1 || true)"
+if [[ -z "$MANIFEST_ENTRY" ]]; then
+  bad "manifest در آرتیفکت پیدا نشد: $ARTIFACT"
+  exit 1
 fi
 
-dex_strings() {
-  # نام کلاس‌ها در DEX به‌صورت رشته ذخیره می‌شوند؛ strings آن‌ها را برمی‌گرداند.
-  unzip -p "$ARTIFACT" "$DEX_PATTERN" 2>/dev/null | strings -a || true
-}
-
-manifest_strings() {
-  # manifest نهایی باینری است؛ رشته‌ها در string pool هستند (UTF-8 یا UTF-16LE).
-  unzip -p "$ARTIFACT" AndroidManifest.xml 2>/dev/null | strings -a  || true
-  unzip -p "$ARTIFACT" AndroidManifest.xml 2>/dev/null | strings -el || true
-}
-
-DEX_TEXT="$(dex_strings)"
-MANIFEST_TEXT="$(manifest_strings)"
+DEX_ENTRIES="$(awk '{print $NF}' <<<"$ARCHIVE_LIST" \
+  | grep -E '(^|/)classes[0-9]*\.dex$' | tr '\n' ' ' || true)"
 
 info "آرتیفکت: $ARTIFACT"
 info "فروشگاه مورد انتظار: $EXPECTED"
+info "manifest: $MANIFEST_ENTRY"
+info "dex: ${DEX_ENTRIES:-<هیچ>}"
 
-# ── ۱) بررسی manifest با aapt2 (دقیق‌تر) ─────────────────────────────────
+# ── استخراج متن ────────────────────────────────────────────────────────────
+# نام کلاس‌ها در DEX به‌صورت رشته ذخیره می‌شوند؛ strings آن‌ها را برمی‌گرداند.
+DEX_TEXT=""
+for entry in $DEX_ENTRIES; do
+  DEX_TEXT+=$(unzip -p "$ARTIFACT" "$entry" 2>/dev/null | strings -a || true)
+done
+
+# manifest نهایی: در APK باینری است (رشته‌ها در string pool با UTF-8 یا
+# UTF-16LE) و در AAB متنی است. هر دو با strings خوانده می‌شوند.
+MANIFEST_RAW="$(unzip -p "$ARTIFACT" "$MANIFEST_ENTRY" 2>/dev/null || true)"
+MANIFEST_TEXT="$(printf '%s' "$MANIFEST_RAW" | strings -a || true)"
+MANIFEST_TEXT+=$'\n'"$(printf '%s' "$MANIFEST_RAW" | strings -el || true)"
+
+# در AAB، manifest متنی است؛ پس همان متن خام هم دقیق‌تر است.
+MANIFEST_PLAIN="$MANIFEST_RAW"
+
+# ── ۱) بررسی manifest با aapt2 (دقیق‌تر، فقط برای APK) ────────────────────
 AAPT2="$(command -v aapt2 || true)"
 if [[ -z "$AAPT2" ]] && [[ -n "${ANDROID_HOME:-}" ]]; then
   AAPT2="$(ls -1 "${ANDROID_HOME}"/build-tools/*/aapt2 2>/dev/null | sort -V | tail -1 || true)"
 fi
-if [[ -n "$AAPT2" && -x "$AAPT2" ]]; then
+if [[ -n "$AAPT2" && -x "$AAPT2" && "$MANIFEST_ENTRY" == "AndroidManifest.xml" ]]; then
   info "aapt2: $AAPT2"
-  if $is_bundle; then
-    # AAB manifest باینری نیست؛ aapt2 روی AAB کار نمی‌کند. بررسی DEX کافی است.
-    info "aapt2 روی AAB قابل استفاده نیست؛ بررسی manifest از روی string pool انجام می‌شود."
+  PERMS="$("$AAPT2" dump permissions "$ARTIFACT" 2>/dev/null || true)"
+  if [[ "$EXPECTED" == "bazaar" ]]; then
+    grep -q "$BAZAAR_PERMISSION" <<<"$PERMS" \
+      && ok "مجوز بازار در manifest هست" \
+      || bad "مجوز بازار در manifest پیدا نشد"
+    grep -q "$MYKET_PERMISSION" <<<"$PERMS" \
+      && bad "مجوز مایکت در آرتیفکت بازار وجود دارد!" \
+      || ok "مجوز مایکت در آرتیفکت بازار وجود ندارد"
   else
-    PERMS="$("$AAPT2" dump permissions "$ARTIFACT" 2>/dev/null || true)"
-    if $is_bundle; then :; else
-      if [[ "$EXPECTED" == "bazaar" ]]; then
-        grep -q "$BAZAAR_PERMISSION" <<<"$PERMS" \
-          && ok "مجوز بازار در manifest هست" \
-          || bad "مجوز بازار در manifest پیدا نشد"
-        grep -q "$MYKET_PERMISSION" <<<"$PERMS" \
-          && bad "مجوز مایکت در آرتیفکت بازار وجود دارد!" \
-          || ok "مجوز مایکت در آرتیفکت بازار وجود ندارد"
-      else
-        grep -q "$MYKET_PERMISSION" <<<"$PERMS" \
-          && ok "مجوز مایکت در manifest هست" \
-          || bad "مجوز مایکت در manifest پیدا نشد"
-        grep -q "$BAZAAR_PERMISSION" <<<"$PERMS" \
-          && bad "مجوز بازار در آرتیفکت مایکت وجود دارد!" \
-          || ok "مجوز بازار در آرتیفکت مایکت وجود ندارد"
-      fi
-    fi
+    grep -q "$MYKET_PERMISSION" <<<"$PERMS" \
+      && ok "مجوز مایکت در manifest هست" \
+      || bad "مجوز مایکت در manifest پیدا نشد"
+    grep -q "$BAZAAR_PERMISSION" <<<"$PERMS" \
+      && bad "مجوز بازار در آرتیفکت مایکت وجود دارد!" \
+      || ok "مجوز بازار در آرتیفکت مایکت وجود ندارد"
   fi
 else
-  info "aapt2 در دسترس نیست؛ بررسی manifest از روی string pool انجام می‌شود."
+  info "aapt2 (یا فرمت APK) در دسترس نیست؛ بررسی manifest از روی متن/string pool انجام می‌شود."
 fi
 
 # ── ۲) بررسی SDK رقیب در DEX ────────────────────────────────────────────────
 if [[ "$EXPECTED" == "bazaar" ]]; then
   OWN_MARKER="$BAZAAR_DEX_MARKER"; OWN_PERM="$BAZAAR_PERMISSION"; OWN_PKG="$BAZAAR_PACKAGE"
-  RIVAL_MARKER="$MYKET_DEX_MARKER"; RIVAL_PERM="$MYKET_PERMISSION"; RIVAL_PKG="$MYKET_PACKAGE"; RIVAL_SERVICE="$MYKET_SERVICE"
+  RIVAL_MARKER="$MYKET_DEX_MARKER"; RIVAL_PERM="$MYKET_PERMISSION"; RIVAL_PKG="$MYKET_PACKAGE"
 else
   OWN_MARKER="$MYKET_DEX_MARKER"; OWN_PERM="$MYKET_PERMISSION"; OWN_PKG="$MYKET_PACKAGE"
-  RIVAL_MARKER="$BAZAAR_DEX_MARKER"; RIVAL_PERM="$BAZAAR_PERMISSION"; RIVAL_PKG="$BAZAAR_PACKAGE"; RIVAL_SERVICE="com.farsitel.bazaar"
+  RIVAL_MARKER="$BAZAAR_DEX_MARKER"; RIVAL_PERM="$BAZAAR_PERMISSION"; RIVAL_PKG="$BAZAAR_PACKAGE"
 fi
 
 if grep -q "$OWN_MARKER" <<<"$DEX_TEXT"; then
@@ -129,7 +132,7 @@ else
   ok "SDK فروشگاه رقیب در DEX وجود ندارد ($RIVAL_MARKER)"
 fi
 
-# ── ۳) بررسی manifest از روی string pool ───────────────────────────────────
+# ── ۳) بررسی manifest ──────────────────────────────────────────────────────
 if grep -q "$OWN_PERM" <<<"$MANIFEST_TEXT"; then
   ok "مجوز خودِ فروشگاه در manifest هست ($OWN_PERM)"
 else
@@ -142,15 +145,10 @@ else
   ok "مجوز فروشگاه رقیب در manifest وجود ندارد ($RIVAL_PERM)"
 fi
 
-if grep -q "$RIVAL_SERVICE" <<<"$MANIFEST_TEXT"; then
-  bad "سرویس billing فروشگاه رقیب در manifest اعلام شده ($RIVAL_SERVICE) — جداسازی نقض شده!"
-else
-  ok "سرویس billing فروشگاه رقیب در manifest نیست"
-fi
-
 # بستهٔ فروشگاه رقیب نباید در manifest باشد (نه <queries>، نه سرویس، نه مجوز)
 if grep -q "$RIVAL_PKG" <<<"$MANIFEST_TEXT"; then
   bad "بستهٔ فروشگاه رقیب در manifest آمده ($RIVAL_PKG) — جداسازی نقض شده!"
+  printf '::debug::manifest matches: %s\n' "$(grep -o "$RIVAL_PKG[A-Za-z._]*" <<<"$MANIFEST_TEXT" | sort -u | tr '\n' ' ')"
 else
   ok "بستهٔ فروشگاه رقیب در manifest نیست ($RIVAL_PKG)"
 fi

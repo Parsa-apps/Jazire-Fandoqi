@@ -117,35 +117,71 @@ jobs:
       # 🔒 اثبات جداسازی: SDK و مجوز فروشگاه رقیب نباید در آرتیفکت باشد.
       - name: "Verify store isolation (no rival SDK in the artifacts)"
         run: |
-          set -euo pipefail
-          bash tool/verify_store_isolation.sh \
-            build/app/outputs/flutter-apk/app-bazaar-release.apk bazaar
-          bash tool/verify_store_isolation.sh \
-            build/app/outputs/flutter-apk/app-myket-release.apk myket
-          bash tool/verify_store_isolation.sh \
-            build/app/outputs/bundle/bazaarRelease/app-bazaar-release.aab bazaar
-          bash tool/verify_store_isolation.sh \
-            build/app/outputs/bundle/myketRelease/app-myket-release.aab myket
+          set -uo pipefail
+          STATUS=0
+          check() {
+            if bash tool/verify_store_isolation.sh "$1" "$2"; then
+              echo "::notice title=Store isolation::$1 → OK ($2)"
+            else
+              echo "::error title=Store isolation::$1 → VIOLATED ($2)"
+              STATUS=1
+            fi
+          }
+          check build/app/outputs/flutter-apk/app-bazaar-release.apk bazaar
+          check build/app/outputs/flutter-apk/app-myket-release.apk myket
+          check build/app/outputs/bundle/bazaarRelease/app-bazaar-release.aab bazaar
+          check build/app/outputs/bundle/myketRelease/app-myket-release.aab myket
+          exit $STATUS
+
+      # اگر بررسی بالا شکست خورد، این گام علت را دقیق می‌گوید (و در
+      # خلاصهٔ ران هم ثبت می‌شود) تا بدون دسترسی به لاگ کامل قابل رفع باشد.
+      - name: "Store isolation diagnostics"
+        if: always()
+        run: |
+          set -uo pipefail
+          {
+            echo "### 🔎 گزارش جداسازی فروشگاه"
+            for f in \
+              "build/app/outputs/flutter-apk/app-bazaar-release.apk|bazaar" \
+              "build/app/outputs/flutter-apk/app-myket-release.apk|myket" \
+              "build/app/outputs/bundle/bazaarRelease/app-bazaar-release.aab|bazaar" \
+              "build/app/outputs/bundle/myketRelease/app-myket-release.aab|myket" ; do
+              path="${f%%|*}"; store="${f##*|}"
+              echo ""
+              echo "#### $path (انتظار: $store)"
+              if [ ! -f "$path" ]; then echo "  (فایل موجود نیست)"; continue; fi
+              echo "  entries:"; unzip -l "$path" | awk '{print "    " $NF}' | grep -E 'AndroidManifest|classes.*\.dex' || true
+              manifest="$(unzip -l "$path" | awk '{print $NF}' | grep -E '(^|/)AndroidManifest\.xml$' | head -1)"
+              if [ -n "$manifest" ]; then
+                echo "  manifest ($manifest) — خطوط مرتبط با فروشگاه‌ها:"
+                unzip -p "$path" "$manifest" | strings -a | grep -E 'farsitel|mservices|poolakey|billingclient' | sort -u | sed 's/^/    /' || true
+              fi
+            done
+          } >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: "Upload APK — Cafe Bazaar"
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: jazire_fandoqi_v7.5.0_apk_bazaar
           path: build/app/outputs/flutter-apk/app-bazaar-release.apk
 
       - name: "Upload APK — Myket"
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: jazire_fandoqi_v7.5.0_apk_myket
           path: build/app/outputs/flutter-apk/app-myket-release.apk
 
       - name: "Upload AAB — Cafe Bazaar"
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: jazire_fandoqi_v7.5.0_aab_bazaar
           path: build/app/outputs/bundle/bazaarRelease/app-bazaar-release.aab
 
       - name: "Upload AAB — Myket"
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: jazire_fandoqi_v7.5.0_aab_myket
