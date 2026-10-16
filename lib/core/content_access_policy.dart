@@ -1,6 +1,7 @@
 import 'cartoons/cartoon_data.dart';
 import 'growth/life_skills_data.dart';
 import 'learning_content/children_stories_data.dart';
+import 'learning_content/learning_topics.dart';
 import 'learning_content/lullabies_data.dart';
 import 'literacy/decodable_stories.dart';
 
@@ -46,15 +47,20 @@ abstract final class ContentAccessPolicy {
   static const int freeLifeSkillCount = 5;
 
   // ── الفبا ───────────────────────────────────────────────────────────────
-  /// حالت «الفبایی سنتی» (۳۳ نشانه): ۸ نشانهٔ نخست رایگان.
-  static const int freeAlphabetTopRowCount = 8;
+  /// حالت «الفبایی سنتی» (۳۳ نشانه): نیمهٔ اول (۱۶ نشانه) رایگان.
+  ///
+  /// ⚖️ قانونِ نصف/نصف: پیش از این فقط ۸ نشانه رایگان بود (۲۴٪ کل) و این با
+  /// قانون نمی‌خواند؛ نیمهٔ ۳۳ نشانه یعنی ۱۶ نشانه.
+  static const int freeAlphabetTopRowCount = 16;
 
-  /// حالت کلاس اول (پیش‌فرض، ۳۸ درس در ۸ بسته): دو بستهٔ اول رایگان → ۸ درس.
+  /// حالت کلاس اول (پیش‌فرض، ۳۸ درس در ۸ بسته): نیمهٔ بسته‌ها رایگان → ۴ بسته.
   ///
   /// ⚠️ پیش از این، رایگان‌بودن با شمارهٔ **درس داخل بسته** سنجیده می‌شد و
   /// چون بسته‌ها ۴ تا ۹ درس دارند، عملاً ۳۷ درس از ۳۸ درس برای کاربر رایگان
   /// باز می‌ماند. اکنون سنجش با شمارهٔ بسته انجام می‌شود.
-  static const int freeAlphabetBundleCount = 2;
+  /// ⚖️ بعد از آن اصلاح فقط ۲ بسته (۲۵٪) رایگان مانده بود — یعنی الفبا برخلاف
+  /// بقیهٔ مجموعه‌ها حدود ۷۵٪ پولی بود؛ حالا ۴ بسته از ۸ بسته آزاد است.
+  static const int freeAlphabetBundleCount = 4;
 
   // ── اعداد ───────────────────────────────────────────────────────────────
   /// شمارش ۱ تا ۱۰ هستهٔ ریاضی اول دبستان است و نباید پشت پرداخت قفل شود.
@@ -108,6 +114,13 @@ abstract final class ContentAccessPolicy {
     'میوه',
     'لالایی', // هاب لالایی؛ ۵ از ۱۰ لالایی داخلش رایگان است
     'استیکر', // آلبوم استیکر با سکهٔ درون‌برنامه خریده می‌شود (استثنای بالا)
+    // ── مجموعه‌هایی که حالا خودشان نیمه‌رایگان شده‌اند ──────────────────
+    // درِ ورودِ این مجموعه‌ها باید باز بماند تا کاربر به نیمهٔ رایگانشان
+    // برسد؛ قفلِ نیمهٔ دوم داخل خود صفحه (روی تک‌تک آیتم‌ها) اعمال می‌شود.
+    'حیوانات', // ۱۵ حیوان از ۳۰ — بقیه با نسخهٔ کامل
+    'شغل‌ها', // ۱۰ شغل از ۲۰ — بقیه با نسخهٔ کامل
+    'مفاهیم', // ۸ مفهوم از ۱۶ — بقیه با نسخهٔ کامل
+    'واژگان', // نیمهٔ اولِ واژه‌های ثبت‌شده — بقیه با نسخهٔ کامل
   };
 
   /// آکادمی‌های مستقیم: رنگ، شکل، احساسات و میوه رایگان‌اند.
@@ -169,6 +182,36 @@ abstract final class ContentAccessPolicy {
 
   static bool isNumberFree(int number) =>
       number >= 1 && number <= freeNumberCount;
+
+  // ── قاعدهٔ عمومی «نیمهٔ اولِ هر مجموعهٔ مرتّب» ───────────────────────────
+  /// قانونِ نصف/نصف برای هر مجموعه‌ای که هنوز ثابتِ اختصاصی ندارد.
+  ///
+  /// `orderedIds` باید **ترتیبِ کتاب** (ترتیبِ کانونیِ داده) باشد، نه ترتیبِ
+  /// نمایش: فیلتر، جست‌وجو و دسته‌بندی نباید بتوانند یک آیتمِ پولی را به صدرِ
+  /// فهرست بیاورند و رایگانش کنند. شناسهٔ ناشناخته همیشه قفل است (fail-closed)
+  /// تا افزوده‌شدنِ محتوای جدید هرگز نشت نسازد.
+  static bool isFreeHalfItem(String id, Iterable<String> orderedIds) =>
+      _isAmongFirst(id, orderedIds, orderedIds.length ~/ 2);
+
+  /// آیا این کارتِ یک موضوعِ یادگیری (حیوانات، شغل‌ها، مفاهیم، احساسات،
+  /// رنگ‌ها، شکل‌ها، بدن، میوه) رایگان است؟
+  static bool isTopicCardFree(LearningTopic topic, String cardId) =>
+      isFreeHalfItem(cardId, topic.cards.map((card) => card.id));
+
+  /// کارت‌هایی از این موضوع که کاربر مجاز به دیدن/تمرین آن‌هاست.
+  ///
+  /// برای بازی‌هایی که کارت‌ها را تصادفی بیرون می‌کشند (`AcademyGame`): pool
+  /// را به نیمهٔ رایگان محدود می‌کند تا نیمهٔ پولی در قالبِ «شانسِ تصادفی»
+  /// در دسترس قرار نگیرد.
+  static List<LearningCard> allowedTopicCards(
+    LearningTopic topic, {
+    required bool hasFullVersion,
+  }) {
+    if (hasFullVersion) return topic.cards;
+    final free = topic.cards.length ~/ 2;
+    if (free <= 0 || free >= topic.cards.length) return topic.cards;
+    return topic.cards.take(free).toList(growable: false);
+  }
 
   static bool _isAmongFirst(
     String id,

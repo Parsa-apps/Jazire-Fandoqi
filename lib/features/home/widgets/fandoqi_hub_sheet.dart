@@ -112,8 +112,9 @@ class FandoqiHubs {
         subtitle: 'کشف کلمات جدید و تقویت دایره لغات کودک',
         emoji: '📚',
         route: '/vocabulary',
+        // نیمهٔ اولِ واژه‌ها رایگان است؛ نیمهٔ دوم داخل صفحه قفل می‌شود.
         gameName: 'واژگان',
-        isFree: false,
+        isFree: true,
       ),
       HubActivity(
         title: 'بازی تشخیص صداها',
@@ -199,8 +200,9 @@ class FandoqiHubs {
         subtitle: 'کوچک‌تر و بزرگ‌تر، سبک و سنگین، کم و زیاد',
         emoji: '⚖️',
         route: '/concepts',
+        // ۸ مفهوم از ۱۶ رایگان است؛ بقیه داخل صفحه قفل می‌شوند.
         gameName: 'مفاهیم',
-        isFree: false,
+        isFree: true,
       ),
     ],
   );
@@ -267,8 +269,9 @@ class FandoqiHubs {
         emoji: '🦁',
         route: '/game/حیوانات',
         image: 'assets/illustrations/animals_cards.webp',
+        // ۱۵ حیوان از ۳۰ رایگان است؛ بقیه داخل صفحه قفل می‌شوند.
         gameName: 'حیوانات',
-        isFree: false,
+        isFree: true,
       ),
       HubActivity(
         title: 'شناخت اعضای بدن',
@@ -292,8 +295,9 @@ class FandoqiHubs {
         subtitle: 'فصل‌ها، آب‌وهوا، شب و روز و پدیده‌های طبیعی',
         emoji: '🌍',
         route: '/concepts',
+        // ۸ مفهوم از ۱۶ رایگان است؛ بقیه داخل صفحه قفل می‌شوند.
         gameName: 'مفاهیم',
-        isFree: false,
+        isFree: true,
       ),
     ],
   );

@@ -1,14 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/app_colors.dart';
 import '../../app/design_tokens.dart';
 import '../../app/app_fonts.dart';
+import '../../core/content_access_policy.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';
 import '../../core/learning_content/learning_topics.dart';
+import '../../core/monetization.dart';
 import '../../shared/widgets/fandoghi_premium.dart';
+import '../shop/content_lock.dart';
 
 /// 🌈 CONCEPTS HUB PREMIUM — پیشنهاد ۲۸
 /// مفاهیم اولیه: بزرگ/کوچک، شب/روز، فصل‌ها، هوا، زمان
@@ -21,13 +26,25 @@ class ConceptsHubScreen extends StatefulWidget {
 class _ConceptsHubState extends State<ConceptsHubScreen> {
   String? _selectedId;
 
+  /// نیمهٔ اولِ مفاهیم (ترتیبِ کتاب) رایگان است؛ نیمهٔ دوم فقط با نسخهٔ
+  /// کامل. پیش‌فرض «خرید ندارد» (fail-closed).
+  bool _hasFullVersion = false;
+
   @override
   void initState() {
     super.initState();
     FandoghiCoach.enablePersistentPresence();
+    _refreshEntitlement();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FandoghiCoach.say('به دنیای مفاهیم خوش اومدی! 🌈 بزرگ و کوچک، شب و روز، فصل‌ها — همه رو با هم یاد می‌گیریم!', mood: FandoghiMood.excited, duration: const Duration(seconds: 4));
     });
+  }
+
+  Future<void> _refreshEntitlement() async {
+    final hasFullVersion = await Monetization.hasFullVersion();
+    if (mounted && hasFullVersion != _hasFullVersion) {
+      setState(() => _hasFullVersion = hasFullVersion);
+    }
   }
 
   @override
@@ -87,14 +104,24 @@ class _ConceptsHubState extends State<ConceptsHubScreen> {
                             final card = entry.value[index];
                             final isSelected = _selectedId == card.id;
                             return GestureDetector(
-                              onTap: () {
+                              onTap: () async {
                                 HapticFeedback.selectionClick();
+                                final allowed = await ensureContentAccess(
+                                  context,
+                                  featureName: card.name,
+                                  isFree: ContentAccessPolicy.isTopicCardFree(topic, card.id),
+                                );
+                                if (!allowed || !mounted) return;
+                                unawaited(_refreshEntitlement());
                                 setState(() => _selectedId = card.id);
                                 FandoghiCoach.say('${card.name} ${card.emoji} — ${card.fact ?? ''}', mood: FandoghiMood.happy, duration: const Duration(seconds: 3));
                                 GameData.recordAnswer(correct: true, skill: 'concepts');
-                                setState(() {});
+                                if (mounted) setState(() {});
                               },
-                              child: AnimatedContainer(
+                              child: LockedCardOverlay(
+                                locked: !_hasFullVersion &&
+                                    !ContentAccessPolicy.isTopicCardFree(topic, card.id),
+                                child: AnimatedContainer(
                                 duration: AppMotion.fast,
                                 decoration: BoxDecoration(
                                   color: isSelected ? Colors.white : Colors.white.withOpacity(0.92),
@@ -110,6 +137,7 @@ class _ConceptsHubState extends State<ConceptsHubScreen> {
                                     Text(card.name, style: AppFonts.vazirmatn(fontSize: 14, fontWeight: FontWeight.w900, color: const Color(0xFF4E342E))),
                                     if (card.fact != null) Text(card.fact!, style: TextStyle(fontSize: 10, color: Colors.black54), textAlign: TextAlign.center),
                                   ],
+                                ),
                                 ),
                               ).animate(delay: (index * 40).ms).fadeIn(duration: 300.ms),
                             );

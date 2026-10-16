@@ -3,6 +3,7 @@ import 'package:jazireh_fandoghi/core/cartoons/cartoon_data.dart';
 import 'package:jazireh_fandoghi/core/content_access_policy.dart';
 import 'package:jazireh_fandoghi/core/growth/life_skills_data.dart';
 import 'package:jazireh_fandoghi/core/learning_content/children_stories_data.dart';
+import 'package:jazireh_fandoghi/core/learning_content/learning_topics.dart';
 import 'package:jazireh_fandoghi/core/learning_content/lullabies_data.dart';
 
 void main() {
@@ -72,16 +73,16 @@ void main() {
     });
 
     test('الفبا: در حالت کلاس اول فقط بسته‌های ابتدایی رایگان‌اند', () {
-      // حالت الفبایی سنتی (۳۳ نشانه) — ۸ نشانهٔ نخست.
+      // حالت الفبایی سنتی (۳۳ نشانه) — نیمهٔ اول (۱۶ نشانه).
       expect(ContentAccessPolicy.isAlphabetLessonFree(0), isTrue);
-      expect(ContentAccessPolicy.isAlphabetLessonFree(7), isTrue);
-      expect(ContentAccessPolicy.isAlphabetLessonFree(8), isFalse);
+      expect(ContentAccessPolicy.isAlphabetLessonFree(15), isTrue);
+      expect(ContentAccessPolicy.isAlphabetLessonFree(16), isFalse);
       expect(ContentAccessPolicy.isAlphabetLessonFree(-1), isFalse);
 
-      // حالت کلاس اول (۸ بسته) — دو بستهٔ اول.
+      // حالت کلاس اول (۸ بسته) — نصفِ بسته‌ها (۴ بسته).
       expect(ContentAccessPolicy.isAlphabetBundleFree(0), isTrue);
-      expect(ContentAccessPolicy.isAlphabetBundleFree(1), isTrue);
-      expect(ContentAccessPolicy.isAlphabetBundleFree(2), isFalse);
+      expect(ContentAccessPolicy.isAlphabetBundleFree(3), isTrue);
+      expect(ContentAccessPolicy.isAlphabetBundleFree(4), isFalse);
       expect(ContentAccessPolicy.isAlphabetBundleFree(-1), isFalse);
     });
 
@@ -117,6 +118,11 @@ void main() {
         'اشکال',
         'میوه',
         'استیکر',
+        // مجموعه‌های نیمه‌رایگانی که درِ ورودشان باید باز باشد
+        'حیوانات',
+        'شغل‌ها',
+        'مفاهیم',
+        'واژگان',
         // بازی‌های رایگان کارناوال
         'حرف اول',
         'شمارش خوش',
@@ -129,15 +135,12 @@ void main() {
 
       for (final game in <String>[
         // نیمهٔ پولی هر بخش
-        'واژگان',
         'صدا',
         'قاب ده‌تایی',
         'ساعت',
         'ارزش مکانی',
         'تقارن',
         'الگو',
-        'مفاهیم',
-        'حیوانات',
         'ستاره‌گیری',
         'حافظه',
         'پازل',

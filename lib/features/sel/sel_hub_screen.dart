@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -6,11 +7,14 @@ import '../../app/app_colors.dart';
 import '../../app/design_tokens.dart';
 import '../../app/app_fonts.dart';
 import '../../core/audio_service.dart';
+import '../../core/content_access_policy.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';
+import '../../core/monetization.dart';
 import '../../shared/widgets/child_touch_target.dart';
 import '../../shared/widgets/fandoghi_premium.dart';
+import '../shop/content_lock.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// 💛 SEL HUB PREMIUM — دنیای هوش هیجانی و آرام‌سازی کودک
@@ -28,6 +32,10 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
   bool _breathing = false;
   int _breathPhase = 0; // 0: دم, 1: نگه‌دار, 2: بازدم
 
+  /// نیمهٔ اولِ احساسات (ترتیبِ کتاب: شادی، ناراحتی، خشم، ترس) رایگان است و
+  /// نیمهٔ دوم فقط با نسخهٔ کامل. پیش‌فرض «خرید ندارد» (fail-closed).
+  bool _hasFullVersion = false;
+
   static const List<_Emotion> _emotions = [
     _Emotion(id: 'happy', name: 'شادی', emoji: '😄', color: Color(0xFFFFD700), story: 'فندقی امروز خیلی خوشحاله چون با تو بازی کرده! وقتی شادی، لبخند بزن و بگو «من شادم!»', tip: 'شادی‌ات را با یک بغل به مامان یا بابا قسمت کن 🤗'),
     _Emotion(id: 'sad', name: 'ناراحتی', emoji: '😢', color: Color(0xFF74B9FF), story: 'فندقی گاهی ناراحت می‌شود، مثل وقتی اسباب‌بازی‌اش گم شد. او گریه کرد و بعد با مامان حرف زد.', tip: 'وقتی ناراحتی، گریه اشکالی ندارد. بعد با یک بزرگتر حرف بزن 💧'),
@@ -44,6 +52,7 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
     super.initState();
     _breathCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 4000));
     FandoghiCoach.enablePersistentPresence();
+    _refreshEntitlement();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FandoghiCoach.say(
         'به دنیای احساسات خوش اومدی! هر احساس یه رنگ داره — بزن روش تا قصه‌اش رو بشنوی 💛',
@@ -60,8 +69,30 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  void _selectEmotion(_Emotion e) {
+  Future<void> _refreshEntitlement() async {
+    final hasFullVersion = await Monetization.hasFullVersion();
+    if (mounted && hasFullVersion != _hasFullVersion) {
+      setState(() => _hasFullVersion = hasFullVersion);
+    }
+  }
+
+  /// رایگان‌بودن یک احساس بر پایهٔ ترتیبِ کتاب (نه ترتیبِ نمایش).
+  bool _isEmotionFree(_Emotion e) =>
+      ContentAccessPolicy.isFreeHalfItem(e.id, _emotions.map((x) => x.id));
+
+  /// قفلِ مؤثر: دقیقاً همان چیزی که هنگام لمس اتفاق می‌افتد.
+  bool _isLocked(_Emotion e) => !_hasFullVersion && !_isEmotionFree(e);
+
+  Future<void> _selectEmotion(_Emotion e) async {
     HapticFeedback.selectionClick();
+    final allowed = await ensureContentAccess(
+      context,
+      featureName: 'احساس ${e.name}',
+      isFree: _isEmotionFree(e),
+    );
+    if (!allowed) return;
+    if (!mounted) return;
+    unawaited(_refreshEntitlement());
     setState(() => _selectedEmotion = e.id);
     FandoghiCoach.say(
       e.story,
@@ -274,7 +305,10 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
         final selected = _selectedEmotion == e.id;
         return GestureDetector(
           onTap: () => _selectEmotion(e),
-          child: AnimatedContainer(
+          child: LockedCardOverlay(
+            locked: _isLocked(e),
+            badgeSize: 22,
+            child: AnimatedContainer(
             duration: AppMotion.fast,
             decoration: BoxDecoration(
               color: selected ? Colors.white : Colors.white.withOpacity(0.92),
@@ -306,6 +340,7 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
                     decoration: BoxDecoration(shape: BoxShape.circle, color: e.color),
                   ).animate().scale(duration: 300.ms, curve: Curves.elasticOut),
               ],
+            ),
             ),
           ).animate(delay: (index * 40).ms).fadeIn(duration: 300.ms).scale(begin: const Offset(0.85, 0.85), curve: Curves.easeOutBack),
         );
