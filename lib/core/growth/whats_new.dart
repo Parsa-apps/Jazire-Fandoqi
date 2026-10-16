@@ -1,18 +1,36 @@
 import 'package:flutter/material.dart';
 
 /// ═══════════════════════════════════════════════════════════════
-/// 🆕 تغییرات نسخهٔ ۷.۵.۲ «قفل‌های طلایی متحرک» — جزیره فندقی
+/// 🆕 تغییرات نسخهٔ ۷.۵.۳ «اصلاح تشخیص نسخهٔ کامل» — جزیره فندقی
 /// بعد از هر آپدیت یک‌بار به‌صورت خودکار نشان داده می‌شود.
 /// ═══════════════════════════════════════════════════════════════
 class WhatsNew {
   WhatsNew._();
 
-  static const String version = '۷.۵.۲';
-  static const String versionName = 'قفل‌های طلایی متحرک';
-  static const String buildNumber = '+۲۴';
+  static const String version = '۷.۵.۳';
+  static const String versionName = 'اصلاح تشخیص نسخهٔ کامل';
+  static const String buildNumber = '+۲۵';
 
   /// دسته‌بندی‌های تغییرات برای نمایش حرفه‌ای
   static const List<WhatsNewSection> sections = [
+    WhatsNewSection(
+      id: 'signed-receipt-entitlement',
+      title: '🛡️ اصلاح تشخیص نسخهٔ کامل',
+      emoji: '🛡️',
+      color: Color(0xFF16803C),
+      items: [
+        WhatsNewItem(
+          emoji: '🔐',
+          title: 'قفل‌ها با مجوز قدیمی پنهان نمی‌شوند',
+          body: 'فلگ یا توکن ذخیره‌شدهٔ قدیمی دیگر نسخهٔ کامل محسوب نمی‌شود. فقط رسید امضاشدهٔ همین برنامه، همین محصول و خرید تکمیل‌شده دسترسی می‌دهد.',
+        ),
+        WhatsNewItem(
+          emoji: '💛',
+          title: 'خرید قبلی بازیابی می‌شود؛ پیشرفت پاک نمی‌شود',
+          body: 'اگر قبلاً خریده‌اید، یک‌بار بازیابی خرید را بزنید؛ پرداخت دوباره لازم نیست. پس از تأیید، رسید برای استفادهٔ آفلاین امن ذخیره می‌شود و ستاره‌ها و پیشرفت دست‌نخورده می‌مانند.',
+        ),
+      ],
+    ),
     WhatsNewSection(
       id: 'animated-gold-locks',
       title: '🔐 قفل‌های طلایی متحرک',

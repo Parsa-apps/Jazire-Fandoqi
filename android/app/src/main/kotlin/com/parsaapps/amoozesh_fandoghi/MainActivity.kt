@@ -32,6 +32,15 @@ class MainActivity : FlutterFragmentActivity() {
     private val channelName = "kudake_iran/billing"
     private val backupChannelName = "kudake_iran/backup"
     private val fullVersionProductId = "full_version"
+    private val receiptVerifier by lazy(LazyThreadSafetyMode.NONE) {
+        StoreReceiptVerifier(
+            applicationContext.packageName,
+            mapOf(
+                StoreVendor.BAZAAR to BuildConfig.BAZAAR_RSA_PUBLIC_KEY,
+                StoreVendor.MYKET to BuildConfig.MYKET_RSA_PUBLIC_KEY,
+            ),
+        )
+    }
     private var purchaseInProgress = false
     private var pendingBackupResult: MethodChannel.Result? = null
 
@@ -92,6 +101,20 @@ class MainActivity : FlutterFragmentActivity() {
                     "purchase" -> purchase(call.arguments as? Map<*, *>, result)
                     "consume" -> consume(call.arguments as? Map<*, *>, result)
                     "restore" -> restore(result)
+                    "verifyReceipt" -> {
+                        val requestedStore = StoreVendor.fromChannel(call.argument<String>("store"))
+                        val outcome = if (requestedStore == vendor) {
+                            receiptVerifier.verify(
+                                vendor,
+                                call.argument<String>("signedData"),
+                                call.argument<String>("signature"),
+                                fullVersionProductId,
+                            )
+                        } else {
+                            BillingOutcome.invalidReceipt()
+                        }
+                        result.success(outcome.toMap())
+                    }
                     // Flutter از این برای انتخاب متن/رفتار مناسب استفاده می‌کند.
                     "installerPackage" -> result.success(StoreVendor.installerPackage(applicationContext))
                     "storeVendor" -> result.success(vendor.name.lowercase())

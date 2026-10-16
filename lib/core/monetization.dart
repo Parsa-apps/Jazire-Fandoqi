@@ -1,110 +1,211 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+
 import '../data/datasources/hive_player_store.dart';
 import 'billing_service.dart';
 import 'security/secure_store.dart';
 
-/// One-time full-version entitlement. The store is the authority in every build;
-/// the Keystore-backed grant keeps the purchase working offline and makes a
-/// plaintext file edit unable to forge premium access.
-///
-/// 🔐 مدل امنیتی (v6.3):
-///  - در همهٔ بیلدها، مرجع واقعی همان فروشگاهی است که اپ از آن نصب شده
-///    (کافه‌بازار یا مایکت) — بازیابی خرید با تأیید امضای RSA رسید.
-///  - بعد از تأیید استور، گرنت + توکن رسید در SecureStore (Android Keystore)
-///    ذخیره می‌شود؛ دستکاری فایل Hive دیگر نمی‌تواند پریمیوم جعل کند.
-///  - در حالت آفلاین، فقط گرنت Keystore که پیش‌تر با پاسخ معتبر فروشگاه
-///    ذخیره شده قبول می‌شود. فلگ و توکن قدیمی Hive به‌تنهایی هرگز مرجع نیستند؛
-///    کاربران قدیمی باید هنگام اتصال از خود فروشگاه بازیابی کنند.
+enum FullVersionAccessStatus {
+  checking,
+  free,
+  needsRestore,
+  storeVerified,
+  offlineVerified;
+
+  bool get isVerified =>
+      this == storeVerified || this == offlineVerified;
+}
+
+/// Permanent ownership requires a signed store receipt, not a historic local
+/// grant. Offline access re-verifies the saved JSON/signature with native RSA.
+/// An authoritative empty inventory revokes it; unavailable stores do not.
 class Monetization {
-  static const String _fullVersionKey = 'has_full_version';
-  static const String _receiptTokenKey = 'full_version_receipt_token';
-  static const String _receiptOrderKey = 'full_version_receipt_order';
-  static const String productIdFullVersion = 'full_version';
+  static const String productIdFullVersion = BillingService.fullVersionProductId;
+  static const int receiptCacheSchema = 2;
+  static const String signedReceiptKey = 'entitlement.signed_receipt.v2';
 
-  // Keystore-backed grant keys (native SecureStore).
-  static const String _grantKey = 'entitlement.granted';
-  static const String _grantTokenKey = 'entitlement.receipt_token';
-  static const String _grantOrderKey = 'entitlement.receipt_order';
+  static const _legacySecureKeys = <String>[
+    'entitlement.granted',
+    'entitlement.receipt_token',
+    'entitlement.receipt_order',
+  ];
+  static final _accessStatus =
+      ValueNotifier<FullVersionAccessStatus>(FullVersionAccessStatus.checking);
+  static ValueListenable<FullVersionAccessStatus> get accessStatus => _accessStatus;
 
-  /// آخرین پیام خطای خرید/بازیابی برای نمایش در UI (مثلاً «پرداخت لغو شد»).
-  /// خالی یعنی خطایی نبوده. هر تلاش جدید این مقدار را بازنشانی می‌کند.
+  static Future<bool>? _pendingCheck;
+  static int _revision = 0;
+  static bool _lastDecision = false;
   static String lastPurchaseError = '';
 
-  static Future<bool> hasFullVersion() async {
-    // ۱) استور مرجع است: بازیابی خرید با تأیید امضا.
-    final restored = await BillingService.restorePurchases();
-    if (restored.success) {
-      if (restored.hasStoreReceipt) {
-        await _storeGrant(token: restored.purchaseToken!, orderId: restored.orderId);
-        await _clearLegacyKeys();
-        return true;
-      }
-      // استور در دسترس است ولی خریدی ثبت نشده → قطعاً پریمیوم نیست،
-      // حتی اگر کسی فایل‌ها را با فلگ جعلی دستکاری کرده باشد.
-      return false;
-    }
-    // ۲) استور پاسخ معتبر نداده → فقط گرنتی که قبلاً در Keystore ذخیره
-    //    شده پذیرفته می‌شود. دادهٔ قدیمی Hive قابل‌ویرایش است و شکلِ ظاهری
-    //    یک توکن هم اثبات امضای فروشگاه نیست؛ بنابراین هیچ‌کدام به‌تنهایی
-    //    نباید در release دسترسی پولی بدهند.
-    return _isGranted();
+  /// Coalesce inventory queries from simultaneously mounting hubs. The SDK
+  /// must not be asked to set up / query itself several times concurrently.
+  static Future<bool> hasFullVersion() {
+    final pending = _pendingCheck;
+    if (pending != null) return pending;
+    final revision = _revision;
+    late final Future<bool> check;
+    check = _checkAccess(revision).whenComplete(() {
+      if (identical(_pendingCheck, check)) _pendingCheck = null;
+    });
+    _pendingCheck = check;
+    return check;
   }
 
-  static Future<bool> activateFullVersion(BillingResult result) async {
-    if (!result.success) {
+  static Future<bool> _checkAccess(int revision) async {
+    final restored = await BillingService.restorePurchases();
+    if (revision != _revision) return _lastDecision;
+    if (restored.hasReceiptFor(productIdFullVersion)) {
+      final accepted = await _acceptReceipt(restored, expectedRevision: revision);
+      if (accepted || revision != _revision) return _lastDecision;
+      return _revoke(revision, FullVersionAccessStatus.needsRestore);
+    }
+    if (restored.status == BillingStatus.notOwned) {
+      return _revoke(revision, FullVersionAccessStatus.free);
+    }
+    if (restored.status == BillingStatus.invalidReceipt) {
+      return _revoke(revision, FullVersionAccessStatus.needsRestore);
+    }
+
+    // Only a receipt whose signature is checked again may survive offline.
+    // Do not promote a legacy true/nonempty-token pair into a verified cache.
+    final saved = await SecureStore.read(signedReceiptKey);
+    if (revision != _revision) return _lastDecision;
+    if (saved != null) {
+      final proof = await _verifySavedReceipt(saved);
+      if (revision != _revision) return _lastDecision;
+      return _publish(proof.hasReceiptFor(productIdFullVersion)
+          ? FullVersionAccessStatus.offlineVerified
+          : FullVersionAccessStatus.needsRestore);
+    }
+    final oldGrant = await SecureStore.read('entitlement.granted');
+    if (revision != _revision) return _lastDecision;
+    return _publish(oldGrant == 'true'
+        ? FullVersionAccessStatus.needsRestore
+        : FullVersionAccessStatus.free);
+  }
+
+  static Future<BillingResult> _verifySavedReceipt(String saved) async {
+    try {
+      final record = jsonDecode(saved);
+      if (record is Map &&
+          record['schema'] == receiptCacheSchema &&
+          record['signedData'] is String &&
+          record['signature'] is String &&
+          record['store'] is String) {
+        return BillingService.verifyFullVersionReceipt(
+          signedData: record['signedData'] as String,
+          signature: record['signature'] as String,
+          store: record['store'] as String,
+        );
+      }
+    } catch (_) {
+      // Corrupt or legacy local data is never an entitlement.
+    }
+    return const BillingResult.failure(
+      'رسید ذخیره‌شده نیاز به بازیابی دارد',
+      status: BillingStatus.invalidReceipt,
+    );
+  }
+
+  static Future<bool> activateFullVersion(BillingResult result) =>
+      _acceptReceipt(result);
+
+  static Future<bool> _acceptReceipt(
+    BillingResult result, {
+    int? expectedRevision,
+  }) async {
+    if (!result.hasReceiptFor(productIdFullVersion)) {
       lastPurchaseError = result.message.isNotEmpty
-          ? result.message
-          : 'پرداخت توسط فروشگاه تأیید نشد';
+          ? result.message : 'رسید امضاشدهٔ نسخهٔ کامل دریافت نشد';
       return false;
     }
-    if (!result.hasStoreReceipt) {
-      lastPurchaseError = 'رسید خرید از فروشگاه دریافت نشد';
+    // This also protects callers constructing BillingResult themselves: the
+    // native verifier re-derives ownership from signed bytes, not these fields.
+    final proof = await BillingService.verifyFullVersionReceipt(
+      signedData: result.signedData!,
+      signature: result.signature!,
+      store: result.store!,
+    );
+    if (expectedRevision != null && expectedRevision != _revision) {
+      return _lastDecision;
+    }
+    if (!proof.hasReceiptFor(productIdFullVersion)) {
+      lastPurchaseError = 'امضای رسید نسخهٔ کامل تأیید نشد';
       return false;
     }
-    await _storeGrant(token: result.purchaseToken!, orderId: result.orderId);
+    final revision = ++_revision;
+    _pendingCheck = null;
+    _lastDecision = true;
+    // One atomic encrypted record: a partially written grant cannot unlock.
+    await SecureStore.write(signedReceiptKey, jsonEncode(<String, Object?>{
+      'schema': receiptCacheSchema,
+      'store': proof.store,
+      'signedData': proof.signedData,
+      'signature': proof.signature,
+    }));
     await _clearLegacyKeys();
+    if (revision != _revision) return _lastDecision;
     lastPurchaseError = '';
-    return true;
+    return _publish(FullVersionAccessStatus.storeVerified);
+  }
+
+  static Future<bool> _revoke(
+    int expectedRevision,
+    FullVersionAccessStatus status,
+  ) async {
+    if (expectedRevision != _revision) return _lastDecision;
+    final revision = ++_revision;
+    _pendingCheck = null;
+    _lastDecision = false;
+    await SecureStore.delete(signedReceiptKey);
+    await _clearLegacyKeys();
+    if (revision != _revision) return _lastDecision;
+    return _publish(status);
   }
 
   static Future<bool> restoreFullVersion() async {
+    final revision = _revision;
     final result = await BillingService.restorePurchases();
-    lastPurchaseError = result.success ? '' : (result.message.isNotEmpty ? result.message : '');
-    return activateFullVersion(result);
+    if (revision != _revision) return _lastDecision;
+    if (result.status == BillingStatus.notOwned ||
+        result.status == BillingStatus.invalidReceipt) {
+      await _revoke(revision, result.status == BillingStatus.notOwned
+          ? FullVersionAccessStatus.free : FullVersionAccessStatus.needsRestore);
+    }
+    return _acceptReceipt(result);
   }
 
-  static Future<bool> purchaseFullVersion() async {
-    final result = await BillingService.purchaseNonConsumable(productIdFullVersion);
-    lastPurchaseError = result.success ? '' : (result.message.isNotEmpty ? result.message : '');
-    return activateFullVersion(result);
-  }
+  static Future<bool> purchaseFullVersion() async =>
+      _acceptReceipt(await BillingService.purchaseNonConsumable(productIdFullVersion));
 
-  /// Compatibility aliases kept while feature screens migrate to the permanent model.
   static Future<bool> isPremium() => hasFullVersion();
   static Future<bool> activatePremium(BillingResult result) => activateFullVersion(result);
   static Future<bool> restorePremium() => restoreFullVersion();
 
-  // ── گرنت Keystore ────────────────────────────────────────────────────────
-
-  static Future<void> _storeGrant({required String token, String? orderId}) async {
-    await SecureStore.write(_grantTokenKey, token);
-    if (orderId != null && orderId.isNotEmpty) {
-      await SecureStore.write(_grantOrderKey, orderId);
-    }
-    await SecureStore.write(_grantKey, 'true');
+  static bool _publish(FullVersionAccessStatus status) {
+    _lastDecision = status.isVerified;
+    _accessStatus.value = status;
+    return _lastDecision;
   }
 
-  static Future<bool> _isGranted() async {
-    final granted = await SecureStore.read(_grantKey);
-    if (granted != 'true') return false;
-    final token = await SecureStore.read(_grantTokenKey);
-    return BillingResult(success: true, purchaseToken: token).hasStoreReceipt;
-  }
-
-  /// پاک‌سازی داده‌های قدیمی فقط پس از تأیید موفق از خود فروشگاه؛ این
-  /// مقادیر هرگز برای اعطای entitlement در هیچ بیلدی استفاده نمی‌شوند.
+  /// Only obsolete entitlement keys are touched, never progress, PIN or coins.
   static Future<void> _clearLegacyKeys() async {
-    await HivePlayerStore.writeValue(_fullVersionKey, false);
-    await HivePlayerStore.writeValue(_receiptTokenKey, '');
-    await HivePlayerStore.writeValue(_receiptOrderKey, '');
+    for (final key in _legacySecureKeys) {
+      await SecureStore.delete(key);
+    }
+    await HivePlayerStore.writeValue('has_full_version', false);
+    await HivePlayerStore.writeValue('full_version_receipt_token', '');
+    await HivePlayerStore.writeValue('full_version_receipt_order', '');
+  }
+
+  @visibleForTesting
+  static void resetForTesting() {
+    _revision++;
+    _pendingCheck = null;
+    _lastDecision = false;
+    lastPurchaseError = '';
+    _accessStatus.value = FullVersionAccessStatus.checking;
   }
 }

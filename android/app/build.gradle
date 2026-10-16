@@ -440,6 +440,10 @@ configurations.configureEach { configuration ->
 }
 
 dependencies {
+    // Test-only crypto/JSON coverage; these do not ship in the APK.
+    testImplementation "junit:junit:4.13.2"
+    testImplementation "org.json:json:20240303"
+
     // Poolakey is the official open-source Cafe Bazaar billing client.
     implementation "com.github.cafebazaar.Poolakey:poolakey:2.2.0"
     // Myket's official open-source billing client (same JitPack repo).

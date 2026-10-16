@@ -135,6 +135,7 @@ class _GamesCarnivalScreenState extends State<GamesCarnivalScreen> {
   @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_onAccessChanged);
     FandoghiCoach.enablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -145,8 +146,18 @@ class _GamesCarnivalScreenState extends State<GamesCarnivalScreen> {
     });
   }
 
+  void _onAccessChanged() {
+    if (!mounted) return;
+    final status = Monetization.accessStatus.value;
+    setState(() {
+      _hasFullVersion = status.isVerified;
+      _checkedPurchase = status != FullVersionAccessStatus.checking;
+    });
+  }
+
   @override
   void dispose() {
+    Monetization.accessStatus.removeListener(_onAccessChanged);
     FandoghiCoach.clear();
     super.dispose();
   }

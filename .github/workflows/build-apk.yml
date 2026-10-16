@@ -86,6 +86,7 @@ jobs:
             test/features/shop/content_lock_test.dart \
             test/features/shop/gold_lock_collections_test.dart \
             test/shared/widgets/animated_gold_lock_test.dart \
+            test/shared/widgets/purchase_access_status_test.dart \
             > qa-gate-log/paywall-regression.log 2>&1
           status=$?
           cat qa-gate-log/paywall-regression.log
@@ -96,6 +97,30 @@ jobs:
 
       - name: Build APK (Release)
         run: flutter build apk --release
+
+      - name: Native signed receipt tests (both stores)
+        run: |
+          mkdir -p qa-gate-log
+          set +e
+          (cd android && ./gradlew testMyketReleaseUnitTest testBazaarReleaseUnitTest --console=plain) > qa-gate-log/native-receipts.log 2>&1
+          status=$?
+          cat qa-gate-log/native-receipts.log
+          if [ "$status" -ne 0 ]; then
+            python3 tool/ci_annotate.py 'Native receipt tests failed' qa-gate-log/native-receipts.log
+          else
+            python3 - <<'PYTEST'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          suites = [ET.parse(p).getroot() for p in Path('build/app/test-results').rglob('TEST-*StoreReceiptVerifierTest.xml')]
+          assert len(suites) == 2, 'Expected receipt test results for both store variants'
+          total = sum(int(s.attrib['tests']) for s in suites)
+          failed = sum(int(s.attrib['failures']) + int(s.attrib['errors']) for s in suites)
+          assert failed == 0
+          print(f'::notice::Native RSA receipt tests: {total} passed across both release flavors')
+          PYTEST
+            status=$?
+          fi
+          exit "$status"
 
       - name: Verify release signing (APK)
         if: ${{ env.KEYSTORE_B64 != '' }}
@@ -131,6 +156,8 @@ jobs:
             echo "store=myket"
             echo "paywall_regression_gate=passed"
             echo "animated_gold_lock_tests=passed"
+            echo "native_rsa_receipt_tests=passed"
+            echo "entitlement_receipt_schema=2"
             sha256sum build/app/outputs/flutter-apk/app-release.apk
           } > build/app/outputs/flutter-apk/build-info.txt
           cat build/app/outputs/flutter-apk/build-info.txt
@@ -138,7 +165,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: jazire_fandoqi_v7.5.2_apk
+          name: jazire_fandoqi_v7.5.3_apk
           path: |
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/flutter-apk/build-info.txt
@@ -155,5 +182,5 @@ jobs:
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: jazire_fandoqi_v7.5.2_aab
+          name: jazire_fandoqi_v7.5.3_aab
           path: build/app/outputs/bundle/release/app-release.aab

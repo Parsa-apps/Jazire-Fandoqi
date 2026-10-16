@@ -48,6 +48,7 @@ class _GameAccessGateState extends State<GameAccessGate>
   @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_onAccessChanged);
     _floatCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3),
@@ -66,8 +67,23 @@ class _GameAccessGateState extends State<GameAccessGate>
     }
   }
 
+  void _onAccessChanged() {
+    final status = Monetization.accessStatus.value;
+    final isFree = widget.isFree ?? ContentAccessPolicy.isGameFree(widget.gameName);
+    if (!mounted || isFree || _allowed != true ||
+        status == FullVersionAccessStatus.checking || status.isVerified) {
+      return;
+    }
+    _checkGeneration++;
+    setState(() {
+      _allowed = false;
+      _lazyChild = null;
+    });
+  }
+
   @override
   void dispose() {
+    Monetization.accessStatus.removeListener(_onAccessChanged);
     _floatCtrl.dispose();
     super.dispose();
   }

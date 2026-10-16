@@ -21,6 +21,9 @@ class BazaarBilling(
     private val activity: FlutterFragmentActivity,
     publicKey: String,
 ) {
+    private val receiptVerifier = StoreReceiptVerifier(
+        activity.packageName, mapOf(StoreVendor.BAZAAR to publicKey),
+    )
     private var connection: Connection? = null
 
     private val payment: Payment? = publicKey.takeIf { it.isNotBlank() }?.let { key ->
@@ -65,10 +68,11 @@ class BazaarBilling(
                     callback(BillingOutcome.failure("شناسه محصول با رسید فروشگاه هم‌خوان نیست"))
                 } else {
                     callback(
-                        BillingOutcome.success(
-                            token = info.purchaseToken,
-                            orderId = info.orderId,
-                            message = "پرداخت تأیید شد",
+                        receiptVerifier.verify(
+                            StoreVendor.BAZAAR,
+                            info.originalJson,
+                            info.dataSignature,
+                            productId,
                         )
                     )
                 }
@@ -86,13 +90,14 @@ class BazaarBilling(
             querySucceed { purchases ->
                 val active = purchases.firstOrNull { it.productId == productId }
                 if (active == null) {
-                    callback(BillingOutcome.failure("خرید نسخه کامل یافت نشد"))
+                    callback(BillingOutcome.notOwned())
                 } else {
                     callback(
-                        BillingOutcome.success(
-                            token = active.purchaseToken,
-                            orderId = active.orderId,
-                            message = "خرید بازیابی شد",
+                        receiptVerifier.verify(
+                            StoreVendor.BAZAAR,
+                            active.originalJson,
+                            active.dataSignature,
+                            productId,
                         )
                     )
                 }

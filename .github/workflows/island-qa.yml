@@ -94,6 +94,11 @@ jobs:
             lib/features/shop/game_access_gate.dart \
             lib/features/shop/content_lock.dart \
             lib/shared/widgets/animated_gold_lock.dart \
+            lib/core/billing_service.dart \
+            lib/core/monetization.dart \
+            lib/shared/widgets/purchase_access_status.dart \
+            test/core/monetization_test.dart \
+            test/shared/widgets/purchase_access_status_test.dart \
             test/shared/widgets/animated_gold_lock_test.dart \
             test/features/shop/gold_lock_collections_test.dart \
             lib/shared/widgets/island_kit.dart \
@@ -147,6 +152,8 @@ jobs:
           test/features/home/hero_fandoq_test.dart
           test/shared/island_kit_test.dart
           test/shared/widgets/animated_gold_lock_test.dart
+          test/shared/widgets/purchase_access_status_test.dart
+          test/core/monetization_test.dart
           test/features/shop/gold_lock_collections_test.dart
           test/features/games/mini_games/mini_game_scaffold_test.dart
           test/app_smoke_test.dart

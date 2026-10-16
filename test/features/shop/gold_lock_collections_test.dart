@@ -103,6 +103,8 @@ void main() {
       // Only the explicit verified native-store fixture may grant access.
       store.purchaseResponse = PaywallTestStore.verifiedPurchase;
       expect(await Monetization.purchaseFullVersion(), isTrue);
+      await tester.pump();
+      expect(find.byType(AnimatedGoldLock), findsNothing);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpWidget(MaterialApp(home: collection.screen));
       await tester.pump(const Duration(milliseconds: 600));
@@ -139,6 +141,34 @@ void main() {
       ),
     ));
     await tester.pump(const Duration(milliseconds: 600));
+    const expectedLocks = {
+      'حرف اول': false,
+      'کلمه‌ساز': true,
+      'شمارش خوش': false,
+      'جمع تصویری': true,
+      'بزرگ و کوچک': false,
+      'جورچین شکل‌ها': true,
+      'ترکیب رنگ': true,
+      'ترتیب اعداد': false,
+      'متفاوت را پیدا کن': false,
+      'سبد دسته‌بندی': true,
+    };
+    for (final entry in expectedLocks.entries) {
+      await tester.scrollUntilVisible(find.text(entry.key), 220,
+          scrollable: find.byType(Scrollable).last);
+      await tester.pump(const Duration(milliseconds: 50));
+      final card = find.ancestor(
+        of: find.text(entry.key),
+        matching: find.byType(ChildTouchTarget),
+      );
+      expect(find.descendant(
+        of: card,
+        matching: find.byType(AnimatedGoldLock),
+      ), entry.value ? findsOneWidget : findsNothing, reason: entry.key);
+    }
+    await tester.scrollUntilVisible(find.text('کلمه‌ساز'), -220,
+        scrollable: find.byType(Scrollable).last);
+    await tester.pump(const Duration(milliseconds: 200));
     final wordBuilder = find.ancestor(
       of: find.text('کلمه‌ساز'),
       matching: find.byType(ChildTouchTarget),

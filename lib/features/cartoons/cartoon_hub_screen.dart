@@ -47,6 +47,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen>
   @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_onAccessChanged);
     _floatController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 5),
@@ -94,8 +95,15 @@ class _CartoonHubScreenState extends State<CartoonHubScreen>
     }
   }
 
+  void _onAccessChanged() {
+    if (!mounted) return;
+    final has = Monetization.accessStatus.value.isVerified;
+    if (has != _hasFullVersion) setState(() => _hasFullVersion = has);
+  }
+
   @override
   void dispose() {
+    Monetization.accessStatus.removeListener(_onAccessChanged);
     _scrollController
       ..removeListener(_onScroll)
       ..dispose();

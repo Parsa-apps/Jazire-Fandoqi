@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'package:jazireh_fandoghi/core/billing_service.dart';
 import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
 import 'package:jazireh_fandoghi/core/game_data.dart';
 import 'package:jazireh_fandoghi/core/growth/growth_store.dart';
@@ -104,8 +103,8 @@ void main() {
   });
 
   testWidgets('a verified purchaser can enter a premium destination', (tester) async {
-    await Monetization.activateFullVersion(const BillingResult(
-      success: true, purchaseToken: 'verified-test-receipt'));
+    store.purchaseResponse = PaywallTestStore.verifiedPurchase;
+    expect(await Monetization.purchaseFullVersion(), isTrue);
     var mounts = 0;
     var builds = 0;
     await _open(tester, GameAccessGate.lazy(
@@ -118,6 +117,23 @@ void main() {
     await _pump(tester);
     expect(builds, 1);
     expect(mounts, 1);
+    await _dispose(tester);
+  });
+
+  testWidgets('confirmed revocation removes an already-mounted paid destination',
+      (tester) async {
+    store.purchaseResponse = PaywallTestStore.verifiedPurchase;
+    expect(await Monetization.purchaseFullVersion(), isTrue);
+    await _open(tester, GameAccessGate.lazy(
+      gameName: 'حافظه',
+      childBuilder: () => const Scaffold(body: Text('PAID_DESTINATION')),
+    ));
+    expect(find.text('PAID_DESTINATION'), findsOneWidget);
+    store.restoreResponse = PaywallTestStore.notOwned;
+    expect(await Monetization.hasFullVersion(), isFalse);
+    await _pump(tester);
+    expect(find.text('PAID_DESTINATION'), findsNothing);
+    expect(find.byType(AnimatedGoldLock), findsOneWidget);
     await _dispose(tester);
   });
 

@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:jazireh_fandoghi/core/security/secure_store.dart';
+import 'package:jazireh_fandoghi/core/monetization.dart';
 import 'package:jazireh_fandoghi/core/store_vendor.dart';
 import 'package:jazireh_fandoghi/data/datasources/hive_player_store.dart';
 
@@ -10,20 +11,36 @@ import 'package:jazireh_fandoghi/data/datasources/hive_player_store.dart';
 class PaywallTestStore {
   static const billing = MethodChannel('kudake_iran/billing');
   static const secureStore = MethodChannel('kudake_iran/secure_store');
+  // Only this exact pair stands for native RSA verification in Dart tests.
+  // Real signature / tamper / package / state checks run in JVM unit tests.
+  static const signedData = '{"packageName":"com.parsaapps.amoozesh_fandoghi",'
+      '"productId":"full_version","purchaseState":0,'
+      '"purchaseToken":"verified-test-receipt","orderId":"verified-test-order"}';
+  static const signature = 'explicit-native-verified-test-signature';
   static const verifiedPurchase = <String, Object?>{
     'success': true,
+    'status': 'verified',
     'purchaseToken': 'verified-test-receipt',
     'orderId': 'verified-test-order',
+    'productId': 'full_version',
+    'store': 'myket',
+    'purchaseState': 0,
+    'signedData': signedData,
+    'signature': signature,
+  };
+  static const notOwned = <String, Object?>{
+    'success': false,
+    'status': 'not_owned',
+    'message': 'خرید نسخه کامل یافت نشد',
   };
 
   Object? purchaseResponse = const <String, Object?>{
     'success': false,
     'message': 'پرداخت لغو شد',
   };
-  Object? restoreResponse = const <String, Object?>{
-    'success': false,
-    'message': 'خریدی ثبت نشده',
-  };
+  Object? restoreResponse = notOwned;
+  bool rejectReceiptVerification = false;
+  Future<Object?> Function()? restoreOverride;
   bool offline = false;
   final values = <String, String>{};
   final calls = <String>[];
@@ -31,20 +48,39 @@ class PaywallTestStore {
   void install() {
     HivePlayerStore.useMemoryStorage(clear: true);
     SecureStore.resetForTesting();
+    Monetization.resetForTesting();
     StoreDetector.debugOverride(StoreVendor.myket);
     final messenger =
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(billing, (call) async {
       calls.add(call.method);
       if (call.method == 'storeVendor') return 'myket';
+      if (call.method == 'verifyReceipt') {
+        final args = call.arguments as Map;
+        if (!rejectReceiptVerification &&
+            args['signedData'] == signedData &&
+            args['signature'] == signature && args['store'] == 'myket') {
+          return verifiedPurchase;
+        }
+        return <String, Object?>{
+          'success': false,
+          'status': 'invalid_receipt',
+          'message': 'امضای رسید معتبر نیست',
+        };
+      }
       if (offline) throw PlatformException(code: 'offline');
       switch (call.method) {
         case 'purchase':
+          if (identical(purchaseResponse, verifiedPurchase)) {
+            // A real successful transaction also updates the store inventory.
+            restoreResponse = verifiedPurchase;
+          }
           return purchaseResponse;
         case 'restore':
-          return restoreResponse;
+          final override = restoreOverride;
+          return override != null ? await override() : restoreResponse;
         case 'consume':
-          return <String, Object?>{'success': true};
+          return <String, Object?>{'success': true, 'status': 'completed'};
         default:
           return null;
       }
@@ -73,6 +109,7 @@ class PaywallTestStore {
     messenger.setMockMethodCallHandler(secureStore, null);
     StoreDetector.debugOverride(null);
     SecureStore.resetForTesting();
+    Monetization.resetForTesting();
   }
 }
 
