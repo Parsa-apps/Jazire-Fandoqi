@@ -21,6 +21,9 @@ void main() {
   });
 
   test('Bazaar listing points at Cafe Bazaar, never the publisher site', () {
+    expect(StoreListing.hasStorePage(StoreVendor.bazaar), isTrue);
+    expect(StoreVendor.bazaar.supportsBilling, isFalse,
+        reason: 'A support link must not enable Bazaar purchases');
     expect(StoreListing.displayName(StoreVendor.bazaar), 'کافه‌بازار');
     expect(
       StoreListing.detailsDeepLink(StoreVendor.bazaar),

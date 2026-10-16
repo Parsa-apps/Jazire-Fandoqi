@@ -2,12 +2,9 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// 🏪 اپ روی چند فروشگاه (کافه‌بازار، مایکت، …) منتشر می‌شود و یک APK
-/// واحد دارد. کاربرِ مایکت نباید هیچ‌جا اسم کافه‌بازار را ببیند و برعکس.
-///
-/// این تست، **متن‌های قابل‌نمایش** را در کل `lib/` می‌گردد و اگر کسی
-/// دوباره نام یک فروشگاه را داخل رابط کاربری بنویسد، قرمز می‌شود.
-/// کامنت‌ها آزادند: آن‌ها را کاربر نمی‌بیند و برای نگه‌داری کد لازم‌اند.
+/// The production release explicitly uses Myket for payments. Only payment
+/// information, release notes and store support may name it; educational UI
+/// stays neutral and must never promote a competing billing gateway.
 void main() {
   /// نام فروشگاه‌ها به شکلی که ممکن است در متن فارسی بیاید.
   const storeNames = <String>[
@@ -30,7 +27,14 @@ void main() {
   bool hasStringLiteral(String line) =>
       line.contains("'") || line.contains('"');
 
-  test('no store brand name appears in any user-visible string', () {
+  const myketPaymentSurfaces = <String>{
+    'lib/core/billing_service.dart',
+    'lib/core/growth/whats_new.dart',
+    'lib/features/shop/full_version_paywall.dart',
+    'lib/shared/widgets/purchase_access_status.dart',
+  };
+
+  test('store branding stays inside the approved Myket payment and support surfaces', () {
     final offenders = <String>[];
 
     final dartFiles = Directory('lib')
@@ -53,6 +57,11 @@ void main() {
         if (!hasStringLiteral(line)) continue;
         for (final name in storeNames) {
           if (line.contains(name)) {
+            final path = file.path.replaceAll('\\', '/');
+            if ((name == 'مایکت' || name == 'Myket') &&
+                myketPaymentSurfaces.contains(path)) {
+              continue;
+            }
             offenders.add('${file.path}:${i + 1} → $name');
           }
         }
@@ -62,7 +71,7 @@ void main() {
     expect(
       offenders,
       isEmpty,
-      reason: 'نام فروشگاه نباید در متنِ قابل‌نمایش باشد:\n'
+      reason: 'نام فروشگاه خارج از سطح مجاز پرداخت/پشتیبانی آمده است:\n'
           '${offenders.join('\n')}',
     );
   });
@@ -77,9 +86,8 @@ void main() {
     expect(paywall.contains('خرید امن از'), isFalse);
   });
 
-  test('the app never hardcodes a single store gateway in Dart', () {
-    // خرید باید از مسیر انتخاب خودکار درگاه برود، نه صدا زدن مستقیم یک
-    // فروشگاه. (نام متد قدیمیِ openBazaarReview فقط به‌عنوان alias مانده.)
+  test('store support actions still use the native bridge', () {
+    // Review/details links remain native actions, not alternate payment flows.
     final billing = File('lib/core/billing_service.dart').readAsStringSync();
     expect(billing.contains('openStoreReview'), isTrue);
     expect(billing.contains('openStoreDetails'), isTrue);
@@ -87,6 +95,15 @@ void main() {
     final rating = File('lib/core/store_rating_service.dart').readAsStringSync();
     expect(rating.contains('openStoreReview'), isTrue,
         reason: 'امتیازدهی باید به فروشگاه نصب‌کننده برود');
+  });
+
+  test('payment and receipt status explicitly identify Myket, not another gateway', () {
+    final paywall =
+        File('lib/features/shop/full_version_paywall.dart').readAsStringSync();
+    final status =
+        File('lib/shared/widgets/purchase_access_status.dart').readAsStringSync();
+    expect(paywall, contains('در پرداخت مایکت'));
+    expect(status, contains('رسید امضاشدهٔ مایکت تأیید شد'));
   });
 
   test('about screen source never links to the publisher website', () {
