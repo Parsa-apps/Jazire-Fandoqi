@@ -408,16 +408,21 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
           ),
-          const Spacer(),
-          Text(
-            'آکادمی الفبا و اول دبستان 🔤',
-            style: AppFonts.balooBhaijaan2(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
+          const SizedBox(width: 8),
+          Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'آکادمی الفبا و اول دبستان 🔤',
+                style: AppFonts.balooBhaijaan2(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
             ),
           ),
-          const Spacer(),
+          const SizedBox(width: 8),
           Text(
             '${_lessonIndex + 1}/${_currentLessons.length}',
             style: AppFonts.balooBhaijaan2(

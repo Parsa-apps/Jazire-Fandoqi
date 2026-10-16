@@ -116,6 +116,9 @@ jobs:
           flutter test --reporter expanded > test-output.txt 2>&1
           status=$?
           echo "::notice::flutter test (full suite) exit=$status"
+          if [ "$status" -ne 0 ]; then
+            python3 tool/ci_annotate.py 'Full suite failed' test-output.txt
+          fi
           grep -E '\[E\]' test-output.txt | head -30 | while IFS= read -r line; do
             clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
             echo "::error::$clean"

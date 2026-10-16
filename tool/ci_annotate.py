@@ -16,7 +16,7 @@ ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 PROGRESS = re.compile(r"^\d{2}:\d{2} \+\d+")
 INDEX_LINE = re.compile(r"(\[E\]\s*$|timed out|Some tests failed|Test failed\.)")
 DETAIL_MARKER = re.compile(
-    r"(EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK"
+    r"(EXCEPTION CAUGHT BY (?:FLUTTER TEST FRAMEWORK|RENDERING LIBRARY|WIDGETS LIBRARY)"
     r"|^Error:|^.*error •"
     r"|PathNotFoundException"
     r"|Deletion failed)"
@@ -84,7 +84,7 @@ def main():
 
     # 2.5) Failure detail blocks (exception + Expected/Actual + stack), so a
     # red run is diagnosable from annotations alone, without raw logs.
-    for number, block in enumerate(detail_blocks(lines)[:3], start=1):
+    for number, block in enumerate(detail_blocks(lines)[:12], start=1):
         emit(f"{title} — detail [{number}]", block[:CHUNK])
 
     # 3) The whole log, head first (the expanded reporter prints each failure's

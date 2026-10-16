@@ -132,7 +132,7 @@ void main() {
     await tester.tap(find.text('الفبایی سنتی 🔤'));
     await _pump(tester);
     await tester.ensureVisible(find.byType(TextField));
-    await tester.enterText(find.byType(TextField), 'ی');
+    await tester.enterText(find.byType(TextField), 'یخ');
     await _pump(tester);
     final letter = find.byKey(const ValueKey('alphabet_letter_ی'));
     await tester.ensureVisible(letter);
