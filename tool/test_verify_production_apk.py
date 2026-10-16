@@ -43,6 +43,10 @@ class ProductionApkVerificationTest(unittest.TestCase):
         self.rejected(expected_signer="b" * 64)
         self.rejected(signature="no certificates")
 
+    def test_unknown_sdk_console_format_is_not_treated_as_a_signer(self):
+        # Only the API-backed canonical report is consumed by this gate.
+        self.rejected(signature="APK signature verified; no canonical certificate report")
+
     def test_android_debug_key_is_rejected_even_if_digest_matches(self):
         self.rejected(signature=self.inputs()["signature"].replace(
             "CN=Fandoghi", "CN=Android Debug,O=Android,C=US"))

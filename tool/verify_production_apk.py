@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Gate a production Myket APK using aapt/apksigner output, never build labels.
 
-The caller must first run `apksigner verify --print-certs` successfully. This
+The caller must first run apksigner and VerifyApkSigner.java successfully. The
+latter emits a stable report from the verifier's certificate API. This gate
 checks its signer against the configured release key, rejects debug/test-only
 APKs and checks package, version and store permissions before publication.
 """

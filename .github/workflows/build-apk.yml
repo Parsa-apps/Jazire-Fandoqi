@@ -142,8 +142,13 @@ jobs:
           APK="build/app/outputs/flutter-apk/app-myket-release.apk"
           APS="$(ls "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)"
           test -n "$APS" || { echo "apksigner not found under $ANDROID_HOME/build-tools"; exit 1; }
-          "$APS" verify --print-certs "$APK" | tee qa-gate-log/release-signature.txt
-          echo "APK cryptographic signature verified."
+          "$APS" verify --print-certs "$APK"
+          APK_SIGNER_JAR="$(dirname "$APS")/lib/apksigner.jar"
+          test -f "$APK_SIGNER_JAR"
+          java --class-path "$APK_SIGNER_JAR" tool/VerifyApkSigner.java \
+            "$APK" "$RUNNER_TEMP/release-signer.sha256" \
+            | tee qa-gate-log/release-signature.txt
+          echo "APK cryptographic signature and official signer verified."
 
       - name: Build AAB (Release)
         run: flutter build appbundle --release --flavor myket
