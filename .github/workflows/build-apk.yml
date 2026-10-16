@@ -191,7 +191,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: jazire_fandoqi_v7.5.5_myket_production_apk
+          name: jazire_fandoqi_v7.5.6_myket_production_apk
           path: |
             build/app/outputs/flutter-apk/app-myket-release.apk
             build/app/outputs/flutter-apk/build-info.txt
@@ -208,5 +208,5 @@ jobs:
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: jazire_fandoqi_v7.5.5_myket_production_aab
+          name: jazire_fandoqi_v7.5.6_myket_production_aab
           path: build/app/outputs/bundle/myketRelease/app-myket-release.aab

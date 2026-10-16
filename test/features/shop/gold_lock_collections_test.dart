@@ -65,8 +65,22 @@ void main() {
 
       await tester.pumpWidget(MaterialApp(home: collection.screen));
       await tester.pump(const Duration(milliseconds: 600));
+      // ۲ قفلِ غیرِسکو متعلق به مسیر خریدِ همیشه‌نویدبار است: چیپ طلایی
+      // «خرید» نوار بالا + کارت خرید پایین صفحه. قفلِ سکوها همان نیمهٔ پولی
+      // می‌ماند و این تست حضورِ راه خرید را هم گارت می‌کند.
+      const entryLocks = 2;
+      expect(
+        find.byKey(const ValueKey('hub_purchase_button')),
+        findsOneWidget,
+        reason: 'دکمهٔ خرید نسخهٔ کامل باید در هاب دیده شود',
+      );
+      expect(
+        find.byKey(const ValueKey('full_version_purchase_entry')),
+        findsOneWidget,
+        reason: 'کارت خرید نسخهٔ کامل باید پایین هاب دیده شود',
+      );
       expect(find.byType(AnimatedGoldLock),
-          findsNWidgets(collection.total - collection.total ~/ 2));
+          findsNWidgets(collection.total - collection.total ~/ 2 + entryLocks));
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
     });
@@ -82,8 +96,11 @@ void main() {
       await tester.pumpWidget(MaterialApp(home: collection.screen));
       await tester.pump(const Duration(milliseconds: 600));
       final freeCount = collection.total ~/ 2;
+      // قفل‌های دو مسیر خرید همیشه‌نویدبار (چیپ بالا + کارت پایین) جمع می‌شوند؛
+      // گارتِ دقیقِ نیمهٔ پولی، پایین‌تر روی تک‌تک سکوها اعمال می‌شود.
+      const entryLocks = 2;
       expect(find.byType(AnimatedGoldLock),
-          findsNWidgets(collection.total - freeCount));
+          findsNWidgets(collection.total - freeCount + entryLocks));
       for (var i = 0; i < collection.total; i++) {
         final platform = find.byKey(
           ValueKey('${collection.prefix}_platform_$i'),

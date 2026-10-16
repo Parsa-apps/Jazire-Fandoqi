@@ -36,6 +36,10 @@ void main() {
       ),
     );
     await tester.pump(const Duration(milliseconds: 600));
+    // حباب خوش‌آمدِ فندقی ۵ ثانیه‌ای است؛ قبل از لمس‌ها منقضی‌اش می‌کنیم
+    // تا هیچ درهم‌پوشانی با دکمهٔ خرید باقی نماند.
+    await tester.pump(const Duration(seconds: 6));
+    FandoghiCoach.clear();
     FandoghiCoach.disablePersistentPresence();
   }
 
