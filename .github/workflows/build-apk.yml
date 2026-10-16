@@ -73,14 +73,23 @@ jobs:
           echo "Release signing configured from GitHub Secrets."
 
       - name: Paywall regression gate
-        run: >-
-          flutter test --reporter expanded
-          test/core/monetization_test.dart
-          test/core/content_access_policy_test.dart
-          test/core/half_free_rule_test.dart
-          test/core/decodable_stories_test.dart
-          test/core/paid_route_guard_test.dart
-          test/features/shop/content_lock_test.dart
+        run: |
+          mkdir -p qa-gate-log
+          set +e
+          flutter test --reporter expanded \
+            test/core/monetization_test.dart \
+            test/core/content_access_policy_test.dart \
+            test/core/half_free_rule_test.dart \
+            test/core/decodable_stories_test.dart \
+            test/core/paid_route_guard_test.dart \
+            test/features/shop/content_lock_test.dart \
+            > qa-gate-log/paywall-regression.log 2>&1
+          status=$?
+          cat qa-gate-log/paywall-regression.log
+          if [ "$status" -ne 0 ]; then
+            python3 tool/ci_annotate.py 'Paywall regression failed' qa-gate-log/paywall-regression.log
+          fi
+          exit "$status"
 
       - name: Build APK (Release)
         run: flutter build apk --release
@@ -97,6 +106,17 @@ jobs:
 
       - name: Build AAB (Release)
         run: flutter build appbundle --release
+
+      - name: Verify release APK is not debuggable
+        run: |
+          set -euo pipefail
+          AAPT="$(ls "$ANDROID_HOME"/build-tools/*/aapt 2>/dev/null | sort -V | tail -1)"
+          test -n "$AAPT"
+          "$AAPT" dump badging build/app/outputs/flutter-apk/app-release.apk > build/app/outputs/flutter-apk/apk-info.txt
+          if grep -q '^application-debuggable' build/app/outputs/flutter-apk/apk-info.txt; then
+            echo '::error::The deliverable must be a non-debuggable release APK.'
+            exit 1
+          fi
 
       - name: Record APK build identity
         run: |
