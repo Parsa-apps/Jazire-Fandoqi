@@ -126,9 +126,12 @@ void main() {
     await _open(tester, const ProviderScope(child: StageMapScreen()));
     final sixth = find.byKey(const ValueKey('stage_payment_lock_6'));
     expect(tester.widget<LockedCardOverlay>(sixth).locked, isTrue);
-    await tester.ensureVisible(sixth);
+    // The map has a fixed top bar. Align the node below it, not at y=0.
+    await Scrollable.ensureVisible(tester.element(sixth), alignment: 0.4);
     await _pump(tester);
-    await tester.tap(find.descendant(of: sixth, matching: find.byType(PremiumStageNode)));
+    final node = find.descendant(of: sixth, matching: find.byType(PremiumStageNode));
+    expect(node.hitTestable(), findsOneWidget);
+    await tester.tap(node.hitTestable());
     await _pump(tester);
     expect(find.text('خرید نسخه کامل'), findsOneWidget);
     expect(GameData.currentStage, 6);
