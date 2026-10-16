@@ -168,11 +168,14 @@ jobs:
         run: |
           mkdir -p qa-gate-log
           set +e
-          (cd android && ./gradlew testMyketReleaseUnitTest --console=plain) > qa-gate-log/native-receipts.log 2>&1
+          (cd android && ./gradlew --no-daemon testMyketReleaseUnitTest --console=plain) > qa-gate-log/native-receipts.log 2>&1
           status=$?
           cat qa-gate-log/native-receipts.log
           if [ "$status" -ne 0 ]; then
             python3 tool/ci_annotate.py 'Native production tests failed' qa-gate-log/native-receipts.log
+            # ۴۰ خطِ آخر جداگانه، چون annotationهای بلندِ گیت‌هاب در ~۴KB بریده می‌شوند
+            tail -n 40 qa-gate-log/native-receipts.log > qa-gate-log/native-tail.log
+            python3 tool/ci_annotate.py 'Native tail (last 40 lines)' qa-gate-log/native-tail.log
           fi
           exit "$status"
 

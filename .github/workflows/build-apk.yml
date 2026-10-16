@@ -110,17 +110,30 @@ jobs:
           exit "$status"
 
       - name: Build APK (Release)
-        run: flutter build apk --release --flavor myket
+        run: |
+          mkdir -p qa-gate-log
+          set +e
+          flutter build apk --release --flavor myket > qa-gate-log/apk-build.log 2>&1
+          status=$?
+          tail -n 40 qa-gate-log/apk-build.log
+          if [ "$status" -ne 0 ]; then
+            python3 tool/ci_annotate.py 'APK build tail (last 40 lines)' qa-gate-log/apk-tail.log 2>/dev/null || true
+            tail -n 40 qa-gate-log/apk-build.log > qa-gate-log/apk-tail.log
+            python3 tool/ci_annotate.py 'APK build tail (last 40 lines)' qa-gate-log/apk-tail.log
+          fi
+          exit "$status"
 
       - name: Native production and Myket receipt tests
         run: |
           mkdir -p qa-gate-log
           set +e
-          (cd android && ./gradlew testMyketReleaseUnitTest --console=plain) > qa-gate-log/native-receipts.log 2>&1
+          (cd android && ./gradlew --no-daemon testMyketReleaseUnitTest --console=plain) > qa-gate-log/native-receipts.log 2>&1
           status=$?
           cat qa-gate-log/native-receipts.log
           if [ "$status" -ne 0 ]; then
             python3 tool/ci_annotate.py 'Native receipt tests failed' qa-gate-log/native-receipts.log
+            tail -n 40 qa-gate-log/native-receipts.log > qa-gate-log/native-tail.log
+            python3 tool/ci_annotate.py 'Native tail (last 40 lines)' qa-gate-log/native-tail.log
           else
             python3 - <<'PYTEST'
           from pathlib import Path
