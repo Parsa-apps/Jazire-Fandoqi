@@ -10,14 +10,25 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      # When KEYSTORE_B64 is present the release is signed with the project's
-      # release key; when absent the build still succeeds (debug-signed,
-      # non-publishable). See android/app/build.gradle + KEYSTORE_ROTATION_GUIDE.md.
+      # A production release requires the official key. Missing credentials
+      # fail the job; this workflow never falls back to a test/debug APK.
       KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Require production signing
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASSWORD" || {
+            echo '::error::Official release signing is required; no test APK will be produced.'
+            exit 1
+          }
+
+      - name: Production APK policy tests
+        run: python3 -m unittest discover -s tool -p 'test_verify_production_apk.py' -v
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -51,7 +62,6 @@ jobs:
         run: flutter pub get
 
       - name: Configure release signing
-        if: ${{ env.KEYSTORE_B64 != '' }}
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
@@ -70,29 +80,120 @@ jobs:
             echo "keyPassword=${KEYSTORE_PASSWORD}"
           } > android/key.properties
           chmod 600 android/key.properties
-          echo "Release signing configured from GitHub Secrets."
+          keytool -exportcert -alias fandoghi -keystore android/release.keystore \
+            -storepass:env KEYSTORE_PASSWORD | sha256sum | awk '{print $1}' \
+            > "$RUNNER_TEMP/release-signer.sha256"
+          echo "Official release signing configured."
+
+      - name: Paywall regression gate
+        run: |
+          mkdir -p qa-gate-log
+          set +e
+          flutter test --reporter expanded \
+            test/core/monetization_test.dart \
+            test/core/store_vendor_test.dart \
+            test/core/content_access_policy_test.dart \
+            test/core/half_free_rule_test.dart \
+            test/core/decodable_stories_test.dart \
+            test/core/paid_route_guard_test.dart \
+            test/features/shop/content_lock_test.dart \
+            test/features/shop/gold_lock_collections_test.dart \
+            test/shared/widgets/animated_gold_lock_test.dart \
+            test/shared/widgets/purchase_access_status_test.dart \
+            > qa-gate-log/paywall-regression.log 2>&1
+          status=$?
+          cat qa-gate-log/paywall-regression.log
+          if [ "$status" -ne 0 ]; then
+            python3 tool/ci_annotate.py 'Paywall regression failed' qa-gate-log/paywall-regression.log
+          fi
+          exit "$status"
 
       - name: Build APK (Release)
-        run: flutter build apk --release
+        run: flutter build apk --release --flavor myket
+
+      - name: Native production and Myket receipt tests
+        run: |
+          mkdir -p qa-gate-log
+          set +e
+          (cd android && ./gradlew testMyketReleaseUnitTest --console=plain) > qa-gate-log/native-receipts.log 2>&1
+          status=$?
+          cat qa-gate-log/native-receipts.log
+          if [ "$status" -ne 0 ]; then
+            python3 tool/ci_annotate.py 'Native receipt tests failed' qa-gate-log/native-receipts.log
+          else
+            python3 - <<'PYTEST'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          suites = [ET.parse(p).getroot() for p in Path('build/app/test-results/testMyketReleaseUnitTest').glob('TEST-*.xml')]
+          assert len(suites) >= 2, 'Expected receipt and production-build policy test results'
+          total = sum(int(s.attrib['tests']) for s in suites)
+          failed = sum(int(s.attrib['failures']) + int(s.attrib['errors']) for s in suites)
+          skipped = sum(int(s.attrib.get('skipped', 0)) for s in suites)
+          assert failed == 0 and skipped == 0 and total > 0
+          print(f'::notice::Native production / Myket RSA tests: {total} passed')
+          PYTEST
+            status=$?
+          fi
+          exit "$status"
 
       - name: Verify release signing (APK)
-        if: ${{ env.KEYSTORE_B64 != '' }}
         run: |
           set -euo pipefail
-          APK="build/app/outputs/flutter-apk/app-release.apk"
+          APK="build/app/outputs/flutter-apk/app-myket-release.apk"
           APS="$(ls "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)"
           test -n "$APS" || { echo "apksigner not found under $ANDROID_HOME/build-tools"; exit 1; }
           "$APS" verify --print-certs "$APK"
-          echo "APK verified: signed with the release certificate."
+          APK_SIGNER_JAR="$(dirname "$APS")/lib/apksigner.jar"
+          test -f "$APK_SIGNER_JAR"
+          java --class-path "$APK_SIGNER_JAR" tool/VerifyApkSigner.java \
+            "$APK" "$RUNNER_TEMP/release-signer.sha256" \
+            | tee qa-gate-log/release-signature.txt
+          echo "APK cryptographic signature and official signer verified."
 
       - name: Build AAB (Release)
-        run: flutter build appbundle --release
+        run: flutter build appbundle --release --flavor myket
+
+      - name: Verify official production Myket APK
+        run: |
+          set -euo pipefail
+          AAPT="$(ls "$ANDROID_HOME"/build-tools/*/aapt 2>/dev/null | sort -V | tail -1)"
+          test -n "$AAPT"
+          "$AAPT" dump badging build/app/outputs/flutter-apk/app-myket-release.apk > qa-gate-log/apk-info.txt
+          "$AAPT" dump xmltree build/app/outputs/flutter-apk/app-myket-release.apk AndroidManifest.xml > qa-gate-log/manifest.txt
+          python3 tool/verify_production_apk.py \
+            --pubspec pubspec.yaml --badging qa-gate-log/apk-info.txt \
+            --manifest qa-gate-log/manifest.txt --signature qa-gate-log/release-signature.txt \
+            --expected-signer "$RUNNER_TEMP/release-signer.sha256"
+
+      - name: Record APK build identity
+        run: |
+          set -euo pipefail
+          {
+            echo "version=$(sed -n 's/^version: //p' pubspec.yaml)"
+            echo "commit=${GITHUB_SHA}"
+            echo "build_mode=release"
+            echo "distribution=production_only"
+            echo "debuggable=false"
+            echo "test_only=false"
+            echo "release_certificate=matched"
+            echo "store=myket"
+            echo "paywall_regression_gate=passed"
+            echo "animated_gold_lock_tests=passed"
+            echo "native_rsa_receipt_tests=passed"
+            echo "native_production_policy_tests=passed"
+            echo "full_version_store=myket_only"
+            echo "entitlement_receipt_schema=2"
+            sha256sum build/app/outputs/flutter-apk/app-myket-release.apk
+          } > build/app/outputs/flutter-apk/build-info.txt
+          cat build/app/outputs/flutter-apk/build-info.txt
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: jazire_fandoqi_v7.5.0_apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: jazire_fandoqi_v7.5.4_myket_production_apk
+          path: |
+            build/app/outputs/flutter-apk/app-myket-release.apk
+            build/app/outputs/flutter-apk/build-info.txt
 
       - name: Upload QA gate log
         if: failure()
@@ -106,5 +207,5 @@ jobs:
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: jazire_fandoqi_v7.5.0_aab
-          path: build/app/outputs/bundle/release/app-release.aab
+          name: jazire_fandoqi_v7.5.4_myket_production_aab
+          path: build/app/outputs/bundle/myketRelease/app-myket-release.aab

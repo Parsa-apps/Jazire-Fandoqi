@@ -66,8 +66,21 @@ class _AnimalEncyclopediaState extends State<AnimalEncyclopediaScreen> {
   }
 
   @override
+  void dispose() {
+    Monetization.accessStatus.removeListener(_syncFullVersionAccess);
+    super.dispose();
+  }
+
+  void _syncFullVersionAccess() {
+    if (!mounted) return;
+    final has = Monetization.accessStatus.value.isVerified;
+    if (has != _hasFullVersion) setState(() => _hasFullVersion = has);
+  }
+
+  @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_syncFullVersionAccess);
     FandoghiCoach.enablePersistentPresence();
     _refreshEntitlement();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -87,6 +100,13 @@ class _AnimalEncyclopediaState extends State<AnimalEncyclopediaScreen> {
           child: Column(
             children: [
               _buildTopBar(topic.cards.length),
+              ContentAccessNotice(
+                featureName: 'حیوانات ایران',
+                freeCount: topic.cards.length ~/ 2,
+                totalCount: topic.cards.length,
+                hasFullVersion: _hasFullVersion,
+                onUnlocked: _refreshEntitlement,
+              ),
               _buildFilterBar(),
               Expanded(
                 child: GridView.builder(

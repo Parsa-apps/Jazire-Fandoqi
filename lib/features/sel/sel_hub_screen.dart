@@ -47,9 +47,16 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
     _Emotion(id: 'calm', name: 'آرامش', emoji: '😌', color: Color(0xFF00B894), story: 'فندقی روی چمن نشست، چشم‌هایش را بست و به صدای پرنده‌ها گوش داد.', tip: 'آرامش را با نفس عمیق و گوش دادن به صدای طبیعت پیدا کن 🌿'),
   ];
 
+  void _syncFullVersionAccess() {
+    if (!mounted) return;
+    final has = Monetization.accessStatus.value.isVerified;
+    if (has != _hasFullVersion) setState(() => _hasFullVersion = has);
+  }
+
   @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_syncFullVersionAccess);
     _breathCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 4000));
     FandoghiCoach.enablePersistentPresence();
     _refreshEntitlement();
@@ -64,6 +71,7 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    Monetization.accessStatus.removeListener(_syncFullVersionAccess);
     _breathCtrl.dispose();
     FandoghiCoach.clear();
     super.dispose();
@@ -163,6 +171,13 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
           child: Column(
             children: [
               _buildTopBar(),
+              ContentAccessNotice(
+                featureName: 'احساسات',
+                freeCount: _emotions.length ~/ 2,
+                totalCount: _emotions.length,
+                hasFullVersion: _hasFullVersion,
+                onUnlocked: _refreshEntitlement,
+              ),
               Expanded(
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),

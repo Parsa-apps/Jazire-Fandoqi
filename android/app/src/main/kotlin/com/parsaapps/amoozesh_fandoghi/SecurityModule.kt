@@ -159,7 +159,7 @@ class SecurityModule(private val context: Context) {
 
     /** SHA-256 (hex, lowercase) of the signing certificate of the installed APK. */
     @SuppressLint("NewApi")
-    private fun signingCertificateSha256(): String {
+    internal fun signingCertificateSha256(): String {
         return try {
             val pm = context.packageManager
             val packageName = context.packageName

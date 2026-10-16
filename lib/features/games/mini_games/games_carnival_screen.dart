@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:jazireh_fandoghi/shared/widgets/animated_gold_lock.dart';
 
 import '../../../app/app_colors.dart';
 import '../../../app/app_fonts.dart';
@@ -134,6 +135,7 @@ class _GamesCarnivalScreenState extends State<GamesCarnivalScreen> {
   @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_onAccessChanged);
     FandoghiCoach.enablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -144,8 +146,18 @@ class _GamesCarnivalScreenState extends State<GamesCarnivalScreen> {
     });
   }
 
+  void _onAccessChanged() {
+    if (!mounted) return;
+    final status = Monetization.accessStatus.value;
+    setState(() {
+      _hasFullVersion = status.isVerified;
+      _checkedPurchase = status != FullVersionAccessStatus.checking;
+    });
+  }
+
   @override
   void dispose() {
+    Monetization.accessStatus.removeListener(_onAccessChanged);
     FandoghiCoach.clear();
     super.dispose();
   }
@@ -431,8 +443,8 @@ class _LockBadge extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFB300),
-            borderRadius: BorderRadius.circular(99),
+            color: const Color(0xFFFFF4CE),
+            borderRadius: BorderRadius.circular(18),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x33000000),
@@ -441,15 +453,15 @@ class _LockBadge extends StatelessWidget {
               ),
             ],
           ),
-          child: const Row(
+          child: const Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.lock_rounded, color: Colors.white, size: 15),
-              SizedBox(width: 5),
+              AnimatedGoldLock(size: 44),
+              SizedBox(height: 4),
               Text(
                 'نسخه کامل',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF714716),
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                 ),

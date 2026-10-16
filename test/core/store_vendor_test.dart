@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 import 'package:jazireh_fandoghi/core/store_vendor.dart';
 
 void main() {
@@ -73,9 +74,55 @@ void main() {
     });
   });
 
+  group('actual native bridge detection in every build mode', () {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    const channel = MethodChannel('kudake_iran/billing');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+
+    setUp(() => StoreDetector.debugOverride(null));
+    tearDown(() {
+      messenger.setMockMethodCallHandler(channel, null);
+      StoreDetector.debugOverride(null);
+    });
+
+    test('debug also reads the native vendor and caches the real decision', () async {
+      var calls = 0;
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        calls++;
+        expect(call.method, 'storeVendor');
+        return 'myket';
+      });
+      expect(await StoreDetector.detect(), StoreVendor.myket);
+      expect(await StoreDetector.detect(), StoreVendor.myket);
+      expect(calls, 1);
+    });
+
+    test('native unknown is never automatically replaced with Bazaar', () async {
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        expect(call.method, 'storeVendor');
+        return 'unknown';
+      });
+      expect(await StoreDetector.detect(), StoreVendor.unknown);
+    });
+
+    test('unrecognized native response uses the actual installer fallback', () async {
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        return call.method == 'installerPackage' ? StoreDetector.myketPackage : null;
+      });
+      expect(await StoreDetector.detect(), StoreVendor.myket);
+    });
+
+    test('missing native plugin stays unknown, including debug', () async {
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        throw MissingPluginException();
+      });
+      expect(await StoreDetector.detect(), StoreVendor.unknown);
+    });
+  });
+
   group('billing availability', () {
-    test('only known stores can take a payment', () {
-      expect(StoreVendor.bazaar.supportsBilling, isTrue);
+    test('only Myket can take a payment in the production release', () {
+      expect(StoreVendor.bazaar.supportsBilling, isFalse);
       expect(StoreVendor.myket.supportsBilling, isTrue);
       // بدون فروشگاه، خرید باید محترمانه رد شود نه اینکه خطای مبهم بدهد.
       expect(StoreVendor.unknown.supportsBilling, isFalse);

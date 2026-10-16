@@ -5,63 +5,82 @@ import 'package:flutter/services.dart';
 
 import 'store_vendor.dart';
 
-/// نتیجه یک عملیات پرداخت
-///
-/// [success] فقط زمانی true است که فروشگاه خرید را تایید کرده باشد.
-/// تا وقتی [success] true نشده، نباید هیچ دسترسی ویژه‌ای در اپ فعال شود.
-class BillingResult {
-  final bool success;
-  final String? purchaseToken;
-  final String? orderId;
-  final String message;
+/// Distinguish a confirmed empty inventory from a temporarily unavailable store.
+enum BillingStatus {
+  verified, notOwned, unavailable, invalidReceipt, completed, untrustedBuild,
+}
 
+/// A token or success flag alone is never proof of ownership. Signed receipt
+/// data must also have passed the native RSA / package / product / state check.
+class BillingResult {
   const BillingResult({
     required this.success,
     this.purchaseToken,
     this.orderId,
     this.message = '',
+    this.status = BillingStatus.unavailable,
+    this.productId,
+    this.store,
+    this.purchaseState,
+    this.signedData,
+    this.signature,
+    this.releaseVerified = false,
   });
 
-  const BillingResult.failure(this.message)
-      : success = false,
-        purchaseToken = null,
-        orderId = null;
-
-  const BillingResult.sandbox()
-      : success = true,
+  const BillingResult.failure(
+    this.message, {
+    this.status = BillingStatus.unavailable,
+  })  : success = false,
         purchaseToken = null,
         orderId = null,
-        message = 'خرید آزمایشی (حالت سندباکس)';
+        productId = null,
+        store = null,
+        purchaseState = null,
+        signedData = null,
+        signature = null,
+        releaseVerified = false;
+
+  final bool success;
+  final String? purchaseToken;
+  final String? orderId;
+  final String message;
+  final BillingStatus status;
+  final String? productId;
+  final String? store;
+  final int? purchaseState;
+  final String? signedData;
+  final String? signature;
+  final bool releaseVerified;
+
+  bool get hasStoreReceipt =>
+      success &&
+      releaseVerified &&
+      status == BillingStatus.verified &&
+      purchaseState == 0 &&
+      store == 'myket' &&
+      (productId?.trim().isNotEmpty ?? false) &&
+      (signedData?.trim().isNotEmpty ?? false) &&
+      (signature?.trim().isNotEmpty ?? false) &&
+      (purchaseToken?.trim().isNotEmpty ?? false) &&
+      purchaseToken!.trim() != 'sandbox-token';
+
+  bool hasReceiptFor(String expectedProductId) =>
+      hasStoreReceipt && productId == expectedProductId;
+
+  bool get hasMyketFullVersionReceipt =>
+      hasReceiptFor(BillingService.fullVersionProductId) && store == 'myket';
 }
 
-/// پل ارتباطی با سیستم پرداخت درون‌برنامه‌ای فروشگاه‌های ایرانی
-///
-/// 🏪 چند-فروشگاهی: اپ هنگام اجرا تشخیص می‌دهد از کدام فروشگاه نصب شده
-/// (`StoreDetector`) و لایهٔ نیتیو همان درگاه را صدا می‌زند — کافه‌بازار
-/// با Poolakey و مایکت با Myket Billing Client. کاربر هیچ‌وقت نام
-/// فروشگاه را نمی‌بیند و چیزی انتخاب نمی‌کند.
-///
-/// ارتباط از طریق MethodChannel با نام `kudake_iran/billing` انجام می‌شود.
-/// ماژول نیتیو اندروید باید این متودها را پیاده‌سازی کند:
-///
-/// 1. `purchase`: ورودی `{productId: String, consumable: bool}`
-///    خروجی: `{success: bool, purchaseToken: String?, orderId: String?, message: String?}`
-/// 2. `consume`: ورودی `{purchaseToken: String}` برای مصرف‌کردنی‌ها
-/// 3. `restore`: بدون ورودی؛ نتیجه‌ی یک اشتراک معتبر فعلی را با همان قالب
-///    `purchase` برمی‌گرداند (یا `success: false` اگر خریدی نیست)
-///
-/// در حالت توسعه (یا وقتی ماژول نیتیو نصب نیست) اگر [sandboxFallback]
-/// فعال باشد، خریدها به‌صورت آزمایشی موفق در نظر گرفته می‌شوند تا کل
-/// فلوی خرید قابل تست باشد. قبل از انتشار نسخه نهایی باید:
-///   1. ماژول نیتیو متصل شود
-///   2. بیلد release واقعی ساخته شود؛ fallback در release به‌صورت compile-time خاموش است
+/// Production Myket billing bridge. Native validates the APK's release
+/// certificate before purchase, restore or offline receipt verification.
+/// A completed purchase needs signed data, product/package/state validation
+/// and native release attestation; debug/demo/local flags never unlock it.
+/// Unit/widget tests provide explicit channel mocks outside the shipped app.
 class BillingService {
   BillingService._();
 
   static const MethodChannel _channel = MethodChannel('kudake_iran/billing');
-
-  /// سندباکس فقط در debug فعال است و از کد release قابل روشن‌کردن نیست.
-  static bool get sandboxFallback => !kReleaseMode;
+  static const String fullVersionProductId = 'full_version';
 
   /// خرید دائمی و غیرمصرف‌شدنی نسخه کامل.
   static Future<BillingResult> purchaseNonConsumable(String productId) {
@@ -76,9 +95,7 @@ class BillingService {
   /// خرید آیتم مصرف‌شدنی مثل بسته سکه یا ستاره
   static Future<BillingResult> purchaseConsumable(String productId) async {
     final result = await _invoke('purchase', productId, consumable: true);
-    if (kReleaseMode &&
-        result.success &&
-        (result.purchaseToken == null || result.purchaseToken!.isEmpty)) {
+    if (result.success && !result.hasStoreReceipt) {
       return const BillingResult.failure('توکن خرید مصرف‌شدنی دریافت نشد');
     }
     return result;
@@ -86,7 +103,43 @@ class BillingService {
 
   /// بازیابی خریدهای قبلی کاربر
   static Future<BillingResult> restorePurchases() {
-    return _invoke('restore', '');
+    return _invoke('restore', fullVersionProductId);
+  }
+
+  /// Verify a saved signed receipt locally, without an inventory/network call.
+  /// The native bridge chooses the build's store key and requires full_version,
+  /// this app's package and purchaseState == 0. Old cached flags cannot pass.
+  static Future<BillingResult> verifyFullVersionReceipt({
+    required String signedData,
+    required String signature,
+    required String store,
+  }) async {
+    if (store != 'myket') {
+      return const BillingResult.failure(
+        'نسخهٔ کامل فقط با رسید معتبر مایکت فعال می‌شود',
+        status: BillingStatus.invalidReceipt,
+      );
+    }
+    try {
+      final raw = await _channel.invokeMethod<Object?>(
+        'verifyReceipt',
+        <String, Object?>{
+          'signedData': signedData,
+          'signature': signature,
+          'store': store,
+        },
+      );
+      return _parse(
+        raw,
+        expectedProductId: fullVersionProductId,
+        expectedStore: store,
+      );
+    } catch (_) {
+      return const BillingResult.failure(
+        'تأیید رسید ذخیره‌شده ممکن نیست؛ بازیابی خرید را انجام دهید',
+        status: BillingStatus.invalidReceipt,
+      );
+    }
   }
 
   /// مصرف‌کردن خرید مصرف‌شدنی. موجودی فقط بعد از موفقیت این متد باید
@@ -102,7 +155,6 @@ class BillingService {
       );
       return _parse(raw, requireReceipt: false);
     } on MissingPluginException {
-      if (sandboxFallback) return const BillingResult.sandbox();
       return const BillingResult.failure('سرویس پرداخت استور در دسترس نیست');
     } on PlatformException catch (e) {
       return BillingResult.failure(e.message ?? 'تأیید خرید انجام نشد');
@@ -119,8 +171,8 @@ class BillingService {
     final result = await _run(method, productId, consumable: consumable);
     // لاگ تشخیصی برای دیباگ روی دستگاه (logcat)؛ توکن/رسید خرید هرگز لاگ
     // نمی‌شود. اگر خرید یا بازیابی «بی‌صدا» شکست خورد، ردپای آن این‌جاست.
-    debugPrint('[Billing] $method → success=${result.success}'
-        '${result.message.isEmpty ? '' : ' | ${result.message}'}');
+    debugPrint('[Billing] $method → success=${result.success} '
+        'status=${result.status.name}');
     return result;
   }
 
@@ -132,13 +184,11 @@ class BillingService {
     if (method != 'restore' && productId.trim().isEmpty) {
       return const BillingResult.failure('شناسه محصول نامعتبر است');
     }
-    // اگر اپ از فروشگاه پشتیبانی‌شده نصب نشده باشد (نصب مستقیم APK)،
-    // هیچ درگاه پرداختی وجود ندارد. به‌جای خطای مبهم استور، پیام روشن
-    // می‌دهیم. در debug این بررسی رد می‌شود تا سندباکس کار کند.
-    if (kReleaseMode && !(await StoreDetector.detect()).supportsBilling) {
+    final vendor = await StoreDetector.detect();
+    if (!vendor.supportsBilling) {
       return const BillingResult.failure(
-        'این نسخه از فروشگاه رسمی نصب نشده است؛ برای خرید، برنامه را از '
-        'فروشگاهی که آن را دریافت کرده‌اید نصب کنید.',
+        'خرید و فعال‌سازی فقط در نسخهٔ رسمی انتشار مایکت امکان‌پذیر است',
+        status: BillingStatus.untrustedBuild,
       );
     }
     try {
@@ -157,14 +207,16 @@ class BillingService {
         invocation = invocation.timeout(const Duration(seconds: 25));
       }
       final dynamic raw = await invocation;
-      return _parse(raw);
+      return _parse(
+        raw,
+        expectedProductId: productId,
+        expectedStore: vendor.name,
+      );
     } on TimeoutException {
       return const BillingResult.failure(
         'پاسخ فروشگاه به‌موقع نرسید؛ اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.',
       );
     } on MissingPluginException {
-      // ماژول نیتیو استور نصب نیست؛ در حالت توسعه خرید آزمایشی موفق است
-      if (sandboxFallback) return const BillingResult.sandbox();
       return const BillingResult.failure('سرویس پرداخت استور در دسترس نیست');
     } on PlatformException catch (e) {
       // استور خطا داده (انصراف کاربر، قطع اینترنت، موجودی ناکافی و...)
@@ -207,33 +259,54 @@ class BillingService {
   /// نمایش/پنهان‌کردن دکمهٔ امتیازدهی).
   static Future<StoreVendor> currentVendor() => StoreDetector.detect();
 
-  static BillingResult _parse(dynamic raw, {bool requireReceipt = true}) {
-    if (raw is Map) {
-      final success = raw['success'] == true;
-      final message = raw['message']?.toString() ?? '';
-      if (success) {
-        final token = raw['purchaseToken']?.toString();
-        final orderId = raw['orderId']?.toString();
-        // A release purchase is not trusted without a store receipt/token.
-        // Debug sandbox responses are the only permitted exception.
-        if (kReleaseMode &&
-            requireReceipt &&
-            (token == null || token.isEmpty) &&
-            (orderId == null || orderId.isEmpty)) {
-          return const BillingResult.failure('رسید خرید از استور دریافت نشد');
-        }
-        return BillingResult(
-          success: true,
-          purchaseToken: token,
-          orderId: orderId,
-          message: message,
-        );
-      }
+  static BillingResult _parse(
+    dynamic raw, {
+    bool requireReceipt = true,
+    String? expectedProductId,
+    String? expectedStore,
+  }) {
+    if (raw is! Map) {
+      return const BillingResult.failure('پاسخ نامعتبر از سرویس پرداخت');
+    }
+    final message = raw['message'] is String ? raw['message'] as String : '';
+    final status = switch (raw['status']) {
+      'verified' => BillingStatus.verified,
+      'not_owned' => BillingStatus.notOwned,
+      'invalid_receipt' => BillingStatus.invalidReceipt,
+      'completed' => BillingStatus.completed,
+      'untrusted_build' => BillingStatus.untrustedBuild,
+      _ => BillingStatus.unavailable,
+    };
+    if (raw['success'] != true) {
       return BillingResult.failure(
         message.isEmpty ? 'پرداخت انجام نشد' : message,
+        status: status,
       );
     }
-    if (sandboxFallback) return const BillingResult.sandbox();
-    return const BillingResult.failure('پاسخ نامعتبر از سرویس پرداخت');
+    final result = BillingResult(
+      success: true,
+      purchaseToken: raw['purchaseToken'] is String
+          ? raw['purchaseToken'] as String : null,
+      orderId: raw['orderId'] is String ? raw['orderId'] as String : null,
+      message: message,
+      status: status,
+      productId: raw['productId'] is String ? raw['productId'] as String : null,
+      store: raw['store'] is String ? raw['store'] as String : null,
+      purchaseState: raw['purchaseState'] is int
+          ? raw['purchaseState'] as int : null,
+      signedData: raw['signedData'] is String ? raw['signedData'] as String : null,
+      signature: raw['signature'] is String ? raw['signature'] as String : null,
+      releaseVerified: raw['releaseVerified'] == true,
+    );
+    if (requireReceipt &&
+        (!result.hasStoreReceipt ||
+            (expectedProductId != null && result.productId != expectedProductId) ||
+            (expectedStore != null && result.store != expectedStore))) {
+      return const BillingResult.failure(
+        'رسید امضاشدهٔ معتبر از فروشگاه دریافت نشد',
+        status: BillingStatus.invalidReceipt,
+      );
+    }
+    return result;
   }
 }

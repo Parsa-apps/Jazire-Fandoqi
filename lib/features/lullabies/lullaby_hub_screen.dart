@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:jazireh_fandoghi/shared/widgets/animated_gold_lock.dart';
 
 import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
@@ -45,6 +46,7 @@ class _LullabyHubScreenState extends State<LullabyHubScreen>
   @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_onAccessChanged);
     _floatController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 5),
@@ -79,8 +81,15 @@ class _LullabyHubScreenState extends State<LullabyHubScreen>
     }
   }
 
+  void _onAccessChanged() {
+    if (!mounted) return;
+    final has = Monetization.accessStatus.value.isVerified;
+    if (has != _hasFullVersion) setState(() => _hasFullVersion = has);
+  }
+
   @override
   void dispose() {
+    Monetization.accessStatus.removeListener(_onAccessChanged);
     _scrollController
       ..removeListener(_onScroll)
       ..dispose();
@@ -577,11 +586,7 @@ class _LullabyPlatformState extends State<_LullabyPlatform>
                   Positioned(
                     top: coverSize * 0.73,
                     right: widget.width * 0.23,
-                    child: _statusBadge(
-                      icon: Icons.lock_rounded,
-                      color: const Color(0xFF7E57C2),
-                      label: 'قفل',
-                    ),
+                    child: const AnimatedGoldLock(size: 44),
                   ),
                 Positioned(
                   left: -18,

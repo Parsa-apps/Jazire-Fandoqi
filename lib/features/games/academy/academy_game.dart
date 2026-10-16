@@ -17,6 +17,7 @@ import '../../../shared/widgets/child_touch_target.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
 import '../../../shared/widgets/particle_celebration.dart';
 import '../../../shared/widgets/premium_button.dart';
+import '../../shop/content_lock.dart';
 
 /// ────────────────────────────────────────────────────────────
 /// 🎓 فاز ۲۲-۲۸: موتور بازی آکادمی (مشترک برای همه موضوعات)
@@ -61,9 +62,16 @@ class _AcademyGameState extends State<AcademyGame> {
   int? _selectedIndex;
   bool _wasCorrect = false;
 
+  void _syncFullVersionAccess() {
+    if (!mounted) return;
+    final has = Monetization.accessStatus.value.isVerified;
+    if (has != _hasFullVersion) setState(() => _hasFullVersion = has);
+  }
+
   @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_syncFullVersionAccess);
     _topic = learningTopicById(widget.topicId) ?? learningTopics.first;
     _pool = ContentAccessPolicy.allowedTopicCards(
       _topic,
@@ -90,6 +98,7 @@ class _AcademyGameState extends State<AcademyGame> {
 
   @override
   void dispose() {
+    Monetization.accessStatus.removeListener(_syncFullVersionAccess);
     FandoghiCoach.clear();
     FandoghiCoach.cancelSmartHint();
     super.dispose();
@@ -130,12 +139,11 @@ class _AcademyGameState extends State<AcademyGame> {
     // گزینه‌های جواب: کارت درست + ۲ کارت تصادفی دیگر
     // گزینه‌های انحرافی هم فقط از poolِ مجاز می‌آیند: نمایشِ نام/تصویرِ یک
     // کارتِ پولی به‌عنوان گزینه، خودش بخشی از همان محتواست.
-    final source = _pool.length >= 3 ? _pool : _topic.cards;
-    final others = source
+    final others = _pool
         .where((c) => c.id != _currentCard.id)
         .toList()
       ..shuffle(Random());
-    return <LearningCard>[_currentCard, others[0], others[1]]
+    return <LearningCard>[_currentCard, ...others.take(2)]
       ..shuffle(Random());
   }
 
@@ -290,6 +298,13 @@ class _AcademyGameState extends State<AcademyGame> {
             ],
           ),
         ),
+        ContentAccessNotice(
+          featureName: _topic.title,
+          freeCount: _topic.cards.length ~/ 2,
+          totalCount: _topic.cards.length,
+          hasFullVersion: _hasFullVersion,
+          onUnlocked: _refreshEntitlement,
+        ),
         const SizedBox(height: 4),
         // Progress
         Padding(
@@ -319,9 +334,13 @@ class _AcademyGameState extends State<AcademyGame> {
         const SizedBox(height: 24),
         // Prompt: listen mode shows speaker; name mode shows the card
         Expanded(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+          child: LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
               if (_listenMode)
                 Semantics(
                   button: true,
@@ -397,7 +416,10 @@ class _AcademyGameState extends State<AcademyGame> {
                 const SizedBox(height: 12),
               ],
               const SizedBox(height: 16),
-            ],
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ],

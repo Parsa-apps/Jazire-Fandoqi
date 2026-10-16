@@ -27,9 +27,16 @@ class _LifeSkillsHubScreenState extends State<LifeSkillsHubScreen> {
   /// «باز» یعنی نشتِ محتوای پولی پیش از پاسخِ فروشگاه.
   bool _hasFullVersion = false;
 
+  void _syncFullVersionAccess() {
+    if (!mounted) return;
+    final has = Monetization.accessStatus.value.isVerified;
+    if (has != _hasFullVersion) setState(() => _hasFullVersion = has);
+  }
+
   @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_syncFullVersionAccess);
     FandoghiCoach.enablePersistentPresence();
     ActivityTracker.recordOpen(route: '/life-skills', title: 'مهارت زندگی', skill: 'concepts');
     _refreshEntitlement();
@@ -56,6 +63,7 @@ class _LifeSkillsHubScreenState extends State<LifeSkillsHubScreen> {
 
   @override
   void dispose() {
+    Monetization.accessStatus.removeListener(_syncFullVersionAccess);
     FandoghiCoach.clear();
     super.dispose();
   }

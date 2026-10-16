@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:jazireh_fandoghi/features/home/widgets/island_map/hub_island_node.dart';
+import 'package:jazireh_fandoghi/shared/widgets/animated_gold_lock.dart';
 
 /// نمایش صادقانهٔ قفل در هاب‌ها: سکوی قفل‌شده باید صریحاً بگوید
 /// «نسخه کامل» (هم دیداری، هم برای صفحه‌خوان) و سکوی باز هیچ نشانی
@@ -13,7 +14,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('نسخه کامل'), findsOneWidget);
-    expect(find.byIcon(Icons.lock_rounded), findsOneWidget);
+    expect(find.byType(AnimatedGoldLock), findsOneWidget);
     expect(find.bySemanticsLabel(RegExp('با نسخه کامل')), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -24,7 +25,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('نسخه کامل'), findsNothing);
-    expect(find.byIcon(Icons.lock_rounded), findsNothing);
+    expect(find.byType(AnimatedGoldLock), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });

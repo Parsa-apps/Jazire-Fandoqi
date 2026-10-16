@@ -18,6 +18,9 @@ import ir.myket.billingclient.util.Purchase
  */
 class MyketBilling(context: Context, private val publicKey: String) {
 
+    private val receiptVerifier = StoreReceiptVerifier(
+        context.packageName, mapOf(StoreVendor.MYKET to publicKey),
+    )
     private var helper: IabHelper? = null
     private var setupDone = false
     private var setupFailed = false
@@ -88,10 +91,11 @@ class MyketBilling(context: Context, private val publicKey: String) {
                             cb(BillingOutcome.failure("شناسه محصول با رسید فروشگاه هم‌خوان نیست"))
                         } else {
                             cb(
-                                BillingOutcome.success(
-                                    token = purchase.token,
-                                    orderId = purchase.orderId,
-                                    message = "پرداخت تأیید شد",
+                                receiptVerifier.verify(
+                                    StoreVendor.MYKET,
+                                    purchase.originalJson,
+                                    purchase.signature,
+                                    productId,
                                 )
                             )
                         }
@@ -142,13 +146,14 @@ class MyketBilling(context: Context, private val publicKey: String) {
                     }
                     val purchase = inventory.getPurchase(productId)
                     if (purchase == null) {
-                        callback(BillingOutcome.failure("خرید نسخه کامل یافت نشد"))
+                        callback(BillingOutcome.notOwned())
                     } else {
                         callback(
-                            BillingOutcome.success(
-                                token = purchase.token,
-                                orderId = purchase.orderId,
-                                message = "خرید بازیابی شد",
+                            receiptVerifier.verify(
+                                StoreVendor.MYKET,
+                                purchase.originalJson,
+                                purchase.signature,
+                                productId,
                             )
                         )
                     }
@@ -173,6 +178,10 @@ class MyketBilling(context: Context, private val publicKey: String) {
                         ?.firstOrNull { it.token == purchaseToken }
                     if (!result.isSuccess || target == null) {
                         callback(BillingOutcome.failure("مصرف خرید تأیید نشد"))
+                        return@queryInventoryAsync
+                    }
+                    if (!ProductionBillingPolicy.canConsume(target.sku)) {
+                        callback(BillingOutcome.failure("خرید دائمی نسخهٔ کامل قابل مصرف نیست"))
                         return@queryInventoryAsync
                     }
                     helper?.consumeAsync(target) { _, consumeResult ->

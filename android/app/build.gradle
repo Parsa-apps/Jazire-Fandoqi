@@ -9,17 +9,11 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
-// Signing secrets stay local (android/key.properties) or are created from CI secrets.
-// A release without this file remains unsigned; it is suitable only for build
-// verification and must never be submitted to an app store.
+// Production releases are never debug-signed. QA runs unit/widget tests and
+// native compilation without publishing an installable APK.
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file("key.properties")
 def hasReleaseSigning = keystorePropertiesFile.exists()
-def verificationSigningRequested = providers.gradleProperty("allowVerificationSigning")
-    .getOrElse("false")
-    .toBoolean()
-def allowVerificationSigning = verificationSigningRequested ||
-    System.getenv("GITHUB_ACTIONS") == "true"
 if (hasReleaseSigning) {
     keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
 }
@@ -40,9 +34,10 @@ def myketRsaPublicKey = billingProperties.getProperty("myketRsaPublicKey", "")
 // into BuildConfig. At runtime the app compares the installed APK's own
 // signature against this digest and refuses to run when they differ — a
 // repackaged APK is always signed with a different certificate.
-// CI / verification builds (no key.properties) embed an empty digest, which
-// disables the check; they are not publishable artifacts.
+// Unit-test/debug compilations without key.properties embed an empty digest.
+// Billing rejects those builds; release packaging itself fails without a key.
 def releaseSigningSha256 = ""
+def usesAndroidDebugCertificate = false
 if (hasReleaseSigning) {
     try {
         // storeFile در key.properties ممکن است نسبی باشد؛ مبنای آن پوشهٔ
@@ -69,6 +64,9 @@ if (hasReleaseSigning) {
                 }
             }
             if (cert != null) {
+                usesAndroidDebugCertificate =
+                    cert.subjectX500Principal.name.toLowerCase().contains("cn=android debug") ||
+                    alias.equalsIgnoreCase("androiddebugkey")
                 def md = java.security.MessageDigest.getInstance("SHA-256")
                 releaseSigningSha256 = md.digest(cert.getEncoded())
                     .collect { String.format("%02x", it & 0xff) }
@@ -188,15 +186,9 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            // Store releases must use key.properties. Debug signing is restricted to
-            // GitHub Actions or an explicit non-publishable verification build.
-            if (hasReleaseSigning) {
-                signingConfig = signingConfigs.release
-            } else if (allowVerificationSigning) {
-                signingConfig = signingConfigs.debug
-            } else {
-                signingConfig = null
-            }
+            debuggable false
+            // Missing production credentials is an error, never a debug fallback.
+            signingConfig = hasReleaseSigning ? signingConfigs.release : null
         }
     }
 }
@@ -205,11 +197,21 @@ gradle.taskGraph.whenReady { taskGraph ->
     def releaseRequested = taskGraph.allTasks.any { task ->
         task.path ==~ /:app:(assemble|bundle).*Release/
     }
-    if (releaseRequested && !hasReleaseSigning && !allowVerificationSigning) {
-        throw new GradleException(
-            "Release signing is not configured. Add android/key.properties, " +
-            "or explicitly enable allowVerificationSigning for a non-publishable CI artifact."
-        )
+    if (releaseRequested) {
+        if (!hasReleaseSigning || !(releaseSigningSha256 ==~ /[0-9a-f]{64}/) ||
+            usesAndroidDebugCertificate) {
+            throw new GradleException(
+                "Official release signing is required. Debug/verification signing cannot produce a release."
+            )
+        }
+        try {
+            def encoded = java.util.Base64.decoder.decode(myketRsaPublicKey)
+            java.security.KeyFactory.getInstance("RSA").generatePublic(
+                new java.security.spec.X509EncodedKeySpec(encoded)
+            )
+        } catch (Exception ignored) {
+            throw new GradleException("A valid Myket RSA public key is required for production billing.")
+        }
     }
 }
 
@@ -220,16 +222,8 @@ flutter {
 // ---------------------------------------------------------------------
 // Backward-compatible release entry points
 // ---------------------------------------------------------------------
-// The active GitHub workflow still invokes
-// `flutter build apk --release` / `flutter build appbundle --release`
-// without `--flavor`. AGP's aggregate tasks build both store variants,
-// but Flutter then looks for the old unflavored names
-// (app-release.apk / app-release.aab) and exits with "failed to produce"
-// because only app-<flavor>-release.* exists.
-// Copy the store artifacts onto those legacy names instead of
-// re-registering assembleRelease / bundleRelease (AGP already owns them):
-//   * generic APK -> Myket (the store that accepts an APK)
-//   * generic AAB -> Bazaar (the store release distributed as an AAB)
+// Legacy CLI entry points keep Myket as their default output. The official
+// workflow explicitly selects --flavor myket and uses the flavored paths.
 def firstExistingFile(List<File> candidates) {
     return candidates.find { it != null && it.exists() }
 }
@@ -258,19 +252,19 @@ tasks.matching { it.name == "assembleRelease" || it.name == "assembleMyketReleas
     }
 }
 
-tasks.matching { it.name == "bundleRelease" || it.name == "bundleBazaarRelease" }.configureEach {
+tasks.matching { it.name == "bundleRelease" || it.name == "bundleMyketRelease" }.configureEach {
     doLast {
-        def bazaarBundleDir = layout.buildDirectory.dir("outputs/bundle/bazaarRelease").get().asFile
+        def myketBundleDir = layout.buildDirectory.dir("outputs/bundle/myketRelease").get().asFile
         def releaseBundleDir = layout.buildDirectory.dir("outputs/bundle/release").get().asFile
         def sourceAab = firstExistingFile([
-            new File(bazaarBundleDir, "app-bazaar-release.aab"),
-            new File(bazaarBundleDir, "app.aab"),
-            new File(releaseBundleDir, "app-bazaar-release.aab"),
+            new File(myketBundleDir, "app-myket-release.aab"),
+            new File(myketBundleDir, "app.aab"),
+            new File(releaseBundleDir, "app-myket-release.aab"),
         ])
         def legacyAab = new File(releaseBundleDir, "app-release.aab")
         if (sourceAab == null) {
             throw new GradleException(
-                "Expected Bazaar AAB was not produced under ${bazaarBundleDir}"
+                "Expected Myket AAB was not produced under ${myketBundleDir}"
             )
         }
         copy {
@@ -440,6 +434,10 @@ configurations.configureEach { configuration ->
 }
 
 dependencies {
+    // Test-only crypto/JSON coverage; these do not ship in the APK.
+    testImplementation "junit:junit:4.13.2"
+    testImplementation "org.json:json:20240303"
+
     // Poolakey is the official open-source Cafe Bazaar billing client.
     implementation "com.github.cafebazaar.Poolakey:poolakey:2.2.0"
     // Myket's official open-source billing client (same JitPack repo).

@@ -14,12 +14,26 @@ data class BillingOutcome(
     val token: String? = null,
     val orderId: String? = null,
     val message: String = "",
+    val status: String = if (success) "completed" else "unavailable",
+    val productId: String? = null,
+    val store: String? = null,
+    val purchaseState: Int? = null,
+    val signedData: String? = null,
+    val signature: String? = null,
+    val releaseVerified: Boolean = false,
 ) {
     fun toMap(): Map<String, Any?> = mapOf(
         "success" to success,
         "purchaseToken" to token,
         "orderId" to orderId,
         "message" to message,
+        "status" to status,
+        "productId" to productId,
+        "store" to store,
+        "purchaseState" to purchaseState,
+        "signedData" to signedData,
+        "signature" to signature,
+        "releaseVerified" to releaseVerified,
     )
 
     companion object {
@@ -27,6 +41,23 @@ data class BillingOutcome(
             BillingOutcome(true, token, orderId, message)
 
         fun failure(message: String) = BillingOutcome(false, message = message)
+
+        // An authoritative empty inventory is not a network failure. Dart must
+        // revoke a stale grant instead of falling back to it indefinitely.
+        fun notOwned() = BillingOutcome(
+            false, message = "خرید نسخه کامل یافت نشد", status = "not_owned",
+        )
+
+        fun untrustedBuild() = BillingOutcome(
+            false,
+            message = "خرید و فعال‌سازی فقط در نسخهٔ رسمی انتشار مایکت امکان‌پذیر است",
+            status = "untrusted_build",
+        )
+
+        fun invalidReceipt() = BillingOutcome(
+            false, message = "رسید خرید قابل تأیید نیست؛ بازیابی خرید را انجام دهید",
+            status = "invalid_receipt",
+        )
     }
 }
 

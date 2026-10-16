@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../support/paywall_test_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
@@ -15,6 +16,7 @@ Future<void> _disposeAnimatedTree(WidgetTester tester) async {
 }
 
 void main() {
+  setUpUnpurchasedStore();
   tearDown(() {
     FandoghiCoach.clear();
     FandoghiCoach.disablePersistentPresence();

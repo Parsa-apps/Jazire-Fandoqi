@@ -23,7 +23,7 @@ void main() {
       expect(ContentAccessPolicy.isCartoonFree('missing-cartoon'), isFalse);
     });
 
-    test('نیمهٔ اول قصه‌های تعاملی رایگان است و قصه‌های خواندنی همیشه باز', () {
+    test('نیمهٔ اول قصه‌ها رایگان است', () {
       final stories = ChildrenStoriesData.allStories;
       final half = stories.length ~/ 2;
 
@@ -36,7 +36,7 @@ void main() {
         );
       }
       expect(ContentAccessPolicy.isStoryFree('missing-story'), isFalse);
-      // قصه‌های کوتاه خواندنی با تسلط کودک باز می‌شوند و نباید قفل شوند.
+      // نخستین قصهٔ خواندنی هم در نیمهٔ رایگان است.
       expect(ContentAccessPolicy.isStoryFree('decodable-baba-ab'), isTrue);
     });
 
@@ -117,6 +117,7 @@ void main() {
         'رنگ‌ها',
         'اشکال',
         'میوه',
+        'میوه‌ها', // Stage-map alias, the same partially-free academy.
         'استیکر',
         // مجموعه‌های نیمه‌رایگانی که درِ ورودشان باید باز باشد
         'حیوانات',
@@ -161,25 +162,22 @@ void main() {
       }
     });
 
-    test('آکادمی‌های مستقیم فقط برای موضوع‌های صریحاً رایگان باز است', () {
-      for (final topic in <String>['colors', 'shapes', 'emotions', 'fruits']) {
-        expect(ContentAccessPolicy.isAcademyTopicFree(topic), isTrue,
-            reason: topic);
+    test('all known academies have a free half; unknown topics stay locked', () {
+      for (final topic in learningTopics) {
+        expect(ContentAccessPolicy.isAcademyTopicFree(topic.id), isTrue,
+            reason: topic.id);
       }
-      for (final topic in <String>[
-        // اعداد عمداً قفل است: آکادمی اعداد ۱ تا ۲۰ را یک‌جا می‌دهد و
-        // اگر رایگان شود قفل ۱۱ تا ۲۰ دور می‌خورد. مسیر درست: /numbers.
-        'numbers',
-        'animals',
-        'body',
-        'jobs',
-        'concepts',
-        'unknown',
-        'COLORS',
-      ]) {
-        expect(ContentAccessPolicy.isAcademyTopicFree(topic), isFalse,
-            reason: topic);
-      }
+      expect(ContentAccessPolicy.isAcademyTopicFree('unknown'), isFalse);
+      expect(ContentAccessPolicy.isAcademyTopicFree('COLORS'), isFalse);
+    });
+
+    test('alphabet search retains canonical letter identity', () {
+      final letters = List.generate(33, (index) => 'letter-$index');
+      expect(ContentAccessPolicy.isAlphabetLetterFree('letter-0', letters), isTrue);
+      expect(ContentAccessPolicy.isAlphabetLetterFree('letter-15', letters), isTrue);
+      expect(ContentAccessPolicy.isAlphabetLetterFree('letter-16', letters), isFalse);
+      expect(ContentAccessPolicy.isAlphabetLetterFree('letter-32', letters), isFalse);
+      expect(ContentAccessPolicy.isAlphabetLetterFree('unknown', letters), isFalse);
     });
   });
 }

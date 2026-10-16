@@ -31,8 +31,21 @@ class _ConceptsHubState extends State<ConceptsHubScreen> {
   bool _hasFullVersion = false;
 
   @override
+  void dispose() {
+    Monetization.accessStatus.removeListener(_syncFullVersionAccess);
+    super.dispose();
+  }
+
+  void _syncFullVersionAccess() {
+    if (!mounted) return;
+    final has = Monetization.accessStatus.value.isVerified;
+    if (has != _hasFullVersion) setState(() => _hasFullVersion = has);
+  }
+
+  @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_syncFullVersionAccess);
     FandoghiCoach.enablePersistentPresence();
     _refreshEntitlement();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -74,6 +87,13 @@ class _ConceptsHubState extends State<ConceptsHubScreen> {
                   ],
                 ),
               ),
+              ContentAccessNotice(
+                featureName: 'مفاهیم',
+                freeCount: topic.cards.length ~/ 2,
+                totalCount: topic.cards.length,
+                hasFullVersion: _hasFullVersion,
+                onUnlocked: _refreshEntitlement,
+              ),
               const SizedBox(height: 8),
               Expanded(
                 child: ListView(
@@ -104,6 +124,7 @@ class _ConceptsHubState extends State<ConceptsHubScreen> {
                             final card = entry.value[index];
                             final isSelected = _selectedId == card.id;
                             return GestureDetector(
+                              key: ValueKey('concept_${card.id}'),
                               onTap: () async {
                                 HapticFeedback.selectionClick();
                                 final allowed = await ensureContentAccess(

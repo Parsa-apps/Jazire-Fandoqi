@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:jazireh_fandoghi/app/island_world_style.dart';
 import 'package:jazireh_fandoghi/features/home/widgets/island_map/island_decorations.dart';
 import 'package:jazireh_fandoghi/features/home/widgets/island_map/island_node.dart';
+import 'package:jazireh_fandoghi/shared/widgets/animated_gold_lock.dart';
 
 /// تست‌های بازطراحی صفحهٔ جزیره: سکوها باید برچسب خوانا داشته باشند،
 /// لمسشان دقیقاً به همان مقصد قبلی برود و سکوی قفل‌شده هرگز مسیری را
@@ -32,7 +33,7 @@ void main() {
     await tester.pumpWidget(_NodeHarness(onTap: () => taps++, locked: true));
     await tester.pump(const Duration(milliseconds: 800));
 
-    expect(find.byIcon(Icons.lock_rounded), findsOneWidget);
+    expect(find.byType(AnimatedGoldLock), findsOneWidget);
 
     await tester.tap(find.byType(IslandNode));
     await tester.pump();

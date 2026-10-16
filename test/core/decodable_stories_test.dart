@@ -70,10 +70,13 @@ void main() {
     );
   });
 
-  test('decodable readers are free classroom work, not a paywall', () {
-    for (final story in DecodableStories.all) {
-      expect(ContentAccessPolicy.isStoryFree(story.id), isTrue);
+  test('decodable readers follow the same half-free payment policy', () {
+    final stories = DecodableStories.all;
+    for (var index = 0; index < stories.length; index++) {
+      expect(ContentAccessPolicy.isStoryFree(stories[index].id),
+          index < stories.length ~/ 2);
     }
+    expect(ContentAccessPolicy.isStoryFree('decodable-unknown'), isFalse);
     expect(ContentAccessPolicy.isStoryFree('missing-story'), isFalse);
   });
 }

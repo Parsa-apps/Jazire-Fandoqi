@@ -16,6 +16,7 @@ void main() {
       // می‌ماندند و قفل فقط ظاهری بود.
       "'/star_catch': (context) => GameAccessGate(",
       "'/drawing-album': (context) => GameAccessGate(",
+      "'/colors_lab': (context) => GameAccessGate(",
     ]) {
       expect(source, contains(route), reason: route);
     }
@@ -35,6 +36,30 @@ void main() {
   test('life-skill worlds are checked by id against the central policy', () {
     final source = File('lib/main.dart').readAsStringSync();
     expect(source, contains('ContentAccessPolicy.isLifeSkillFree(topic.id)'));
+  });
+
+  test('game route arguments cannot substitute another game identity', () {
+    final source = File('lib/main.dart').readAsStringSync();
+    expect(source, contains('final launch = GameLaunch(\n            gameName: gameName,'));
+    expect(source, isNot(contains('? suppliedLaunch\n              : GameLaunch')));
+  });
+
+  test('game destinations are built lazily so locked games cannot record an open', () {
+    final source = File('lib/main.dart').readAsStringSync();
+    expect(source, contains('GameAccessGate.lazy('));
+    expect(source, contains('childBuilder: () => _gameFor(launch)'));
+    expect(source, isNot(contains('child: _gameFor(launch)')));
+  });
+
+  test('legacy dashboard and stage map visibly mark payment locks', () {
+    for (final file in <String>[
+      'lib/features/home/widgets/dashboard_tab.dart',
+      'lib/features/stage_map/stage_map_screen.dart',
+    ]) {
+      final source = File(file).readAsStringSync();
+      expect(source, contains('LockedCardOverlay('), reason: file);
+      expect(source, contains('!ContentAccessPolicy.isGameFree('), reason: file);
+    }
   });
 
   test('dashboard and hub use the same game policy as route gates', () {

@@ -16,8 +16,6 @@ import 'literacy/decodable_stories.dart';
 /// استثناهای عامدانه (هر کدام دلیل آموزشی دارد، نه تجاری):
 ///  • اعداد ۱ تا ۱۰ — هستهٔ کتاب ریاضی اول دبستان است و نباید قفل شود
 ///    (۱۱ تا ۲۰ با نسخهٔ کامل باز می‌شود). همین‌جا از ابتدا نیمه‌نیمه بود.
-///  • قصه‌های کوتاهِ خواندنی (`DecodableStories`) — با تسلط کودک بر نشانه‌ها
-///    باز می‌شوند و تمرین حلقهٔ خواندن‌اند؛ قفل‌کردنشان تمرین را می‌بندد.
 ///  • آلبوم استیکر — بخشی از اقتصاد سکهٔ درون‌برنامه است؛ استیکر با سکه
 ///    خریده می‌شود و قفل‌کردن آلبوم، آیتم خریداری‌شده را بی‌مصرف می‌کند.
 ///  • هاب‌هایی که داخلشان محتوای نیمه‌رایگان دارند (قصه، لالایی، مهارت زندگی،
@@ -123,23 +121,13 @@ abstract final class ContentAccessPolicy {
     'واژگان', // نیمهٔ اولِ واژه‌های ثبت‌شده — بقیه با نسخهٔ کامل
   };
 
-  /// آکادمی‌های مستقیم: رنگ، شکل، احساسات و میوه رایگان‌اند.
-  ///
-  /// «numbers» عمداً اینجا نیست: آکادمی اعداد ۱ تا ۲۰ را یک‌جا می‌دهد و
-  /// اگر رایگان شود، قفل ۱۱ تا ۲۰ دور می‌خورد. مسیر درست اعداد، هاب
-  /// `/numbers` است که ۱ تا ۱۰ را رایگان می‌دهد.
-  /// هر topic ناشناخته نیز به‌صورت پیش‌فرض پریمیوم محسوب می‌شود.
-  static const Set<String> _freeAcademyTopicIds = <String>{
-    'colors',
-    'shapes',
-    'emotions',
-    'fruits',
-  };
-
-  static bool isGameFree(String gameName) => freeGameNames.contains(gameName);
-
+  /// Every known academy has a free half. AcademyGame limits both questions
+  /// and distractors to allowedTopicCards; an unknown topic stays locked.
   static bool isAcademyTopicFree(String topicId) =>
-      _freeAcademyTopicIds.contains(topicId);
+      learningTopicById(topicId) != null;
+
+  static bool isGameFree(String gameName) =>
+      freeGameNames.contains(gameName == 'میوه‌ها' ? 'میوه' : gameName);
 
   static bool isCartoonFree(String id) => _isAmongFirst(
         id,
@@ -148,7 +136,9 @@ abstract final class ContentAccessPolicy {
       );
 
   static bool isStoryFree(String id) {
-    if (DecodableStories.isDecodableId(id)) return true;
+    if (DecodableStories.isDecodableId(id)) {
+      return isFreeHalfItem(id, DecodableStories.all.map((story) => story.id));
+    }
     return _isAmongFirst(
       id,
       ChildrenStoriesData.allStories.map((item) => item.id),
@@ -175,6 +165,10 @@ abstract final class ContentAccessPolicy {
   /// رایگان‌بودن درس‌های حالت «الفبایی سنتی» (۳۳ نشانه).
   static bool isAlphabetLessonFree(int index) =>
       index >= 0 && index < freeAlphabetTopRowCount;
+
+  /// A filtered/search result retains its canonical lesson index.
+  static bool isAlphabetLetterFree(String letter, List<String> orderedLetters) =>
+      isAlphabetLessonFree(orderedLetters.indexOf(letter));
 
   /// رایگان‌بودن یک بستهٔ کلاس اول (حالت پیش‌فرض).
   static bool isAlphabetBundleFree(int bundleIndex) =>
@@ -209,7 +203,6 @@ abstract final class ContentAccessPolicy {
   }) {
     if (hasFullVersion) return topic.cards;
     final free = topic.cards.length ~/ 2;
-    if (free <= 0 || free >= topic.cards.length) return topic.cards;
     return topic.cards.take(free).toList(growable: false);
   }
 

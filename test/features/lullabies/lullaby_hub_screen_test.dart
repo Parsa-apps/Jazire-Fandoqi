@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../support/paywall_test_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -8,6 +9,7 @@ import 'package:jazireh_fandoghi/core/learning_content/lullabies_data.dart';
 import 'package:jazireh_fandoghi/features/lullabies/lullaby_hub_screen.dart';
 
 void main() {
+  setUpUnpurchasedStore();
   setUp(() {
     GoogleFonts.config.allowRuntimeFetching = false;
     GameData.resetForTesting();

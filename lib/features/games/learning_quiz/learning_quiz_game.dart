@@ -58,9 +58,16 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
   /// پیش‌فرض «خرید ندارد» (fail-closed).
   bool _hasFullVersion = false;
 
+  void _syncFullVersionAccess() {
+    if (!mounted) return;
+    final has = Monetization.accessStatus.value.isVerified;
+    if (has != _hasFullVersion) setState(() => _hasFullVersion = has);
+  }
+
   @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_syncFullVersionAccess);
     FandoghiCoach.enablePersistentPresence();
     _questions = _withShuffledOptions(_questionsFor(widget.topic));
     _refreshEntitlement();
@@ -89,6 +96,7 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
 
   @override
   void dispose() {
+    Monetization.accessStatus.removeListener(_syncFullVersionAccess);
     _roundToken++;
     FandoghiCoach.clear();
     super.dispose();

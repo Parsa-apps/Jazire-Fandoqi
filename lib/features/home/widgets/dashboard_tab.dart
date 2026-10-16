@@ -21,6 +21,7 @@ import '../../../shared/widgets/premium_streak_calendar.dart';
 import '../../../shared/widgets/premium/particle_celebration.dart';
 import '../../profile/profile_editor.dart';
 import '../../shop/full_version_paywall.dart';
+import '../../shop/content_lock.dart';
 import '../../../shared/widgets/parent_pin_gate.dart';
 
 /// ═══════════════════════════════════════════════════════════════
@@ -39,10 +40,25 @@ class _DashboardState extends ConsumerState<DashboardTab>
   late final AnimationController _floatCtrl;
   _GameCategory _selectedCategory = _GameCategory.all;
   bool _showCelebration = false;
+  bool _hasFullVersion = false;
+
+  Future<bool> _refreshEntitlement() async {
+    final hasFullVersion = await Monetization.hasFullVersion();
+    if (mounted) setState(() => _hasFullVersion = hasFullVersion);
+    return hasFullVersion;
+  }
+
+  void _syncFullVersionAccess() {
+    if (!mounted) return;
+    final has = Monetization.accessStatus.value.isVerified;
+    if (has != _hasFullVersion) setState(() => _hasFullVersion = has);
+  }
 
   @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_syncFullVersionAccess);
+    _refreshEntitlement();
     _floatCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 4),
@@ -57,6 +73,7 @@ class _DashboardState extends ConsumerState<DashboardTab>
 
   @override
   void dispose() {
+    Monetization.accessStatus.removeListener(_syncFullVersionAccess);
     _floatCtrl.dispose();
     super.dispose();
   }
@@ -72,12 +89,12 @@ class _DashboardState extends ConsumerState<DashboardTab>
       return;
     }
     if (!ContentAccessPolicy.isGameFree(gameName) &&
-        !await Monetization.hasFullVersion()) {
+        !await _refreshEntitlement()) {
       SmartConversion.noteLockedTap();
       if (!mounted) return;
       final unlocked =
           await showFullVersionPaywall(context, featureName: gameName);
-      if (!mounted || !unlocked || !await Monetization.hasFullVersion()) return;
+      if (!mounted || !unlocked || !await _refreshEntitlement()) return;
     }
     if (mounted) {
       ActivityTracker.recordOpen(route: route, title: gameName);
@@ -866,11 +883,15 @@ class _DashboardState extends ConsumerState<DashboardTab>
           children: [
             for (var j = 0; j < rowGames.length; j++) ...[
               if (j > 0) SizedBox(width: gap),
-              _GameFloatingPlatform(
-                tile: rowGames[j],
-                size: tileSize,
-                index: i + j,
-                onTap: () => _openGame(rowGames[j].route, rowGames[j].gameName),
+              LockedCardOverlay(
+                locked: !ContentAccessPolicy.isGameFree(rowGames[j].gameName) &&
+                    !_hasFullVersion,
+                child: _GameFloatingPlatform(
+                  tile: rowGames[j],
+                  size: tileSize,
+                  index: i + j,
+                  onTap: () => _openGame(rowGames[j].route, rowGames[j].gameName),
+                ),
               ),
             ],
           ],

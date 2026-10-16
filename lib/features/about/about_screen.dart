@@ -17,6 +17,7 @@ import '../../core/store_vendor.dart';
 import '../../shared/widgets/parsa_gold_aura.dart';
 import '../../shared/widgets/parsa_website_card.dart';
 import '../../shared/widgets/parent_pin_gate.dart';
+import '../../shared/widgets/purchase_access_status.dart';
 import '../../shared/widgets/theme_selector_widget.dart';
 
 /// Publisher, support and privacy information for parents and store review.
@@ -314,12 +315,14 @@ class AboutScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+          const PurchaseAccessStatus(),
+          const SizedBox(height: 8),
           // نسخه از منبع واحد نسخهٔ اپ (همان Splash و پنل والدین) می‌آید.
           // کلمهٔ «پریمیوم» اینجا گمراه‌کننده بود: نصب برنامه رایگان است و
           // نسخهٔ کامل با خرید یک‌باره روی همان دستگاه فعال می‌شود.
           Center(
             child: Text(
-              'جزیره فندقی • نسخه ${PersianDigits.toFa(GrowthStore.appVersion)} • نصب رایگان\n'
+              'جزیره فندقی • نسخه ${PersianDigits.toFa(GrowthStore.appVersion)}${WhatsNew.buildNumber} • نصب رایگان\n'
               'ساخته‌شده با دقت برای کودکان ایران',
               textAlign: TextAlign.center,
               style: const TextStyle(

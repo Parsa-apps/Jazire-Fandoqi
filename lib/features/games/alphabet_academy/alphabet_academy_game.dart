@@ -9,6 +9,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../app/app_colors.dart';
 import '../../../app/design_tokens.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
+import 'package:jazireh_fandoghi/shared/widgets/animated_gold_lock.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/content_access_policy.dart';
 import '../../../core/fandoghi_coach.dart';
@@ -23,6 +24,7 @@ import '../../../shared/widgets/fandoghi_v2.dart';
 import '../../../shared/widgets/handwriting_score_overlay.dart';
 import '../../../shared/widgets/particle_celebration.dart';
 import '../../shop/full_version_paywall.dart';
+import '../../shop/content_lock.dart';
 import 'dictation_game.dart';
 
 /// ────────────────────────────────────────────────────────────
@@ -81,9 +83,16 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     return list.isEmpty ? _alphabeticalLessons.first : list[_lessonIndex];
   }
 
+  void _syncFullVersionAccess() {
+    if (!mounted) return;
+    final has = Monetization.accessStatus.value.isVerified;
+    if (has != _hasFullVersion) setState(() => _hasFullVersion = has);
+  }
+
   @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_syncFullVersionAccess);
     FandoghiCoach.enablePersistentPresence();
     _refreshEntitlement();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -102,6 +111,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
 
   @override
   void dispose() {
+    Monetization.accessStatus.removeListener(_syncFullVersionAccess);
     _searchController.dispose();
     FandoghiCoach.clear();
     super.dispose();
@@ -117,7 +127,10 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     if (_mode == _AlphabetMode.grade1) {
       return !ContentAccessPolicy.isAlphabetBundleFree(_selectedBundleIndex);
     }
-    return !ContentAccessPolicy.isAlphabetLessonFree(index);
+    return !ContentAccessPolicy.isAlphabetLetterFree(
+      _currentLessons[index].letter,
+      _alphabeticalLessons.map((lesson) => lesson.letter).toList(),
+    );
   }
 
   String _lessonKey(int bundleIndex, int lessonIndex) =>
@@ -146,20 +159,33 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     return hasFullVersion;
   }
 
+  Future<bool> _ensureCurrentLessonAccess() async {
+    if (!_isPaywalled(_lessonIndex)) return true;
+    final allowed = await ensureContentAccess(
+      context,
+      featureName: 'نشانه «${_lesson.letter}»',
+      isFree: false,
+    );
+    if (!allowed || !mounted) return false;
+    return _refreshEntitlement();
+  }
+
   Future<void> _selectLesson(int index) async {
+    if (index < 0 || index >= _currentLessons.length) return;
+    if (_isPaywalled(index)) {
+      final allowed = await ensureContentAccess(
+        context,
+        featureName: 'نشانه «${_currentLessons[index].letter}»',
+        isFree: false,
+      );
+      if (!allowed || !mounted) return;
+      await _refreshEntitlement();
+    }
     if (_isTeacherLocked(index)) {
       FandoghiCoach.instruction(
         'اول نشانهٔ قبلی را روی خط کرسی بنویس تا معلم مهر بزند ✍️',
       );
       return;
-    }
-    if (_isPaywalled(index) && !await Monetization.hasFullVersion()) {
-      if (!mounted) return;
-      await showFullVersionPaywall(
-        context,
-        featureName: 'نشانه «${_currentLessons[index].letter}»',
-      );
-      if (!await _refreshEntitlement()) return;
     }
     if (!mounted) return;
     setState(() {
@@ -182,6 +208,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   /// اینترنت و موتور فارسی ندارد). اگر کلمه‌ای هنوز ضبط نشده باشد و TTS
   /// فارسی هم نباشد، به‌جای سکوت شمرده‌شمرده هجی می‌شود.
   Future<void> _readWord(String word) async {
+    if (!await _ensureCurrentLessonAccess() || !mounted) return;
     HapticFeedback.lightImpact();
     final spoken = await AudioService.speakWord(word);
     if (spoken || !mounted) return;
@@ -196,12 +223,21 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
 
   /// 🔡 هجی خواستهٔ کودک: حرف‌ها پشت سر هم، نه هم‌زمان.
   Future<void> _spellWord(String word) async {
+    if (!await _ensureCurrentLessonAccess() || !mounted) return;
     HapticFeedback.selectionClick();
     await AudioService.spellOut(word);
   }
 
-  void _selectBundle(int idx) {
+  Future<void> _selectBundle(int idx) async {
     HapticFeedback.selectionClick();
+    final allowed = await ensureContentAccess(
+      context,
+      featureName: _grade1Bundles[idx].title,
+      isFree: ContentAccessPolicy.isAlphabetBundleFree(idx),
+    );
+    if (!allowed || !mounted) return;
+    await _refreshEntitlement();
+    if (!mounted) return;
     if (idx > 0) {
       final prevLast = _grade1Bundles[idx - 1].lessons.length - 1;
       if (!GameData.isAlphabetMastered(_lessonKey(idx - 1, prevLast))) {
@@ -262,6 +298,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   }
 
   Future<void> _openTraceScreen() async {
+    if (!await _ensureCurrentLessonAccess() || !mounted) return;
     if (_isLocked(_lessonIndex) || !canStartPlay(context)) return;
     if (!_ladder.canWrite) {
       FandoghiCoach.instruction(
@@ -292,7 +329,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     } else if (GameData.isAlphabetMastered(
       _mode == _AlphabetMode.grade1
           ? _lessonKey(_selectedBundleIndex, _lessonIndex)
-          : 'alpha-$_lessonIndex',
+          : 'alpha-${_alphabeticalLessons.indexOf(_lesson)}',
     )) {
       FandoghiCoach.instruction('مهر معلم را گرفتی! نشانه بعدی باز شد 🌟');
     } else {
@@ -319,6 +356,17 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
             children: [
               _topBar(),
               _modeSwitchBar(),
+              ContentAccessNotice(
+                featureName: 'آکادمی الفبا',
+                freeCount: _mode == _AlphabetMode.grade1
+                    ? ContentAccessPolicy.freeAlphabetBundleCount
+                    : ContentAccessPolicy.freeAlphabetTopRowCount,
+                totalCount: _mode == _AlphabetMode.grade1
+                    ? _grade1Bundles.length
+                    : _alphabeticalLessons.length,
+                hasFullVersion: _hasFullVersion,
+                onUnlocked: () async { await _refreshEntitlement(); },
+              ),
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
@@ -369,16 +417,21 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
           ),
-          const Spacer(),
-          Text(
-            'آکادمی الفبا و اول دبستان 🔤',
-            style: AppFonts.balooBhaijaan2(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
+          const SizedBox(width: 8),
+          Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'آکادمی الفبا و اول دبستان 🔤',
+                style: AppFonts.balooBhaijaan2(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
             ),
           ),
-          const Spacer(),
+          const SizedBox(width: 8),
           Text(
             '${_lessonIndex + 1}/${_currentLessons.length}',
             style: AppFonts.balooBhaijaan2(
@@ -514,12 +567,14 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
             children: [
               const Text('📦', style: TextStyle(fontSize: 16)),
               const SizedBox(width: 6),
-              Text(
-                'بسته‌های آموزشی کتاب فارسی اول دبستان:',
-                style: AppFonts.balooBhaijaan2(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
+              Expanded(
+                child: Text(
+                  'بسته‌های آموزشی کتاب فارسی اول دبستان:',
+                  style: AppFonts.balooBhaijaan2(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ],
@@ -536,8 +591,13 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: GestureDetector(
+                  key: ValueKey('alphabet_bundle_$i'),
                   onTap: () => _selectBundle(i),
-                  child: AnimatedContainer(
+                  child: LockedCardOverlay(
+                    locked: !_hasFullVersion &&
+                        !ContentAccessPolicy.isAlphabetBundleFree(i),
+                    badgeSize: 24,
+                    child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
@@ -578,6 +638,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                         ),
                       ],
                     ),
+                    ),
                   ),
                 ),
               );
@@ -601,10 +662,12 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               const Text('🏗️', style: TextStyle(fontSize: 20)),
-              const SizedBox(width: 8),
               Text(
                 'کارگاه واژه‌سازی ${b.shortTitle}:',
                 style: AppFonts.balooBhaijaan2(
@@ -613,7 +676,6 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              const Spacer(),
               Text(
                 'لمس = خواندن کلمه • نگه‌داشتن = هجی',
                 style: AppFonts.balooBhaijaan2(
@@ -711,7 +773,8 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
           ),
           const SizedBox(height: 10),
           FilledButton.icon(
-            onPressed: () {
+            onPressed: () async {
+              if (!await _ensureCurrentLessonAccess() || !mounted) return;
               HapticFeedback.lightImpact();
               unawaited(AudioService.speak(sentence));
               FandoghiCoach.instruction('با انگشتت زیر جمله برو و بلند بخوان 📖');
@@ -756,7 +819,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     );
   }
 
-  void _openFirstDueReview() {
+  Future<void> _openFirstDueReview() async {
     final due = GameData.dueAlphabetReviewKeys();
     if (due.isEmpty) return;
     final key = due.first;
@@ -765,7 +828,15 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
       if (lesson == null || lesson < 0 || lesson >= _alphabeticalLessons.length) {
         return;
       }
+      final allowed = await ensureContentAccess(
+        context,
+        featureName: 'مرور نشانهٔ ${_alphabeticalLessons[lesson].letter}',
+        isFree: ContentAccessPolicy.isAlphabetLessonFree(lesson),
+      );
+      if (!allowed || !mounted) return;
       setState(() {
+        _searchQuery = '';
+        _searchController.clear();
         _mode = _AlphabetMode.alphabetical;
         _lessonIndex = lesson;
         _ladder.reset();
@@ -782,6 +853,12 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     if (bundle == null || lesson == null) return;
     if (bundle < 0 || bundle >= _grade1Bundles.length) return;
     if (lesson < 0 || lesson >= _grade1Bundles[bundle].lessons.length) return;
+    final allowed = await ensureContentAccess(
+      context,
+      featureName: 'مرور ${_grade1Bundles[bundle].title}',
+      isFree: ContentAccessPolicy.isAlphabetBundleFree(bundle),
+    );
+    if (!allowed || !mounted) return;
     setState(() {
       _mode = _AlphabetMode.grade1;
       _selectedBundleIndex = bundle;
@@ -793,7 +870,8 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     );
   }
 
-  void _playLiteracyStep(int step) {
+  Future<void> _playLiteracyStep(int step) async {
+    if (!await _ensureCurrentLessonAccess() || !mounted) return;
     final unit = LiteracyUnit.forLesson(_lesson.letter, _lesson.word);
     if (!_ladder.isHeard(step) && !_ladder.canHear(step)) {
       FandoghiCoach.instruction(
@@ -1001,11 +1079,15 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                           icon: const Icon(Icons.volume_up_rounded, size: 18),
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          'صدای نشانه',
-                          style: AppFonts.balooBhaijaan2(
-                            color: Colors.white70,
-                            fontSize: 12,
+                        Flexible(
+                          child: Text(
+                            'صدای نشانه',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppFonts.balooBhaijaan2(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -1048,14 +1130,16 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                       showFullVersionPaywall(context, featureName: 'حرف «${_lesson.letter}»');
                     }
                   : _openTraceScreen,
-              icon: Icon(
-                locked
-                    ? Icons.lock_rounded
-                    : _ladder.canWrite
-                        ? Icons.draw_rounded
-                        : Icons.hearing_rounded,
-                size: 20,
-              ),
+              icon: _isPaywalled(_lessonIndex)
+                  ? const AnimatedGoldLock(size: 26)
+                  : Icon(
+                      locked
+                          ? Icons.lock_rounded
+                          : _ladder.canWrite
+                              ? Icons.draw_rounded
+                              : Icons.hearing_rounded,
+                      size: 20,
+                    ),
               label: Text(
                 _isTeacherLocked(_lessonIndex)
                     ? 'اول نشانهٔ قبلی 🔒'
@@ -1084,7 +1168,8 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: () {
+                onPressed: () async {
+                  if (!await _ensureCurrentLessonAccess() || !mounted) return;
                   final words = _currentBundle.createdWords
                       .map(AudioService.cleanSpokenText)
                       .where((w) => w.isNotEmpty)
@@ -1138,12 +1223,14 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
             children: [
               const Text('📝', style: TextStyle(fontSize: 18)),
               const SizedBox(width: 8),
-              Text(
-                'شکل‌های مختلف نشانه در کلمه (اشکال چهارگانه):',
-                style: AppFonts.balooBhaijaan2(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
+              Expanded(
+                child: Text(
+                  'شکل‌های مختلف نشانه در کلمه (اشکال چهارگانه):',
+                  style: AppFonts.balooBhaijaan2(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ],
@@ -1246,11 +1333,12 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
               final isSelected = index == _lessonIndex && !locked;
               final key = _mode == _AlphabetMode.grade1
                   ? _lessonKey(_selectedBundleIndex, index)
-                  : 'alpha-$index';
+                  : 'alpha-${_alphabeticalLessons.indexOf(item)}';
               final fluent = GameData.isAlphabetFluent(key);
               final review = GameData.isAlphabetDueForReview(key);
 
               return ChildTouchTarget(
+                key: ValueKey('alphabet_letter_${item.letter}'),
                 onTap: () => _selectLesson(index),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
@@ -1295,14 +1383,16 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                         ),
                       ),
                       if (locked)
-                        const Positioned(
-                          top: 4,
-                          right: 4,
-                          child: Icon(
-                            Icons.lock_rounded,
-                            color: Colors.amberAccent,
-                            size: 12,
-                          ),
+                        Positioned(
+                          top: 1,
+                          right: 1,
+                          child: _isPaywalled(index)
+                              ? const AnimatedGoldLock(size: 24)
+                              : const Icon(
+                                  Icons.lock_rounded,
+                                  color: Colors.amberAccent,
+                                  size: 12,
+                                ),
                         )
                       else if (fluent)
                         const Positioned(
@@ -1361,6 +1451,7 @@ class _TraceScreenState extends State<_TraceScreen>
   _TraceResult? _lastResult;
   bool _checking = false;
   bool _showMagicDemo = false;
+  late bool _hasFullVersion;
   late AnimationController _demoController;
 
   _LetterLesson get _lesson => widget.lessons[_lessonIndex];
@@ -1369,6 +1460,7 @@ class _TraceScreenState extends State<_TraceScreen>
   void initState() {
     super.initState();
     _lessonIndex = widget.initialIndex;
+    _hasFullVersion = widget.hasFullVersion;
     _demoController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2200),
@@ -1409,21 +1501,24 @@ class _TraceScreenState extends State<_TraceScreen>
     if (widget.grade1Mode) {
       return 'g1-${widget.bundleIndex}-$lessonIndex';
     }
-    return 'alpha-$lessonIndex';
+    return 'alpha-${_alphabeticalLessons.indexOf(widget.lessons[lessonIndex])}';
   }
 
   /// همان قاعدهٔ صفحهٔ اصلی، برای مسیر نوشتن: در حالت کلاس اول رایگان‌بودن با
-  /// شمارهٔ بسته سنجیده می‌شود (دو بستهٔ اول) و در حالت الفبایی سنتی با
-  /// شمارهٔ نشانه (۸ نشانهٔ نخست).
+  /// شمارهٔ بسته سنجیده می‌شود و در حالت الفبایی سنتی با هویت نشانه
+  /// در فهرست اصلی، نه جای آن در نتیجهٔ جست‌وجو.
   bool _isPaywalledLesson(int index) {
-    if (widget.hasFullVersion) return false;
+    if (_hasFullVersion) return false;
     if (widget.grade1Mode) {
       return !ContentAccessPolicy.isAlphabetBundleFree(widget.bundleIndex);
     }
-    return !ContentAccessPolicy.isAlphabetLessonFree(index);
+    return !ContentAccessPolicy.isAlphabetLetterFree(
+      widget.lessons[index].letter,
+      _alphabeticalLessons.map((lesson) => lesson.letter).toList(),
+    );
   }
 
-  void _selectLesson(int index) {
+  Future<void> _selectLesson(int index) async {
     if (index < 0 || index >= widget.lessons.length) return;
     if (widget.grade1Mode &&
         index > 0 &&
@@ -1434,11 +1529,14 @@ class _TraceScreenState extends State<_TraceScreen>
       return;
     }
     if (_isPaywalledLesson(index)) {
-      showFullVersionPaywall(
+      final allowed = await ensureContentAccess(
         context,
         featureName: 'نشانه «${widget.lessons[index].letter}»',
+        isFree: false,
       );
-      return;
+      if (!allowed || !mounted) return;
+      _hasFullVersion = await Monetization.hasFullVersion();
+      if (!_hasFullVersion || !mounted) return;
     }
     setState(() {
       _lessonIndex = index;

@@ -26,8 +26,8 @@ String normalizePaywallDigits(String input) {
 
 /// A parent-facing, one-time purchase surface — PREMIUM V2
 /// پیشنهاد ۴۱ — پرداخت امن درون‌برنامه‌ای + اعتماد والد
-/// نام فروشگاه عمداً در UI نمی‌آید: اپ روی چند فروشگاه منتشر می‌شود و
-/// درگاه درست هنگام اجرا از روی بستهٔ نصب‌کننده انتخاب می‌شود.
+/// Only a completed, RSA-verified Myket purchase in the official release
+/// activates the full version. No trial, demo or debug grant exists.
 Future<bool> showFullVersionPaywall(BuildContext context, {String? featureName}) async {
   final bought = await showModalBottomSheet<bool>(
     context: context,
@@ -92,7 +92,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.xl)),
-        title: Row(children: [Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.error_outline_rounded, color: Colors.red)), const SizedBox(width: 10), Text('پرداخت کامل نشد', style: AppFonts.vazirmatn(fontWeight: FontWeight.w900))]),
+        title: Row(children: [Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.error_outline_rounded, color: Colors.red)), const SizedBox(width: 10), Expanded(child: Text('پرداخت کامل نشد', style: AppFonts.vazirmatn(fontWeight: FontWeight.w900)))]),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,7 +233,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                       children: [
                         const Icon(Icons.verified_rounded, size: 14, color: Color(0xFF00B894)),
                         const SizedBox(width: 6),
-                        Text(widget.featureName == null ? 'همه بازی‌ها + داستان‌ها + کارتون‌ها' : '«${widget.featureName}» + همه دنیاها', style: AppFonts.vazirmatn(fontSize: 12, fontWeight: FontWeight.w800, color: const Color(0xFF00695C))),
+                        Flexible(child: Text(widget.featureName == null ? 'همه بازی‌ها + داستان‌ها + کارتون‌ها' : '«${widget.featureName}» + همه دنیاها', style: AppFonts.vazirmatn(fontSize: 12, fontWeight: FontWeight.w800, color: const Color(0xFF00695C)))),
                       ],
                     ),
                   ),
@@ -252,14 +252,16 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 6,
+                                crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                     decoration: BoxDecoration(color: const Color(0xFFFFD700), borderRadius: BorderRadius.circular(AppRadii.pill)),
                                     child: Text('پرداخت یک‌باره', style: AppFonts.vazirmatn(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.black87)),
                                   ),
-                                  const SizedBox(width: 8),
                                   Text('بدون تمدید ماهانه', style: AppFonts.vazirmatn(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w700)),
                                 ],
                               ),
@@ -277,7 +279,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                             children: [
                               Text('قیمت نهایی', style: TextStyle(fontSize: 10, color: Colors.black54, fontWeight: FontWeight.w700)),
                               const SizedBox(height: 2),
-                              Text('در پرداخت فروشگاه', style: AppFonts.vazirmatn(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.primary)),
+                              Text('در پرداخت مایکت', style: AppFonts.vazirmatn(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.primary)),
                               const Icon(Icons.storefront_rounded, size: 16, color: AppColors.primary),
                             ],
                           ),
@@ -298,7 +300,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                   // نشان اعتماد
                   Row(
                     children: [
-                      _TrustBadge(icon: Icons.security_rounded, label: 'پرداخت امن', sub: 'درگاه رسمی'),
+                      _TrustBadge(icon: Icons.security_rounded, label: 'پرداخت امن', sub: 'مایکت'),
                       const SizedBox(width: 8),
                       _TrustBadge(icon: Icons.block_rounded, label: 'بدون تبلیغ', sub: '۱۰۰٪'),
                       const SizedBox(width: 8),
@@ -342,8 +344,9 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                     ),
                   ).animate().scale(delay: 300.ms, duration: 400.ms, curve: Curves.easeOutBack),
                   const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       const Icon(Icons.refresh_rounded, size: 14, color: AppColors.primary),
                       TextButton(
@@ -390,7 +393,7 @@ class _StorePriceNotice extends StatelessWidget {
           ),
           const SizedBox(height: 5),
           Text(
-            'مبلغ نهایی را فروشگاه در پنجرهٔ پرداخت نشان می‌دهد.',
+            'مبلغ نهایی را مایکت در پنجرهٔ پرداخت نشان می‌دهد.',
             textAlign: TextAlign.center,
             style: AppFonts.vazirmatn(
               fontSize: 13,

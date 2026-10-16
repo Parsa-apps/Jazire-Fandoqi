@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:jazireh_fandoghi/shared/widgets/animated_gold_lock.dart';
 import '../../../app/app_colors.dart';
 
 /// ═══════════════════════════════════════════════
@@ -190,11 +191,7 @@ class _PlatformState extends State<FloatingPlatform>
                           color: Colors.black.withOpacity(0.4),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
-                          Icons.lock_rounded,
-                          color: Colors.white70,
-                          size: 24,
-                        ),
+                        child: const Center(child: AnimatedGoldLock(size: 48)),
                       ),
                   ],
                 ),

@@ -18,6 +18,7 @@ import 'package:jazireh_fandoghi/features/cartoons/cartoon_player_screen.dart';
 import 'package:jazireh_fandoghi/features/cartoons/widgets/cartoon_cover.dart';
 import 'package:jazireh_fandoghi/features/home/widgets/island_map/island_map_background.dart';
 import 'package:jazireh_fandoghi/features/shop/full_version_paywall.dart';
+import 'package:jazireh_fandoghi/shared/widgets/animated_gold_lock.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// 🎬 CARTOON HUB SCREEN — کارتون‌کدهٔ جزیره‌ای
@@ -46,6 +47,7 @@ class _CartoonHubScreenState extends State<CartoonHubScreen>
   @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_onAccessChanged);
     _floatController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 5),
@@ -93,8 +95,15 @@ class _CartoonHubScreenState extends State<CartoonHubScreen>
     }
   }
 
+  void _onAccessChanged() {
+    if (!mounted) return;
+    final has = Monetization.accessStatus.value.isVerified;
+    if (has != _hasFullVersion) setState(() => _hasFullVersion = has);
+  }
+
   @override
   void dispose() {
+    Monetization.accessStatus.removeListener(_onAccessChanged);
     _scrollController
       ..removeListener(_onScroll)
       ..dispose();
@@ -595,11 +604,7 @@ class _CartoonPlatformState extends State<_CartoonPlatform>
                   Positioned(
                     top: coverSize * 0.73,
                     right: widget.width * 0.23,
-                    child: _statusBadge(
-                      icon: Icons.lock_rounded,
-                      color: const Color(0xFF7E57C2),
-                      label: 'قفل',
-                    ),
+                    child: const AnimatedGoldLock(size: 44),
                   ),
                 Positioned(
                   left: -18,

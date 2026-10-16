@@ -9,6 +9,9 @@ import '../../core/fandoghi_models.dart';
 import '../../shared/widgets/child_touch_target.dart';
 import '../../shared/widgets/fandoghi_premium.dart';
 
+import '../../core/monetization.dart';
+import '../shop/content_lock.dart';
+
 /// Entry point for the premium content hubs delivered in PR80.
 ///
 /// These screens used to exist as orphaned Dart files: no route or visible
@@ -23,6 +26,7 @@ class LearningLibraryScreen extends StatefulWidget {
 }
 
 class _LearningLibraryScreenState extends State<LearningLibraryScreen> {
+  bool _hasFullVersion = false;
   static const _entries = <_LibraryEntry>[
     _LibraryEntry(
       title: 'دانشنامه حیوانات ایران',
@@ -68,10 +72,18 @@ class _LearningLibraryScreenState extends State<LearningLibraryScreen> {
     ),
   ];
 
+  void _syncFullVersionAccess() {
+    if (!mounted) return;
+    final has = Monetization.accessStatus.value.isVerified;
+    if (has != _hasFullVersion) setState(() => _hasFullVersion = has);
+  }
+
   @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_syncFullVersionAccess);
     FandoghiCoach.enablePersistentPresence();
+    _refreshEntitlement();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         FandoghiCoach.instruction(
@@ -81,8 +93,14 @@ class _LearningLibraryScreenState extends State<LearningLibraryScreen> {
     });
   }
 
+  Future<void> _refreshEntitlement() async {
+    final owned = await Monetization.hasFullVersion();
+    if (mounted) setState(() => _hasFullVersion = owned);
+  }
+
   @override
   void dispose() {
+    Monetization.accessStatus.removeListener(_syncFullVersionAccess);
     FandoghiCoach.clear();
     super.dispose();
   }
@@ -182,6 +200,11 @@ class _LearningLibraryScreenState extends State<LearningLibraryScreen> {
                   ],
                 ),
               ),
+            ),
+            ContentAccessNotice(
+              featureName: 'کتابخانه یادگیری',
+              hasFullVersion: _hasFullVersion,
+              onUnlocked: _refreshEntitlement,
             ),
             Expanded(
               child: GridView.builder(

@@ -20,8 +20,9 @@ enum StoreVendor {
   /// در این حالت درگاه پرداختی وجود ندارد و خرید باید محترمانه رد شود.
   unknown;
 
-  /// آیا برای این حالت درگاه پرداخت فعالی داریم؟
-  bool get supportsBilling => this != StoreVendor.unknown;
+  /// Legacy vendors remain identifiable for support links, but this release
+  /// accepts payments and permanent ownership only through Myket.
+  bool get supportsBilling => this == StoreVendor.myket;
 }
 
 /// تشخیص فروشگاه نصب‌کننده و انتخاب خودکار درگاه پرداخت.
@@ -56,14 +57,9 @@ class StoreDetector {
 
   /// فروشگاهی که اپ باید با درگاه آن کار کند.
   ///
-  /// در حالت debug عمداً کافه‌بازار برگردانده می‌شود تا فلوی خرید در
-  /// سندباکس قابل تست بماند (نصب از Android Studio installer ندارد).
+  /// در همهٔ حالت‌های ساخت، درگاه واقعی از لایهٔ نیتیو خوانده می‌شود.
   static Future<StoreVendor> detect() async {
     if (_cached != null) return _cached!;
-    if (!kReleaseMode) {
-      _cached = StoreVendor.bazaar;
-      return _cached!;
-    }
     // ۱) نظر لایهٔ نیتیو — همان resolve() با fallback «تنها فروشگاه
     //    نصب‌شده» برای نصب‌های دستی. با timeout تا هیچ‌وقت فلوی خرید
     //    منتظر نماند.
