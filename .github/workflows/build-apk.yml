@@ -98,6 +98,7 @@ jobs:
             test/core/paid_route_guard_test.dart \
             test/features/shop/content_lock_test.dart \
             test/features/shop/gold_lock_collections_test.dart \
+            test/features/shop/full_version_purchase_entry_test.dart \
             test/shared/widgets/animated_gold_lock_test.dart \
             test/shared/widgets/purchase_access_status_test.dart \
             > qa-gate-log/paywall-regression.log 2>&1
@@ -190,7 +191,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: jazire_fandoqi_v7.5.4_myket_production_apk
+          name: jazire_fandoqi_v7.5.5_myket_production_apk
           path: |
             build/app/outputs/flutter-apk/app-myket-release.apk
             build/app/outputs/flutter-apk/build-info.txt
@@ -207,5 +208,5 @@ jobs:
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: jazire_fandoqi_v7.5.4_myket_production_aab
+          name: jazire_fandoqi_v7.5.5_myket_production_aab
           path: build/app/outputs/bundle/myketRelease/app-myket-release.aab

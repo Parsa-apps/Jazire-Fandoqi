@@ -19,6 +19,7 @@ import '../../shared/widgets/parsa_website_card.dart';
 import '../../shared/widgets/parent_pin_gate.dart';
 import '../../shared/widgets/purchase_access_status.dart';
 import '../../shared/widgets/theme_selector_widget.dart';
+import '../shop/full_version_purchase_entry.dart';
 
 /// Publisher, support and privacy information for parents and store review.
 /// It intentionally does not invent a registration number or address.
@@ -143,6 +144,25 @@ class AboutScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
         children: [
           _buildPublisherCard(),
+          const SizedBox(height: 16),
+          const FullVersionPurchaseEntry(),
+          const SizedBox(height: 8),
+          const PurchaseAccessStatus(),
+          const SizedBox(height: 12),
+          // خرید قبلی را بدون پرداخت دوباره از همان فروشگاه بازیابی کنید.
+          Card(
+            child: ListTile(
+              leading:
+                  const Icon(Icons.restore_rounded, color: AppColors.primary),
+              title: Text(
+                'بازیابی خرید نسخهٔ کامل',
+                style: AppFonts.vazirmatn(fontWeight: FontWeight.w800),
+              ),
+              subtitle: const Text('اگر قبلاً نسخهٔ کامل را خریده‌اید'),
+              trailing: const Icon(Icons.chevron_left_rounded),
+              onTap: () => _restorePurchase(context),
+            ),
+          ),
           const SizedBox(height: 22),
           _buildStoreCard(context)
               .animate()
@@ -266,24 +286,6 @@ class AboutScreen extends StatelessWidget {
               onTap: () => _showFeedbackDialog(context),
             ),
           ),
-          const SizedBox(height: 12),
-          // بازیابی خرید نسخهٔ کامل — مسیر مستقیم برای والدی که برنامه را
-          // حذف و دوباره نصب کرده است. در نسخهٔ ۶.۲.۶ این ورودی در همین صفحه
-          // بود و در ۷.۱ حذف شد؛ بدون آن، والدِ خریدار فقط با باز کردن یک
-          // قفل به صفحهٔ خرید می‌رسد. پشت دروازهٔ والد است، مثل خودِ خرید.
-          Card(
-            child: ListTile(
-              leading:
-                  const Icon(Icons.restore_rounded, color: AppColors.primary),
-              title: Text(
-                'بازیابی خرید نسخهٔ کامل',
-                style: AppFonts.vazirmatn(fontWeight: FontWeight.w800),
-              ),
-              subtitle: const Text('اگر قبلاً نسخهٔ کامل را خریده‌اید'),
-              trailing: const Icon(Icons.chevron_left_rounded),
-              onTap: () => _restorePurchase(context),
-            ),
-          ),
           const SizedBox(height: 16),
           Card(
             child: Column(
@@ -315,8 +317,6 @@ class AboutScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const PurchaseAccessStatus(),
-          const SizedBox(height: 8),
           // نسخه از منبع واحد نسخهٔ اپ (همان Splash و پنل والدین) می‌آید.
           // کلمهٔ «پریمیوم» اینجا گمراه‌کننده بود: نصب برنامه رایگان است و
           // نسخهٔ کامل با خرید یک‌باره روی همان دستگاه فعال می‌شود.
