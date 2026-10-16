@@ -6,6 +6,10 @@ on:
     branches: [ main, master, 'arena/**' ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -115,22 +119,70 @@ jobs:
           done
 
       # 🔒 اثبات جداسازی: SDK و مجوز فروشگاه رقیب نباید در آرتیفکت باشد.
+      # گزارش کامل هم در خلاصهٔ ران و هم به‌صورت کامنتِ روی PR منتشر می‌شود
+      # تا نتیجه بدون نیاز به دسترسی به لاگ خام قابل بازرسی باشد.
       - name: "Verify store isolation (no rival SDK in the artifacts)"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          HEAD_BRANCH: ${{ github.repository_owner }}:${{ github.ref_name }}
         run: |
           set -uo pipefail
+          REPORT="$(mktemp)"
+          {
+            echo "<!-- store-isolation-report -->"
+            echo "## 🔒 گزارش جداسازی فروشگاه"
+            echo ""
+            echo "هر آرتیفکت باید فقط SDK و مجوز پرداخت **فروشگاه خودش** را داشته باشد."
+            echo "اگر حتی یک مورد ❌ باشد، آن آرتیفکت نباید منتشر شود."
+            echo ""
+            echo "کامیت: \`${GITHUB_SHA:0:7}\` · ران: [${GITHUB_RUN_ID}](${GITHUB_SERVER_URL}/${REPO}/actions/runs/${GITHUB_RUN_ID})"
+          } > "$REPORT"
+
           STATUS=0
           check() {
-            if bash tool/verify_store_isolation.sh "$1" "$2"; then
+            {
+              echo ""
+              echo "### \`$1\` — انتظار: $2"
+              echo ""
+              echo '```'
+            } >> "$REPORT"
+            if bash tool/verify_store_isolation.sh "$1" "$2" >> "$REPORT" 2>&1; then
               echo "::notice title=Store isolation::$1 → OK ($2)"
             else
               echo "::error title=Store isolation::$1 → VIOLATED ($2)"
               STATUS=1
             fi
+            echo '```' >> "$REPORT"
           }
+
           check build/app/outputs/flutter-apk/app-bazaar-release.apk bazaar
           check build/app/outputs/flutter-apk/app-myket-release.apk myket
           check build/app/outputs/bundle/bazaarRelease/app-bazaar-release.aab bazaar
           check build/app/outputs/bundle/myketRelease/app-myket-release.aab myket
+
+          {
+            echo ""
+            if [ "$STATUS" -eq 0 ]; then
+              echo "**نتیجه: ✅ جداسازی در هر چهار آرتیفکت تأیید شد.**"
+            else
+              echo "**نتیجه: ❌ جداسازی نقض شد — این آرتیفکت‌ها قابل انتشار نیستند.**"
+            fi
+          } >> "$REPORT"
+
+          cat "$REPORT" >> "$GITHUB_STEP_SUMMARY" || true
+
+          # گزارش را روی PR بگذار تا با یک نگاه قابل بازرسی باشد.
+          PR_NUMBER="$(gh api "repos/${REPO}/pulls?state=open&head=${HEAD_BRANCH}" --jq '.[0].number' 2>/dev/null || true)"
+          if [ -n "${PR_NUMBER:-}" ] && [ "$PR_NUMBER" != "null" ]; then
+            EXISTING="$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" --jq '[.[] | select((.body // "") | contains("<!-- store-isolation-report -->"))] | .[-1].id' 2>/dev/null || true)"
+            if [ -n "${EXISTING:-}" ] && [ "$EXISTING" != "null" ]; then
+              gh api -X PATCH "repos/${REPO}/issues/comments/${EXISTING}" -f body="$(cat "$REPORT")" >/dev/null 2>&1 || true
+            else
+              gh pr comment "$PR_NUMBER" --body-file "$REPORT" >/dev/null 2>&1 || true
+            fi
+          fi
+
           exit $STATUS
 
       # اگر بررسی بالا شکست خورد، این گام علت را دقیق می‌گوید (و در
