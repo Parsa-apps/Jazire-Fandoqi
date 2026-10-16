@@ -1,4 +1,4 @@
-name: Build APK & AAB - جزیره فندقی v7.1
+name: Build APK & AAB - جزیره فندقی v7.5
 
 
 on:
@@ -98,11 +98,11 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: jazire_fandoqi_v7.1.0_apk
+          name: jazire_fandoqi_v7.5.0_apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: jazire_fandoqi_v7.1.0_aab
+          name: jazire_fandoqi_v7.5.0_aab
           path: build/app/outputs/bundle/release/app-release.aab
