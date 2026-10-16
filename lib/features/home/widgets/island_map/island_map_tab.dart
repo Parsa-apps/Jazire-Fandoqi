@@ -806,9 +806,12 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        GestureDetector(
-          onTap: () => showProfileEditor(context),
-          child: Container(
+        // پروفایل انعطاف‌پذیر است: در گوشی‌های باریک متنِ سلام کوتاه می‌شود
+        // (سه‌نقطه) و دیگر هیچ‌وقت ردیفِ نوار بالا سرریز نمی‌کند.
+        Flexible(
+          child: GestureDetector(
+            onTap: () => showProfileEditor(context),
+            child: Container(
             padding: EdgeInsets.symmetric(
               horizontal: compact ? 4 : 10,
               vertical: compact ? 4 : 6,
@@ -862,6 +865,8 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
                   const SizedBox(width: 8),
                   Text(
                     'سلام $childName!',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: AppFonts.kids(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
@@ -873,6 +878,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
               ],
             ),
           ),
+        ),
         ),
         Row(
           children: [
