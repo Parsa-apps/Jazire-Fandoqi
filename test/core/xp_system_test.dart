@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:jazireh_fandoghi/core/achievement_system.dart';
 import 'package:jazireh_fandoghi/core/game_data.dart';
 import 'package:jazireh_fandoghi/core/growth/growth_store.dart';
+import 'package:jazireh_fandoghi/core/growth/persian_digits.dart';
+import 'package:jazireh_fandoghi/core/growth/whats_new.dart';
 import 'package:jazireh_fandoghi/core/xp_system.dart';
 import 'package:jazireh_fandoghi/data/datasources/hive_player_store.dart';
 
@@ -161,6 +163,6 @@ void main() {
   });
 
   test('نسخهٔ برنامه و تازه‌های نسخه همگام هستند', () {
-    expect(GrowthStore.appVersion, '7.5.4');
+    expect(WhatsNew.version, PersianDigits.toFa(GrowthStore.appVersion));
   });
 }
