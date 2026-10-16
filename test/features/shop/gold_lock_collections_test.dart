@@ -178,7 +178,12 @@ void main() {
       of: wordBuilder,
       matching: find.byType(AnimatedGoldLock),
     ), findsOneWidget);
-    await tester.tap(wordBuilder);
+    // Text visibility alone can leave the card centre behind the fixed XP
+    // header. Centre the actual hit target and require a real pointer hit.
+    await Scrollable.ensureVisible(tester.element(wordBuilder), alignment: 0.5);
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(wordBuilder.hitTestable(), findsOneWidget);
+    await tester.tap(wordBuilder.hitTestable());
     await tester.pump(const Duration(milliseconds: 600));
     await tester.pump(const Duration(milliseconds: 600));
     expect(paidGameBuilds, 0);
