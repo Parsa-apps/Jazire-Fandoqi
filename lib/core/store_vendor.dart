@@ -56,14 +56,9 @@ class StoreDetector {
 
   /// فروشگاهی که اپ باید با درگاه آن کار کند.
   ///
-  /// در حالت debug عمداً کافه‌بازار برگردانده می‌شود تا فلوی خرید در
-  /// سندباکس قابل تست بماند (نصب از Android Studio installer ندارد).
+  /// در همهٔ حالت‌های ساخت، درگاه واقعی از لایهٔ نیتیو خوانده می‌شود.
   static Future<StoreVendor> detect() async {
     if (_cached != null) return _cached!;
-    if (!kReleaseMode) {
-      _cached = StoreVendor.bazaar;
-      return _cached!;
-    }
     // ۱) نظر لایهٔ نیتیو — همان resolve() با fallback «تنها فروشگاه
     //    نصب‌شده» برای نصب‌های دستی. با timeout تا هیچ‌وقت فلوی خرید
     //    منتظر نماند.

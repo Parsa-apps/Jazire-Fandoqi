@@ -12,6 +12,7 @@ import '../../../core/game_launch.dart';
 import '../../../core/growth/growth.dart';
 import '../../../core/monetization.dart';
 import '../../shop/full_version_paywall.dart';
+import '../../shop/content_lock.dart';
 import 'island_map/hub_island_node.dart';
 import 'island_map/island_map_background.dart';
 
@@ -639,6 +640,14 @@ class _FandoqiHubSheetWidgetState extends State<_FandoqiHubSheetWidget>
             child: Column(
               children: [
                 _header(hub, animationsDisabled: animationsDisabled),
+                ContentAccessNotice(
+                  featureName: hub.title,
+                  hasFullVersion: _hasFullVersion,
+                  onUnlocked: () async {
+                    final owned = await Monetization.hasFullVersion();
+                    if (mounted) setState(() => _hasFullVersion = owned);
+                  },
+                ),
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),

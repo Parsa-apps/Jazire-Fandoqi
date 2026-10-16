@@ -12,8 +12,16 @@ import 'full_version_paywall.dart';
 
 /// Route-level guard so premium games cannot be opened through a deep link.
 class GameAccessGate extends StatefulWidget {
-  const GameAccessGate({super.key, required this.gameName, required this.child});
+  const GameAccessGate({
+    super.key,
+    required this.gameName,
+    required this.child,
+    this.isFree,
+  });
   final String gameName;
+  /// Content routes supply their item policy explicitly. A story/world title
+  /// must never inherit a free game's entitlement just because names match.
+  final bool? isFree;
   final Widget child;
   @override
   State<GameAccessGate> createState() => _GameAccessGateState();
@@ -22,6 +30,7 @@ class GameAccessGate extends StatefulWidget {
 class _GameAccessGateState extends State<GameAccessGate>
     with SingleTickerProviderStateMixin {
   bool? _allowed;
+  int _checkGeneration = 0;
   late final AnimationController _floatCtrl;
 
   @override
@@ -35,15 +44,27 @@ class _GameAccessGateState extends State<GameAccessGate>
   }
 
   @override
+  void didUpdateWidget(GameAccessGate oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.gameName != widget.gameName || oldWidget.isFree != widget.isFree) {
+      _allowed = null;
+      _check();
+    }
+  }
+
+  @override
   void dispose() {
     _floatCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _check() async {
-    final allowed = ContentAccessPolicy.isGameFree(widget.gameName) ||
-        await Monetization.hasFullVersion();
-    if (mounted) setState(() => _allowed = allowed);
+    final generation = ++_checkGeneration;
+    final isFree = widget.isFree ?? ContentAccessPolicy.isGameFree(widget.gameName);
+    final allowed = isFree || await Monetization.hasFullVersion();
+    if (mounted && generation == _checkGeneration) {
+      setState(() => _allowed = allowed);
+    }
   }
 
   @override

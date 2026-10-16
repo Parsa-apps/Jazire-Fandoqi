@@ -14,6 +14,7 @@ import '../../core/monetization.dart';
 import '../../shared/widgets/child_touch_target.dart';
 import '../../shared/widgets/fandoghi_premium.dart';
 import '../shop/full_version_paywall.dart';
+import '../shop/content_lock.dart';
 
 /// 🔢 NUMBERS HUB PREMIUM — دنیای اعداد و دست‌ورزی ریاضی اول دبستان
 class NumbersHubScreen extends StatefulWidget {
@@ -86,6 +87,13 @@ class _NumbersHubState extends State<NumbersHubScreen> {
           child: Column(
             children: [
               _buildTopBar(),
+              ContentAccessNotice(
+                featureName: 'اعداد',
+                freeCount: ContentAccessPolicy.freeNumberCount,
+                totalCount: 20,
+                hasFullVersion: _hasFullVersion,
+                onUnlocked: () async { await _refreshEntitlement(); },
+              ),
               const SizedBox(height: 4),
               FandoghiPremium(
                 size: 52,
@@ -158,14 +166,14 @@ class _NumbersHubState extends State<NumbersHubScreen> {
 
   Widget _buildMathActivitiesRow() {
     final activities = [
-      ('جمع و تفریق', '➕', const Color(0xFFD84315), '/math/add'),
-      ('قاب ده‌تایی', '🟥', const Color(0xFFC0392B), '/math/ten-frame'),
-      ('تمساح', '🐊', const Color(0xFF2E7D32), '/math/compare'),
-      ('ساعت', '🕐', const Color(0xFF1565C0), '/math/clock'),
-      ('چوب‌خط', '🥢', const Color(0xFF2980B9), '/math/tally'),
-      ('ارزش مکانی', '🧮', const Color(0xFF8E44AD), '/math/place-value'),
-      ('محور اعداد', '🐸', const Color(0xFF16A085), '/math/number-line'),
-      ('تقارن', '🦋', const Color(0xFFD35400), '/math/symmetry'),
+      ('جمع و تفریق', '➕', const Color(0xFFD84315), '/math/add', 'جمع'),
+      ('قاب ده‌تایی', '🟥', const Color(0xFFC0392B), '/math/ten-frame', 'قاب ده‌تایی'),
+      ('تمساح', '🐊', const Color(0xFF2E7D32), '/math/compare', 'تمساح'),
+      ('ساعت', '🕐', const Color(0xFF1565C0), '/math/clock', 'ساعت'),
+      ('چوب‌خط', '🥢', const Color(0xFF2980B9), '/math/tally', 'چوب‌خط'),
+      ('ارزش مکانی', '🧮', const Color(0xFF8E44AD), '/math/place-value', 'ارزش مکانی'),
+      ('محور اعداد', '🐸', const Color(0xFF16A085), '/math/number-line', 'محور اعداد'),
+      ('تقارن', '🦋', const Color(0xFFD35400), '/math/symmetry', 'تقارن'),
     ];
 
     return SingleChildScrollView(
@@ -176,9 +184,16 @@ class _NumbersHubState extends State<NumbersHubScreen> {
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: GestureDetector(
-              onTap: () {
+              onTap: () async {
                 HapticFeedback.selectionClick();
-                Navigator.pushNamed(context, act.$4);
+                final allowed = await ensureContentAccess(
+                  context,
+                  featureName: act.$1,
+                  isFree: ContentAccessPolicy.isGameFree(act.$5),
+                );
+                if (!allowed || !mounted) return;
+                await _refreshEntitlement();
+                if (mounted) Navigator.pushNamed(context, act.$4);
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -191,6 +206,10 @@ class _NumbersHubState extends State<NumbersHubScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    if (!_hasFullVersion && !ContentAccessPolicy.isGameFree(act.$5)) ...[
+                      const Icon(Icons.lock_rounded, size: 16),
+                      const SizedBox(width: 4),
+                    ],
                     Text(act.$2, style: const TextStyle(fontSize: 16)),
                     const SizedBox(width: 4),
                     Text(

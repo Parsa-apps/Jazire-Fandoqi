@@ -87,6 +87,13 @@ class _AnimalEncyclopediaState extends State<AnimalEncyclopediaScreen> {
           child: Column(
             children: [
               _buildTopBar(topic.cards.length),
+              ContentAccessNotice(
+                featureName: 'حیوانات ایران',
+                freeCount: topic.cards.length ~/ 2,
+                totalCount: topic.cards.length,
+                hasFullVersion: _hasFullVersion,
+                onUnlocked: _refreshEntitlement,
+              ),
               _buildFilterBar(),
               Expanded(
                 child: GridView.builder(

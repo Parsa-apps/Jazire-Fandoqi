@@ -1,7 +1,6 @@
 package com.parsaapps.amoozesh_fandoghi
 
 import android.content.Intent
-import android.content.pm.ApplicationInfo
 import android.net.Uri
 import android.view.WindowManager
 import androidx.activity.result.contract.ActivityResultContracts
@@ -192,10 +191,6 @@ class MainActivity : FlutterFragmentActivity() {
             result.success(failure("شناسه محصول نامعتبر است"))
             return
         }
-        if (isDebuggable()) {
-            result.success(success("sandbox-token", "sandbox-order", "خرید آزمایشی"))
-            return
-        }
         if (purchaseInProgress) {
             result.success(failure("یک پرداخت دیگر در حال انجام است"))
             return
@@ -225,10 +220,6 @@ class MainActivity : FlutterFragmentActivity() {
             result.success(failure("توکن خرید نامعتبر است"))
             return
         }
-        if (isDebuggable()) {
-            result.success(success(message = "مصرف آزمایشی انجام شد"))
-            return
-        }
         val reply = singleReply(result)
         when (vendor) {
             StoreVendor.BAZAAR -> bazaar.consume(token, reply)
@@ -238,10 +229,6 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     private fun restore(result: MethodChannel.Result) {
-        if (isDebuggable()) {
-            result.success(failure("خرید فعالی در سندباکس نیست"))
-            return
-        }
         val reply = singleReply(result)
         when (vendor) {
             StoreVendor.BAZAAR -> bazaar.restore(fullVersionProductId, reply)
@@ -343,10 +330,6 @@ class MainActivity : FlutterFragmentActivity() {
         }
     }
 
-    private fun isDebuggable() = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
-    private fun success(token: String? = null, orderId: String? = null, message: String) = mapOf(
-        "success" to true, "purchaseToken" to token, "orderId" to orderId, "message" to message
-    )
     private fun failure(message: String) = mapOf("success" to false, "message" to message)
 
     override fun onDestroy() {

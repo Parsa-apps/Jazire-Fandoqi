@@ -14,7 +14,7 @@ import 'package:jazireh_fandoghi/core/learning_content/lullabies_data.dart';
 ///
 /// استثناهای عامدانه (در `ContentAccessPolicy` مستند شده‌اند):
 ///  * اعداد ۱ تا ۱۰ — هستهٔ ریاضی اول دبستان (۱۱ تا ۲۰ پولی)
-///  * قصه‌های کوتاهِ خواندنی (`DecodableStories`) — تمرینِ حلقهٔ خواندن
+/// قصه‌های کوتاه خواندنی هم از همین قانون پیروی می‌کنند.
 void main() {
   group('قانونِ نصف/نصف روی مجموعه‌های مرتّب', () {
     test('کارتون‌ها: نیمهٔ اول رایگان، نیمهٔ دوم نه', () {
@@ -104,6 +104,13 @@ void main() {
         );
         expect(fullPool.length, topic.cards.length, reason: topic.id);
       }
+    });
+
+    test('small/empty pools never fall back to paid cards', () {
+      const card = LearningCard(id: 'only', name: 'only', emoji: '', sound: '');
+      const topic = LearningTopic(id: 'small', title: '', skill: '', cards: [card]);
+      expect(ContentAccessPolicy.allowedTopicCards(topic, hasFullVersion: false), isEmpty);
+      expect(ContentAccessPolicy.allowedTopicCards(topic, hasFullVersion: true), [card]);
     });
 
     test('کارتِ ناشناخته قفل است (افزودنِ محتوا نشت نمی‌سازد)', () {

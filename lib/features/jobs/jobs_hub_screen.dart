@@ -74,6 +74,13 @@ class _JobsHubState extends State<JobsHubScreen> {
                   ],
                 ),
               ),
+              ContentAccessNotice(
+                featureName: 'شغل‌ها',
+                freeCount: topic.cards.length ~/ 2,
+                totalCount: topic.cards.length,
+                hasFullVersion: _hasFullVersion,
+                onUnlocked: _refreshEntitlement,
+              ),
               const SizedBox(height: 6),
               const FandoghiPremium(size: 52, mood: FandoghiMood.happy, showParticles: false),
               const SizedBox(height: 6),
@@ -87,6 +94,7 @@ class _JobsHubState extends State<JobsHubScreen> {
                     final card = topic.cards[index];
                     final isSelected = _selectedId == card.id;
                     return GestureDetector(
+                      key: ValueKey('job_${card.id}'),
                       onTap: () async {
                         HapticFeedback.selectionClick();
                         final allowed = await ensureContentAccess(

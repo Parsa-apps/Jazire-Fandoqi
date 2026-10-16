@@ -8,6 +8,8 @@ import '../../../app/app_colors.dart';
 import '../../../app/design_tokens.dart';
 import '../../../app/app_fonts.dart';
 import '../../../core/audio_service.dart';
+import '../../../core/content_access_policy.dart';
+import '../../../core/monetization.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
@@ -15,6 +17,7 @@ import '../../../shared/widgets/child_touch_target.dart';
 import '../../../shared/widgets/fandoghi_premium.dart';
 import '../../../shared/widgets/magnetic_drag.dart';
 import '../../../shared/widgets/premium_button.dart';
+import '../../shop/content_lock.dart';
 
 /// ────────────────────────────────────────────────────────────
 /// 🧍 فاز ۳۹: بازی بدن و حواس
@@ -46,10 +49,39 @@ class _BodyPartsGameState extends State<BodyPartsGame> {
 
   final Set<int> _placed = <int>{};
   bool _finished = false;
+  bool _hasFullVersion = false;
+
+  bool _isPartFree(int index) => ContentAccessPolicy.isFreeHalfItem(
+        _parts[index].$1, _parts.map((part) => part.$1));
+
+  bool _isPartLocked(int index) => !_hasFullVersion && !_isPartFree(index);
+
+  int get _playableCount => _hasFullVersion ? _parts.length : _parts.length ~/ 2;
+  int get _coinReward => _playableCount * 3;
+  int get _starReward => _playableCount ~/ 2;
+
+  Future<void> _refreshEntitlement() async {
+    final owned = await Monetization.hasFullVersion();
+    if (!mounted || owned == _hasFullVersion) return;
+    setState(() {
+      _hasFullVersion = owned;
+      _finished = false;
+    });
+  }
+
+  Future<void> _unlockPart(int index) async {
+    final allowed = await ensureContentAccess(
+      context,
+      featureName: 'عضو بدن: ${_parts[index].$1}',
+      isFree: _isPartFree(index),
+    );
+    if (allowed && mounted) await _refreshEntitlement();
+  }
 
   @override
   void initState() {
     super.initState();
+    unawaited(_refreshEntitlement());
     FandoghiCoach.enablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -66,29 +98,30 @@ class _BodyPartsGameState extends State<BodyPartsGame> {
   }
 
   void _onDrop(int index, String emoji) {
-    if (_placed.contains(index)) return;
+    if (_finished || _isPartLocked(index) || _placed.contains(index)) return;
     if (_parts[index].$2 != emoji) return;
     setState(() => _placed.add(index));
     HapticFeedback.lightImpact();
     FandoghiCoach.correct('${_parts[index].$1} سر جایش نشست! ${_parts[index].$3} ✨');
     unawaited(AudioService.playCorrect());
-    if (_placed.length == _parts.length) {
+    if (_placed.length == _playableCount) {
       Future<void>.delayed(const Duration(milliseconds: 700), () {
-        if (!mounted) return;
+        if (!mounted || _placed.length != _playableCount) return;
         setState(() => _finished = true);
         GameData.recordAnswer(correct: true, skill: 'body');
-        GameData.addCoins(18);
-        GameData.addStars(3);
+        GameData.addCoins(_coinReward);
+        GameData.addStars(_starReward);
         if (widget.stageId != null) {
           GameData.completeStage(widget.stageId!, stageNumber: widget.stageNumber);
         }
         unawaited(AudioService.win());
-        FandoghiCoach.reward('آفرین! هر ۶ عضو سر جاشه — حالا هر ۵ حس رو می‌شناسی 👏');
+        FandoghiCoach.reward('آفرین! هر $_playableCount عضو سر جاشه 👏');
       });
     }
   }
 
   void _saySense(int index) {
+    if (_isPartLocked(index)) return;
     AudioService.tap();
     // روی گوشی‌های بدون TTS فارسی، `speak` بی‌صدا رد می‌شود (تا لهجهٔ عربی
     // پخش نشود)؛ پس همان جمله را از زبان فندقی هم نشان می‌دهیم.
@@ -103,14 +136,26 @@ class _BodyPartsGameState extends State<BodyPartsGame> {
       body: DecoratedBox(
         decoration: const BoxDecoration(gradient: AppGradients.forest),
         child: SafeArea(
-          child: _finished ? _buildResult() : _buildGame(),
+          child: Column(
+            children: [
+              ContentAccessNotice(
+                featureName: 'بدن و حواس',
+                freeCount: _parts.length ~/ 2,
+                totalCount: _parts.length,
+                hasFullVersion: _hasFullVersion,
+                onUnlocked: _refreshEntitlement,
+              ),
+              Expanded(child: _finished ? _buildResult() : _buildGame()),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildGame() {
-    return Column(
+    return SingleChildScrollView(
+      child: Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
@@ -129,13 +174,13 @@ class _BodyPartsGameState extends State<BodyPartsGame> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadii.pill), boxShadow: AppShadows.soft),
-                child: Text('${_placed.length}/${_parts.length}', style: AppFonts.vazirmatn(fontSize: 13, fontWeight: FontWeight.w900, color: const Color(0xFF2D3436))),
+                child: Text('${_placed.length}/$_playableCount', style: AppFonts.vazirmatn(fontSize: 13, fontWeight: FontWeight.w900, color: const Color(0xFF2D3436))),
               ),
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 decoration: BoxDecoration(color: const Color(0xFF00B894).withOpacity(0.9), borderRadius: BorderRadius.circular(AppRadii.pill)),
-                child: Text('+18 🪙', style: AppFonts.vazirmatn(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.white)),
+                child: Text('+$_coinReward 🪙', style: AppFonts.vazirmatn(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.white)),
               ),
             ],
           ),
@@ -171,15 +216,15 @@ class _BodyPartsGameState extends State<BodyPartsGame> {
         Text('اعضای بدن را بکش و بگذار سر جایش — بعد رویش بزن تا «${_parts[0].$3}» رو بشنوی!', textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12, height: 1.5)),
         const SizedBox(height: 12),
         // اعضای کشیدنی
-        Expanded(
-          child: Wrap(
+        Wrap(
             alignment: WrapAlignment.center,
             spacing: 16,
             runSpacing: 16,
             children: [
               for (var i = 0; i < _parts.length; i++)
-                if (!_placed.contains(i))
+                if (!_placed.contains(i) && !_isPartLocked(i))
                   MagneticDraggable(
+                    key: ValueKey('body_part_drag_$i'),
                     data: _parts[i].$2,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -197,82 +242,79 @@ class _BodyPartsGameState extends State<BodyPartsGame> {
                   ),
             ],
           ),
-        ),
         const SizedBox(height: 16),
       ],
+      ),
     );
   }
 
   Widget _slot(int index, String label) {
     final filled = _placed.contains(index);
     final part = _parts[index];
-    return Column(
-      children: [
-        DragTarget<String>(
-          onWillAcceptWithDetails: (_) => !_placed.contains(index),
-          onAcceptWithDetails: (details) => _onDrop(index, details.data),
-          builder: (context, candidates, rejected) {
-            final hovering = candidates.isNotEmpty;
-            return AnimatedContainer(
-              duration: AppMotion.fast,
-              decoration: BoxDecoration(
-                color: hovering
-                    ? Colors.amber.withOpacity(0.30)
-                    : filled
-                        ? Colors.white
-                        : Colors.white.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(AppRadii.lg),
-                border: Border.all(
-                  color: hovering ? Colors.amber : filled ? const Color(0xFF00B894) : Colors.white30,
-                  width: hovering ? 3 : filled ? 2 : 1.5,
-                ),
-                boxShadow: filled ? [BoxShadow(color: const Color(0xFF00B894).withOpacity(0.2), blurRadius: 8)] : null,
-              ),
-              child: AspectRatio(
-                aspectRatio: 1,
-                child: filled
-                    ? Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(part.$2, style: const TextStyle(fontSize: 32)),
-                          const SizedBox(height: 2),
-                          Text(part.$1, style: AppFonts.vazirmatn(color: const Color(0xFF2D3436), fontSize: 11, fontWeight: FontWeight.w800)),
-                          Text(part.$3, style: TextStyle(color: const Color(0xFF00B894), fontSize: 9, fontWeight: FontWeight.w700)),
-                        ],
-                      )
-                    : Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.add_rounded, color: Colors.white70, size: 20),
-                            const SizedBox(height: 2),
-                            Text(label, style: AppFonts.vazirmatn(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700)),
-                          ],
-                        ),
-                      ),
-              ),
-            );
-          },
-        ),
-        if (filled) ...[
-          const SizedBox(height: 4),
-          ChildTouchTarget(
-            minSize: 40,
-            onTap: () => _saySense(index),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.volume_up_rounded, color: Colors.white, size: 16),
-                SizedBox(width: 2),
-                Text(
-                  'بشنو',
-                  style: TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-              ],
+    if (_isPartLocked(index)) {
+      return GestureDetector(
+        key: ValueKey('body_part_locked_$index'),
+        onTap: () => _unlockPart(index),
+        child: LockedCardOverlay(
+          locked: true,
+          badgeSize: 24,
+          child: Container(
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(AppRadii.lg),
+              border: Border.all(color: Colors.white30),
             ),
+            child: Text(label, style: const TextStyle(color: Colors.white)),
           ),
-        ],
-      ],
+        ),
+      );
+    }
+    return GestureDetector(
+      onTap: filled ? () => _saySense(index) : null,
+      child: DragTarget<String>(
+        key: ValueKey('body_part_target_$index'),
+        onWillAcceptWithDetails: (_) => !_isPartLocked(index) && !filled,
+        onAcceptWithDetails: (details) => _onDrop(index, details.data),
+        builder: (context, candidates, rejected) {
+          final hovering = candidates.isNotEmpty;
+          return AnimatedContainer(
+            duration: AppMotion.fast,
+            decoration: BoxDecoration(
+              color: hovering
+                  ? Colors.amber.withOpacity(0.30)
+                  : filled ? Colors.white : Colors.white.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(AppRadii.lg),
+              border: Border.all(
+                color: hovering ? Colors.amber : filled
+                    ? const Color(0xFF00B894) : Colors.white30,
+                width: hovering ? 3 : filled ? 2 : 1.5,
+              ),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (filled) ...[
+                    Text(part.$2, style: const TextStyle(fontSize: 32)),
+                    Text(part.$1, style: AppFonts.vazirmatn(
+                      color: const Color(0xFF2D3436), fontSize: 11,
+                      fontWeight: FontWeight.w800)),
+                    Text(part.$3, style: const TextStyle(
+                      color: Color(0xFF00B894), fontSize: 9)),
+                    const Icon(Icons.volume_up_rounded, size: 16,
+                        color: Color(0xFF00B894)),
+                  ] else ...[
+                    const Icon(Icons.add_rounded, color: Colors.white70, size: 20),
+                    Text(label, style: AppFonts.vazirmatn(
+                      color: Colors.white70, fontSize: 11)),
+                  ],
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -285,7 +327,7 @@ class _BodyPartsGameState extends State<BodyPartsGame> {
           children: [
             const FandoghiPremium(size: 110, mood: FandoghiMood.celebrating, showParticles: true).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
             const SizedBox(height: 16),
-            Text('بدنت کامل شد! 🧍✨', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900)).animate().fadeIn(delay: 200.ms),
+            Text('تمرین بدن تمام شد! 🧍✨', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900)).animate().fadeIn(delay: 200.ms),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -297,16 +339,16 @@ class _BodyPartsGameState extends State<BodyPartsGame> {
               decoration: BoxDecoration(color: Colors.white.withOpacity(0.10), borderRadius: BorderRadius.circular(AppRadii.lg), border: Border.all(color: Colors.white24)),
               child: Column(
                 children: [
-                  Text('هر ۶ عضو سر جاشه!', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+                  Text('هر $_playableCount عضو سر جاشه!', style: AppFonts.vazirmatn(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 6),
-                  Text('👀 بینایی  •  👂 شنوایی  •  👃 بویایی  •  👄 چشایی  •  ✋ لامسه  •  🦶 حرکت', textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12, height: 1.6)),
+                  Text([for (var i = 0; i < _parts.length; i++) if (!_isPartLocked(i)) '${_parts[i].$2} ${_parts[i].$4}'].join('  •  '), textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12, height: 1.6)),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: const Color(0xFFFFD700).withOpacity(0.2), borderRadius: BorderRadius.circular(AppRadii.pill)), child: Row(children: [const Text('🪙', style: TextStyle(fontSize: 14)), const SizedBox(width: 4), Text('+18', style: AppFonts.vazirmatn(fontSize: 13, fontWeight: FontWeight.w900, color: const Color(0xFFFFD700)))])),
+                      Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: const Color(0xFFFFD700).withOpacity(0.2), borderRadius: BorderRadius.circular(AppRadii.pill)), child: Row(children: [const Text('🪙', style: TextStyle(fontSize: 14)), const SizedBox(width: 4), Text('+$_coinReward', style: AppFonts.vazirmatn(fontSize: 13, fontWeight: FontWeight.w900, color: const Color(0xFFFFD700)))])),
                       const SizedBox(width: 8),
-                      Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(AppRadii.pill)), child: Row(children: [const Icon(Icons.star_rounded, size: 14, color: Colors.white), const SizedBox(width: 4), Text('+3 ⭐', style: AppFonts.vazirmatn(fontSize: 13, fontWeight: FontWeight.w900, color: Colors.white))])),
+                      Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(AppRadii.pill)), child: Row(children: [const Icon(Icons.star_rounded, size: 14, color: Colors.white), const SizedBox(width: 4), Text('+$_starReward ⭐', style: AppFonts.vazirmatn(fontSize: 13, fontWeight: FontWeight.w900, color: Colors.white))])),
                     ],
                   ),
                 ],

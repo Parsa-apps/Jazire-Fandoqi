@@ -72,6 +72,16 @@ jobs:
           chmod 600 android/key.properties
           echo "Release signing configured from GitHub Secrets."
 
+      - name: Paywall regression gate
+        run: >-
+          flutter test --reporter expanded
+          test/core/monetization_test.dart
+          test/core/content_access_policy_test.dart
+          test/core/half_free_rule_test.dart
+          test/core/decodable_stories_test.dart
+          test/core/paid_route_guard_test.dart
+          test/features/shop/content_lock_test.dart
+
       - name: Build APK (Release)
         run: flutter build apk --release
 
@@ -88,11 +98,26 @@ jobs:
       - name: Build AAB (Release)
         run: flutter build appbundle --release
 
+      - name: Record APK build identity
+        run: |
+          set -euo pipefail
+          {
+            echo "version=$(sed -n 's/^version: //p' pubspec.yaml)"
+            echo "commit=${GITHUB_SHA}"
+            echo "build_mode=release"
+            echo "store=myket"
+            echo "paywall_regression_gate=passed"
+            sha256sum build/app/outputs/flutter-apk/app-release.apk
+          } > build/app/outputs/flutter-apk/build-info.txt
+          cat build/app/outputs/flutter-apk/build-info.txt
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: jazire_fandoqi_v7.5.0_apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: jazire_fandoqi_v7.5.1_apk
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/build-info.txt
 
       - name: Upload QA gate log
         if: failure()
@@ -106,5 +131,5 @@ jobs:
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: jazire_fandoqi_v7.5.0_aab
+          name: jazire_fandoqi_v7.5.1_aab
           path: build/app/outputs/bundle/release/app-release.aab

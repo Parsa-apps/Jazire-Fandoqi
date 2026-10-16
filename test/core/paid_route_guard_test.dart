@@ -16,6 +16,7 @@ void main() {
       // می‌ماندند و قفل فقط ظاهری بود.
       "'/star_catch': (context) => GameAccessGate(",
       "'/drawing-album': (context) => GameAccessGate(",
+      "'/colors_lab': (context) => GameAccessGate(",
     ]) {
       expect(source, contains(route), reason: route);
     }
@@ -35,6 +36,12 @@ void main() {
   test('life-skill worlds are checked by id against the central policy', () {
     final source = File('lib/main.dart').readAsStringSync();
     expect(source, contains('ContentAccessPolicy.isLifeSkillFree(topic.id)'));
+  });
+
+  test('game route arguments cannot substitute another game identity', () {
+    final source = File('lib/main.dart').readAsStringSync();
+    expect(source, contains('final launch = GameLaunch(\n            gameName: gameName,'));
+    expect(source, isNot(contains('? suppliedLaunch\n              : GameLaunch')));
   });
 
   test('dashboard and hub use the same game policy as route gates', () {

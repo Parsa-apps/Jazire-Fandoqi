@@ -358,9 +358,14 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
               child: const CartoonHubScreen(),
             ),
         '/stories': (context) => const StoriesHubScreen(),
-        '/stories/read': (context) => StoryReaderScreen(
-              story: DecodableStories.forToday().toChildrenStory(),
-            ),
+        '/stories/read': (context) {
+          final story = DecodableStories.forToday().toChildrenStory();
+          return GameAccessGate(
+            gameName: story.title,
+            isFree: ContentAccessPolicy.isStoryFree(story.id),
+            child: StoryReaderScreen(story: story),
+          );
+        },
         '/lullabies': (context) => const LullabyHubScreen(),
         '/home': (context) => const HomeScreen(),
         '/drawing-album': (context) => GameAccessGate(
@@ -377,7 +382,10 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
               gameName: 'ستاره‌گیری',
               child: const StarCatchGame(),
             ),
-        '/colors_lab': (context) => const ColorsLabGame(),
+        '/colors_lab': (context) => GameAccessGate(
+              gameName: 'آزمایشگاه رنگ',
+              child: const ColorsLabGame(),
+            ),
         '/puzzle': (context) => GameAccessGate(
               gameName: 'پازل',
               child: const PuzzleGame(),
@@ -478,9 +486,13 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
         if (name.startsWith('/game/')) {
           final gameName = name.substring('/game/'.length);
           final suppliedLaunch = settings.arguments;
-          final launch = suppliedLaunch is GameLaunch
-              ? suppliedLaunch
-              : GameLaunch(gameName: gameName);
+          // Route identity is authoritative; arguments may carry stage
+          // progress, never substitute a different (possibly paid) game.
+          final launch = GameLaunch(
+            gameName: gameName,
+            stageId: suppliedLaunch is GameLaunch ? suppliedLaunch.stageId : null,
+            stageNumber: suppliedLaunch is GameLaunch ? suppliedLaunch.stageNumber : null,
+          );
           return MaterialPageRoute(
             settings: settings,
             builder: (_) => GameAccessGate(gameName: gameName, child: _gameFor(launch)),
@@ -493,8 +505,10 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
           if (decodable != null) {
             return MaterialPageRoute(
               settings: settings,
-              builder: (_) => StoryReaderScreen(
-                story: decodable.toChildrenStory(),
+              builder: (_) => GameAccessGate(
+                gameName: decodable.title,
+                isFree: ContentAccessPolicy.isStoryFree(decodable.id),
+                child: StoryReaderScreen(story: decodable.toChildrenStory()),
               ),
             );
           }
@@ -506,6 +520,7 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
                   ? StoryReaderScreen(story: childrenStory)
                   : GameAccessGate(
                       gameName: childrenStory.title,
+                      isFree: false,
                       child: StoryReaderScreen(story: childrenStory),
                     ),
             );
@@ -528,6 +543,7 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
                 ? CartoonPlayerScreen(cartoon: cartoon)
                 : GameAccessGate(
                     gameName: cartoon.title,
+                      isFree: false,
                     child: CartoonPlayerScreen(cartoon: cartoon),
                   ),
           );
@@ -541,6 +557,7 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
                 ? CartoonPlayerScreen(cartoon: cartoon)
                 : GameAccessGate(
                     gameName: cartoon.title,
+                      isFree: false,
                     child: CartoonPlayerScreen(cartoon: cartoon),
                   ),
           );
@@ -558,6 +575,7 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
                   ? LifeSkillsGame(topic: topic)
                   : GameAccessGate(
                       gameName: topic.title,
+                      isFree: false,
                       child: LifeSkillsGame(topic: topic),
                     ),
             );
@@ -573,6 +591,7 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
                   ? LullabyPlayerScreen(lullaby: lullaby)
                   : GameAccessGate(
                       gameName: lullaby.title,
+                      isFree: false,
                       child: LullabyPlayerScreen(lullaby: lullaby),
                     ),
             );
@@ -593,8 +612,8 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
                 stageNumber: launch?.stageNumber,
               );
               if (isFreeTopic) return academy;
-              // شماره‌های ۱ تا ۲۰ و موضوعات پریمیوم از مسیر مستقیم هم
-              // نباید از قفل سطح محتوا عبور کنند؛ ۱ تا ۱۰ رایگان از /numbers است.
+              // Unknown topics fail closed. Known academies enforce their
+              // half-free question/option pool inside the destination.
               return GameAccessGate(gameName: 'آکادمی', child: academy);
             },
           );

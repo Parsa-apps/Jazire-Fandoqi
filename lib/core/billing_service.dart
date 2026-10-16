@@ -27,11 +27,13 @@ class BillingResult {
         purchaseToken = null,
         orderId = null;
 
-  const BillingResult.sandbox()
-      : success = true,
-        purchaseToken = null,
-        orderId = null,
-        message = 'خرید آزمایشی (حالت سندباکس)';
+  /// The native store SDK has already verified the receipt's signature.
+  /// Empty receipts and tokens from older automatic sandbox builds are never
+  /// proof of payment, in any build mode.
+  bool get hasStoreReceipt =>
+      purchaseToken != null &&
+      purchaseToken!.trim().isNotEmpty &&
+      purchaseToken!.trim() != 'sandbox-token';
 }
 
 /// پل ارتباطی با سیستم پرداخت درون‌برنامه‌ای فروشگاه‌های ایرانی
@@ -50,18 +52,13 @@ class BillingResult {
 /// 3. `restore`: بدون ورودی؛ نتیجه‌ی یک اشتراک معتبر فعلی را با همان قالب
 ///    `purchase` برمی‌گرداند (یا `success: false` اگر خریدی نیست)
 ///
-/// در حالت توسعه (یا وقتی ماژول نیتیو نصب نیست) اگر [sandboxFallback]
-/// فعال باشد، خریدها به‌صورت آزمایشی موفق در نظر گرفته می‌شوند تا کل
-/// فلوی خرید قابل تست باشد. قبل از انتشار نسخه نهایی باید:
-///   1. ماژول نیتیو متصل شود
-///   2. بیلد release واقعی ساخته شود؛ fallback در release به‌صورت compile-time خاموش است
+/// Missing plugins, malformed responses and unavailable stores always fail
+/// closed, including debug/profile builds. Tests use explicit channel mocks;
+/// there is no automatic successful purchase or restore in a shipped APK.
 class BillingService {
   BillingService._();
 
   static const MethodChannel _channel = MethodChannel('kudake_iran/billing');
-
-  /// سندباکس فقط در debug فعال است و از کد release قابل روشن‌کردن نیست.
-  static bool get sandboxFallback => !kReleaseMode;
 
   /// خرید دائمی و غیرمصرف‌شدنی نسخه کامل.
   static Future<BillingResult> purchaseNonConsumable(String productId) {
@@ -76,9 +73,7 @@ class BillingService {
   /// خرید آیتم مصرف‌شدنی مثل بسته سکه یا ستاره
   static Future<BillingResult> purchaseConsumable(String productId) async {
     final result = await _invoke('purchase', productId, consumable: true);
-    if (kReleaseMode &&
-        result.success &&
-        (result.purchaseToken == null || result.purchaseToken!.isEmpty)) {
+    if (result.success && !result.hasStoreReceipt) {
       return const BillingResult.failure('توکن خرید مصرف‌شدنی دریافت نشد');
     }
     return result;
@@ -102,7 +97,6 @@ class BillingService {
       );
       return _parse(raw, requireReceipt: false);
     } on MissingPluginException {
-      if (sandboxFallback) return const BillingResult.sandbox();
       return const BillingResult.failure('سرویس پرداخت استور در دسترس نیست');
     } on PlatformException catch (e) {
       return BillingResult.failure(e.message ?? 'تأیید خرید انجام نشد');
@@ -134,8 +128,8 @@ class BillingService {
     }
     // اگر اپ از فروشگاه پشتیبانی‌شده نصب نشده باشد (نصب مستقیم APK)،
     // هیچ درگاه پرداختی وجود ندارد. به‌جای خطای مبهم استور، پیام روشن
-    // می‌دهیم. در debug این بررسی رد می‌شود تا سندباکس کار کند.
-    if (kReleaseMode && !(await StoreDetector.detect()).supportsBilling) {
+    // می‌دهیم. حالت ساخت هیچ‌وقت مجوز پرداخت محسوب نمی‌شود.
+    if (!(await StoreDetector.detect()).supportsBilling) {
       return const BillingResult.failure(
         'این نسخه از فروشگاه رسمی نصب نشده است؛ برای خرید، برنامه را از '
         'فروشگاهی که آن را دریافت کرده‌اید نصب کنید.',
@@ -163,8 +157,6 @@ class BillingService {
         'پاسخ فروشگاه به‌موقع نرسید؛ اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.',
       );
     } on MissingPluginException {
-      // ماژول نیتیو استور نصب نیست؛ در حالت توسعه خرید آزمایشی موفق است
-      if (sandboxFallback) return const BillingResult.sandbox();
       return const BillingResult.failure('سرویس پرداخت استور در دسترس نیست');
     } on PlatformException catch (e) {
       // استور خطا داده (انصراف کاربر، قطع اینترنت، موجودی ناکافی و...)
@@ -212,28 +204,25 @@ class BillingService {
       final success = raw['success'] == true;
       final message = raw['message']?.toString() ?? '';
       if (success) {
-        final token = raw['purchaseToken']?.toString();
-        final orderId = raw['orderId']?.toString();
-        // A release purchase is not trusted without a store receipt/token.
-        // Debug sandbox responses are the only permitted exception.
-        if (kReleaseMode &&
-            requireReceipt &&
-            (token == null || token.isEmpty) &&
-            (orderId == null || orderId.isEmpty)) {
-          return const BillingResult.failure('رسید خرید از استور دریافت نشد');
-        }
-        return BillingResult(
+        final token = raw['purchaseToken'] is String
+            ? raw['purchaseToken'] as String : null;
+        final orderId = raw['orderId'] is String
+            ? raw['orderId'] as String : null;
+        final result = BillingResult(
           success: true,
           purchaseToken: token,
           orderId: orderId,
           message: message,
         );
+        if (requireReceipt && !result.hasStoreReceipt) {
+          return const BillingResult.failure('رسید خرید از استور دریافت نشد');
+        }
+        return result;
       }
       return BillingResult.failure(
         message.isEmpty ? 'پرداخت انجام نشد' : message,
       );
     }
-    if (sandboxFallback) return const BillingResult.sandbox();
     return const BillingResult.failure('پاسخ نامعتبر از سرویس پرداخت');
   }
 }

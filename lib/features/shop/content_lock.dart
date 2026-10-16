@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_fonts.dart';
+import '../../app/island_world_style.dart';
+import '../../core/growth/persian_digits.dart';
 import '../../core/growth/smart_conversion.dart';
 import '../../core/monetization.dart';
 import 'full_version_paywall.dart';
@@ -117,9 +120,80 @@ class LockedCardOverlay extends StatelessWidget {
         PositionedDirectional(
           top: 6,
           end: 6,
-          child: LockedItemBadge(size: badgeSize),
+          child: IgnorePointer(child: LockedItemBadge(size: badgeSize)),
         ),
       ],
+    );
+  }
+}
+
+/// An always-visible explanation for collections whose paid half may be
+/// below the fold or excluded from a random quiz. This is not an entitlement:
+/// the same access guard still decides whether the paid content can open.
+class ContentAccessNotice extends StatelessWidget {
+  const ContentAccessNotice({
+    super.key,
+    required this.featureName,
+    required this.hasFullVersion,
+    required this.onUnlocked,
+    this.freeCount,
+    this.totalCount,
+  }) : assert((freeCount == null) == (totalCount == null));
+
+  final String featureName;
+  final bool hasFullVersion;
+  final Future<void> Function() onUnlocked;
+  final int? freeCount;
+  final int? totalCount;
+
+  @override
+  Widget build(BuildContext context) {
+    if (hasFullVersion) return const SizedBox.shrink();
+    final message = freeCount == null
+        ? 'نیمهٔ هر مجموعه رایگان؛ بقیه با نسخهٔ کامل'
+        : '${PersianDigits.toFa(freeCount!)} از '
+            '${PersianDigits.toFa(totalCount!)} رایگان؛ '
+            '${PersianDigits.toFa(totalCount! - freeCount!)} مورد قفل است';
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Material(
+        color: IslandWorldPalette.paper,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          key: const ValueKey('content_access_notice'),
+          borderRadius: BorderRadius.circular(16),
+          onTap: () async {
+            final allowed = await ensureContentAccess(
+              context,
+              featureName: featureName,
+              isFree: false,
+            );
+            if (allowed && context.mounted) await onUnlocked();
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                const LockedItemBadge(size: 28),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '$message\nبازکردن با کمک مامان یا بابا',
+                    style: AppFonts.vazirmatn(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: IslandWorldPalette.ink,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+                const Icon(Icons.chevron_left_rounded,
+                    color: IslandWorldPalette.ink),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

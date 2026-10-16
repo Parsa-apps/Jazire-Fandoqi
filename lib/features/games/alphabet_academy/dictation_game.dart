@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../../../app/app_fonts.dart';
 import '../../../core/audio_service.dart';
+import '../../../core/monetization.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
@@ -16,6 +17,7 @@ import '../../../shared/widgets/child_touch_target.dart';
 import '../../../shared/widgets/fandoghi_premium.dart';
 import '../../../shared/widgets/next_today_button.dart';
 import '../../../shared/widgets/particle_celebration.dart';
+import '../../shop/content_lock.dart';
 
 /// املای شنیداری اول دبستان: فندقی کلمه را می‌خواند، کودک کلمهٔ درست را می‌زند.
 class AlphabetDictationGame extends StatefulWidget {
@@ -44,7 +46,9 @@ class _AlphabetDictationGameState extends State<AlphabetDictationGame> {
     'ایران',
   ];
 
+  late List<String> _allWords;
   late List<String> _pool;
+  bool _hasFullVersion = false;
   String _target = '';
   late List<String> _options;
   int _index = 0;
@@ -56,23 +60,35 @@ class _AlphabetDictationGameState extends State<AlphabetDictationGame> {
   @override
   void initState() {
     super.initState();
-    _pool = widget.words
+    _allWords = widget.words
         .map(AudioService.cleanSpokenText)
         .where((w) => w.length >= 2)
         .toSet()
         .toList();
-    if (_pool.length < 3) {
-      _pool = LiteracyUnit.dictationWords();
+    if (_allWords.length < 3) {
+      _allWords = LiteracyUnit.dictationWords();
     }
-    if (_pool.length < 3) {
-      _pool = List<String>.from(_fallback);
+    if (_allWords.length < 3) {
+      _allWords = List<String>.from(_fallback);
     }
+    _pool = _allWords.take(_allWords.length ~/ 2).toList();
     _deal();
+    unawaited(_refreshEntitlement());
     FandoghiCoach.enablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       FandoghiCoach.instruction('گوش کن؛ بعد کلمه‌ای را که شنیدی لمس کن 👂');
       unawaited(_speak());
+    });
+  }
+
+  Future<void> _refreshEntitlement() async {
+    final owned = await Monetization.hasFullVersion();
+    if (!mounted || owned == _hasFullVersion) return;
+    setState(() {
+      _hasFullVersion = owned;
+      _pool = owned ? _allWords : _allWords.take(_allWords.length ~/ 2).toList();
+      _deal();
     });
   }
 
@@ -149,13 +165,25 @@ class _AlphabetDictationGameState extends State<AlphabetDictationGame> {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8E7),
       body: SafeArea(
-        child: _finished ? _result() : _game(),
+        child: Column(
+          children: [
+            ContentAccessNotice(
+              featureName: widget.title,
+              freeCount: _allWords.length ~/ 2,
+              totalCount: _allWords.length,
+              hasFullVersion: _hasFullVersion,
+              onUnlocked: _refreshEntitlement,
+            ),
+            Expanded(child: _finished ? _result() : _game()),
+          ],
+        ),
       ),
     );
   }
 
   Widget _game() {
-    return Column(
+    return SingleChildScrollView(
+      child: Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
@@ -232,6 +260,7 @@ class _AlphabetDictationGameState extends State<AlphabetDictationGame> {
             ),
           ),
       ],
+      ),
     );
   }
 

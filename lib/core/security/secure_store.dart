@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 /// 🔐 Keystore-backed secure storage bridge (Android native side).
@@ -55,4 +56,7 @@ class SecureStore {
       // Best effort.
     }
   }
+  @visibleForTesting
+  static void resetForTesting() => _cache.clear();
+
 }

@@ -163,6 +163,13 @@ class _SelHubState extends State<SelHubScreen> with TickerProviderStateMixin {
           child: Column(
             children: [
               _buildTopBar(),
+              ContentAccessNotice(
+                featureName: 'احساسات',
+                freeCount: _emotions.length ~/ 2,
+                totalCount: _emotions.length,
+                hasFullVersion: _hasFullVersion,
+                onUnlocked: _refreshEntitlement,
+              ),
               Expanded(
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
