@@ -9,6 +9,9 @@ import 'package:jazireh_fandoghi/core/learning_content/lullabies_data.dart';
 import 'package:jazireh_fandoghi/core/monetization.dart';
 import 'package:jazireh_fandoghi/features/cartoons/cartoon_hub_screen.dart';
 import 'package:jazireh_fandoghi/features/lullabies/lullaby_hub_screen.dart';
+import 'package:jazireh_fandoghi/features/games/mini_games/games_carnival_screen.dart';
+import 'package:jazireh_fandoghi/features/shop/game_access_gate.dart';
+import 'package:jazireh_fandoghi/shared/widgets/child_touch_target.dart';
 import 'package:jazireh_fandoghi/features/stories/stories_hub_screen.dart';
 import 'package:jazireh_fandoghi/shared/widgets/animated_gold_lock.dart';
 
@@ -47,6 +50,27 @@ void main() {
   ];
 
   for (final collection in collections) {
+    testWidgets(
+        '${collection.prefix}: a stale local grant must not hide the paid-half locks',
+        (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      store.values.addAll(<String, String>{
+        'entitlement.granted': 'true',
+        'entitlement.receipt_token': 'previous-placeholder-receipt',
+      });
+      store.offline = true;
+
+      await tester.pumpWidget(MaterialApp(home: collection.screen));
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(find.byType(AnimatedGoldLock),
+          findsNWidgets(collection.total - collection.total ~/ 2));
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
     testWidgets(
         '${collection.prefix}: only the paid half has gold locks; verified purchase removes them',
         (tester) async {
@@ -87,4 +111,50 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     });
   }
+
+  testWidgets('carnival keeps word builder locked with a stale local grant',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    store.values.addAll(<String, String>{
+      'entitlement.granted': 'true',
+      'entitlement.receipt_token': 'previous-placeholder-receipt',
+    });
+    store.offline = true;
+    var paidGameBuilds = 0;
+    await tester.pumpWidget(MaterialApp(
+      home: const GamesCarnivalScreen(),
+      onGenerateRoute: (settings) => MaterialPageRoute<void>(
+        settings: settings,
+        builder: (_) => GameAccessGate.lazy(
+          gameName: 'کلمه‌ساز',
+          isFree: false,
+          childBuilder: () {
+            paidGameBuilds++;
+            return const Scaffold(body: Text('PAID_GAME_CONTENT'));
+          },
+        ),
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 600));
+    final wordBuilder = find.ancestor(
+      of: find.text('کلمه‌ساز'),
+      matching: find.byType(ChildTouchTarget),
+    );
+    expect(wordBuilder, findsOneWidget);
+    expect(find.descendant(
+      of: wordBuilder,
+      matching: find.byType(AnimatedGoldLock),
+    ), findsOneWidget);
+    await tester.tap(wordBuilder);
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(paidGameBuilds, 0);
+    expect(find.text('PAID_GAME_CONTENT'), findsNothing);
+    expect(find.byType(GameAccessGate), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }

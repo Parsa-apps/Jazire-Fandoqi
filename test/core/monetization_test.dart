@@ -118,6 +118,32 @@ void main() {
     expect(await Monetization.hasFullVersion(), isFalse);
   });
 
+  test('an unversioned Keystore grant cannot unlock an unpaid offline update',
+      () async {
+    store.values.addAll(<String, String>{
+      'entitlement.granted': 'true',
+      'entitlement.receipt_token': 'previous-placeholder-receipt',
+      'entitlement.receipt_order': 'previous-placeholder-order',
+    });
+    store.offline = true;
+    expect(await Monetization.hasFullVersion(), isFalse);
+  });
+
+  test('a store-confirmed missing purchase revokes an earlier cached grant',
+      () async {
+    store.purchaseResponse = PaywallTestStore.verifiedPurchase;
+    expect(await Monetization.purchaseFullVersion(), isTrue);
+    store.restoreResponse = const <String, Object?>{
+      'success': false,
+      'status': 'not_owned',
+      'message': 'خرید نسخه کامل یافت نشد',
+    };
+    expect(await Monetization.hasFullVersion(), isFalse);
+    SecureStore.resetForTesting();
+    store.offline = true;
+    expect(await Monetization.hasFullVersion(), isFalse);
+  });
+
   test('Android no longer fabricates successful debug purchases', () {
     final source = File('android/app/src/main/kotlin/com/parsaapps/'
         'amoozesh_fandoghi/MainActivity.kt').readAsStringSync();
