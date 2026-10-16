@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>جزیره اسرارآمیز و حیرت‌انگیز</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap');
+        
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Vazirmatn', sans-serif;
+            background: transparent;
+        }
+
+        #wonderCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 24px;
+        }
+
+        .glass-box {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            pointer-events: auto;
+        }
+
+        @keyframes floatingCard {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-8px) scale(1.02); }
+        }
+
+        .magic-card {
+            animation: floatingCard 5s ease-in-out infinite;
+        }
+
+        /* دکمه جادویی با افکت نئونی */
+        .neon-btn {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 0 25px rgba(168, 85, 247, 0.5);
+        }
+        .neon-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- بوم گرافیکی داینامیک برای خلق تصاویری که هر بار متفاوت‌اند -->
+    <canvas id="wonderCanvas"></canvas>
+
+    <!-- پنل رابط کاربری و نمایش شگفتی‌ها -->
+    <div class="ui-layer">
+        <!-- هدر بالا -->
+        <div class="flex justify-between items-center">
+            <div class="glass-box px-4 py-2 rounded-2xl flex items-center gap-3 text-white">
+                <span class="w-3.5 h-3.5 rounded-full bg-amber-400 animate-ping"></span>
+                <span class="font-black text-xs tracking-wide" id="themeTitle">بعد پنهان کائنات</span>
+            </div>
+            <div class="glass-box px-3 py-1.5 rounded-xl text-white/80 text-xs font-bold" id="visitCounter">
+                ورود شماره #۱
+            </div>
+        </div>
+
+        <!-- کارت شگفتی و پیام حیرت‌انگیز وسط/پایین صفحه -->
+        <div class="flex flex-col items-center gap-4 pb-6">
+            <div class="glass-box magic-card w-full max-w-sm p-5 rounded-3xl text-center border-t-2 border-purple-400">
+                <div id="wonderEmoji" class="text-4xl mb-2">🌟</div>
+                <h3 id="wonderHeadline" class="text-white font-black text-base mb-1">در حال احضار شگفتی...</h3>
+                <p id="wonderDescription" class="text-purple-200 text-xs font-bold leading-relaxed">هر بار که وارد اپلیکیشن می‌شوید، جهان زیرین به شکل تازه‌ای متولد می‌شود.</p>
+            </div>
+
+            <!-- دکمه کشف شگفتی جدید -->
+            <button onclick="generateNewWonder()" class="neon-btn text-white font-black px-8 py-3.5 rounded-2xl shadow-xl flex items-center gap-2 cursor-pointer pointer-events-auto">
+                <span>✨ کشف یک شگفتی تازه دیگر</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('wonderCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        let particles = [];
+        let shapes = [];
+        let currentThemeIndex = 0;
+
+        // لیست بانک شگفتی‌ها، پدیده‌ها و تِم‌های مختلف که هر بار تصادفی انتخاب می‌شوند
+        const wonderPool = [
+            {
+                title: "سحابی کهکشانی رنگین‌کمان",
+                emoji: "🌌",
+                headline: "رقص ستارگان در کهکشان بی‌نهایت",
+                desc: "جهان امروز شما از جنس نورهای بنفش و کهکشانی است. انرژی امروزت پر از پویایی و خلاقیت است.",
+                colors: ['#6366f1', '#a855f7', '#ec4899', '#38bdf8']
+            },
+            {
+                title: "جزیره بلورین و الماس‌های معلق",
+                emoji: "💎",
+                headline: "شکوه بلورهای نوری در زمان متوقف شده",
+                desc: "فضایی آرام، لوکس و سرشار از صلح درونی. قدرت تمرکز شما امروز در بالاترین حد خود قرار دارد.",
+                colors: ['#38bdf8', '#06b6d4', '#10b981', '#ffffff']
+            },
+            {
+                title: "طوفان انرژی کهکشانی و آتشین",
+                emoji: "🔥",
+                headline: "انفجار خوش‌رنگ ستاره‌ای در هسته زمان",
+                desc: "امروز روز شجاعت و شروع‌های بزرگ است. تمام موانع در برابر اراده شما ذوب خواهند شد.",
+                colors: ['#f59e0b', '#ef4444', '#f97316', '#fbbf24']
+            },
+            {
+                title: "باغ اسرارآمیز شکوفه‌های زمردین",
+                emoji: "🌿",
+                headline: "طبیعت زنده و جادویی ابعاد موازی",
+                desc: "رشد، تازگی و طراوت همراه لحظه به لحظه شماست. نفس عمیقی بکشید و از آرامش موجود لذت ببرید.",
+                colors: ['#22c55e', '#10b981', '#84cc16', '#bae6fd']
+            },
+            {
+                title: "دروازه ابعاد طلایی زمان",
+                emoji: "⏳",
+                headline: "پرتوهای طلایی آگاهی و خرد باستانی",
+                desc: "شما در نقطه‌ای از زمان قرار دارید که کلیدهای بزرگ و فرصت‌های پنهان آشکار می‌شوند.",
+                colors: ['#eab308', '#f59e0b', '#d97706', '#fef08a']
+            }
+        ];
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // کلاس ذرات متحرک پیشرفته پویا
+        class WonderParticle {
+            constructor(themeColors) {
+                this.reset(themeColors);
+            }
+            reset(colors) {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 6 + 2;
+                this.speedX = (Math.random() - 0.5) * 2;
+                this.speedY = (Math.random() - 0.5) * 2;
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.alpha = Math.random() * 0.7 + 0.3;
+                this.pulse = Math.random() * 0.05 + 0.01;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0 || this.x > width) this.speedX *= -1;
+                if (this.y < 0 || this.y > height) this.speedY *= -1;
+            }
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = this.color;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // ایجاد اشکال هندسی نورانی منحصربه‌فرد برای هر بار ورود
+        class GlowingOrb {
+            constructor(colors) {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.radius = Math.random() * 120 + 60;
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.dx = (Math.random() - 0.5) * 0.8;
+                this.dy = (Math.random() - 0.5) * 0.8;
+            }
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+                if (this.x - this.radius > width || this.x + this.radius < 0) this.dx *= -1;
+                if (this.y - this.radius > height || this.y + this.radius < 0) this.dy *= -1;
+            }
+            draw() {
+                ctx.save();
+                let grad = ctx.createRadialGradient(this.x, this.y, 5, this.x, this.y, this.radius);
+                grad.addColorStop(0, this.color);
+                grad.addColorStop(1, 'transparent');
+                ctx.fillStyle = grad;
+                ctx.globalAlpha = 0.35;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // تابع اصلی تغییر و ساخت شگفتی جدید
+        function generateNewWonder() {
+            // انتخاب تصادفی یک تِم کاملاً متفاوت با قبلی
+            let newIndex;
+            do {
+                newIndex = Math.floor(Math.random() * wonderPool.length);
+            } while (newIndex === currentThemeIndex && wonderPool.length > 1);
+            
+            currentThemeIndex = newIndex;
+            const wonder = wonderPool[currentThemeIndex];
+
+            // به‌روزرسانی متن‌ها و اطلاعات رابط کاربری
+            document.getElementById('themeTitle').innerText = wonder.title;
+            document.getElementById('wonderEmoji').innerText = wonder.emoji;
+            document.getElementById('wonderHeadline').innerText = wonder.headline;
+            document.getElementById('wonderDescription').innerText = wonder.desc;
+
+            // شمارنده ورودهای متفاوت کاربر (ذخیره در حافظه موقت سشن/محلی)
+            let visitCount = parseInt(localStorage.getItem('wonder_visits') || '0') + 1;
+            localStorage.setItem('wonder_visits', visitCount);
+            document.getElementById('visitCounter').innerText = `ورود شماره #${visitCount}`;
+
+            // بازآفرینی ذرات و گوی‌های نوری متناسب با تِم جدید
+            particles = [];
+            shapes = [];
+            for (let i = 0; i < 70; i++) particles.push(new WonderParticle(wonder.colors));
+            for (let i = 0; i < 4; i++) shapes.push(new GlowingOrb(wonder.colors));
+
+            // ایجاد انفجار ذرات جادویی هنگام کلیک یا تغییر
+            for (let i = 0; i < 15; i++) {
+                particles.push(new WonderParticle(wonder.colors));
+            }
+        }
+
+        // انیمیشن مداوم و روان (Loop)
+        function animate() {
+            ctx.fillStyle = 'rgba(3, 7, 18, 0.25)'; // افکت محو شدگی ملایم پس‌زمینه
+            ctx.fillRect(0, 0, width, height);
+
+            shapes.forEach(shape => {
+                shape.update();
+                shape.draw();
+            });
+
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        // زمان اجرای اولیه هنگام ورود کاربر به اپلیکیشن
+        window.onload = function() {
+            generateNewWonder();
+            animate();
+        };
+
+        // لمس صفحه نیز شگفتی‌های بیشتری آزاد می‌کند
+        window.addEventListener('click', (e) => {
+            const wonder = wonderPool[currentThemeIndex];
+            for (let i = 0; i < 8; i++) {
+                let p = new WonderParticle(wonder.colors);
+                p.x = e.clientX;
+                p.y = e.clientY;
+                particles.push(p);
+            }
+        });
+    </script>
+</body>
+</html>

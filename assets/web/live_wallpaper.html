@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>لایو والپیپر فول حرفه‌ای جزیره فندقی</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap');
+        
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Vazirmatn', sans-serif;
+            background: #0284c7;
+        }
+
+        .wallpaper-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px 0 rgba(0, 31, 63, 0.25);
+        }
+
+        @keyframes bounceGlow {
+            0%, 100% { transform: translateY(0) scale(1); filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3)); }
+            50% { transform: translateY(-8px) scale(1.02); filter: drop-shadow(0 18px 25px rgba(251, 191, 36, 0.5)); }
+        }
+
+        .fandoq-character {
+            animation: bounceGlow 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="wallpaper-container" id="wallpaperContainer">
+        <!-- بوم اصلی انیمیشن‌های حرفه‌ای -->
+        <canvas id="proCanvas"></canvas>
+
+        <!-- پنل وضعیت زنده حرفه‌ای بالا -->
+        <div class="absolute top-6 right-6 z-10 flex items-center gap-3">
+            <div class="glass-panel px-4 py-2 rounded-2xl flex items-center gap-2 text-white shadow-xl">
+                <span class="w-3.5 h-3.5 rounded-full bg-emerald-400 animate-ping"></span>
+                <span class="font-black text-sm drop-shadow">جزیره فندقی • نسخه پرو</span>
+            </div>
+        </div>
+
+        <!-- کاراکتر فانتزی فندق تعاملی در گوشه پایین تصویر -->
+        <div class="absolute bottom-16 left-8 z-10 fandoq-character pointer-events-auto cursor-pointer" id="fandoqBtn" title="روی من ضربه بزن!">
+            <div class="relative bg-amber-800/90 border-4 border-amber-300 rounded-3xl p-3 shadow-2xl flex items-center gap-3 glass-panel">
+                <div class="w-14 h-14 bg-amber-200 rounded-2xl flex items-center justify-center text-3xl shadow-inner border-2 border-amber-400">
+                    🌰
+                </div>
+                <div>
+                    <h3 class="text-white font-black text-base drop-shadow-md">سلام کوچولو!</h3>
+                    <p class="text-amber-100 text-xs font-bold">بریم به جزیره شادی؟</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- راهنمای لمس پیشرفته در پایین -->
+        <div class="absolute bottom-4 left-0 right-0 text-center z-10 pointer-events-none">
+            <p class="text-white/90 text-xs font-bold drop-shadow-md bg-black/30 inline-block px-5 py-2 rounded-full backdrop-blur-md border border-white/20">
+                ✨ صفحه را لمس کنید تا جادو، ستاره و پروانه‌ها آزاد شوند! ✨
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('proCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        let clouds = [];
+        let birds = [];
+        let butterflies = [];
+        let particles = [];
+        let waterSplashes = [];
+        let boatX = -100;
+        let sunAngle = 0;
+
+        // تنظیم داینامیک سایز بوم
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            if (boatX < -50) boatX = width * 0.2;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // کلاس ابرهای پیشرفته با لایه‌بندی عمق (Parallax)
+        class AdvancedCloud {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * (height * 0.35);
+                this.speed = 0.15 + Math.random() * 0.4;
+                this.scale = 0.5 + Math.random() * 0.9;
+                this.opacity = 0.6 + Math.random() * 0.4;
+            }
+            update() {
+                this.x += this.speed;
+                if (this.x - 200 > width) {
+                    this.x = -250;
+                    this.y = Math.random() * (height * 0.35);
+                }
+            }
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                let cx = this.x;
+                let cy = this.y;
+                let r = 40 * this.scale;
+                
+                ctx.arc(cx, cy, r, Math.PI * 0.5, Math.PI * 1.5);
+                ctx.arc(cx + r * 0.9, cy - r * 0.8, r * 0.95, Math.PI * 1, Math.PI * 2);
+                ctx.arc(cx + r * 1.9, cy - r * 0.5, r * 0.85, Math.PI * 1.1, Math.PI * 2.1);
+                ctx.arc(cx + r * 2.6, cy, r * 0.9, Math.PI * 1.5, Math.PI * 0.5);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // کلاس پرندگان با بال زدن طبیعی
+        class Bird {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = -100 - Math.random() * 300;
+                this.y = 40 + Math.random() * (height * 0.25);
+                this.speed = 1.2 + Math.random() * 1.8;
+                this.wingAngle = Math.random() * Math.PI;
+                this.wingSpeed = 0.12;
+            }
+            update() {
+                this.x += this.speed;
+                this.y += Math.sin(this.x * 0.015) * 0.4;
+                this.wingAngle += this.wingSpeed;
+                if (this.x > width + 100) this.reset();
+            }
+            draw() {
+                ctx.save();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 3.5;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                let span = 18;
+                let h = Math.sin(this.wingAngle) * 9;
+                ctx.moveTo(this.x - span, this.y - h);
+                ctx.quadraticCurveTo(this.x, this.y - 6, this.x, this.y);
+                ctx.quadraticCurveTo(this.x, this.y - 6, this.x + span, this.y - h);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        // کلاس پروانه‌های رنگی و شاد روی جزیره
+        class Butterfly {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = width * 0.5 + (Math.random() - 0.5) * 300;
+                this.y = height * 0.7 + (Math.random() - 0.5) * 100;
+                this.baseX = this.x;
+                this.baseY = this.y;
+                this.angle = Math.random() * Math.PI * 2;
+                this.color = ['#f43f5e', '#fbbf24', '#a855f7', '#38bdf8'][Math.floor(Math.random() * 4)];
+            }
+            update() {
+                this.angle += 0.03;
+                this.x = this.baseX + Math.sin(this.angle) * 40;
+                this.y = this.baseY + Math.cos(this.angle * 2) * 20;
+            }
+            draw() {
+                ctx.save();
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 5, 0, Math.PI * 2);
+                ctx.arc(this.x + 8, this.y - 4, 4, 0, Math.PI * 2);
+                ctx.arc(this.x + 8, this.y + 4, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // ذرات تعاملی حرفه‌ای (ستاره‌های طلایی، قلب و حباب‌های رنگارنگ جادویی)
+        class MagicParticle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.type = ['star', 'bubble', 'heart'][Math.floor(Math.random() * 3)];
+                this.size = Math.random() * 18 + 12;
+                this.speedY = -(Math.random() * 3 + 1.5);
+                this.speedX = (Math.random() - 0.5) * 3;
+                this.alpha = 1;
+                this.rotation = Math.random() * Math.PI;
+                this.rotSpeed = (Math.random() - 0.5) * 0.06;
+            }
+            update() {
+                this.y += this.speedY;
+                this.x += this.speedX + Math.sin(this.y * 0.05) * 0.8;
+                this.alpha -= 0.012;
+                this.rotation += this.rotSpeed;
+            }
+            draw() {
+                if (this.alpha <= 0) return;
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+
+                if (this.type === 'star') {
+                    ctx.fillStyle = '#fde047';
+                    ctx.beginPath();
+                    for (let i = 0; i < 5; i++) {
+                        ctx.lineTo(Math.cos((18 + i * 72) * Math.PI / 180) * this.size, -Math.sin((18 + i * 72) * Math.PI / 180) * this.size);
+                        ctx.lineTo(Math.cos((54 + i * 72) * Math.PI / 180) * (this.size / 2), -Math.sin((54 + i * 72) * Math.PI / 180) * (this.size / 2));
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                } else if (this.type === 'heart') {
+                    ctx.fillStyle = '#f43f5e';
+                    ctx.beginPath();
+                    let s = this.size * 0.6;
+                    ctx.moveTo(0, s * 0.3);
+                    ctx.bezierCurveTo(-s, -s * 0.5, -s * 1.2, s * 0.5, 0, s * 1.3);
+                    ctx.bezierCurveTo(s * 1.2, s * 0.5, s, -s * 0.5, 0, s * 0.3);
+                    ctx.fill();
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size * 0.8, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+                    ctx.fill();
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+        }
+
+        // راه‌اندازی اولیه المان‌ها
+        function initScene() {
+            clouds = [];
+            birds = [];
+            butterflies = [];
+            for (let i = 0; i < 6; i++) clouds.push(new AdvancedCloud());
+            for (let i = 0; i < 3; i++) birds.push(new Bird());
+            for (let i = 0; i < 5; i++) butterflies.push(new Butterfly());
+        }
+        initScene();
+
+        // مدیریت تعاملات لمسی و کلیک برای انفجار ذرات جادویی
+        window.addEventListener('click', (e) => triggerMagic(e.clientX, e.clientY));
+        window.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 0) triggerMagic(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: true });
+
+        function triggerMagic(x, y) {
+            for (let i = 0; i < 7; i++) {
+                particles.push(new MagicParticle(x + (Math.random() - 0.5) * 50, y + (Math.random() - 0.5) * 50));
+            }
+        }
+
+        document.getElementById('fandoqBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            for (let i = 0; i < 12; i++) {
+                particles.push(new MagicParticle(window.innerWidth * 0.2, window.innerHeight * 0.85));
+            }
+        });
+
+        // حلقه اصلی رندر انیمیشن حرفه‌ای
+        function animate() {
+            sunAngle += 0.005;
+
+            // ۱. ترسیم گرادانت آسمان شاداب و پویا
+            let skyGrad = ctx.createLinearGradient(0, 0, 0, height);
+            skyGrad.addColorStop(0, '#0284c7');
+            skyGrad.addColorStop(0.5, '#38bdf8');
+            skyGrad.addColorStop(1, '#bae6fd');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, width, height);
+
+            // ۲. خورشید تابنده با افکت پرتو
+            ctx.save();
+            let sunX = width * 0.85;
+            let sunY = height * 0.15;
+            let sunG = ctx.createRadialGradient(sunX, sunY, 15, sunX, sunY, 140);
+            sunG.addColorStop(0, 'rgba(254, 240, 138, 0.95)');
+            sunG.addColorStop(1, 'rgba(254, 240, 138, 0)');
+            ctx.fillStyle = sunG;
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, 140, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            // ۳. به‌روزرسانی و رسم ابرها
+            clouds.forEach(c => { c.update(); c.draw(); });
+
+            // ۴. به‌روزرسانی و رسم پرندگان آسمان
+            birds.forEach(b => { b.update(); b.draw(); });
+
+            // ۵. ترسیم دریاچه و امواج متحرک در پس‌زمینه
+            ctx.save();
+            ctx.fillStyle = '#0284c7';
+            ctx.fillRect(0, height * 0.6, width, height * 0.4);
+
+            // موج‌های آب
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            let waveOffset = Date.now() * 0.003;
+            for (let x = 0; x < width; x += 40) {
+                let wy = height * 0.68 + Math.sin(x * 0.02 + waveOffset) * 6;
+                ctx.lineTo(x, wy);
+            }
+            ctx.stroke();
+            ctx.restore();
+
+            // ۶. حرکت کشتی بادبانی کوچک روی آب
+            boatX += 0.35;
+            if (boatX > width + 100) boatX = -100;
+            ctx.save();
+            ctx.translate(boatX, height * 0.64 + Math.sin(Date.now() * 0.005) * 4);
+            // بدنه کشتی
+            ctx.fillStyle = '#b45309';
+            ctx.beginPath();
+            ctx.moveTo(-20, 10);
+            ctx.lineTo(20, 10);
+            ctx.lineTo(12, 22);
+            ctx.lineTo(-12, 22);
+            ctx.closePath();
+            ctx.fill();
+            // بادبان
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(0, 8);
+            ctx.lineTo(0, -15);
+            ctx.lineTo(16, 2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+
+            // ۷. ترسیم تپه‌ها و جزیره سرسبز فندقی در پایین صفحه
+            ctx.save();
+            // تپه پشتی
+            ctx.fillStyle = '#15803d';
+            ctx.beginPath();
+            ctx.moveTo(0, height * 0.72);
+            ctx.bezierCurveTo(width * 0.35, height * 0.62, width * 0.65, height * 0.78, width, height * 0.68);
+            ctx.lineTo(width, height);
+            ctx.lineTo(0, height);
+            ctx.closePath();
+            ctx.fill();
+
+            // تپه جلویی با چمن شاداب
+            ctx.fillStyle = '#22c55e';
+            ctx.beginPath();
+            ctx.moveTo(0, height * 0.78);
+            ctx.bezierCurveTo(width * 0.4, height * 0.68, width * 0.6, height * 0.88, width, height * 0.76);
+            ctx.lineTo(width, height);
+            ctx.lineTo(0, height);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+
+            // ۸. رسم پروانه‌ها روی چمن جزیره
+            butterflies.forEach(bf => { bf.update(); bf.draw(); });
+
+            // ۹. به‌روزرسانی و رسم ذرات تعاملی جادویی (ستاره‌ها و حباب‌ها)
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+                if (particles[i].alpha <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // شروع انیمیشن پس از بارگذاری کامل صفحه
+        window.onload = function() {
+            animate();
+        };
+    </script>
+</body>
+</html>

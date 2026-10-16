@@ -90,6 +90,11 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        // 🌐 نمایش فایل‌های HTML پیوست‌شده (لایو والپیپر و اپ جادویی) داخل اپ
+        flutterEngine.platformViewsRegistry.registerViewFactory(
+            "html_webview",
+            HtmlWebViewFactory(applicationContext),
+        )
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
             .setMethodCallHandler { call, result ->
                 if (call.method in billingMethods && !productionBillingAllowed) {
