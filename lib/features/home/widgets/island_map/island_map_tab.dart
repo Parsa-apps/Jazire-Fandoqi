@@ -17,6 +17,7 @@ import '../../../../presentation/providers/game_state_provider.dart';
 import '../../../../shared/widgets/today_complete_sheet.dart';
 import '../../../profile/profile_editor.dart';
 import '../../../shop/full_version_purchase_entry.dart';
+import '../../../shop/hub_purchase_button.dart';
 import '../../../stage_map/stage_map_screen.dart';
 import '../daily_gifts_dialog.dart';
 import '../fandoqi_hub_sheet.dart';
@@ -236,6 +237,17 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
             right: 10,
             bottom: 22,
             child: SafeArea(top: false, child: _buildSideButtons()),
+          ),
+          // ── دکمهٔ طلایی «خرید نسخهٔ کامل» با هالهٔ نئونی، روی صفحهٔ اصلی ──
+          // بالای دکمه‌های کناری می‌نشیند تا در هیچ حالتی (حتی «کلاس روشن»)
+          // با سکوها و نوارهای بالا تصادم نکند؛ با اسکرول نقشه هم نمی‌رود.
+          const Positioned(
+            right: 10,
+            bottom: 142,
+            child: SafeArea(
+              top: false,
+              child: HubPurchaseChip(),
+            ),
           ),
 
           // ── لایهٔ ۴: نوار وضعیت ثابت بالای صفحه ──

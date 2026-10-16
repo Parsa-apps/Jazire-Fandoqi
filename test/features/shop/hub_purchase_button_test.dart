@@ -25,13 +25,35 @@ void main() {
         ),
       );
 
-  testWidgets('unpaid hub chip is a visible buy button that opens the paywall',
+  final haloBoxFinder = find.byWidgetPredicate(
+    (w) =>
+        w is DecoratedBox &&
+        w.decoration is BoxDecoration &&
+        ((w.decoration as BoxDecoration).boxShadow ?? const []).isNotEmpty,
+  );
+
+  testWidgets('unpaid hub chip is a visible buy button with a neon halo',
       (tester) async {
     await tester.pumpWidget(host());
     await tester.pump(const Duration(milliseconds: 150));
 
     expect(find.text('خرید'), findsOneWidget);
     expect(find.byType(AnimatedGoldLock), findsOneWidget);
+    // هالهٔ نئونی تا وقتی خرید تأیید نشده دور دکمه می‌درخشد.
+    expect(haloBoxFinder, findsOneWidget);
+
+    // تنفّس هاله نباید کل دکمه را هر فریم بازسازی کند؛ درخشش جلوی دکمه
+    // نمی‌آید و لمس همان دکمه است.
+    final glowBefore = tester.widget<DecoratedBox>(haloBoxFinder);
+    await tester.pump(const Duration(milliseconds: 400));
+    final glowMid = tester.widget<DecoratedBox>(haloBoxFinder);
+    expect(
+      (glowMid.decoration as BoxDecoration).boxShadow!.first.color,
+      isNot(
+        (glowBefore.decoration as BoxDecoration).boxShadow!.first.color,
+      ),
+      reason: 'هالهٔ نئونی باید آرام نفس بکشد (تغییر رنگ/شدت در طول زمان)',
+    );
 
     // بازکردنِ مسیر خرید خودش خریدی نمی‌سازد.
     await tester.tap(find.byKey(const ValueKey('hub_purchase_button')));
@@ -47,11 +69,12 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('after a verified purchase the chip flips to فعال and stops selling',
+  testWidgets('after a verified purchase the halo turns off and the chip stops selling',
       (tester) async {
     await tester.pumpWidget(host());
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('خرید'), findsOneWidget);
+    expect(haloBoxFinder, findsOneWidget);
 
     store.purchaseResponse = PaywallTestStore.verifiedPurchase;
     expect(await Monetization.purchaseFullVersion(), isTrue);
@@ -60,6 +83,8 @@ void main() {
     expect(find.text('فعال'), findsOneWidget);
     expect(find.text('خرید'), findsNothing);
     expect(find.byType(AnimatedGoldLock), findsNothing);
+    // بعد از خرید تأییدشده، هالهٔ نئونی خاموش می‌شود؛ دکمهٔ سبز آرام است.
+    expect(haloBoxFinder, findsNothing);
 
     // نسخهٔ کامل فعال است؛ لمسِ دکمه نباید پی‌وال یا خریدِ تازه‌ای بسازد.
     final callsBefore = store.calls.length;
