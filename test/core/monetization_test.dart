@@ -169,6 +169,9 @@ void main() {
       {'signedData': ''},
       {'signature': null},
       {'status': 'completed'},
+      {'releaseVerified': false},
+      {'releaseVerified': null},
+      {'releaseVerified': 'true'},
     ]) {
       store.purchaseResponse = <String, Object?>{
         ...PaywallTestStore.verifiedPurchase,
@@ -191,6 +194,7 @@ void main() {
       purchaseToken: 'forged-token',
       signedData: 'unsigned-data',
       signature: 'unsigned-signature',
+      releaseVerified: true,
     );
     expect(await Monetization.activateFullVersion(forged), isFalse);
     expect(store.calls, contains('verifyReceipt'));
@@ -259,6 +263,48 @@ void main() {
     expect(store.values['parent.pin.hash'], 'keep-parent-pin');
     expect(store.values['entitlement.granted'], isNull);
     expect(store.values['entitlement.receipt_token'], isNull);
+  });
+
+  test('a Bazaar receipt cannot activate the full version even if signed',
+      () async {
+    StoreDetector.debugOverride(StoreVendor.bazaar);
+    store.purchaseResponse = <String, Object?>{
+      ...PaywallTestStore.verifiedPurchase, 'store': 'bazaar',
+    };
+    store.restoreResponse = store.purchaseResponse;
+    expect(await Monetization.purchaseFullVersion(), isFalse);
+    expect(await Monetization.restoreFullVersion(), isFalse);
+    expect(await Monetization.hasFullVersion(), isFalse);
+    expect(store.calls, isNot(contains('purchase')));
+    expect(store.calls, isNot(contains('verifyReceipt')));
+    expect(store.values, isEmpty);
+  });
+
+  test('an offline Bazaar cache cannot grant a Myket full-version entitlement',
+      () async {
+    store.values[Monetization.signedReceiptKey] = jsonEncode({
+      'schema': Monetization.receiptCacheSchema,
+      'store': 'bazaar',
+      'signedData': PaywallTestStore.signedData,
+      'signature': PaywallTestStore.signature,
+    });
+    store.offline = true;
+    expect(await Monetization.hasFullVersion(), isFalse);
+    expect(store.calls, isNot(contains('verifyReceipt')));
+  });
+
+  test('an untrusted APK cannot use a genuine cached receipt to unlock',
+      () async {
+    store.purchaseResponse = PaywallTestStore.verifiedPurchase;
+    expect(await Monetization.purchaseFullVersion(), isTrue);
+    final saved = store.values[Monetization.signedReceiptKey];
+    store.trustedRelease = false;
+    expect(await Monetization.hasFullVersion(), isFalse);
+    expect(Monetization.accessStatus.value, FullVersionAccessStatus.untrustedBuild);
+    expect(await Monetization.restoreFullVersion(), isFalse);
+    expect(await Monetization.purchaseFullVersion(), isFalse);
+    expect(store.values[Monetization.signedReceiptKey], saved,
+        reason: 'Keep proof for the genuine release, without granting access');
   });
 
   test('Android no longer fabricates successful debug purchases', () {

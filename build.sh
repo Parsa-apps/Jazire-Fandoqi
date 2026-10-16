@@ -3,10 +3,10 @@
 # چک ۷ مرحله‌ای با توقف شفاف: analyze → test → coverage → build → size → icon
 set -Eeuo pipefail
 
-BUILD_MODE="${BUILD_MODE:-debug}"
+BUILD_MODE="${BUILD_MODE:-release}"
 STORE_FLAVOR="${STORE_FLAVOR:-myket}"
-if [[ "$STORE_FLAVOR" != "myket" && "$STORE_FLAVOR" != "bazaar" ]]; then
-  echo "STORE_FLAVOR must be either 'myket' or 'bazaar'." >&2
+if [[ "$BUILD_MODE" != "release" || "$STORE_FLAVOR" != "myket" ]]; then
+  echo "Only an official Myket release is distributable; debug/test and alternate-store APKs are disabled." >&2
   exit 2
 fi
 PROJECT_NAME="amoozesh_fandoghi"
@@ -76,15 +76,9 @@ fi
 log 'مرحله ۷/۷: ساخت خروجی'
 if [[ "$BUILD_MODE" == "release" ]]; then
   if [[ ! -f android/key.properties ]]; then
-    if [[ "${ALLOW_VERIFICATION_SIGNING:-0}" == "1" ]]; then
-      log '⚠️  خروجی تأیید CI با کلید debug ساخته می‌شود و قابل انتشار نیست.'
-      export ORG_GRADLE_PROJECT_allowVerificationSigning=true
-    else
-      fail 'فایل android/key.properties پیدا نشد؛ ساخت خروجی release متوقف شد.'
-      log 'برای انتشار، keystore اصلی و android/key.properties را طبق BUILD_INSTRUCTIONS.md تنظیم کن.'
-      log 'فقط برای آرتیفکت غیرقابل‌انتشار CI: ALLOW_VERIFICATION_SIGNING=1'
-      exit 1
-    fi
+    fail 'فایل android/key.properties پیدا نشد؛ خروجی آزمایشی جایگزین ساخته نمی‌شود.'
+    log 'keystore رسمی انتشار را طبق BUILD_INSTRUCTIONS.md تنظیم کن.'
+    exit 1
   else
     ok 'فایل امضای انتشار پیدا شد → استفاده از کلید اصلی'
   fi
@@ -117,13 +111,7 @@ if [[ "$BUILD_MODE" == "release" ]]; then
     fi
   done
   ok "حجم کل APKها: ${TOTAL}MB (هدف < ۳۵MB برای هر ABI)"
-else
-  log 'ساخت نسخه آزمایشی (Debug)...'
-  if ! flutter build apk --flavor "$STORE_FLAVOR" --debug; then
-    fail 'ساخت Debug شکست خورد'
-    exit 1
-  fi
-  ok 'APK دیباگ با کلید دیباگ امضا شد و قابل نصب است'
+
 fi
 
 if [[ $FAILED -ne 0 ]]; then

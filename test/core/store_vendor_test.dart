@@ -121,8 +121,8 @@ void main() {
   });
 
   group('billing availability', () {
-    test('only known stores can take a payment', () {
-      expect(StoreVendor.bazaar.supportsBilling, isTrue);
+    test('only Myket can take a payment in the production release', () {
+      expect(StoreVendor.bazaar.supportsBilling, isFalse);
       expect(StoreVendor.myket.supportsBilling, isTrue);
       // بدون فروشگاه، خرید باید محترمانه رد شود نه اینکه خطای مبهم بدهد.
       expect(StoreVendor.unknown.supportsBilling, isFalse);

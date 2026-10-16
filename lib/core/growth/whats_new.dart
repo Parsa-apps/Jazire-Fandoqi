@@ -1,18 +1,36 @@
 import 'package:flutter/material.dart';
 
 /// ═══════════════════════════════════════════════════════════════
-/// 🆕 تغییرات نسخهٔ ۷.۵.۳ «اصلاح تشخیص نسخهٔ کامل» — جزیره فندقی
+/// 🆕 تغییرات نسخهٔ ۷.۵.۴ «انتشار رسمی و پرداخت مایکت» — جزیره فندقی
 /// بعد از هر آپدیت یک‌بار به‌صورت خودکار نشان داده می‌شود.
 /// ═══════════════════════════════════════════════════════════════
 class WhatsNew {
   WhatsNew._();
 
-  static const String version = '۷.۵.۳';
-  static const String versionName = 'اصلاح تشخیص نسخهٔ کامل';
-  static const String buildNumber = '+۲۵';
+  static const String version = '۷.۵.۴';
+  static const String versionName = 'انتشار رسمی و پرداخت مایکت';
+  static const String buildNumber = '+۲۶';
 
   /// دسته‌بندی‌های تغییرات برای نمایش حرفه‌ای
   static const List<WhatsNewSection> sections = [
+    WhatsNewSection(
+      id: 'production-myket-only',
+      title: '💛 نسخهٔ کامل فقط با خرید مایکت',
+      emoji: '💛',
+      color: Color(0xFF16803C),
+      items: [
+        WhatsNewItem(
+          emoji: '🔒',
+          title: 'همان نصف رایگان، نصف قفل',
+          body: 'نیمهٔ رایگان حفظ شده است؛ همهٔ بخش‌های پولی فقط پس از خرید تکمیل‌شده و رسید معتبر مایکت باز می‌شوند. نسخهٔ دیباگ یا فلگ آزمایشی مجوز دسترسی نیست.',
+        ),
+        WhatsNewItem(
+          emoji: '✨',
+          title: 'بازشدن همهٔ قفل‌های پرداخت پس از خرید',
+          body: 'با تأیید خرید مایکت، قفل‌های پرداخت در صفحه‌های باز هم به‌روز می‌شوند. خرید قبلی با بازیابی برمی‌گردد و پیشرفت کودک پاک نمی‌شود.',
+        ),
+      ],
+    ),
     WhatsNewSection(
       id: 'signed-receipt-entitlement',
       title: '🛡️ اصلاح تشخیص نسخهٔ کامل',

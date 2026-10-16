@@ -20,6 +20,7 @@ data class BillingOutcome(
     val purchaseState: Int? = null,
     val signedData: String? = null,
     val signature: String? = null,
+    val releaseVerified: Boolean = false,
 ) {
     fun toMap(): Map<String, Any?> = mapOf(
         "success" to success,
@@ -32,6 +33,7 @@ data class BillingOutcome(
         "purchaseState" to purchaseState,
         "signedData" to signedData,
         "signature" to signature,
+        "releaseVerified" to releaseVerified,
     )
 
     companion object {
@@ -44,6 +46,12 @@ data class BillingOutcome(
         // revoke a stale grant instead of falling back to it indefinitely.
         fun notOwned() = BillingOutcome(
             false, message = "خرید نسخه کامل یافت نشد", status = "not_owned",
+        )
+
+        fun untrustedBuild() = BillingOutcome(
+            false,
+            message = "خرید و فعال‌سازی فقط در نسخهٔ رسمی انتشار مایکت امکان‌پذیر است",
+            status = "untrusted_build",
         )
 
         fun invalidReceipt() = BillingOutcome(

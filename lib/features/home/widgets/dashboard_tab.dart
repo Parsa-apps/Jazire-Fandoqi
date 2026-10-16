@@ -48,9 +48,16 @@ class _DashboardState extends ConsumerState<DashboardTab>
     return hasFullVersion;
   }
 
+  void _syncFullVersionAccess() {
+    if (!mounted) return;
+    final has = Monetization.accessStatus.value.isVerified;
+    if (has != _hasFullVersion) setState(() => _hasFullVersion = has);
+  }
+
   @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_syncFullVersionAccess);
     _refreshEntitlement();
     _floatCtrl = AnimationController(
       vsync: this,
@@ -66,6 +73,7 @@ class _DashboardState extends ConsumerState<DashboardTab>
 
   @override
   void dispose() {
+    Monetization.accessStatus.removeListener(_syncFullVersionAccess);
     _floatCtrl.dispose();
     super.dispose();
   }

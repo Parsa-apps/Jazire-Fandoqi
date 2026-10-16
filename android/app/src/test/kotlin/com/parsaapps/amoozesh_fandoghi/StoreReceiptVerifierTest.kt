@@ -54,18 +54,28 @@ class StoreReceiptVerifierTest {
         verifier().verify(StoreVendor.MYKET, data, signature, PRODUCT)
 
     @Test
-    fun signedPurchasedReceiptIsAcceptedForEachStore() {
+    fun signedCompletedMyketPurchaseIsAccepted() {
         val data = receipt()
-        for (store in listOf(StoreVendor.MYKET, StoreVendor.BAZAAR)) {
-            val result = verifier().verify(store, data, sign(data), PRODUCT)
-            assertTrue(result.success)
-            assertEquals("verified", result.status)
-            assertEquals(PRODUCT, result.productId)
-            assertEquals(0, result.purchaseState)
-            assertEquals(store.name.lowercase(), result.store)
-            assertEquals(data, result.signedData)
-            assertEquals("signed-test-purchase-token", result.token)
-        }
+        val result = verifier().verify(StoreVendor.MYKET, data, sign(data), PRODUCT)
+        assertTrue(result.success)
+        assertEquals("verified", result.status)
+        assertEquals(PRODUCT, result.productId)
+        assertEquals(0, result.purchaseState)
+        assertEquals("myket", result.store)
+        assertEquals(data, result.signedData)
+        assertEquals("signed-test-purchase-token", result.token)
+        // RSA is separate from the bridge's official-release attestation.
+        assertFalse(result.releaseVerified)
+        assertTrue(ProductionBillingPolicy.protect(result, true).releaseVerified)
+        assertFalse(ProductionBillingPolicy.protect(result, false).success)
+    }
+
+    @Test
+    fun evenCorrectlySignedBazaarReceiptCannotGrantFullVersion() {
+        val data = receipt()
+        val result = verifier().verify(StoreVendor.BAZAAR, data, sign(data), PRODUCT)
+        assertFalse(result.success)
+        assertEquals("invalid_receipt", result.status)
     }
 
     @Test
@@ -92,7 +102,9 @@ class StoreReceiptVerifierTest {
 
     @Test
     fun receiptForAnotherProductCannotGrantFullVersion() {
-        assertFalse(check(receipt { it.put("productId", "coins_100") }).success)
+        for (product in listOf("coins_100", "android.test.purchased")) {
+            assertFalse(check(receipt { it.put("productId", product) }).success)
+        }
     }
 
     @Test

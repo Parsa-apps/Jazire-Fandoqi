@@ -62,9 +62,16 @@ class _AcademyGameState extends State<AcademyGame> {
   int? _selectedIndex;
   bool _wasCorrect = false;
 
+  void _syncFullVersionAccess() {
+    if (!mounted) return;
+    final has = Monetization.accessStatus.value.isVerified;
+    if (has != _hasFullVersion) setState(() => _hasFullVersion = has);
+  }
+
   @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_syncFullVersionAccess);
     _topic = learningTopicById(widget.topicId) ?? learningTopics.first;
     _pool = ContentAccessPolicy.allowedTopicCards(
       _topic,
@@ -91,6 +98,7 @@ class _AcademyGameState extends State<AcademyGame> {
 
   @override
   void dispose() {
+    Monetization.accessStatus.removeListener(_syncFullVersionAccess);
     FandoghiCoach.clear();
     FandoghiCoach.cancelSmartHint();
     super.dispose();

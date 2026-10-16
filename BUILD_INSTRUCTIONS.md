@@ -1,215 +1,83 @@
-# راهنمای ساخت APK - جزیره فندقی
+# ساخت انتشار رسمی مایکت — جزیره فندقی
 
-این راهنما برای ساخت نسخه‌ی قابل نصب اپلیکیشن **جزیره فندقی** است.
+**نسخهٔ فعلی: ۷.۵.۴+۲۶** (`pubspec.yaml`: `version: 7.5.4+26`)
 
-> **نسخهٔ فعلی:** ۷.۵.۳+۲۵ — «اصلاح تشخیص نسخهٔ کامل» (`pubspec.yaml` → `version: 7.5.3+25`)
+این نسخه همان قانون **نصف رایگان، نصف قفل** را دارد. نسخهٔ کامل فقط با خرید تکمیل‌شدهٔ `full_version` و رسید معتبر مایکت در APK رسمی انتشار فعال می‌شود. حالت دمو/آزمایشی، فلگ محلی یا رسید بازار مجوز دسترسی نیست.
 
-## 📋 پیش‌نیازها
+## پیش‌نیازها
 
-قبل از شروع، مطمئن شوید این‌ها نصب هستند:
+- Flutter **3.24.3**، Android SDK 35 و JDK 17.
+- keystore **اصلی انتشار همین برنامه**، خارج از Git. برای به‌روزرسانی کلید جدید نسازید؛ امضا باید با نصب قبلی سازگار باشد.
+- کلید عمومی RSA صحیح مایکت در `android/billing.properties`، متناظر با همین برنامه در پیشخوان مایکت. کلید عمومی، جایگزین کلید امضای APK نیست.
 
-1. **Flutter SDK** (نسخه 3.24.3+):
-   - دانلود از [flutter.dev](https://docs.flutter.dev/get-started/install)
-   - پس از نصب: `flutter doctor` اجرا کنید تا مطمئن شوید همه چیز درست است
+## امضای انتشار
 
-2. **Android Studio** یا **Android SDK + Java JDK 17+**:
-   - Android Studio از [developer.android.com](https://developer.android.com/studio)
-   - یا فقط Android SDK Command-line Tools
-
-3. **Git** (برای clone کردن)
-
-## 🔧 مراحل ساخت
-
-### ۱. دریافت کد
-
-```bash
-git clone https://github.com/Parsa-apps/Jazire-Fandoqi.git
-cd Jazire-Fandoqi
-git checkout main   # یا شاخهٔ کاری موردنظر
-```
-
-### ۲. نصب وابستگی‌ها
-
-```bash
-flutter pub get
-```
-
-### ۳. ساخت آیکون‌های پلتفرم
-
-این دستور فایل‌های آیکون را برای Android و iOS می‌سازد:
-
-```bash
-flutter pub run flutter_launcher_icons
-```
-
-### ۴. پیکربندی امضای انتشار
-
-برای انتشار واقعی در کافه‌بازار یا گوگل‌پلی، یک keystore خصوصی بسازید و **هرگز**
-آن را وارد Git نکنید. سپس فایل `android/key.properties` محلی را بسازید:
+keystore در `android/release.keystore` و تنظیمات محلی در `android/key.properties`:
 
 ```properties
-storeFile=../release.keystore
-storePassword=رمز-keystore
-keyAlias=نام-key
-keyPassword=رمز-key
+storeFile=release.keystore
+storePassword=رمز-محلی-keystore
+keyAlias=fandoghi
+keyPassword=رمز-محلی-key
 ```
 
-فایل keystore را در `android/release.keystore` بگذارید. `key.properties` و فایل‌های
-keystore در `.gitignore` قرار دارند.
+این فایل‌ها در `.gitignore` هستند؛ هرگز آن‌ها یا رمزها را commit نکنید. SHA-256 گواهی انتشار هنگام ساخت در `BuildConfig.EXPECTED_SIGNING_SHA256` ثبت می‌شود. Native billing همان گواهی را روی APK نصب‌شده بررسی می‌کند و debug/profile، `testOnly`، گواهی خالی یا ناهماهنگ را رد می‌کند.
 
-> **امنیت امضای انتشار:** ساخت release محلی بدون `key.properties` عمداً متوقف
-> می‌شود تا خروجی امضاشده با کلید debug اشتباهاً به استور ارسال نشود. برای تست
-> روی گوشی از `flutter build apk --flavor myket --debug` استفاده کنید. محیط GitHub Actions فقط
-> برای راستی‌آزمایی کامپایل اجازهٔ امضای debug دارد و خروجی آن قابل انتشار نیست.
+**بدون کلید رسمی یا با کلید Android Debug، ساخت انتشار متوقف می‌شود. fallback امضای آزمایشی و `ALLOW_VERIFICATION_SIGNING` حذف شده‌اند.**
 
-> **🛡️ ضد دستکاری خودکار (v6.3):** هنگام ساخت release واقعی، SHA-256 گواهی
-> امضای keystore به‌طور خودکار داخل `BuildConfig.EXPECTED_SIGNING_SHA256` ثبت
-> می‌شود. اپ در اجرای release امضای خودش را با این مقدار مقایسه می‌کند و اگر
-> APK با کلید دیگری بسته/repackage شده باشد، اجرا را متوقف می‌کند. برای
-> راستی‌آزمایی مقدار ثبت‌شده:
->
-> ```bash
-> tools/print_cert_sha256.sh android/release.keystore نام-کلید رمز-کیاستور
-> keytool -printcert -jarfile build/app/outputs/flutter-apk/app-myket-release.apk | grep "SHA256:"   # فقط هگز بعد از SHA256:
-> ```
->
-> دو مقدار باید برابر باشند. (بیلدهای CI که با کلید debug امضا می‌شوند مقدار
-> خالی دارند و این بررسی در آن‌ها غیرفعال است — آن خروجی‌ها قابل انتشار نیستند.)
-
-### ۵. ساخت APK مخصوص هر فروشگاه
-
-هر فروشگاه باید خروجی مخصوص خودش را دریافت کند؛ در غیر این صورت مجوز پرداخت
-فروشگاه رقیب باعث ردشدن APK می‌شود.
+## تست و ساخت
 
 ```bash
-# خروجی قابل ارسال به مایکت (بدون PAY_THROUGH_BAZAAR)
-flutter build apk --flavor myket --release
-
-# خروجی قابل ارسال به کافه‌بازار (بدون مجوز پرداخت مایکت)
-flutter build apk --flavor bazaar --release
-```
-
-برای تست سریع نیز flavor را مشخص کنید:
-
-```bash
-flutter build apk --flavor myket --debug
-```
-
-### ۶. یافتن فایل APK
-
-- **مایکت release:** `build/app/outputs/flutter-apk/app-myket-release.apk`
-- **بازار release:** `build/app/outputs/flutter-apk/app-bazaar-release.apk`
-- **مایکت debug:** `build/app/outputs/flutter-apk/app-myket-debug.apk`
-
-فایل بدون flavor مثل `app-release.apk` را در هیچ‌یک از دو فروشگاه بارگذاری نکنید.
-
-### ۷. ساخت خودکار در GitHub Actions
-
-با هر push روی `main` یا شاخه‌های `arena/**`، ورک‌فلو
-**«Build APK & AAB - جزیره فندقی v7.5»** (`.github/workflows/build-apk.yml`)
-اجرا می‌شود. پیش از ساخت release، `flutter analyze` و کل تست‌ها اجرا می‌شوند و
-هر خطای تحلیل یا تست شکست‌خورده جلوی ساخت را می‌گیرد. خروجی‌ها در صفحهٔ همان
-اجرا (بخش **Artifacts**) قرار می‌گیرند:
-
-- `jazire_fandoqi_v7.5.1_apk` — فایل APK (کپی خروجی flavor مایکت)
-- `jazire_fandoqi_v7.5.1_aab` — فایل AAB (کپی خروجی flavor بازار)
-
-اگر Secret `KEYSTORE_B64` تنظیم شده باشد، خروجی‌ها با کلید انتشار امضا می‌شوند و
-امضای APK با `apksigner` راستی‌آزمایی می‌شود.
-
-## 📱 نصب روی گوشی
-
-### روش ۱: انتقال فایل
-1. فایل APK را به گوشی منتقل کنید
-2. در گوشی، Settings → Security → "Install from unknown sources" را فعال کنید
-3. روی فایل APK بزنید و نصب کنید
-
-### روش ۲: ADB (برای توسعه‌دهندگان)
-```bash
-adb install build/app/outputs/flutter-apk/app-myket-release.apk
-```
-
-## 🎨 آیکون جدید
-
-اپ با آیکون v3 Pro ساخته می‌شود که شامل:
-- 🐰 فندقی بزرگ در مرکز
-- حروف الفبا (الف ب پ) به ترتیب
-- اعداد (1 2 3)
-- پس‌زمینه‌ی گرادیان سبز-آبی
-
-## 🆕 تغییرات نسخهٔ ۷.۵ (۷.۵.۱+۲۳)
-
-- ⚖️ **هر بخش نیمه رایگان، نیمه نسخهٔ کامل**: نیمهٔ اولِ هر مجموعه (به ترتیبِ کتاب) بدون پرداخت باز است و نیمهٔ دوم با یک خرید دائمی
-- 🦁 **مجموعه‌های تازه‌نیمه‌شده**: حیوانات ۱۵ از ۳۰، شغل‌ها ۱۰ از ۲۰، مفاهیم ۸ از ۱۶ و نیمهٔ اولِ واژه‌نامه
-- 🔤 **الفبا دو برابر رایگان شد**: ۴ بسته از ۸ بسته (۱۶ نشانه از ۳۳ در حالت الفبای سنتی)
-- 💛 **احساسات، رنگ‌ها، اشکال، میوه‌ها و اعضای بدن** هم نیمه‌نیمه شدند
-- 🛡️ **رفع نشت**: نیمهٔ پولیِ «مهارت زندگی» بدون پرداخت باز می‌ماند (هاب مسیرِ گیت‌شده را دور می‌زد) — حالا همهٔ بخش‌ها فقط از یک درِ یکپارچه (`content_lock.dart`) اجازه می‌گیرند
-- 🔒 **نشانِ قفلِ شفاف** روی تک‌تک آیتم‌های پولی؛ لمسِ آن درِ والدین را باز می‌کند
-
-فهرست کامل تغییرات همهٔ نسخه‌ها: [RELEASE_NOTES.md](RELEASE_NOTES.md)
-
-### تغییرات نسخه‌های اولیه
-
-1. **نام اپ**: «جزیره فندقی»
-2. **آیکون جدید**: فندقی با حروف و اعداد
-3. **انیمیشن خوش‌آمدگویی**: فندقی در اولین ورود می‌پره و خودش را معرفی می‌کنه
-4. **خرگوش قابل کشیدن**: بچه می‌تونه فندقی را با انگشت به هرجای صفحه بکشه
-5. **بازی‌های بهبودیافته**:
-   - آکادمی الفبا: صفحه‌ی نوشتن جداگانه (بدون conflict با scroll)
-   - بازی حباب: هدف بین ۱-۴ ترکاندن عوض می‌شه
-   - بازی ستاره: سیستم هدف واقعی اضافه شد
-6. **فونت کودکانه Baloo Bhaijaan 2** برای همه‌ی متن‌ها
-
-## 🐛 رفع مشکلات رایج
-
-### خطای `License for Android SDK not accepted`:
-```bash
-flutter doctor --android-licenses
-```
-
-### خطای `Gradle build failed`:
-```bash
-cd android
-./gradlew clean
-cd ..
-flutter clean
 flutter pub get
-flutter build apk --flavor myket --release
+flutter analyze
+flutter test
+python3 -m unittest discover -s tool -p 'test_verify_production_apk.py' -v
+flutter build apk --release --flavor myket
+(cd android && ./gradlew testMyketReleaseUnitTest)
+flutter build appbundle --release --flavor myket
 ```
 
-### خطای `Java not found`:
-مطمئن شوید Java JDK 17 یا بالاتر نصب است:
+یا `BUILD_MODE=release STORE_FLAVOR=myket ./build.sh`. این helper دیگر APK دیباگ/تستی یا فروشگاه دیگر تولید نمی‌کند. برای توسعهٔ داخلی می‌توان تست‌های واحد/ویجت را اجرا کرد؛ هیچ‌یک در APK انتشار بسته‌بندی نمی‌شوند. Android debug/profile حتی با یک رسید واقعی، مجوز محتوای پولی نمی‌دهد.
+
+خروجی‌های اصلی:
+
+- APK: `build/app/outputs/flutter-apk/app-myket-release.apk`
+- AAB: `build/app/outputs/bundle/myketRelease/app-myket-release.aab`
+
+AAB و APK هر دو متعلق به **مایکت** هستند. خروجی قدیمی QA یا نسخهٔ قدیمی بازار، جایگزین این انتشار نیست.
+
+## GitHub Actions
+
+ورک‌فلو `.github/workflows/build-apk.yml` با Secretهای ازپیش‌تنظیم‌شدهٔ `KEYSTORE_B64` و `KEYSTORE_PASSWORD` کلید اصلی را بازیابی می‌کند. نبود Secret، خطای واقعی است و **هیچ APK آزمایشی جایگزین نمی‌شود**.
+
+پیش از انتشار آرتیفکت:
+
+1. تست‌های رفتار قفل و کل مجموعهٔ Flutter عبور می‌کنند.
+2. رمزنگاری رسید و سیاست Native انتشار رسمی تست می‌شوند؛ کلید عمومی مایکت نیز RSA معتبر است.
+3. `apksigner` صحت امضا را بررسی می‌کند؛ `tool/verify_production_apk.py` گواهی را با keystore رسمی مقایسه می‌کند.
+4. از خود APK، package، versionName/versionCode، مجوز پرداخت مایکت و نبود debug/testOnly بررسی می‌شود.
+
+آرتیفکت‌های نسخهٔ فعلی:
+
+- `jazire_fandoqi_v7.5.4_myket_production_apk` — `app-myket-release.apk` + `build-info.txt`
+- `jazire_fandoqi_v7.5.4_myket_production_aab`
+
+QA مستقل فقط گزارش تست/تحلیل و نتایج JVM منتشر می‌کند؛ دیگر `island-qa-apk` ندارد.
+
+## تنظیمات لازم در پیشخوان مایکت
+
+- محصول **غیرمصرف‌شدنی** با شناسهٔ دقیق `full_version`، فعال و دارای قیمت صحیح باشد.
+- بستهٔ `com.parsaapps.amoozesh_fandoghi`، گواهی APK و کلید RSA با تنظیمات انتشار همان برنامه متناظر باشند.
+- اگر حساب/محصول آزمایشی در پیشخوان تعریف شده است، پیش از اعتبارسنجی پرداخت بانکی واقعی آن را غیرفعال کنید. این تنظیمات در سرور مایکت است و با تغییر کد این مخزن حذف نمی‌شود.
+
+رسید معتبر پاسخ امضاشدهٔ مایکت را اثبات می‌کند؛ به‌تنهایی نمی‌تواند تنظیمات حساب آزمایشیِ سرور را تغییر دهد. تست‌های CI تراکنش بانکی واقعی نیستند؛ چک‌لیست تراکنش واقعی در [گزارش انتشار](docs/MYKET_PRODUCTION_7_5_4_FA.md) آمده است.
+
+## نصب بدون حذف پیشرفت
+
 ```bash
-java -version
+adb install -r build/app/outputs/flutter-apk/app-myket-release.apk
 ```
 
-### خطای `Installation failed - parser did not find any certificates`:
-این خطا یعنی APK بدون امضا ساخته شده است.
-**راه حل فوری:**
-```bash
-# روش ۱: دیباگ بساز (همیشه قابل نصب است)
-flutter build apk --flavor myket --debug
-adb install build/app/outputs/flutter-apk/app-myket-debug.apk
+روی گوشی نیز APK را به‌صورت به‌روزرسانی نصب کنید. اگر خطای امضا/نصب گرفتید، **برنامه را حذف نکنید**؛ ابتدا گواهی نصب قبلی، APK جدید و پشتیبان پیشرفت بررسی شود. `adb uninstall` راه‌حل پیش‌فرض این پروژه نیست.
 
-# روش ۲: فقط برای تأیید release-mode و هرگز برای انتشار:
-ALLOW_VERIFICATION_SIGNING=1 BUILD_MODE=release ./build.sh
-# خروجی این حالت با کلید debug امضا می‌شود و باید صرفاً برای QA استفاده شود.
-```
-**برای انتشار اصلی در کافه‌بازار:**
-```bash
-keytool -genkey -v -keystore android/release.keystore -alias fandoghi -keyalg RSA -keysize 4096 -validity 10000
-# بعد فایل android/key.properties را بسازید و دوباره build کنید
-```
-
-### خطای `App not installed` بعد از نصب قبلی:
-اگر نسخه قبلی با کلید دیگری امضا شده بود:
-```bash
-adb uninstall com.parsaapps.amoozesh_fandoghi
-adb install build/app/outputs/flutter-apk/app-myket-release.apk
-```
-
-## 📞 پشتیبانی
-
-- توسعه‌دهنده: فرشاد پارسا
-- ایمیل: farshadparsa2019@gmail.com
-- تلگرام: @Parsaappsadmin
+خریدار واقعی قبلی مایکت می‌تواند «بازیابی خرید نسخهٔ کامل» را بزند؛ پرداخت دوباره لازم نیست. پس از تأیید، رسید معتبر رمز‌شده برای استفادهٔ آفلاین نگه داشته می‌شود. پیشرفت، پین و امتیازها مستقل‌اند و با تغییر مجوز پاک نمی‌شوند.

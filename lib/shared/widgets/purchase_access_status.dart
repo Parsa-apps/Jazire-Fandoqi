@@ -16,12 +16,14 @@ class PurchaseAccessStatus extends StatelessWidget {
           FullVersionAccessStatus.checking => 'وضعیت خرید هنوز بررسی نشده است.',
           FullVersionAccessStatus.free =>
             'نسخهٔ رایگان؛ خرید تأییدشده‌ای در فروشگاه پیدا نشد.',
+          FullVersionAccessStatus.untrustedBuild =>
+            'فعال‌سازی فقط در نسخهٔ رسمی انتشار مایکت امکان‌پذیر است.',
           FullVersionAccessStatus.needsRestore =>
             'مجوز قبلی قابل تأیید نیست. اگر خریده‌اید، «بازیابی خرید نسخهٔ کامل» را بزنید.',
           FullVersionAccessStatus.storeVerified =>
-            'نسخهٔ کامل؛ رسید امضاشدهٔ فروشگاه تأیید شد.',
+            'نسخهٔ کامل؛ رسید امضاشدهٔ مایکت تأیید شد.',
           FullVersionAccessStatus.offlineVerified =>
-            'نسخهٔ کامل آفلاین؛ امضای رسید ذخیره‌شده تأیید شد.',
+            'نسخهٔ کامل آفلاین؛ امضای رسید مایکت ذخیره‌شده تأیید شد.',
         };
         return Semantics(
           liveRegion: true,

@@ -120,6 +120,23 @@ void main() {
     await _dispose(tester);
   });
 
+  testWidgets('a blocked destination opens only after the verified Myket purchase',
+      (tester) async {
+    var mounts = 0;
+    await _open(tester, GameAccessGate.lazy(
+      gameName: 'حافظه',
+      childBuilder: () => _Probe(onMounted: () => mounts++),
+    ));
+    expect(mounts, 0);
+    expect(find.byType(AnimatedGoldLock), findsOneWidget);
+    store.purchaseResponse = PaywallTestStore.verifiedPurchase;
+    expect(await Monetization.purchaseFullVersion(), isTrue);
+    await _pump(tester);
+    expect(mounts, 1);
+    expect(find.byType(AnimatedGoldLock), findsNothing);
+    await _dispose(tester);
+  });
+
   testWidgets('confirmed revocation removes an already-mounted paid destination',
       (tester) async {
     store.purchaseResponse = PaywallTestStore.verifiedPurchase;
@@ -134,6 +151,24 @@ void main() {
     await _pump(tester);
     expect(find.text('PAID_DESTINATION'), findsNothing);
     expect(find.byType(AnimatedGoldLock), findsOneWidget);
+    await _dispose(tester);
+  });
+
+  testWidgets('a Myket purchase removes locks on the mounted map without reopening it',
+      (tester) async {
+    GameData.currentStage = 6;
+    await _open(tester, const ProviderScope(child: StageMapScreen()));
+    final lock = find.byKey(const ValueKey('stage_payment_lock_6'));
+    expect(tester.widget<LockedCardOverlay>(lock).locked, isTrue);
+    store.purchaseResponse = PaywallTestStore.verifiedPurchase;
+    expect(await Monetization.purchaseFullVersion(), isTrue);
+    await _pump(tester);
+    expect(tester.widget<LockedCardOverlay>(lock).locked, isFalse);
+    store.restoreResponse = PaywallTestStore.notOwned;
+    expect(await Monetization.hasFullVersion(), isFalse);
+    await _pump(tester);
+    expect(tester.widget<LockedCardOverlay>(lock).locked, isTrue);
+    expect(GameData.currentStage, 6);
     await _dispose(tester);
   });
 

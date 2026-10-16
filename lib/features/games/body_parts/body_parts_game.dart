@@ -78,9 +78,16 @@ class _BodyPartsGameState extends State<BodyPartsGame> {
     if (allowed && mounted) await _refreshEntitlement();
   }
 
+  void _syncFullVersionAccess() {
+    if (!mounted) return;
+    final has = Monetization.accessStatus.value.isVerified;
+    if (has != _hasFullVersion) setState(() => _hasFullVersion = has);
+  }
+
   @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_syncFullVersionAccess);
     unawaited(_refreshEntitlement());
     FandoghiCoach.enablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -93,6 +100,7 @@ class _BodyPartsGameState extends State<BodyPartsGame> {
 
   @override
   void dispose() {
+    Monetization.accessStatus.removeListener(_syncFullVersionAccess);
     FandoghiCoach.clear();
     super.dispose();
   }

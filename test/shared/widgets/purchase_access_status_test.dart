@@ -24,7 +24,7 @@ void main() {
     store.purchaseResponse = PaywallTestStore.verifiedPurchase;
     expect(await Monetization.purchaseFullVersion(), isTrue);
     await tester.pump();
-    expect(find.textContaining('رسید امضاشدهٔ فروشگاه تأیید شد'), findsOneWidget);
+    expect(find.textContaining('رسید امضاشدهٔ مایکت تأیید شد'), findsOneWidget);
     expect(find.textContaining('verified-test-receipt'), findsNothing);
     expect(find.textContaining('verified-test-order'), findsNothing);
     expect(find.textContaining(PaywallTestStore.signature), findsNothing);

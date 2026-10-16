@@ -57,9 +57,16 @@ class _AlphabetDictationGameState extends State<AlphabetDictationGame> {
   bool _finished = false;
   static const int _rounds = 5;
 
+  void _syncFullVersionAccess() {
+    if (!mounted) return;
+    final has = Monetization.accessStatus.value.isVerified;
+    if (has != _hasFullVersion) setState(() => _hasFullVersion = has);
+  }
+
   @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_syncFullVersionAccess);
     _allWords = widget.words
         .map(AudioService.cleanSpokenText)
         .where((w) => w.length >= 2)
@@ -94,6 +101,7 @@ class _AlphabetDictationGameState extends State<AlphabetDictationGame> {
 
   @override
   void dispose() {
+    Monetization.accessStatus.removeListener(_syncFullVersionAccess);
     FandoghiCoach.clear();
     super.dispose();
   }

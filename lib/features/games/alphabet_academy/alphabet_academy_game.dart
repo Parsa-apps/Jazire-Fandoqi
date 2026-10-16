@@ -83,9 +83,16 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
     return list.isEmpty ? _alphabeticalLessons.first : list[_lessonIndex];
   }
 
+  void _syncFullVersionAccess() {
+    if (!mounted) return;
+    final has = Monetization.accessStatus.value.isVerified;
+    if (has != _hasFullVersion) setState(() => _hasFullVersion = has);
+  }
+
   @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_syncFullVersionAccess);
     FandoghiCoach.enablePersistentPresence();
     _refreshEntitlement();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -104,6 +111,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
 
   @override
   void dispose() {
+    Monetization.accessStatus.removeListener(_syncFullVersionAccess);
     _searchController.dispose();
     FandoghiCoach.clear();
     super.dispose();

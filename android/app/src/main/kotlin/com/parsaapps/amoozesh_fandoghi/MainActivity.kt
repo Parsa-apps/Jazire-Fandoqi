@@ -1,6 +1,7 @@
 package com.parsaapps.amoozesh_fandoghi
 
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.net.Uri
 import android.view.WindowManager
 import androidx.activity.result.contract.ActivityResultContracts
@@ -10,33 +11,18 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.util.UUID
 
-/** Native multi-store billing bridge (Cafe Bazaar + Myket).
- *
- * The app ships to several Iranian stores. Each artifact is built for a
- * specific store via a Gradle flavor, and [BuildConfig.STORE_CHANNEL] is the
- * authoritative store for that build ("myket" APK → Myket, "bazaar" AAB →
- * Bazaar). At runtime [StoreVendor.fromChannel] reads that channel and routes
- * every billing call to the matching gateway — Poolakey for Bazaar, Myket
- * Billing Client for Myket. OS installer detection ([StoreVendor.resolve]) is
- * kept only as a fallback for builds whose channel is unknown. The store name
- * is never shown to the user and is never chosen by hand.
- *
- * A release purchase is accepted only after the store SDK validates the RSA
- * signature of the receipt.
- *
- * This must stay a [FlutterFragmentActivity]: plain FlutterActivity extends
- * android.app.Activity and has no ActivityResultRegistry, which Poolakey needs
- * to launch Bazaar's payment flow.
+/** Production-only Myket billing. Legacy store links are kept for support,
+ * but no alternate store, debug/profile APK or unsigned verification build
+ * can purchase, restore or validate an offline full-version entitlement.
  */
 class MainActivity : FlutterFragmentActivity() {
     private val channelName = "kudake_iran/billing"
     private val backupChannelName = "kudake_iran/backup"
-    private val fullVersionProductId = "full_version"
+    private val fullVersionProductId = ProductionBillingPolicy.FULL_VERSION_PRODUCT_ID
     private val receiptVerifier by lazy(LazyThreadSafetyMode.NONE) {
         StoreReceiptVerifier(
             applicationContext.packageName,
             mapOf(
-                StoreVendor.BAZAAR to BuildConfig.BAZAAR_RSA_PUBLIC_KEY,
                 StoreVendor.MYKET to BuildConfig.MYKET_RSA_PUBLIC_KEY,
             ),
         )
@@ -60,13 +46,23 @@ class MainActivity : FlutterFragmentActivity() {
             ?: StoreVendor.resolve(applicationContext)
     }
 
-    private val bazaar: BazaarBilling by lazy(LazyThreadSafetyMode.NONE) {
-        BazaarBilling(this, BuildConfig.BAZAAR_RSA_PUBLIC_KEY)
+    private val productionBillingAllowed by lazy(LazyThreadSafetyMode.NONE) {
+        val flags = applicationInfo.flags
+        ProductionBillingPolicy.allowsBilling(
+            channel = BuildConfig.STORE_CHANNEL,
+            buildType = BuildConfig.BUILD_TYPE,
+            debuggable = BuildConfig.DEBUG || (flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0,
+            testOnly = (flags and ApplicationInfo.FLAG_TEST_ONLY) != 0,
+            expectedSigner = BuildConfig.EXPECTED_SIGNING_SHA256,
+            actualSigner = SecurityModule(applicationContext).signingCertificateSha256(),
+            myketKeyConfigured = BuildConfig.MYKET_RSA_PUBLIC_KEY.isNotBlank(),
+        )
     }
-
-    private val myket: MyketBilling by lazy(LazyThreadSafetyMode.NONE) {
+    private val billingMethods = setOf("purchase", "consume", "restore", "verifyReceipt")
+    private val myketClient = lazy(LazyThreadSafetyMode.NONE) {
         MyketBilling(applicationContext, BuildConfig.MYKET_RSA_PUBLIC_KEY)
     }
+    private val myket: MyketBilling by myketClient
 
     private val backupPicker = registerForActivityResult(
         ActivityResultContracts.OpenDocument(),
@@ -94,9 +90,12 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        connectStore()
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
             .setMethodCallHandler { call, result ->
+                if (call.method in billingMethods && !productionBillingAllowed) {
+                    result.success(BillingOutcome.untrustedBuild().toMap())
+                    return@setMethodCallHandler
+                }
                 when (call.method) {
                     "purchase" -> purchase(call.arguments as? Map<*, *>, result)
                     "consume" -> consume(call.arguments as? Map<*, *>, result)
@@ -113,7 +112,9 @@ class MainActivity : FlutterFragmentActivity() {
                         } else {
                             BillingOutcome.invalidReceipt()
                         }
-                        result.success(outcome.toMap())
+                        result.success(ProductionBillingPolicy.protect(
+                            outcome, productionBillingAllowed,
+                        ).toMap())
                     }
                     // Flutter از این برای انتخاب متن/رفتار مناسب استفاده می‌کند.
                     "installerPackage" -> result.success(StoreVendor.installerPackage(applicationContext))
@@ -197,17 +198,6 @@ class MainActivity : FlutterFragmentActivity() {
     // ResultReceiver داخلی به listener می‌رساند، پس نیازی به
     // override کردن onActivityResult نیست. (Poolakey/کافه‌بازار هم از
     // ActivityResultRegistry خودش استفاده می‌کند.)
-    /** فقط درگاهِ فروشگاهِ نصب‌کننده متصل می‌شود، نه هر دو. */
-    private fun connectStore() {
-        if (vendor == StoreVendor.BAZAAR) bazaar.connect()
-        // مایکت اتصال تنبل دارد و هنگام اولین خرید setup می‌شود.
-    }
-
-    /** پیام یکسان وقتی اپ از هیچ فروشگاه پشتیبانی‌شده‌ای نصب نشده است. */
-    private fun noStoreFailure() = failure(
-        "این نسخه از فروشگاه رسمی نصب نشده است؛ برای خرید، برنامه را از فروشگاهی که آن را دریافت کرده‌اید نصب کنید."
-    )
-
     private fun purchase(arguments: Map<*, *>?, result: MethodChannel.Result) {
         val productId = arguments?.get("productId") as? String
         if (productId.isNullOrBlank()) {
@@ -225,16 +215,7 @@ class MainActivity : FlutterFragmentActivity() {
         purchaseInProgress = true
         // پاسخ فقط یک‌بار به Flutter برمی‌گردد، حتی اگر SDK دوبار callback بزند.
         val reply = singleReply(result) { purchaseInProgress = false }
-        when (vendor) {
-            StoreVendor.BAZAAR ->
-                bazaar.purchase(activityResultRegistry, productId, payload, reply)
-            StoreVendor.MYKET ->
-                myket.purchase(this, productId, payload, reply)
-            StoreVendor.UNKNOWN -> {
-                purchaseInProgress = false
-                result.success(noStoreFailure())
-            }
-        }
+        myket.purchase(this, productId, payload, reply)
     }
 
     private fun consume(arguments: Map<*, *>?, result: MethodChannel.Result) {
@@ -244,20 +225,12 @@ class MainActivity : FlutterFragmentActivity() {
             return
         }
         val reply = singleReply(result)
-        when (vendor) {
-            StoreVendor.BAZAAR -> bazaar.consume(token, reply)
-            StoreVendor.MYKET -> myket.consume(token, reply)
-            StoreVendor.UNKNOWN -> result.success(noStoreFailure())
-        }
+        myket.consume(token, reply)
     }
 
     private fun restore(result: MethodChannel.Result) {
         val reply = singleReply(result)
-        when (vendor) {
-            StoreVendor.BAZAAR -> bazaar.restore(fullVersionProductId, reply)
-            StoreVendor.MYKET -> myket.restore(fullVersionProductId, reply)
-            StoreVendor.UNKNOWN -> result.success(noStoreFailure())
-        }
+        myket.restore(fullVersionProductId, reply)
     }
 
     /**
@@ -274,7 +247,11 @@ class MainActivity : FlutterFragmentActivity() {
             if (!replied) {
                 replied = true
                 onFirst()
-                runOnUiThread { result.success(outcome.toMap()) }
+                runOnUiThread {
+                    result.success(ProductionBillingPolicy.protect(
+                        outcome, productionBillingAllowed,
+                    ).toMap())
+                }
             }
         }
     }
@@ -356,8 +333,7 @@ class MainActivity : FlutterFragmentActivity() {
     private fun failure(message: String) = mapOf("success" to false, "message" to message)
 
     override fun onDestroy() {
-        bazaar.dispose()
-        myket.dispose()
+        if (myketClient.isInitialized()) myket.dispose()
         super.onDestroy()
     }
 }

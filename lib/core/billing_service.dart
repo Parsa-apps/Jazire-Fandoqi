@@ -6,7 +6,9 @@ import 'package:flutter/services.dart';
 import 'store_vendor.dart';
 
 /// Distinguish a confirmed empty inventory from a temporarily unavailable store.
-enum BillingStatus { verified, notOwned, unavailable, invalidReceipt, completed }
+enum BillingStatus {
+  verified, notOwned, unavailable, invalidReceipt, completed, untrustedBuild,
+}
 
 /// A token or success flag alone is never proof of ownership. Signed receipt
 /// data must also have passed the native RSA / package / product / state check.
@@ -22,6 +24,7 @@ class BillingResult {
     this.purchaseState,
     this.signedData,
     this.signature,
+    this.releaseVerified = false,
   });
 
   const BillingResult.failure(
@@ -34,7 +37,8 @@ class BillingResult {
         store = null,
         purchaseState = null,
         signedData = null,
-        signature = null;
+        signature = null,
+        releaseVerified = false;
 
   final bool success;
   final String? purchaseToken;
@@ -46,12 +50,14 @@ class BillingResult {
   final int? purchaseState;
   final String? signedData;
   final String? signature;
+  final bool releaseVerified;
 
   bool get hasStoreReceipt =>
       success &&
+      releaseVerified &&
       status == BillingStatus.verified &&
       purchaseState == 0 &&
-      (store == 'myket' || store == 'bazaar') &&
+      store == 'myket' &&
       (productId?.trim().isNotEmpty ?? false) &&
       (signedData?.trim().isNotEmpty ?? false) &&
       (signature?.trim().isNotEmpty ?? false) &&
@@ -60,27 +66,16 @@ class BillingResult {
 
   bool hasReceiptFor(String expectedProductId) =>
       hasStoreReceipt && productId == expectedProductId;
+
+  bool get hasMyketFullVersionReceipt =>
+      hasReceiptFor(BillingService.fullVersionProductId) && store == 'myket';
 }
 
-/// پل ارتباطی با سیستم پرداخت درون‌برنامه‌ای فروشگاه‌های ایرانی
-///
-/// 🏪 چند-فروشگاهی: اپ هنگام اجرا تشخیص می‌دهد از کدام فروشگاه نصب شده
-/// (`StoreDetector`) و لایهٔ نیتیو همان درگاه را صدا می‌زند — کافه‌بازار
-/// با Poolakey و مایکت با Myket Billing Client. کاربر هیچ‌وقت نام
-/// فروشگاه را نمی‌بیند و چیزی انتخاب نمی‌کند.
-///
-/// ارتباط از طریق MethodChannel با نام `kudake_iran/billing` انجام می‌شود.
-/// ماژول نیتیو اندروید باید این متودها را پیاده‌سازی کند:
-///
-/// 1. `purchase`: ورودی `{productId: String, consumable: bool}`
-///    خروجی: `{success: bool, purchaseToken: String?, orderId: String?, message: String?}`
-/// 2. `consume`: ورودی `{purchaseToken: String}` برای مصرف‌کردنی‌ها
-/// 3. `restore`: بدون ورودی؛ نتیجه‌ی یک اشتراک معتبر فعلی را با همان قالب
-///    `purchase` برمی‌گرداند (یا `success: false` اگر خریدی نیست)
-///
-/// Missing plugins, malformed responses and unavailable stores always fail
-/// closed, including debug/profile builds. Tests use explicit channel mocks;
-/// there is no automatic successful purchase or restore in a shipped APK.
+/// Production Myket billing bridge. Native validates the APK's release
+/// certificate before purchase, restore or offline receipt verification.
+/// A completed purchase needs signed data, product/package/state validation
+/// and native release attestation; debug/demo/local flags never unlock it.
+/// Unit/widget tests provide explicit channel mocks outside the shipped app.
 class BillingService {
   BillingService._();
 
@@ -119,6 +114,12 @@ class BillingService {
     required String signature,
     required String store,
   }) async {
+    if (store != 'myket') {
+      return const BillingResult.failure(
+        'نسخهٔ کامل فقط با رسید معتبر مایکت فعال می‌شود',
+        status: BillingStatus.invalidReceipt,
+      );
+    }
     try {
       final raw = await _channel.invokeMethod<Object?>(
         'verifyReceipt',
@@ -183,14 +184,11 @@ class BillingService {
     if (method != 'restore' && productId.trim().isEmpty) {
       return const BillingResult.failure('شناسه محصول نامعتبر است');
     }
-    // اگر اپ از فروشگاه پشتیبانی‌شده نصب نشده باشد (نصب مستقیم APK)،
-    // هیچ درگاه پرداختی وجود ندارد. به‌جای خطای مبهم استور، پیام روشن
-    // می‌دهیم. حالت ساخت هیچ‌وقت مجوز پرداخت محسوب نمی‌شود.
     final vendor = await StoreDetector.detect();
     if (!vendor.supportsBilling) {
       return const BillingResult.failure(
-        'این نسخه از فروشگاه رسمی نصب نشده است؛ برای خرید، برنامه را از '
-        'فروشگاهی که آن را دریافت کرده‌اید نصب کنید.',
+        'خرید و فعال‌سازی فقط در نسخهٔ رسمی انتشار مایکت امکان‌پذیر است',
+        status: BillingStatus.untrustedBuild,
       );
     }
     try {
@@ -276,6 +274,7 @@ class BillingService {
       'not_owned' => BillingStatus.notOwned,
       'invalid_receipt' => BillingStatus.invalidReceipt,
       'completed' => BillingStatus.completed,
+      'untrusted_build' => BillingStatus.untrustedBuild,
       _ => BillingStatus.unavailable,
     };
     if (raw['success'] != true) {
@@ -297,6 +296,7 @@ class BillingService {
           ? raw['purchaseState'] as int : null,
       signedData: raw['signedData'] is String ? raw['signedData'] as String : null,
       signature: raw['signature'] is String ? raw['signature'] as String : null,
+      releaseVerified: raw['releaseVerified'] == true,
     );
     if (requireReceipt &&
         (!result.hasStoreReceipt ||

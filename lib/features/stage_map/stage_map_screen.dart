@@ -102,9 +102,16 @@ class _StageMapState extends ConsumerState<StageMapScreen>
 
   double get _mapHeight => _stages.length * 160.0 + 300;
 
+  void _syncFullVersionAccess() {
+    if (!mounted) return;
+    final has = Monetization.accessStatus.value.isVerified;
+    if (has != _hasFullVersion) setState(() => _hasFullVersion = has);
+  }
+
   @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_syncFullVersionAccess);
     _refreshEntitlement();
     _scrollCtrl = ScrollController()..addListener(_onScroll);
     _animCtrl = AnimationController(
@@ -147,6 +154,7 @@ class _StageMapState extends ConsumerState<StageMapScreen>
 
   @override
   void dispose() {
+    Monetization.accessStatus.removeListener(_syncFullVersionAccess);
     FandoghiCoach.clear();
     _scrollCtrl.removeListener(_onScroll);
     _scrollCtrl.dispose();

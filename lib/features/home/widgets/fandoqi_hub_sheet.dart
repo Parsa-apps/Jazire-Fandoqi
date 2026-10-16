@@ -510,9 +510,16 @@ class _FandoqiHubSheetWidgetState extends State<_FandoqiHubSheetWidget>
   /// نسخهٔ کامل خریده، هیچ قفلی نمی‌بیند.
   bool _hasFullVersion = false;
 
+  void _syncFullVersionAccess() {
+    if (!mounted) return;
+    final has = Monetization.accessStatus.value.isVerified;
+    if (has != _hasFullVersion) setState(() => _hasFullVersion = has);
+  }
+
   @override
   void initState() {
     super.initState();
+    Monetization.accessStatus.addListener(_syncFullVersionAccess);
     _floatCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 5),
@@ -548,6 +555,7 @@ class _FandoqiHubSheetWidgetState extends State<_FandoqiHubSheetWidget>
 
   @override
   void dispose() {
+    Monetization.accessStatus.removeListener(_syncFullVersionAccess);
     _floatCtrl.dispose();
     _bubbleCtrl.dispose();
     super.dispose();

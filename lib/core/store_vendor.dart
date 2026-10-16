@@ -20,8 +20,9 @@ enum StoreVendor {
   /// در این حالت درگاه پرداختی وجود ندارد و خرید باید محترمانه رد شود.
   unknown;
 
-  /// آیا برای این حالت درگاه پرداخت فعالی داریم؟
-  bool get supportsBilling => this != StoreVendor.unknown;
+  /// Legacy vendors remain identifiable for support links, but this release
+  /// accepts payments and permanent ownership only through Myket.
+  bool get supportsBilling => this == StoreVendor.myket;
 }
 
 /// تشخیص فروشگاه نصب‌کننده و انتخاب خودکار درگاه پرداخت.

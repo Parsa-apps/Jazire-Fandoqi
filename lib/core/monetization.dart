@@ -10,6 +10,7 @@ enum FullVersionAccessStatus {
   checking,
   free,
   needsRestore,
+  untrustedBuild,
   storeVerified,
   offlineVerified;
 
@@ -56,7 +57,12 @@ class Monetization {
   static Future<bool> _checkAccess(int revision) async {
     final restored = await BillingService.restorePurchases();
     if (revision != _revision) return _lastDecision;
-    if (restored.hasReceiptFor(productIdFullVersion)) {
+    if (restored.status == BillingStatus.untrustedBuild) {
+      // Never erase a genuine receipt merely because this APK is not the
+      // official release. It still must not unlock any paid destination.
+      return _publish(FullVersionAccessStatus.untrustedBuild);
+    }
+    if (restored.hasMyketFullVersionReceipt) {
       final accepted = await _acceptReceipt(restored, expectedRevision: revision);
       if (accepted || revision != _revision) return _lastDecision;
       return _revoke(revision, FullVersionAccessStatus.needsRestore);
@@ -75,7 +81,7 @@ class Monetization {
     if (saved != null) {
       final proof = await _verifySavedReceipt(saved);
       if (revision != _revision) return _lastDecision;
-      return _publish(proof.hasReceiptFor(productIdFullVersion)
+      return _publish(proof.hasMyketFullVersionReceipt
           ? FullVersionAccessStatus.offlineVerified
           : FullVersionAccessStatus.needsRestore);
     }
@@ -93,7 +99,7 @@ class Monetization {
           record['schema'] == receiptCacheSchema &&
           record['signedData'] is String &&
           record['signature'] is String &&
-          record['store'] is String) {
+          record['store'] == 'myket') {
         return BillingService.verifyFullVersionReceipt(
           signedData: record['signedData'] as String,
           signature: record['signature'] as String,
@@ -116,7 +122,7 @@ class Monetization {
     BillingResult result, {
     int? expectedRevision,
   }) async {
-    if (!result.hasReceiptFor(productIdFullVersion)) {
+    if (!result.hasMyketFullVersionReceipt) {
       lastPurchaseError = result.message.isNotEmpty
           ? result.message : 'رسید امضاشدهٔ نسخهٔ کامل دریافت نشد';
       return false;
@@ -131,7 +137,7 @@ class Monetization {
     if (expectedRevision != null && expectedRevision != _revision) {
       return _lastDecision;
     }
-    if (!proof.hasReceiptFor(productIdFullVersion)) {
+    if (!proof.hasMyketFullVersionReceipt) {
       lastPurchaseError = 'امضای رسید نسخهٔ کامل تأیید نشد';
       return false;
     }

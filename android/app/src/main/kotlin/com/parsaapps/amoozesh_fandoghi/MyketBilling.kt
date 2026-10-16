@@ -180,6 +180,10 @@ class MyketBilling(context: Context, private val publicKey: String) {
                         callback(BillingOutcome.failure("مصرف خرید تأیید نشد"))
                         return@queryInventoryAsync
                     }
+                    if (!ProductionBillingPolicy.canConsume(target.sku)) {
+                        callback(BillingOutcome.failure("خرید دائمی نسخهٔ کامل قابل مصرف نیست"))
+                        return@queryInventoryAsync
+                    }
                     helper?.consumeAsync(target) { _, consumeResult ->
                         if (consumeResult.isSuccess) {
                             callback(BillingOutcome.success(message = "خرید مصرف شد"))

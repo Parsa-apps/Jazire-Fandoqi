@@ -20,6 +20,7 @@ class PaywallTestStore {
   static const verifiedPurchase = <String, Object?>{
     'success': true,
     'status': 'verified',
+    'releaseVerified': true,
     'purchaseToken': 'verified-test-receipt',
     'orderId': 'verified-test-order',
     'productId': 'full_version',
@@ -40,6 +41,7 @@ class PaywallTestStore {
   };
   Object? restoreResponse = notOwned;
   bool rejectReceiptVerification = false;
+  bool trustedRelease = true;
   Future<Object?> Function()? restoreOverride;
   bool offline = false;
   final values = <String, String>{};
@@ -55,6 +57,13 @@ class PaywallTestStore {
     messenger.setMockMethodCallHandler(billing, (call) async {
       calls.add(call.method);
       if (call.method == 'storeVendor') return 'myket';
+      if (!trustedRelease) {
+        return <String, Object?>{
+          'success': false,
+          'status': 'untrusted_build',
+          'message': 'نسخهٔ رسمی انتشار مایکت لازم است',
+        };
+      }
       if (call.method == 'verifyReceipt') {
         final args = call.arguments as Map;
         if (!rejectReceiptVerification &&

@@ -70,14 +70,13 @@ class _GameAccessGateState extends State<GameAccessGate>
   void _onAccessChanged() {
     final status = Monetization.accessStatus.value;
     final isFree = widget.isFree ?? ContentAccessPolicy.isGameFree(widget.gameName);
-    if (!mounted || isFree || _allowed != true ||
-        status == FullVersionAccessStatus.checking || status.isVerified) {
-      return;
-    }
+    if (!mounted || isFree || status == FullVersionAccessStatus.checking) return;
+    final allowed = status.isVerified;
+    if (_allowed == allowed) return;
     _checkGeneration++;
     setState(() {
-      _allowed = false;
-      _lazyChild = null;
+      _allowed = allowed;
+      if (!allowed) _lazyChild = null;
     });
   }
 

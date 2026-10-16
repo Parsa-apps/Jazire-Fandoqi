@@ -5,10 +5,10 @@ name: Island QA - analyze, test, build
 #      of pre-existing info-level lints; findings are republished as
 #      check annotations because raw job logs are not always readable).
 #   2. Hard gate: the redesigned island code must be analyzer-clean.
-#   3. Full test-suite report (non-gating, findings republished).
+#   3. Mandatory full test suite (findings republished).
 #   4. Hard gate: island + home smoke tests must pass.
-#   5. Release APK build (debug-signed here; the store workflow owns
-#      the signed release pipeline).
+#   5. Native Myket production/receipt tests and compilation only.
+#      QA never publishes an installable debug/verification APK.
 on:
   push:
     branches: ['arena/**']
@@ -136,8 +136,8 @@ jobs:
             clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
             echo "::notice::$clean"
           done
-          # Report only — the island gate below is what must stay green.
-          true
+          # The entire suite is mandatory; no test APK is published by QA.
+          exit "$status"
 
       # Hard gate: island redesign tests + home smoke suite.
       # Mission 2 adds the design-kit, hub-lock and mini-game scaffold
@@ -158,14 +158,30 @@ jobs:
           test/features/games/mini_games/mini_game_scaffold_test.dart
           test/app_smoke_test.dart
 
-      # Note: on GitHub Actions the project's Gradle build also runs
-      # tool/ci_quality_gate.sh (analyze + full test suite) before
-      # assembling, by design (see android/app/build.gradle).
-      - name: Build APK (Release)
-        run: flutter build apk --release
+      - name: Production APK policy tests
+        run: python3 -m unittest discover -s tool -p 'test_verify_production_apk.py' -v
 
-      - name: Upload APK
+      - name: Native Myket tests and compilation (no APK)
+        run: |
+          mkdir -p qa-gate-log
+          set +e
+          (cd android && ./gradlew testMyketReleaseUnitTest --console=plain) > qa-gate-log/native-receipts.log 2>&1
+          status=$?
+          cat qa-gate-log/native-receipts.log
+          if [ "$status" -ne 0 ]; then
+            python3 tool/ci_annotate.py 'Native production tests failed' qa-gate-log/native-receipts.log
+          fi
+          exit "$status"
+
+      - name: Upload QA reports only
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: island-qa-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: island-qa-reports
+          path: |
+            analyze.txt
+            gate-analyze.txt
+            test-output.txt
+            qa-gate-log/
+            build/app/test-results/testMyketReleaseUnitTest/
+          if-no-files-found: ignore

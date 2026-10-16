@@ -26,8 +26,8 @@ String normalizePaywallDigits(String input) {
 
 /// A parent-facing, one-time purchase surface — PREMIUM V2
 /// پیشنهاد ۴۱ — پرداخت امن درون‌برنامه‌ای + اعتماد والد
-/// نام فروشگاه عمداً در UI نمی‌آید: اپ روی چند فروشگاه منتشر می‌شود و
-/// درگاه درست هنگام اجرا از روی بستهٔ نصب‌کننده انتخاب می‌شود.
+/// Only a completed, RSA-verified Myket purchase in the official release
+/// activates the full version. No trial, demo or debug grant exists.
 Future<bool> showFullVersionPaywall(BuildContext context, {String? featureName}) async {
   final bought = await showModalBottomSheet<bool>(
     context: context,
@@ -279,7 +279,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                             children: [
                               Text('قیمت نهایی', style: TextStyle(fontSize: 10, color: Colors.black54, fontWeight: FontWeight.w700)),
                               const SizedBox(height: 2),
-                              Text('در پرداخت فروشگاه', style: AppFonts.vazirmatn(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.primary)),
+                              Text('در پرداخت مایکت', style: AppFonts.vazirmatn(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.primary)),
                               const Icon(Icons.storefront_rounded, size: 16, color: AppColors.primary),
                             ],
                           ),
@@ -300,7 +300,7 @@ class _FullVersionSheetPremiumState extends State<_FullVersionSheetPremium> {
                   // نشان اعتماد
                   Row(
                     children: [
-                      _TrustBadge(icon: Icons.security_rounded, label: 'پرداخت امن', sub: 'درگاه رسمی'),
+                      _TrustBadge(icon: Icons.security_rounded, label: 'پرداخت امن', sub: 'مایکت'),
                       const SizedBox(width: 8),
                       _TrustBadge(icon: Icons.block_rounded, label: 'بدون تبلیغ', sub: '۱۰۰٪'),
                       const SizedBox(width: 8),
@@ -393,7 +393,7 @@ class _StorePriceNotice extends StatelessWidget {
           ),
           const SizedBox(height: 5),
           Text(
-            'مبلغ نهایی را فروشگاه در پنجرهٔ پرداخت نشان می‌دهد.',
+            'مبلغ نهایی را مایکت در پنجرهٔ پرداخت نشان می‌دهد.',
             textAlign: TextAlign.center,
             style: AppFonts.vazirmatn(
               fontSize: 13,

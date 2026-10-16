@@ -26,7 +26,9 @@ internal class StoreReceiptVerifier(
         expectedProductId: String,
     ): BillingOutcome {
         val key = publicKeys[store]
-        if (store == StoreVendor.UNKNOWN || key.isNullOrBlank() ||
+        if ((expectedProductId == ProductionBillingPolicy.FULL_VERSION_PRODUCT_ID &&
+                store != StoreVendor.MYKET) ||
+            store == StoreVendor.UNKNOWN || key.isNullOrBlank() ||
             signedData.isNullOrBlank() || signature.isNullOrBlank() ||
             expectedProductId.isBlank()
         ) {
