@@ -495,7 +495,10 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
           );
           return MaterialPageRoute(
             settings: settings,
-            builder: (_) => GameAccessGate(gameName: gameName, child: _gameFor(launch)),
+            builder: (_) => GameAccessGate.lazy(
+              gameName: gameName,
+              childBuilder: () => _gameFor(launch),
+            ),
           );
         }
         // قصه‌خانه و داستان‌های کودکانه (/story/<id>)

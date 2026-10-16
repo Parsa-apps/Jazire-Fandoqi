@@ -9,6 +9,9 @@ import '../../core/fandoghi_coach.dart';
 import '../../core/game_data.dart';
 import '../../presentation/providers/game_state_provider.dart';
 import '../../core/game_launch.dart';
+import '../../core/content_access_policy.dart';
+import '../../core/monetization.dart';
+import '../shop/content_lock.dart';
 import '../../domain/entities/game_stage.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
 import 'painters/path_painter.dart';
@@ -35,6 +38,12 @@ class _StageMapState extends ConsumerState<StageMapScreen>
     with TickerProviderStateMixin {
   late ScrollController _scrollCtrl;
   late AnimationController _animCtrl;
+  bool _hasFullVersion = false;
+
+  Future<void> _refreshEntitlement() async {
+    final hasFullVersion = await Monetization.hasFullVersion();
+    if (mounted) setState(() => _hasFullVersion = hasFullVersion);
+  }
 
   // فاز ۵۸: نقشه ۵۰ مرحله‌ای با مسیر مارپیچ واقعی (تولید برنامه‌ای)
   late final List<_StageData> _stages = _generateStages();
@@ -96,6 +105,7 @@ class _StageMapState extends ConsumerState<StageMapScreen>
   @override
   void initState() {
     super.initState();
+    _refreshEntitlement();
     _scrollCtrl = ScrollController()..addListener(_onScroll);
     _animCtrl = AnimationController(
       vsync: this,
@@ -237,12 +247,17 @@ class _StageMapState extends ConsumerState<StageMapScreen>
                         return Positioned(
         left: stage.relX * w - nodeW / 2,
         top: stage.relY * totalH - nodeH / 2,
-        child: PremiumStageNode(
-          stageNumber: stage.number,
-          title: stage.title,
-          emoji: stage.emoji,
-          state: state,
-          onTap: () => _onStageTap(stage),
+        child: LockedCardOverlay(
+          key: ValueKey('stage_payment_lock_${stage.number}'),
+          locked: !ContentAccessPolicy.isGameFree(stage.gameName) &&
+              !_hasFullVersion,
+          child: PremiumStageNode(
+            stageNumber: stage.number,
+            title: stage.title,
+            emoji: stage.emoji,
+            state: state,
+            onTap: () => _onStageTap(stage),
+          ),
         )
             .animate()
             .fadeIn(
@@ -529,11 +544,19 @@ class _StageMapState extends ConsumerState<StageMapScreen>
     );
   }
 
-  void _onStageTap(_StageData stage) {
+  Future<void> _onStageTap(_StageData stage) async {
     if (stage.number > GameData.currentStage) {
       FandoghiCoach.judge('این مرحله هنوز قفل است؛ اول مرحله‌های قبلی را با هم کامل کنیم 🔒');
       return;
     }
+    final allowed = await ensureFullVersionAccess(
+      context,
+      featureName: stage.gameName,
+      isFree: ContentAccessPolicy.isGameFree(stage.gameName),
+    );
+    if (!mounted || !allowed) return;
+    await _refreshEntitlement();
+    if (!mounted) return;
     FandoghiCoach.instruction('این مرحله را انتخاب کردی! آماده‌ای با فندقی شروع کنیم؟ 🗺️');
 
     showModalBottomSheet(

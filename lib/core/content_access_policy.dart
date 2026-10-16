@@ -126,7 +126,8 @@ abstract final class ContentAccessPolicy {
   static bool isAcademyTopicFree(String topicId) =>
       learningTopicById(topicId) != null;
 
-  static bool isGameFree(String gameName) => freeGameNames.contains(gameName);
+  static bool isGameFree(String gameName) =>
+      freeGameNames.contains(gameName == 'میوه‌ها' ? 'میوه' : gameName);
 
   static bool isCartoonFree(String id) => _isAmongFirst(
         id,

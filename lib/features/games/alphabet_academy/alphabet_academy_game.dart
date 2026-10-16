@@ -566,7 +566,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                   ),
-              ),
+                ),
               ),
             ],
           ),
@@ -653,10 +653,12 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               const Text('🏗️', style: TextStyle(fontSize: 20)),
-              const SizedBox(width: 8),
               Text(
                 'کارگاه واژه‌سازی ${b.shortTitle}:',
                 style: AppFonts.balooBhaijaan2(
@@ -665,7 +667,6 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              const Spacer(),
               Text(
                 'لمس = خواندن کلمه • نگه‌داشتن = هجی',
                 style: AppFonts.balooBhaijaan2(
@@ -1219,7 +1220,7 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                   ),
-              ),
+                ),
               ),
             ],
           ),

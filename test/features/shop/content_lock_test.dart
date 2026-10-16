@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:jazireh_fandoghi/core/billing_service.dart';
@@ -15,6 +16,8 @@ import 'package:jazireh_fandoghi/features/games/body_parts/body_parts_game.dart'
 import 'package:jazireh_fandoghi/features/jobs/jobs_hub_screen.dart';
 import 'package:jazireh_fandoghi/features/shop/content_lock.dart';
 import 'package:jazireh_fandoghi/features/shop/game_access_gate.dart';
+import 'package:jazireh_fandoghi/features/stage_map/stage_map_screen.dart';
+import 'package:jazireh_fandoghi/features/stage_map/widgets/premium_stage_node.dart';
 import 'package:jazireh_fandoghi/shared/widgets/magnetic_drag.dart';
 
 import '../../support/paywall_test_store.dart';
@@ -70,12 +73,17 @@ void main() {
     FandoghiCoach.disablePersistentPresence();
   });
 
-  testWidgets('a locked destination never mounts its premium child', (tester) async {
+  testWidgets('a locked destination never constructs or mounts its premium child', (tester) async {
     var mounts = 0;
-    await _open(tester, GameAccessGate(
+    var builds = 0;
+    await _open(tester, GameAccessGate.lazy(
       gameName: 'حافظه',
-      child: _Probe(onMounted: () => mounts++),
+      childBuilder: () {
+        builds++;
+        return _Probe(onMounted: () => mounts++);
+      },
     ));
+    expect(builds, 0);
     expect(mounts, 0);
     expect(find.byIcon(Icons.lock_rounded), findsOneWidget);
     expect(await Monetization.hasFullVersion(), isFalse);
@@ -98,11 +106,32 @@ void main() {
     await Monetization.activateFullVersion(const BillingResult(
       success: true, purchaseToken: 'verified-test-receipt'));
     var mounts = 0;
-    await _open(tester, GameAccessGate(
+    var builds = 0;
+    await _open(tester, GameAccessGate.lazy(
       gameName: 'حافظه',
-      child: _Probe(onMounted: () => mounts++),
+      childBuilder: () {
+        builds++;
+        return _Probe(onMounted: () => mounts++);
+      },
     ));
+    await _pump(tester);
+    expect(builds, 1);
     expect(mounts, 1);
+    await _dispose(tester);
+  });
+
+  testWidgets('a progression-unlocked paid stage still shows and enforces its payment lock',
+      (tester) async {
+    GameData.currentStage = 6; // The memory game, independent of progression.
+    await _open(tester, const ProviderScope(child: StageMapScreen()));
+    final sixth = find.byKey(const ValueKey('stage_payment_lock_6'));
+    expect(tester.widget<LockedCardOverlay>(sixth).locked, isTrue);
+    await tester.ensureVisible(sixth);
+    await _pump(tester);
+    await tester.tap(find.descendant(of: sixth, matching: find.byType(PremiumStageNode)));
+    await _pump(tester);
+    expect(find.text('خرید نسخه کامل'), findsOneWidget);
+    expect(GameData.currentStage, 6);
     await _dispose(tester);
   });
 

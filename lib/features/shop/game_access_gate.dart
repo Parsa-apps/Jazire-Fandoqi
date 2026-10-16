@@ -15,14 +15,26 @@ class GameAccessGate extends StatefulWidget {
   const GameAccessGate({
     super.key,
     required this.gameName,
-    required this.child,
+    required Widget child,
     this.isFree,
-  });
+  }) : child = child,
+       childBuilder = null;
+
+  /// Construct destinations with side effects only after access is granted.
+  const GameAccessGate.lazy({
+    super.key,
+    required this.gameName,
+    required Widget Function() childBuilder,
+    this.isFree,
+  }) : child = null,
+       childBuilder = childBuilder;
+
   final String gameName;
   /// Content routes supply their item policy explicitly. A story/world title
   /// must never inherit a free game's entitlement just because names match.
   final bool? isFree;
-  final Widget child;
+  final Widget? child;
+  final Widget Function()? childBuilder;
   @override
   State<GameAccessGate> createState() => _GameAccessGateState();
 }
@@ -31,6 +43,7 @@ class _GameAccessGateState extends State<GameAccessGate>
     with SingleTickerProviderStateMixin {
   bool? _allowed;
   int _checkGeneration = 0;
+  Widget? _lazyChild;
   late final AnimationController _floatCtrl;
 
   @override
@@ -46,8 +59,10 @@ class _GameAccessGateState extends State<GameAccessGate>
   @override
   void didUpdateWidget(GameAccessGate oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.childBuilder != widget.childBuilder) _lazyChild = null;
     if (oldWidget.gameName != widget.gameName || oldWidget.isFree != widget.isFree) {
       _allowed = null;
+      _lazyChild = null;
       _check();
     }
   }
@@ -171,7 +186,12 @@ class _GameAccessGateState extends State<GameAccessGate>
         ),
       );
     }
-    if (_allowed!) return widget.child;
+    if (_allowed!) {
+      if (widget.childBuilder != null) {
+        return _lazyChild ??= widget.childBuilder!();
+      }
+      return widget.child!;
+    }
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
