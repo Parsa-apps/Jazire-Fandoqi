@@ -1,9 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Myket accepts only its own billing contract. Poolakey's transitive
-         Bazaar permission is explicitly removed from this merged manifest. -->
+    <!-- 🏪 مایکت — مجوز پرداخت همین فروشگاه.
+         در این flavor فقط SDK مایکت وجود دارد؛ `marketPermission` هم در
+         `productFlavors.myket` تعریف شده تا آرتیفکت بازار هیچ شناسهٔ مایکتی
+         حمل نکند. -->
     <uses-permission android:name="ir.mservices.market.BILLING" />
+
+    <!-- شبکهٔ ایمنی: مجوز رقیب نباید حتی به‌صورت پس‌مانده در manifest نهایی
+         باقی بماند (Poolakey اصلاً در این بیلد حاضر نیست). -->
     <uses-permission
         android:name="com.farsitel.bazaar.permission.PAY_THROUGH_BAZAAR"
         tools:node="remove" />

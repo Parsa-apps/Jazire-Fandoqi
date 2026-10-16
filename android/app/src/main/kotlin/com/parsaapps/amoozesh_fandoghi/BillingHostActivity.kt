@@ -3,62 +3,73 @@ package com.parsaapps.amoozesh_fandoghi
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.net.Uri
+import android.os.Build
 import android.view.WindowManager
 import androidx.activity.result.contract.ActivityResultContracts
-import java.io.File
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
 import java.util.UUID
 
-/** Native multi-store billing bridge (Cafe Bazaar + Myket).
+/**
+ * 🏪 میزبانِ مشترکِ فعالیت اندروید — تمام منطقِ **مستقل از فروشگاه**.
  *
- * The app ships to several Iranian stores. Each artifact is built for a
- * specific store via a Gradle flavor, and [BuildConfig.STORE_CHANNEL] is the
- * authoritative store for that build ("myket" APK → Myket, "bazaar" AAB →
- * Bazaar). At runtime [StoreVendor.fromChannel] reads that channel and routes
- * every billing call to the matching gateway — Poolakey for Bazaar, Myket
- * Billing Client for Myket. OS installer detection ([StoreVendor.resolve]) is
- * kept only as a fallback for builds whose channel is unknown. The store name
- * is never shown to the user and is never chosen by hand.
+ * این کلاس همان کاری را می‌کند که `MainActivity` قبلاً می‌کرد، با این تفاوت
+ * که دیگر **هیچ SDK فروشگاهی** را نمی‌شناسد. درگاه پرداخت از طریق
+ * [StoreBilling] و متد انتزاعی [createBilling] تزریق می‌شود و پیاده‌سازی
+ * آن در source set همان flavor قرار دارد:
  *
- * A release purchase is accepted only after the store SDK validates the RSA
- * signature of the receipt.
+ *  • `src/bazaar/kotlin/.../MainActivity.kt` → Poolakey (کافه‌بازار)
+ *  • `src/myket/kotlin/.../MainActivity.kt`  → Myket Billing Client
  *
- * This must stay a [FlutterFragmentActivity]: plain FlutterActivity extends
- * android.app.Activity and has no ActivityResultRegistry, which Poolakey needs
- * to launch Bazaar's payment flow.
+ * نتیجه: در آرتیفکت کافه‌بازار هیچ کلاس، سرویس، مجوز یا مسیر پرداختی از
+ * مایکت وجود ندارد و برعکس. مسیریابی زمان‌اجرا (تشخیص نصب‌کنندهٔ
+ * سیستم‌عامل) حذف شده است: **کانال ساخت** (`BuildConfig.STORE_CHANNEL`)
+ * تنها مرجع فروشگاهِ این بیلد است.
+ *
+ * این کلاس باید `FlutterFragmentActivity` باشد (نه `FlutterActivity`) چون
+ * `FlutterActivity` از `android.app.Activity` ارث می‌برد و
+ * `ActivityResultRegistry` ندارد؛ در حالی که Poolakey برای باز کردن فلوی
+ * پرداخت بازار به آن نیاز دارد.
  */
-class MainActivity : FlutterFragmentActivity() {
+abstract class BillingHostActivity : FlutterFragmentActivity() {
     private val channelName = "kudake_iran/billing"
     private val backupChannelName = "kudake_iran/backup"
     private val fullVersionProductId = "full_version"
     private var purchaseInProgress = false
     private var pendingBackupResult: MethodChannel.Result? = null
 
+    // ── نقطهٔ اتصال flavor ────────────────────────────────────────────────
+
     /**
-     * فروشگاهِ این بیلد؛ یک‌بار محاسبه و کش می‌شود.
-     *
-     * منبعِ قطعی کانال ساخت (`BuildConfig.STORE_CHANNEL`) است: هر قطعهٔ
-     * ارسالی به یک فروشگاه مشخص می‌رود (APKهای flavor «myket» → مایکت،
-     * AABهای flavor «bazaar» → کافه‌بازار)، پس تشخیص زمان‌اجرا فقط به
-     * عنوان fallback نگه داشته می‌شود. این کار جلوی مسدودشدن خرید را در
-     * مواردی می‌گیرد که تشخیص نصب‌کننده مبهم می‌شود (مثلاً نصب از سوی
-     * مکانیزمی که `installingPackageName` دقیقاً بستهٔ فروشگاه نیست، یا
-     * دستگاهی که هر دو اپِ بازار و مایکت را دارد).
+     * درگاه پرداختِ این بیلد. تنها یکی وجود دارد و SDK رقیب در این
+     * آرتیفکت حاضر نیست.
      */
-    private val vendor: StoreVendor by lazy(LazyThreadSafetyMode.NONE) {
-        StoreVendor.fromChannel(BuildConfig.STORE_CHANNEL)
-            ?: StoreVendor.resolve(applicationContext)
-    }
+    protected abstract fun createBilling(): StoreBilling
 
-    private val bazaar: BazaarBilling by lazy(LazyThreadSafetyMode.NONE) {
-        BazaarBilling(this, BuildConfig.BAZAAR_RSA_PUBLIC_KEY)
-    }
+    /**
+     * شناسهٔ فروشگاهِ این بیلد (`bazaar` یا `myket`).
+     *
+     * منبعِ قطعی، `BuildConfig.STORE_CHANNEL` است که در `productFlavors`
+     * تعریف شده؛ همین مقدار به Dart هم داده می‌شود تا نام فروشگاه در UI
+     * با بیلد هم‌خوان بماند.
+     */
+    protected abstract val storeId: String
 
-    private val myket: MyketBilling by lazy(LazyThreadSafetyMode.NONE) {
-        MyketBilling(applicationContext, BuildConfig.MYKET_RSA_PUBLIC_KEY)
-    }
+    /** اینتنت صفحهٔ ثبت نظر/امتیاز در فروشگاهِ همین بیلد. */
+    protected abstract fun buildStoreReviewIntent(): Intent
+
+    /** اینتنت صفحهٔ اطلاعات برنامه در فروشگاهِ همین بیلد. */
+    protected abstract fun buildStoreDetailsIntent(): Intent
+
+    /** نشانی وبِ صفحهٔ برنامه در فروشگاهِ همین بیلد (پشتیبان). */
+    protected abstract fun storeWebUrl(): String
+
+    // ── چرخهٔ عمر درگاه ───────────────────────────────────────────────────
+
+    private val billingDelegate = lazy(LazyThreadSafetyMode.NONE) { createBilling() }
+    private val billing: StoreBilling by billingDelegate
 
     private val backupPicker = registerForActivityResult(
         ActivityResultContracts.OpenDocument(),
@@ -94,8 +105,8 @@ class MainActivity : FlutterFragmentActivity() {
                     "consume" -> consume(call.arguments as? Map<*, *>, result)
                     "restore" -> restore(result)
                     // Flutter از این برای انتخاب متن/رفتار مناسب استفاده می‌کند.
-                    "installerPackage" -> result.success(StoreVendor.installerPackage(applicationContext))
-                    "storeVendor" -> result.success(vendor.name.lowercase())
+                    "installerPackage" -> result.success(installerPackage())
+                    "storeVendor" -> result.success(storeId)
                     "openStoreReview" -> openStoreReview(result)
                     // نام قدیمی، برای سازگاری با نسخه‌های قبلی Dart.
                     "openBazaarReview" -> openStoreReview(result)
@@ -170,21 +181,16 @@ class MainActivity : FlutterFragmentActivity() {
             }
     }
 
-    // نکته: درگاه مایکت برخلاف TrivialDrive گوگل، requestCode و
-    // handleActivityResult ندارد؛ نتیجهٔ خرید را SDK خودش با یک
-    // ResultReceiver داخلی به listener می‌رساند، پس نیازی به
-    // override کردن onActivityResult نیست. (Poolakey/کافه‌بازار هم از
-    // ActivityResultRegistry خودش استفاده می‌کند.)
-    /** فقط درگاهِ فروشگاهِ نصب‌کننده متصل می‌شود، نه هر دو. */
+    /** فقط درگاهِ همین بیلد وصل می‌شود؛ درگاه فروشگاه رقیب اصلاً وجود ندارد. */
     private fun connectStore() {
-        if (vendor == StoreVendor.BAZAAR) bazaar.connect()
-        // مایکت اتصال تنبل دارد و هنگام اولین خرید setup می‌شود.
+        billing.connect()
     }
 
-    /** پیام یکسان وقتی اپ از هیچ فروشگاه پشتیبانی‌شده‌ای نصب نشده است. */
-    private fun noStoreFailure() = failure(
-        "این نسخه از فروشگاه رسمی نصب نشده است؛ برای خرید، برنامه را از فروشگاهی که آن را دریافت کرده‌اید نصب کنید."
-    )
+    // ℹ️ پیامِ «این نسخه از فروشگاه رسمی نصب نشده است» که در نسخهٔ قبلی
+    // برای حالت `StoreVendor.UNKNOWN` وجود داشت، دیگر لازم نیست: در هر
+    // آرتیفکت فقط **یک** فروشگاه وجود دارد و آن فروشگاه همیشه معلوم است.
+    // اگر اپ از فروشگاه نصب نشده باشد، خودِ SDK فروشگاه پیام روشن
+    // «اتصال به فروشگاه برقرار نیست» می‌دهد.
 
     private fun purchase(arguments: Map<*, *>?, result: MethodChannel.Result) {
         val productId = arguments?.get("productId") as? String
@@ -207,16 +213,7 @@ class MainActivity : FlutterFragmentActivity() {
         purchaseInProgress = true
         // پاسخ فقط یک‌بار به Flutter برمی‌گردد، حتی اگر SDK دوبار callback بزند.
         val reply = singleReply(result) { purchaseInProgress = false }
-        when (vendor) {
-            StoreVendor.BAZAAR ->
-                bazaar.purchase(activityResultRegistry, productId, payload, reply)
-            StoreVendor.MYKET ->
-                myket.purchase(this, productId, payload, reply)
-            StoreVendor.UNKNOWN -> {
-                purchaseInProgress = false
-                result.success(noStoreFailure())
-            }
-        }
+        billing.purchase(this, productId, payload, reply)
     }
 
     private fun consume(arguments: Map<*, *>?, result: MethodChannel.Result) {
@@ -230,11 +227,7 @@ class MainActivity : FlutterFragmentActivity() {
             return
         }
         val reply = singleReply(result)
-        when (vendor) {
-            StoreVendor.BAZAAR -> bazaar.consume(token, reply)
-            StoreVendor.MYKET -> myket.consume(token, reply)
-            StoreVendor.UNKNOWN -> result.success(noStoreFailure())
-        }
+        billing.consume(token, reply)
     }
 
     private fun restore(result: MethodChannel.Result) {
@@ -243,11 +236,7 @@ class MainActivity : FlutterFragmentActivity() {
             return
         }
         val reply = singleReply(result)
-        when (vendor) {
-            StoreVendor.BAZAAR -> bazaar.restore(fullVersionProductId, reply)
-            StoreVendor.MYKET -> myket.restore(fullVersionProductId, reply)
-            StoreVendor.UNKNOWN -> result.success(noStoreFailure())
-        }
+        billing.restore(fullVersionProductId, reply)
     }
 
     /**
@@ -269,70 +258,34 @@ class MainActivity : FlutterFragmentActivity() {
         }
     }
 
-    /** صفحهٔ امتیازدهی همان فروشگاهی که اپ از آن نصب شده است. */
+    /** صفحهٔ امتیازدهی همان فروشگاهی که این بیلد برایش ساخته شده است. */
     private fun openStoreReview(result: MethodChannel.Result) {
-        val opened = when (vendor) {
-            StoreVendor.BAZAAR -> openStoreIntent(
-                deepLink = "bazaar://details?id=$packageName",
-                storePackage = StoreVendor.BAZAAR_PACKAGE,
-                webUrl = "https://cafebazaar.ir/app/$packageName",
-                action = Intent.ACTION_EDIT,
-            )
-            StoreVendor.MYKET -> openStoreIntent(
-                deepLink = "myket://comment?id=$packageName",
-                storePackage = StoreVendor.MYKET_PACKAGE,
-                webUrl = "https://myket.ir/app/$packageName",
-                action = Intent.ACTION_EDIT,
-            )
-            StoreVendor.UNKNOWN -> false
-        }
-        result.success(opened)
+        result.success(openStoreIntent(buildStoreReviewIntent()))
     }
 
     /**
-     * صفحهٔ اطلاعات برنامه در فروشگاه این بیلد.
+     * صفحهٔ اطلاعات برنامه در فروشگاهِ همین بیلد.
      *
      * مایکت برای برنامه‌های درون‌پرداخت اجازهٔ لینک به وب‌سایت ناشر را
      * نمی‌دهد و اینتنت رسمی `myket://details?id=` را می‌خواهد:
      * https://myket.ir/kb/pages/open-application-page-in-myket/
      */
     private fun openStoreDetails(result: MethodChannel.Result) {
-        val opened = when (vendor) {
-            StoreVendor.BAZAAR -> openStoreIntent(
-                deepLink = "bazaar://details?id=$packageName",
-                storePackage = StoreVendor.BAZAAR_PACKAGE,
-                webUrl = "https://cafebazaar.ir/app/$packageName",
-                action = Intent.ACTION_VIEW,
-            )
-            StoreVendor.MYKET -> openStoreIntent(
-                deepLink = "myket://details?id=$packageName",
-                storePackage = StoreVendor.MYKET_PACKAGE,
-                webUrl = "https://myket.ir/app/$packageName",
-                action = Intent.ACTION_VIEW,
-            )
-            StoreVendor.UNKNOWN -> false
-        }
-        result.success(opened)
+        result.success(openStoreIntent(buildStoreDetailsIntent()))
     }
 
-    private fun openStoreIntent(
-        deepLink: String,
-        storePackage: String,
-        webUrl: String,
-        action: String = Intent.ACTION_EDIT,
-    ): Boolean {
+    /**
+     * باز کردن اینتنت فروشگاه؛ اگر اپ فروشگاه روی دستگاه نبود، صفحهٔ وبِ
+     * همان فروشگاه باز می‌شود (وب‌سایت ناشر هرگز باز نمی‌شود).
+     */
+    private fun openStoreIntent(intent: Intent): Boolean {
         return try {
-            startActivity(
-                Intent(action, Uri.parse(deepLink)).apply {
-                    setPackage(storePackage)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-            )
+            startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             true
         } catch (_: Exception) {
             try {
                 startActivity(
-                    Intent(Intent.ACTION_VIEW, Uri.parse(webUrl)).apply {
+                    Intent(Intent.ACTION_VIEW, Uri.parse(storeWebUrl())).apply {
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
                 )
@@ -343,6 +296,24 @@ class MainActivity : FlutterFragmentActivity() {
         }
     }
 
+    /**
+     * بستهٔ نصب‌کنندهٔ اپ را از سیستم‌عامل می‌پرسد.
+     *
+     * این مقدار فقط **تشخیصی** است و مسیر پرداخت را تعیین نمی‌کند:
+     * فروشگاهِ این بیلد همیشه از روی کانال ساخت معلوم است.
+     */
+    private fun installerPackage(): String = try {
+        val pm = packageManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            pm.getInstallSourceInfo(packageName).installingPackageName ?: ""
+        } else {
+            @Suppress("DEPRECATION")
+            pm.getInstallerPackageName(packageName) ?: ""
+        }
+    } catch (_: Exception) {
+        ""
+    }
+
     private fun isDebuggable() = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
     private fun success(token: String? = null, orderId: String? = null, message: String) = mapOf(
         "success" to true, "purchaseToken" to token, "orderId" to orderId, "message" to message
@@ -350,8 +321,9 @@ class MainActivity : FlutterFragmentActivity() {
     private fun failure(message: String) = mapOf("success" to false, "message" to message)
 
     override fun onDestroy() {
-        bazaar.dispose()
-        myket.dispose()
+        if (billingDelegate.isInitialized()) {
+            billing.dispose()
+        }
         super.onDestroy()
     }
 }

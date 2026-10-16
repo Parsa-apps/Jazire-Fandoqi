@@ -2,7 +2,9 @@
 
 > **نسخه:** `7.5.0+22` (build ۲۲) — نامِ نسخه در برنامه: «نیمهٔ رایگان، نیمهٔ نسخهٔ کامل»
 > **تاریخ انتشار:** ۱۴۰۵/۰۷/۲۴
-> **خروجی بیلد:** `flutter build apk --flavor myket --release` → `app-myket-release.apk`
+> **خروجی بیلد:** `flutter build apk --flavor myket --release --dart-define=STORE_CHANNEL=myket` → `app-myket-release.apk`
+>
+> (راهنمای کامل دو خروجی مستقل: `docs/STORE_FLAVORS_RELEASE_FA.md`)
 > (یا همان فایل `jazire_fandoqi_v7.5.0_apk` از اجرای «Build APK & AAB - جزیره فندقی v7.5» در GitHub Actions)
 
 این فایل دقیقاً همان چیزی است که برای آپلود آپدیت جدید در پنل مایکت لازم است:

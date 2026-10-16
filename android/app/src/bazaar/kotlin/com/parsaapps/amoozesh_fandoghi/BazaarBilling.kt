@@ -13,14 +13,17 @@ import ir.cafebazaar.poolakey.request.PurchaseRequest
 /**
  * 🏪 درگاه پرداخت کافه‌بازار (Poolakey).
  *
- * هم‌شکلِ [MyketBilling] عمل می‌کند تا [MainActivity] بدون دانستن نام
- * فروشگاه فقط یکی از این دو را صدا بزند. رفتار قبلی اپ عیناً حفظ شده:
- * خرید release فقط بعد از تأیید امضای RSA توسط Poolakey پذیرفته می‌شود.
+ * این فایل **فقط** در flavor «bazaar» کامپایل می‌شود؛ بنابراین کلاس‌های
+ * `ir.cafebazaar.poolakey.*` فقط در آرتیفکت کافه‌بازار وجود دارند و در
+ * آرتیفکت مایکت اصلاً حاضر نیستند.
+ *
+ * رفتار خرید نسبت به نسخهٔ قبلی **عیناً حفظ شده است**: خرید release فقط
+ * بعد از تأیید امضای RSA توسط Poolakey پذیرفته می‌شود.
  */
 class BazaarBilling(
     private val activity: FlutterFragmentActivity,
     publicKey: String,
-) {
+) : StoreBilling {
     private var connection: Connection? = null
 
     private val payment: Payment? = publicKey.takeIf { it.isNotBlank() }?.let { key ->
@@ -32,7 +35,7 @@ class BazaarBilling(
 
     val isConfigured: Boolean get() = payment != null
 
-    fun connect() {
+    override fun connect() {
         connection?.disconnect()
         connection = payment?.connect { /* وضعیت اتصال هنگام نیاز خوانده می‌شود */ }
     }
@@ -51,8 +54,8 @@ class BazaarBilling(
         return client
     }
 
-    fun purchase(
-        registry: ActivityResultRegistry,
+    override fun purchase(
+        activity: FlutterFragmentActivity,
         productId: String,
         payload: String,
         callback: (BillingOutcome) -> Unit,
@@ -77,10 +80,12 @@ class BazaarBilling(
             purchaseFailed { callback(BillingOutcome.failure("پرداخت توسط فروشگاه تأیید نشد")) }
             failedToBeginFlow { callback(BillingOutcome.failure("شروع پرداخت ممکن نیست")) }
         }
-        client.purchaseProduct(registry, request, poolakeyCallback)
+        // Poolakey برای باز کردن فلوی پرداخت بازار به ActivityResultRegistry
+        // فعالیت میزبان نیاز دارد (به همین دلیل میزبان FlutterFragmentActivity است).
+        client.purchaseProduct(activity.activityResultRegistry, request, poolakeyCallback)
     }
 
-    fun restore(productId: String, callback: (BillingOutcome) -> Unit) {
+    override fun restore(productId: String, callback: (BillingOutcome) -> Unit) {
         val client = availablePayment(callback) ?: return
         client.getPurchasedProducts {
             querySucceed { purchases ->
@@ -101,7 +106,7 @@ class BazaarBilling(
         }
     }
 
-    fun consume(purchaseToken: String, callback: (BillingOutcome) -> Unit) {
+    override fun consume(purchaseToken: String, callback: (BillingOutcome) -> Unit) {
         val client = availablePayment(callback) ?: return
         client.consumeProduct(purchaseToken) {
             consumeSucceed { callback(BillingOutcome.success(message = "خرید مصرف شد")) }
@@ -109,7 +114,7 @@ class BazaarBilling(
         }
     }
 
-    fun dispose() {
+    override fun dispose() {
         connection?.disconnect()
         connection = null
     }

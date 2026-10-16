@@ -32,9 +32,22 @@
 
 - [ ] نسخه در `pubspec.yaml` نهایی شده (اکنون `7.5.0+22`)
 - [ ] `flutter analyze` و `flutter test` لوکال سبز (اسکریپت `tool/ci_quality_gate.sh`)
-- [ ] آخرین APK/AAB از آرتیفکت CI دانلود شده (رن موفق `Build APK & AAB - جزیره فندقی v7.5` → آرتیفکت‌های `jazire_fandoqi_v7.5.0_apk` و `jazire_fandoqi_v7.5.0_aab`)
+- [ ] آخرین APK/AAB از آرتیفکت CI دانلود شده (رن موفق `Build APK & AAB - جزیره فندقی v7.5` → آرتیفکت‌های `jazire_fandoqi_v7.5.0_apk_bazaar`، `jazire_fandoqi_v7.5.0_apk_myket`، `jazire_fandoqi_v7.5.0_aab_bazaar`، `jazire_fandoqi_v7.5.0_aab_myket`)
+- [ ] **جداسازی فروشگاه تأیید شده** — `bash tool/verify_store_isolation.sh <apk|aab> <bazaar|myket>` برای هر چهار آرتیفکت سبز است
 - [ ] روی یک گوشی واقعی نصب و تست دستی: باز کردن کارتون، خرید آزمایشی، پنل والدین، حالت آفلاین
 
 ---
 
-> **یادآوری:** APK و AAB واحد ساخته می‌شوند و هر دو فروشگاه را پوشش می‌دهند (تشخیص خودکار فروشگاه نصب‌کننده). قیمت پیشنهادی نسخه کامل: ۴۹٬۰۰۰ تومان (در پنل هر فروشگاه جدا تنظیم می‌شود).
+> **یادآوری:** از نسخهٔ ۷.۵.۰+۲۲ **دو خروجی مستقل** ساخته می‌شود — یکی برای
+> کافه‌بازار و یکی برای مایکت — و هر کدام **فقط SDK پرداخت فروشگاه خودش** را
+> حمل می‌کند (جداسازی در زمان build). بنابراین:
+>
+> - `flutter build apk --flavor bazaar --release --dart-define=STORE_CHANNEL=bazaar`
+> - `flutter build apk --flavor myket  --release --dart-define=STORE_CHANNEL=myket`
+>
+> فایل بدون flavor (`app-release.apk`) **هرگز** آپلود نشود. پیش از انتشار،
+> جداسازی را با `bash tool/verify_store_isolation.sh <file> <store>` تأیید کنید.
+> راهنمای کامل: `docs/STORE_FLAVORS_RELEASE_FA.md`.
+>
+> خریدِ بازار و خریدِ مایکت **مستقل‌اند** و بین دو فروشگاه منتقل نمی‌شود.
+> قیمت پیشنهادی نسخه کامل: ۴۹٬۰۰۰ تومان (در پنل هر فروشگاه جدا تنظیم می‌شود).

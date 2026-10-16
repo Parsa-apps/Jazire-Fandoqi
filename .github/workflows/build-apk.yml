@@ -72,27 +72,84 @@ jobs:
           chmod 600 android/key.properties
           echo "Release signing configured from GitHub Secrets."
 
-      - name: Build APK (Release)
-        run: flutter build apk --release
+      # =====================================================================
+      # 🏪 دو خروجی مستقل — یکی برای هر فروشگاه
+      #
+      # هر flavor فقط SDK پرداخت فروشگاه خودش را دارد:
+      #   bazaar → Poolakey (کافه‌بازار)  |  myket → Myket Billing Client
+      # به همین دلیل `--flavor` و `--dart-define=STORE_CHANNEL` در هر بیلد
+      # صریح و اجباری است.
+      # =====================================================================
 
-      - name: Verify release signing (APK)
+      - name: "Build APK — Cafe Bazaar (flavor: bazaar)"
+        run: |
+          flutter build apk --flavor bazaar --release \
+            --dart-define=STORE_CHANNEL=bazaar
+
+      - name: "Build APK — Myket (flavor: myket)"
+        run: |
+          flutter build apk --flavor myket --release \
+            --dart-define=STORE_CHANNEL=myket
+
+      - name: "Build AAB — Cafe Bazaar (flavor: bazaar)"
+        run: |
+          flutter build appbundle --flavor bazaar --release \
+            --dart-define=STORE_CHANNEL=bazaar
+
+      - name: "Build AAB — Myket (flavor: myket)"
+        run: |
+          flutter build appbundle --flavor myket --release \
+            --dart-define=STORE_CHANNEL=myket
+
+      - name: "Verify release signing (both stores)"
         if: ${{ env.KEYSTORE_B64 != '' }}
         run: |
           set -euo pipefail
-          APK="build/app/outputs/flutter-apk/app-release.apk"
           APS="$(ls "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)"
           test -n "$APS" || { echo "apksigner not found under $ANDROID_HOME/build-tools"; exit 1; }
-          "$APS" verify --print-certs "$APK"
-          echo "APK verified: signed with the release certificate."
+          for APK in build/app/outputs/flutter-apk/app-bazaar-release.apk \
+                      build/app/outputs/flutter-apk/app-myket-release.apk; do
+            test -f "$APK" || { echo "missing APK: $APK"; exit 1; }
+            "$APS" verify --print-certs "$APK"
+            echo "APK verified: $APK"
+          done
 
-      - name: Build AAB (Release)
-        run: flutter build appbundle --release
+      # 🔒 اثبات جداسازی: SDK و مجوز فروشگاه رقیب نباید در آرتیفکت باشد.
+      - name: "Verify store isolation (no rival SDK in the artifacts)"
+        run: |
+          set -euo pipefail
+          bash tool/verify_store_isolation.sh \
+            build/app/outputs/flutter-apk/app-bazaar-release.apk bazaar
+          bash tool/verify_store_isolation.sh \
+            build/app/outputs/flutter-apk/app-myket-release.apk myket
+          bash tool/verify_store_isolation.sh \
+            build/app/outputs/bundle/bazaarRelease/app-bazaar-release.aab bazaar
+          bash tool/verify_store_isolation.sh \
+            build/app/outputs/bundle/myketRelease/app-myket-release.aab myket
 
-      - name: Upload APK
+      - name: "Upload APK — Cafe Bazaar"
         uses: actions/upload-artifact@v4
         with:
-          name: jazire_fandoqi_v7.5.0_apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: jazire_fandoqi_v7.5.0_apk_bazaar
+          path: build/app/outputs/flutter-apk/app-bazaar-release.apk
+
+      - name: "Upload APK — Myket"
+        uses: actions/upload-artifact@v4
+        with:
+          name: jazire_fandoqi_v7.5.0_apk_myket
+          path: build/app/outputs/flutter-apk/app-myket-release.apk
+
+      - name: "Upload AAB — Cafe Bazaar"
+        uses: actions/upload-artifact@v4
+        with:
+          name: jazire_fandoqi_v7.5.0_aab_bazaar
+          path: build/app/outputs/bundle/bazaarRelease/app-bazaar-release.aab
+
+      - name: "Upload AAB — Myket"
+        uses: actions/upload-artifact@v4
+        with:
+          name: jazire_fandoqi_v7.5.0_aab_myket
+          path: build/app/outputs/bundle/myketRelease/app-myket-release.aab
 
       - name: Upload QA gate log
         if: failure()
@@ -102,9 +159,3 @@ jobs:
           path: qa-gate-log/
           if-no-files-found: ignore
           retention-days: 3
-
-      - name: Upload AAB
-        uses: actions/upload-artifact@v4
-        with:
-          name: jazire_fandoqi_v7.5.0_aab
-          path: build/app/outputs/bundle/release/app-release.aab

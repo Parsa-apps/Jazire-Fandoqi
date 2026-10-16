@@ -82,17 +82,33 @@ keystore در `.gitignore` قرار دارند.
 فروشگاه رقیب باعث ردشدن APK می‌شود.
 
 ```bash
-# خروجی قابل ارسال به مایکت (بدون PAY_THROUGH_BAZAAR)
-flutter build apk --flavor myket --release
+# خروجی قابل ارسال به مایکت (فقط SDK مایکت، بدون SDK و مجوز بازار)
+flutter build apk --flavor myket --release --dart-define=STORE_CHANNEL=myket
 
-# خروجی قابل ارسال به کافه‌بازار (بدون مجوز پرداخت مایکت)
-flutter build apk --flavor bazaar --release
+# خروجی قابل ارسال به کافه‌بازار (فقط SDK بازار، بدون SDK و مجوز مایکت)
+flutter build apk --flavor bazaar --release --dart-define=STORE_CHANNEL=bazaar
+
+# AAB هم برای هر فروشگاه جداگانه ساخته می‌شود
+flutter build appbundle --flavor bazaar --release --dart-define=STORE_CHANNEL=bazaar
+flutter build appbundle --flavor myket  --release --dart-define=STORE_CHANNEL=myket
+```
+
+> `--dart-define=STORE_CHANNEL` هم‌ارز `BuildConfig.STORE_CHANNEL` است و به لایهٔ
+> دارت می‌گوید این بیلد برای کدام فروشگاه است (نمایش صفحهٔ فروشگاه در بخش
+> «درباره»).
+
+**قبل از انتشار، جداسازی را روی خودِ آرتیفکت تأیید کنید** (SDK و مجوز فروشگاه
+رقیب نباید در آن باشد):
+
+```bash
+bash tool/verify_store_isolation.sh build/app/outputs/flutter-apk/app-bazaar-release.apk bazaar
+bash tool/verify_store_isolation.sh build/app/outputs/flutter-apk/app-myket-release.apk myket
 ```
 
 برای تست سریع نیز flavor را مشخص کنید:
 
 ```bash
-flutter build apk --flavor myket --debug
+flutter build apk --flavor myket --debug --dart-define=STORE_CHANNEL=myket
 ```
 
 ### ۶. یافتن فایل APK
@@ -111,8 +127,13 @@ flutter build apk --flavor myket --debug
 هر خطای تحلیل یا تست شکست‌خورده جلوی ساخت را می‌گیرد. خروجی‌ها در صفحهٔ همان
 اجرا (بخش **Artifacts**) قرار می‌گیرند:
 
-- `jazire_fandoqi_v7.5.0_apk` — فایل APK (کپی خروجی flavor مایکت)
-- `jazire_fandoqi_v7.5.0_aab` — فایل AAB (کپی خروجی flavor بازار)
+- `jazire_fandoqi_v7.5.0_apk_bazaar` — APK کافه‌بازار
+- `jazire_fandoqi_v7.5.0_apk_myket` — APK مایکت
+- `jazire_fandoqi_v7.5.0_aab_bazaar` — AAB کافه‌بازار
+- `jazire_fandoqi_v7.5.0_aab_myket` — AAB مایکت
+
+پیش از آپلود، جداسازی فروشگاه روی هر چهار فایل بررسی می‌شود
+(`tool/verify_store_isolation.sh`) و شکست آن، ران را قرمز می‌کند.
 
 اگر Secret `KEYSTORE_B64` تنظیم شده باشد، خروجی‌ها با کلید انتشار امضا می‌شوند و
 امضای APK با `apksigner` راستی‌آزمایی می‌شود.

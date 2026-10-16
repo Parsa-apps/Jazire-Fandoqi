@@ -20,7 +20,22 @@ class StoreListing {
 
   static const String kicker = 'صفحهٔ رسمی برنامه در فروشگاه';
 
-  static bool hasStorePage(StoreVendor vendor) => vendor.supportsBilling;
+  /// فروشگاهی که این بیلد برایش ساخته شده (از کانال ساخت).
+  static StoreVendor get buildVendor => StoreDetector.buildVendor;
+
+  /// آیا این فروشگاه همان فروشگاهِ خودِ این بیلد است؟
+  ///
+  /// در بیلدهای فروشگاه فقط فروشگاهِ خودمان مجاز است؛ لینک یا دکمهٔ فروشگاه
+  /// رقیب هرگز نباید در رابط کاربری دیده شود. برای بیلدهای محلی (بدون کانال
+  /// ساخت) محدودیتی اعمال نمی‌شود.
+  static bool isOwnStore(StoreVendor vendor) {
+    final own = buildVendor;
+    if (own == StoreVendor.unknown) return true;
+    return vendor == own;
+  }
+
+  static bool hasStorePage(StoreVendor vendor) =>
+      vendor.supportsBilling && isOwnStore(vendor);
 
   static String displayName(StoreVendor vendor) {
     switch (vendor) {

@@ -36,10 +36,12 @@ class BillingResult {
 
 /// پل ارتباطی با سیستم پرداخت درون‌برنامه‌ای فروشگاه‌های ایرانی
 ///
-/// 🏪 چند-فروشگاهی: اپ هنگام اجرا تشخیص می‌دهد از کدام فروشگاه نصب شده
-/// (`StoreDetector`) و لایهٔ نیتیو همان درگاه را صدا می‌زند — کافه‌بازار
-/// با Poolakey و مایکت با Myket Billing Client. کاربر هیچ‌وقت نام
-/// فروشگاه را نمی‌بیند و چیزی انتخاب نمی‌کند.
+/// 🏪 چند-فروشگاهی: **هر آرتیفکت فقط یک درگاه دارد.** جداسازی در زمان
+/// build انجام می‌شود (Gradle flavor ‹bazaar› و ‹myket›): در آرتیفکت
+/// کافه‌بازار فقط Poolakey و در آرتیفکت مایکت فقط Myket Billing Client
+/// وجود دارد. فروشگاهِ بیلد از `STORE_CHANNEL` (همان
+/// `BuildConfig.STORE_CHANNEL`) معلوم است و کاربر هیچ‌وقت نام فروشگاه را
+/// نمی‌بیند و چیزی انتخاب نمی‌کند.
 ///
 /// ارتباط از طریق MethodChannel با نام `kudake_iran/billing` انجام می‌شود.
 /// ماژول نیتیو اندروید باید این متودها را پیاده‌سازی کند:
@@ -203,7 +205,7 @@ class BillingService {
   @Deprecated('Use openStoreReview')
   static Future<void> openBazaarReview() => openStoreReview();
 
-  /// فروشگاهی که اپ از آن نصب شده است (برای تصمیم‌های UI مثل
+  /// فروشگاهی که این بیلد برایش ساخته شده است (برای تصمیم‌های UI مثل
   /// نمایش/پنهان‌کردن دکمهٔ امتیازدهی).
   static Future<StoreVendor> currentVendor() => StoreDetector.detect();
 

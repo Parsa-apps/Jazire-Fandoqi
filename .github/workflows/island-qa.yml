@@ -145,11 +145,14 @@ jobs:
       # Note: on GitHub Actions the project's Gradle build also runs
       # tool/ci_quality_gate.sh (analyze + full test suite) before
       # assembling, by design (see android/app/build.gradle).
-      - name: Build APK (Release)
-        run: flutter build apk --release
+      #
+      # 🏪 flavor صریح: این QA بیلد خروجی مایکت است (Myket Billing Client).
+      # برای بازار، flavor «bazaar» (Poolakey) باید جداگانه ساخته شود.
+      - name: "Build APK (Release — flavor: myket)"
+        run: flutter build apk --flavor myket --release --dart-define=STORE_CHANNEL=myket
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: island-qa-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-myket-release.apk

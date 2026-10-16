@@ -73,6 +73,29 @@ void main() {
     });
   });
 
+  group('build channel (store selected at build time)', () {
+    // 🏪 هر آرتیفکت فقط یک درگاه دارد و آن درگاه از کانال ساخت می‌آید:
+    // `--dart-define=STORE_CHANNEL=bazaar|myket`.
+    test('maps the build channel to a vendor', () {
+      expect(StoreDetector.fromChannelName('bazaar'), StoreVendor.bazaar);
+      expect(StoreDetector.fromChannelName('myket'), StoreVendor.myket);
+      expect(StoreDetector.fromChannelName('BAZAAR'), StoreVendor.bazaar);
+      expect(StoreDetector.fromChannelName('  Myket '), StoreVendor.myket);
+    });
+
+    test('returns null for an unset or unexpected channel', () {
+      expect(StoreDetector.fromChannelName(''), isNull);
+      expect(StoreDetector.fromChannelName(null), isNull);
+      expect(StoreDetector.fromChannelName('google'), isNull);
+    });
+
+    test('without a build channel the build has no fixed store', () {
+      // در `flutter test` هیچ dart-define‌ای وجود ندارد.
+      expect(StoreDetector.buildChannel, isEmpty);
+      expect(StoreDetector.buildVendor, StoreVendor.unknown);
+    });
+  });
+
   group('billing availability', () {
     test('only known stores can take a payment', () {
       expect(StoreVendor.bazaar.supportsBilling, isTrue);
