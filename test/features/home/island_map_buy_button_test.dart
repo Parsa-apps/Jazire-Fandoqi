@@ -30,20 +30,27 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    // ابزار تشخیص: اگر جایی سرریز چیدمانی رخ داد، به‌جای فقط «۸۲ پیکسل»،
-    // خطوطِ تعیین‌هویت (ویجتِ مقصر و زنجیرهٔ ساخت) داخل خود پیام خطا می‌آیند
-    // تا از لاگ CI قابل ردیابی باشد.
+    // ابزار تشخیص: اگر جایی سرریز چیدمانی رخ داد، «ویجتِ مقصر» استخراج و
+    // در یک خطِ فشرده داخل خود پیام خطا گذاشته می‌شود تا از annotations
+    // قابل خواندن باشد.
     final originalOnError = FlutterError.onError;
     FlutterError.onError = (details) {
-      final keep = details.toString().split('\n').where((line) {
-        return line.contains('overflowed') ||
-            line.contains('causing widget') ||
-            line.contains('Creator:') ||
-            line.contains('The relevant') ||
-            line.contains('When the exception was thrown');
-      }).join('\n');
+      final lines = details.toString().split('\n');
+      String culprit = '';
+      for (var i = 0; i < lines.length; i++) {
+        if (lines[i].contains('causing widget was') && i + 1 < lines.length) {
+          culprit = lines[i + 1].trim();
+        }
+        if (lines[i].contains('overflowed') && culprit.isEmpty) {
+          culprit = lines[i].trim();
+        }
+      }
+      final overflowLine =
+          lines.firstWhere((l) => l.contains('overflowed'), orElse: () => '');
+      final compact =
+          'OVERFLOW-DIAG | ${overflowLine.trim()} | culprit: $culprit';
       originalOnError?.call(FlutterErrorDetails(
-        exception: StateError('سرریزِ تشخیص‌داده‌شده >>>\n$keep'),
+        exception: StateError(compact),
         library: details.library,
         context: details.context,
       ));
