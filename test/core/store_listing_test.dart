@@ -40,4 +40,11 @@ void main() {
     expect(StoreListing.detailsWebUrl(StoreVendor.unknown), isEmpty);
     expect(StoreListing.buttonLabel(StoreVendor.unknown), isEmpty);
   });
+
+  test('a store build only links to its own store', () {
+    // بدون کانال ساخت (مثلاً در تست) محدودیتی اعمال نمی‌شود.
+    expect(StoreListing.buildVendor, StoreVendor.unknown);
+    expect(StoreListing.isOwnStore(StoreVendor.bazaar), isTrue);
+    expect(StoreListing.isOwnStore(StoreVendor.myket), isTrue);
+  });
 }

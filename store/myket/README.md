@@ -14,7 +14,7 @@
 
 ## ترتیب کار پیشنهادی
 
-1. **انتشار نسخهٔ ۷.۵ در مایکت** (`flutter build apk --flavor myket --release`
+1. **انتشار نسخهٔ ۷.۵ در مایکت** (`flutter build apk --flavor myket --release --dart-define=STORE_CHANNEL=myket`
    → آپلود `app-myket-release.apk`). تا این کار انجام نشود، متن و تصاویر جدید
    چیزی را توصیف می‌کنند که کاربر نصب نمی‌کند.
 2. **به‌روزرسانی متن‌ها** در پنل از روی `STORE_LISTING.md` (شامل تغییر عنوان

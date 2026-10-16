@@ -90,12 +90,16 @@ if [[ "$BUILD_MODE" == "release" ]]; then
   fi
 
   log 'ساخت APK (split per ABI + obfuscation)...'
-  if ! flutter build apk --flavor "$STORE_FLAVOR" --release --split-per-abi --obfuscate --split-debug-info=build/symbols; then
+  if ! flutter build apk --flavor "$STORE_FLAVOR" --release \
+       --dart-define=STORE_CHANNEL="$STORE_FLAVOR" \
+       --split-per-abi --obfuscate --split-debug-info=build/symbols; then
     fail 'ساخت APK شکست خورد'
     exit 1
   fi
   log 'ساخت AAB...'
-  if ! flutter build appbundle --flavor "$STORE_FLAVOR" --release --obfuscate --split-debug-info=build/symbols; then
+  if ! flutter build appbundle --flavor "$STORE_FLAVOR" --release \
+       --dart-define=STORE_CHANNEL="$STORE_FLAVOR" \
+       --obfuscate --split-debug-info=build/symbols; then
     fail 'ساخت AAB شکست خورد'
     exit 1
   fi
@@ -117,9 +121,42 @@ if [[ "$BUILD_MODE" == "release" ]]; then
     fi
   done
   ok "حجم کل APKها: ${TOTAL}MB (هدف < ۳۵MB برای هر ABI)"
+
+  # ── بررسی جداسازی فروشگاه روی آرتیفکت واقعی ─────────────────────────
+  log 'بررسی جداسازی فروشگاه (SDK رقیب نباید در آرتیفکت باشد)...'
+  ISOLATION_OK=1
+  for apk in build/app/outputs/flutter-apk/app-"${STORE_FLAVOR}"-release*.apk; do
+    [[ -f "$apk" ]] || continue
+    if bash tool/verify_store_isolation.sh "$apk" "$STORE_FLAVOR"; then
+      ok "جداسازی تأیید شد: $(basename "$apk")"
+    else
+      fail "جداسازی نقض شد: $(basename "$apk")"
+      ISOLATION_OK=0
+    fi
+  done
+  AAB_PATH="build/app/outputs/bundle/${STORE_FLAVOR}Release/app-${STORE_FLAVOR}-release.aab"
+  if [[ -f "$AAB_PATH" ]]; then
+    if bash tool/verify_store_isolation.sh "$AAB_PATH" "$STORE_FLAVOR"; then
+      ok "جداسازی تأیید شد: $(basename "$AAB_PATH")"
+    else
+      fail "جداسازی نقض شد: $(basename "$AAB_PATH")"
+      ISOLATION_OK=0
+    fi
+  fi
+  if [[ "$ISOLATION_OK" -ne 1 ]]; then
+    fail 'آرتیفکت شامل SDK/مجوز فروشگاه رقیب است — نباید منتشر شود.'
+    exit 1
+  fi
+
+  # ── مسیر دقیق آرتیفکت‌های قابل انتشار ─────────────────────────────────
+  log 'آرتیفکت‌های این بیلد (فروشگاه: '"$STORE_FLAVOR"') — فقط همین‌ها منتشر شوند:'
+  for apk in build/app/outputs/flutter-apk/app-"${STORE_FLAVOR}"-release*.apk; do
+    [[ -f "$apk" ]] && printf '   • APK : %s\n' "$apk"
+  done
+  [[ -f "$AAB_PATH" ]] && printf '   • AAB : %s\n' "$AAB_PATH"
 else
   log 'ساخت نسخه آزمایشی (Debug)...'
-  if ! flutter build apk --flavor "$STORE_FLAVOR" --debug; then
+  if ! flutter build apk --flavor "$STORE_FLAVOR" --debug --dart-define=STORE_CHANNEL="$STORE_FLAVOR"; then
     fail 'ساخت Debug شکست خورد'
     exit 1
   fi

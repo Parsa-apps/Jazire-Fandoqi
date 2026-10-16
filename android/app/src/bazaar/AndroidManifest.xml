@@ -1,9 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Bazaar's billing permission is normally contributed by Poolakey. It is
-         repeated here to make the store contract explicit and auditable. -->
+    <!-- 🏪 کافه‌بازار — مجوز پرداخت همین فروشگاه.
+         در این flavor فقط SDK بازار (Poolakey) وجود دارد؛ این مجوز از AAR آن
+         می‌آید و اینجا صریح تکرار شده تا قرارداد فروشگاه قابل بازرسی باشد. -->
     <uses-permission android:name="com.farsitel.bazaar.permission.PAY_THROUGH_BAZAAR" />
+
+    <!-- شبکهٔ ایمنی: مجوز رقیب نباید حتی به‌صورت پس‌مانده در manifest نهایی
+         باقی بماند (SDK مایکت اصلاً در این بیلد حاضر نیست). -->
     <uses-permission
         android:name="ir.mservices.market.BILLING"
         tools:node="remove" />

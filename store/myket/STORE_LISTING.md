@@ -173,7 +173,7 @@
 | لینک حریم خصوصی | URL هاست‌شدهٔ `PRIVACY_POLICY_FA.md` |
 | قیمت | از پنل (بدون تغییر) |
 | کلمات کلیدی متن | بازی آموزشی کودک، آموزش الفبا، آموزش فارسی کودک، قصه کودکانه، بازی فکری کودک، پیش‌دبستانی، مهدکودک، کلاس اول — هر کدام یک‌بار، بدون تکرار مصنوعی |
-| خروجی بیلد | `flutter build apk --flavor myket --release` → `app-myket-release.apk` |
+| خروجی بیلد | `flutter build apk --flavor myket --release --dart-define=STORE_CHANNEL=myket` → `app-myket-release.apk` |
 
 ---
 

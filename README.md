@@ -203,9 +203,19 @@ BUILD_MODE=release ./build.sh
 ```bash
 flutter analyze
 flutter test
-flutter build apk --release
-flutter build appbundle --release
+
+# 🏪 دو خروجی مستقل — هر کدام فقط SDK پرداخت فروشگاه خودش را دارد
+flutter build apk --flavor bazaar --release --dart-define=STORE_CHANNEL=bazaar
+flutter build appbundle --flavor bazaar --release --dart-define=STORE_CHANNEL=bazaar
+flutter build apk --flavor myket --release --dart-define=STORE_CHANNEL=myket
+flutter build appbundle --flavor myket --release --dart-define=STORE_CHANNEL=myket
+
+# اثبات جداسازی روی آرتیفکت ساخته‌شده
+bash tool/verify_store_isolation.sh build/app/outputs/flutter-apk/app-bazaar-release.apk bazaar
+bash tool/verify_store_isolation.sh build/app/outputs/flutter-apk/app-myket-release.apk myket
 ```
+
+> راهنمای کامل انتشار: `docs/STORE_FLAVORS_RELEASE_FA.md`
 
 ## چک‌لیست پیش از انتشار
 
