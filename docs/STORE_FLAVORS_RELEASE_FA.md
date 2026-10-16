@@ -443,3 +443,40 @@ adb logcat | grep -i "\[Billing\]"
 | `test/core/monetization_test.dart` | ردِ خرید ناموفق و بی‌اعتمادی به فلگ محلی در release |
 | `test/core/store_neutral_ui_test.dart` | نام فروشگاه در متن قابل‌نمایش دیده نشود |
 | `tool/verify_store_isolation.sh` | بررسی جداسازی روی آرتیفکت واقعی ساخته‌شده |
+
+---
+
+## ۱۳) نتیجهٔ واقعی ساخت و بررسی (وضعیت فعلی)
+
+ساخت و آزمون روی این محیط (سندباکس) به‌دلیل نبود Flutter SDK و Android SDK
+**قابل انجام نبود**؛ بنابراین ساخت واقعی به CI واگذار شد و نتیجهٔ زیر از همان
+ران‌های واقعی GitHub Actions است (نه ادعای محلی):
+
+| مورد | نتیجه | ران |
+|---|---|---|
+| `flutter analyze` (کل پروژه) | ✅ سبز | [Island QA](https://github.com/Parsa-apps/Jazire-Fandoqi/actions/runs/38843987069) |
+| `flutter test` (کل suite) | ✅ سبز | همان ران بالا |
+| ساخت APK کافه‌بازار | ✅ موفق | [Build APK & AAB](https://github.com/Parsa-apps/Jazire-Fandoqi/actions/runs/38843987055) |
+| ساخت APK مایکت | ✅ موفق | همان ران بالا |
+| ساخت AAB کافه‌بازار | ✅ موفق | همان ران بالا |
+| ساخت AAB مایکت | ✅ موفق | همان ران بالا |
+| امضای release (هر دو فروشگاه) | ✅ تأیید شد | همان ران بالا |
+| جداسازی فروشگاه (هر ۴ آرتیفکت) | ✅ تأیید شد | همان ران بالا |
+| گزارش جداسازی روی PR | ✅ منتشر شد | کامنت PR #167 |
+
+### آنچه بررسی جداسازی روی آرتیفکت واقعی نشان داد
+
+| آرتیفکت | SDK خودش در DEX | SDK رقیب در DEX | مجوز خودش | مجوز رقیب | بستهٔ رقیب |
+|---|---|---|---|---|---|
+| `app-bazaar-release.apk` | ✅ `ir/cafebazaar/poolakey` | ✅❌ `ir/myket/billingclient` وجود ندارد | ✅ `com.farsitel.bazaar.permission.PAY_THROUGH_BAZAAR` | ✅❌ `ir.mservices.market.BILLING` وجود ندارد | ✅❌ `ir.mservices.market` وجود ندارد |
+| `app-myket-release.apk` | ✅ `ir/myket/billingclient` | ✅❌ `ir/cafebazaar/poolakey` وجود ندارد | ✅ `ir.mservices.market.BILLING` | ✅❌ مجوز بازار وجود ندارد | ✅❌ `com.farsitel.bazaar` وجود ندارد |
+| `app-bazaar-release.aab` | ✅ `ir/cafebazaar/poolakey` | ✅❌ `ir/myket/billingclient` وجود ندارد | ✅ مجوز بازار | ✅❌ مجوز مایکت وجود ندارد | ✅❌ `ir.mservices.market` وجود ندارد |
+| `app-myket-release.aab` | ✅ `ir/myket/billingclient` | ✅❌ `ir/cafebazaar/poolakey` وجود ندارد | ✅ مجوز مایکت | ✅❌ مجوز بازار وجود ندارد | ✅❌ `com.farsitel.bazaar` وجود ندارد |
+
+برای APKها، بررسی مجوز با `aapt2 dump permissions` انجام شده (نه فقط تطبیق
+رشته‌ها)؛ برای AABها، manifest در قالب متنی داخل `base/manifest/` خوانده
+می‌شود.
+
+> ⚠️ **آنچه هنوز باید روی دستگاه واقعی انجام شود** (قابل انجام در CI نیست):
+> خرید واقعی با حساب هر دو فروشگاه، لغو/قطع اینترنت، بازیابی خرید، نصب
+> نسخهٔ رسمی از خود فروشگاه و رفتار SDK در حالت release.
