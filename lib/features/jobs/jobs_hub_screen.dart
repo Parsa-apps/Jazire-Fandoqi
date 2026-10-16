@@ -1,14 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/app_colors.dart';
 import '../../app/design_tokens.dart';
 import '../../app/app_fonts.dart';
+import '../../core/content_access_policy.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';
 import '../../core/learning_content/learning_topics.dart';
+import '../../core/monetization.dart';
 import '../../shared/widgets/fandoghi_premium.dart';
+import '../shop/content_lock.dart';
 
 /// 👷 JOBS HUB PREMIUM — پیشنهاد ۲۷
 /// ۲۰ شغل با کارت پریمیوم + نکته + صدای فندقی
@@ -21,13 +26,25 @@ class JobsHubScreen extends StatefulWidget {
 class _JobsHubState extends State<JobsHubScreen> {
   String? _selectedId;
 
+  /// نیمهٔ اولِ شغل‌ها (ترتیبِ کتاب) رایگان است؛ نیمهٔ دوم فقط با نسخهٔ
+  /// کامل. پیش‌فرض «خرید ندارد» (fail-closed).
+  bool _hasFullVersion = false;
+
   @override
   void initState() {
     super.initState();
     FandoghiCoach.enablePersistentPresence();
+    _refreshEntitlement();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FandoghiCoach.say('به دنیای شغل‌ها خوش اومدی! 👷 هر شغلی یه قهرمانه — بزن روش تا بشناسی!', mood: FandoghiMood.excited, duration: const Duration(seconds: 4));
     });
+  }
+
+  Future<void> _refreshEntitlement() async {
+    final hasFullVersion = await Monetization.hasFullVersion();
+    if (mounted && hasFullVersion != _hasFullVersion) {
+      setState(() => _hasFullVersion = hasFullVersion);
+    }
   }
 
   @override
@@ -70,14 +87,24 @@ class _JobsHubState extends State<JobsHubScreen> {
                     final card = topic.cards[index];
                     final isSelected = _selectedId == card.id;
                     return GestureDetector(
-                      onTap: () {
+                      onTap: () async {
                         HapticFeedback.selectionClick();
+                        final allowed = await ensureContentAccess(
+                          context,
+                          featureName: card.name,
+                          isFree: ContentAccessPolicy.isTopicCardFree(topic, card.id),
+                        );
+                        if (!allowed || !mounted) return;
+                        unawaited(_refreshEntitlement());
                         setState(() => _selectedId = card.id);
                         FandoghiCoach.say('${card.name} — ${card.fact ?? 'یک شغل مهم و دوست‌داشتنی'} ${card.emoji}', mood: FandoghiMood.happy, duration: const Duration(seconds: 3));
                         GameData.recordAnswer(correct: true, skill: 'jobs');
-                        setState(() {});
+                        if (mounted) setState(() {});
                       },
-                      child: AnimatedContainer(
+                      child: LockedCardOverlay(
+                        locked: !_hasFullVersion &&
+                            !ContentAccessPolicy.isTopicCardFree(topic, card.id),
+                        child: AnimatedContainer(
                         duration: AppMotion.fast,
                         decoration: BoxDecoration(
                           color: isSelected ? Colors.white : Colors.white.withOpacity(0.92),
@@ -105,6 +132,7 @@ class _JobsHubState extends State<JobsHubScreen> {
                               child: Text(isSelected ? 'شناخته شد ✓' : 'بشنو', style: AppFonts.vazirmatn(fontSize: 10, fontWeight: FontWeight.w800, color: const Color(0xFF0D47A1))),
                             ),
                           ],
+                        ),
                         ),
                       ).animate(delay: (index * 25).ms).fadeIn(duration: 300.ms).scale(begin: const Offset(0.92, 0.92)),
                     );

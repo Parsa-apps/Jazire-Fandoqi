@@ -9,11 +9,13 @@ import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/ai_system.dart';
 import '../../../core/audio_service.dart';
+import '../../../core/content_access_policy.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
 import '../../../core/learning_content/learning_topics.dart';
 import '../../../core/literacy/quiz_shuffle.dart';
+import '../../../core/monetization.dart';
 import '../../../core/play_limit.dart';
 import '../../../shared/widgets/next_today_button.dart';
 import '../../../shared/widgets/fandoghi_premium.dart';
@@ -52,11 +54,16 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
   bool _finished = false;
   int _roundToken = 0;
 
+  /// نیمهٔ اولِ هر موضوع رایگان است؛ نیمهٔ دوم فقط با نسخهٔ کامل.
+  /// پیش‌فرض «خرید ندارد» (fail-closed).
+  bool _hasFullVersion = false;
+
   @override
   void initState() {
     super.initState();
     FandoghiCoach.enablePersistentPresence();
     _questions = _withShuffledOptions(_questionsFor(widget.topic));
+    _refreshEntitlement();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         if (GameData.isDailyLimitReached) {
@@ -72,6 +79,12 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
         }
       }
     });
+  }
+
+  Future<void> _refreshEntitlement() async {
+    final hasFullVersion = await Monetization.hasFullVersion();
+    if (!mounted || hasFullVersion == _hasFullVersion) return;
+    setState(() => _hasFullVersion = hasFullVersion);
   }
 
   @override
@@ -585,10 +598,17 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
       orElse: () => learningTopics.first,
     );
     final questions = <_QuizQuestion>[];
-    final cards = topic.pickRandom(5);
+    // قانونِ نصف/نصف: سوال و گزینه‌ها فقط از کارت‌های مجازِ این کاربر
+    // می‌آیند تا نیمهٔ پولیِ یک موضوع در قالب «سوالِ تصادفی» یا «گزینهٔ
+    // انحرافی» جلوی کودک گذاشته نشود.
+    final pool = ContentAccessPolicy.allowedTopicCards(
+      topic,
+      hasFullVersion: _hasFullVersion,
+    );
+    final cards = topic.pickRandom(5, pool: pool);
     for (final card in cards) {
       // «کدام گزینه X است؟» با ایموجی
-      final others = topic.cards
+      final others = pool
           .where((c) => c.id != card.id)
           .take(3)
           .map((c) => c.name)

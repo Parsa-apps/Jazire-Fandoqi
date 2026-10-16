@@ -38,10 +38,14 @@ class LearningTopic {
   });
 
   /// انتخاب `count` کارت تصادفی بدون تکرار (برای هر دور بازی).
-  List<LearningCard> pickRandom(int count, {int seed = 0}) {
-    final pool = List<LearningCard>.of(cards);
-    pool.shuffle(Random(seed + DateTime.now().millisecond));
-    return pool.take(count).toList();
+  ///
+  /// `pool` وقتی داده می‌شود که بازی بخواهد کارت‌ها را به زیرمجموعهٔ مجاز
+  /// محدود کند (قانونِ نصف/نصف — نیمهٔ دوم فقط با نسخهٔ کامل). در غیر این
+  /// صورت همهٔ کارت‌های موضوع استفاده می‌شوند.
+  List<LearningCard> pickRandom(int count, {int seed = 0, List<LearningCard>? pool}) {
+    final source = List<LearningCard>.of(pool ?? cards);
+    source.shuffle(Random(seed + DateTime.now().millisecond));
+    return source.take(count).toList();
   }
 }
 

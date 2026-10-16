@@ -8,8 +8,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../app/app_colors.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
+import '../../../core/content_access_policy.dart';
 import '../../../core/game_data.dart';
 import '../../../core/learning_content/learning_topics.dart';
+import '../../../core/monetization.dart';
 import '../../../core/play_limit.dart';
 import '../../../shared/widgets/child_touch_target.dart';
 import '../../../shared/widgets/fandoghi_v2.dart';
@@ -42,6 +44,14 @@ class AcademyGame extends StatefulWidget {
 
 class _AcademyGameState extends State<AcademyGame> {
   late final LearningTopic _topic;
+
+  /// کارت‌های مجاز برای این کاربر: نیمهٔ اولِ موضوع (ترتیبِ کتاب) رایگان
+  /// است و نیمهٔ دوم فقط با نسخهٔ کامل. تا وقتی پاسخِ فروشگاه نرسیده،
+  /// پیش‌فرض «فقط نیمهٔ رایگان» است (fail-closed) — یعنی شانسِ تصادفی
+  /// هرگز کارتِ پولی را جلوی کودک نمی‌گذارد.
+  late List<LearningCard> _pool;
+  bool _hasFullVersion = false;
+
   late List<LearningCard> _roundCards;
   int _roundIndex = 0;
   int _score = 0;
@@ -55,8 +65,13 @@ class _AcademyGameState extends State<AcademyGame> {
   void initState() {
     super.initState();
     _topic = learningTopicById(widget.topicId) ?? learningTopics.first;
-    _roundCards = _topic.pickRandom(5);
+    _pool = ContentAccessPolicy.allowedTopicCards(
+      _topic,
+      hasFullVersion: _hasFullVersion,
+    );
+    _roundCards = _pickRound();
     _roundOptions = _buildOptions();
+    unawaited(_refreshEntitlement());
     FandoghiCoach.enablePersistentPresence();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -80,6 +95,28 @@ class _AcademyGameState extends State<AcademyGame> {
     super.dispose();
   }
 
+  /// بعد از مشخص‌شدن وضعیت خرید، pool را به‌روز می‌کند و در صورت نیاز دورِ
+  /// جاری را از نو می‌چیند تا نیمهٔ تازه‌بازشده بلافاصله در دسترس باشد.
+  Future<void> _refreshEntitlement() async {
+    final hasFullVersion = await Monetization.hasFullVersion();
+    if (!mounted || hasFullVersion == _hasFullVersion) return;
+    final nextPool = ContentAccessPolicy.allowedTopicCards(
+      _topic,
+      hasFullVersion: hasFullVersion,
+    );
+    setState(() {
+      _hasFullVersion = hasFullVersion;
+      _pool = nextPool;
+      _roundCards = _pickRound();
+      _roundIndex = 0;
+      _roundOptions = _buildOptions();
+      _selectedIndex = null;
+      _locked = false;
+    });
+  }
+
+  List<LearningCard> _pickRound() => _topic.pickRandom(5, pool: _pool);
+
   bool get _listenMode => _roundIndex.isEven;
 
   LearningCard get _currentCard => _roundCards[_roundIndex];
@@ -91,7 +128,10 @@ class _AcademyGameState extends State<AcademyGame> {
 
   List<LearningCard> _buildOptions() {
     // گزینه‌های جواب: کارت درست + ۲ کارت تصادفی دیگر
-    final others = _topic.cards
+    // گزینه‌های انحرافی هم فقط از poolِ مجاز می‌آیند: نمایشِ نام/تصویرِ یک
+    // کارتِ پولی به‌عنوان گزینه، خودش بخشی از همان محتواست.
+    final source = _pool.length >= 3 ? _pool : _topic.cards;
+    final others = source
         .where((c) => c.id != _currentCard.id)
         .toList()
       ..shuffle(Random());
@@ -195,7 +235,7 @@ class _AcademyGameState extends State<AcademyGame> {
 
   void _restart() {
     setState(() {
-      _roundCards = _topic.pickRandom(5);
+      _roundCards = _pickRound();
       _roundIndex = 0;
       _roundOptions = _buildOptions();
       _score = 0;

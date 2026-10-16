@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -5,11 +7,14 @@ import '../../app/app_colors.dart';
 import '../../app/design_tokens.dart';
 import '../../app/app_fonts.dart';
 import '../../core/audio_service.dart';
+import '../../core/content_access_policy.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';
 import '../../core/learning_content/learning_topics.dart';
+import '../../core/monetization.dart';
 import '../../shared/widgets/fandoghi_premium.dart';
+import '../shop/content_lock.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// 🦁 ANIMAL ENCYCLOPEDIA PREMIUM — پیشنهاد ۲۲
@@ -25,6 +30,11 @@ class AnimalEncyclopediaScreen extends StatefulWidget {
 class _AnimalEncyclopediaState extends State<AnimalEncyclopediaScreen> {
   String _filter = 'همه';
   static const List<String> _filters = ['همه', 'پستاندار', 'پرنده', 'خزنده', 'دریایی'];
+
+  /// نیمهٔ اولِ دایرةالمعارف (به ترتیبِ کتاب) رایگان است و نیمهٔ دوم با
+  /// نسخهٔ کامل باز می‌شود. پیش‌فرض «خرید ندارد» است (fail-closed) تا پیش از
+  /// پاسخِ فروشگاه هیچ حیوانِ پولی‌ای باز نشود.
+  bool _hasFullVersion = false;
 
   // دسته‌بندی دستی برای ۳۰ حیوان
   String _categoryOf(String name) {
@@ -59,6 +69,7 @@ class _AnimalEncyclopediaState extends State<AnimalEncyclopediaScreen> {
   void initState() {
     super.initState();
     FandoghiCoach.enablePersistentPresence();
+    _refreshEntitlement();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FandoghiCoach.say('به دنیای حیوانات ایران خوش اومدی! 🦁 هر حیوان یه قصه داره — بزن روش تا صداشو بشنوی!', mood: FandoghiMood.excited, duration: const Duration(seconds: 4));
     });
@@ -90,6 +101,7 @@ class _AnimalEncyclopediaState extends State<AnimalEncyclopediaScreen> {
                       card: card,
                       index: index,
                       isLearned: isLearned,
+                      locked: _isLocked(card),
                       habitat: _habitatOf(card.name),
                       category: _categoryOf(card.name),
                       onTap: () => _openDetail(card),
@@ -103,6 +115,21 @@ class _AnimalEncyclopediaState extends State<AnimalEncyclopediaScreen> {
       ),
     );
   }
+
+  Future<void> _refreshEntitlement() async {
+    final hasFullVersion = await Monetization.hasFullVersion();
+    if (mounted && hasFullVersion != _hasFullVersion) {
+      setState(() => _hasFullVersion = hasFullVersion);
+    }
+  }
+
+  /// قفلِ مؤثرِ یک حیوان: دقیقاً همان چیزی که هنگام لمس اتفاق می‌افتد.
+  bool _isLocked(LearningCard card) =>
+      !_hasFullVersion && !ContentAccessPolicy.isTopicCardFree(_topicOf(), card.id);
+
+  /// موضوعِ کانونی — ترتیبِ کتاب از همین‌جا می‌آید، نه از ترتیبِ نمایش.
+  LearningTopic _topicOf() =>
+      learningTopicById('animals') ?? learningTopics.first;
 
   Widget _buildTopBar(int total) {
     return Padding(
@@ -176,9 +203,19 @@ class _AnimalEncyclopediaState extends State<AnimalEncyclopediaScreen> {
     );
   }
 
-  void _openDetail(LearningCard card) {
+  Future<void> _openDetail(LearningCard card) async {
     HapticFeedback.lightImpact();
     AudioService.tap();
+
+    final allowed = await ensureContentAccess(
+      context,
+      featureName: card.name,
+      isFree: ContentAccessPolicy.isTopicCardFree(_topicOf(), card.id),
+    );
+    if (!allowed) return;
+    if (!mounted) return;
+    unawaited(_refreshEntitlement());
+
     // TTS ساده
     FandoghiCoach.say('${card.name}! ${card.fact ?? ''} زیستگاهش: ${_habitatOf(card.name)} 🗺️', mood: FandoghiMood.happy, duration: const Duration(seconds: 3));
     GameData.recordAnswer(correct: true, skill: 'animals');
@@ -196,17 +233,20 @@ class _AnimalCard extends StatelessWidget {
   final LearningCard card;
   final int index;
   final bool isLearned;
+  final bool locked;
   final String habitat;
   final String category;
   final VoidCallback onTap;
-  const _AnimalCard({required this.card, required this.index, required this.isLearned, required this.habitat, required this.category, required this.onTap});
+  const _AnimalCard({required this.card, required this.index, required this.isLearned, this.locked = false, required this.habitat, required this.category, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: LockedCardOverlay(
+        locked: locked,
+        child: Container(
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
           borderRadius: BorderRadius.circular(AppRadii.xl),
@@ -293,6 +333,7 @@ class _AnimalCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
