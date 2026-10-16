@@ -688,12 +688,24 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _hubBubble(FandoqiHubs.math, 'ریاضی', 'bubble_math', bubbleW, 0.05),
-          _hubBubble(FandoqiHubs.lettersAndSounds, 'حروف', 'bubble_letters',
-              bubbleW, 0.30),
-          _hubBubble(
-              FandoqiHubs.science, 'علوم', 'bubble_science', bubbleW, 0.55),
-          _hubBubble(FandoqiHubs.art, 'هنر', 'bubble_art', bubbleW, 0.80),
+          // هر حباب انعطاف‌پذیر است: اگر برچسبِ پلاک در فونتِ دستگاهِ مقصد
+          // پهن‌تر از حباب شد، ردیفِ زیرِ آب کلوچ نمی‌زند.
+          Flexible(
+            child: _hubBubble(
+                FandoqiHubs.math, 'ریاضی', 'bubble_math', bubbleW, 0.05),
+          ),
+          Flexible(
+            child: _hubBubble(FandoqiHubs.lettersAndSounds, 'حروف',
+                'bubble_letters', bubbleW, 0.30),
+          ),
+          Flexible(
+            child: _hubBubble(
+                FandoqiHubs.science, 'علوم', 'bubble_science', bubbleW, 0.55),
+          ),
+          Flexible(
+            child: _hubBubble(
+                FandoqiHubs.art, 'هنر', 'bubble_art', bubbleW, 0.80),
+          ),
         ],
       ),
     );

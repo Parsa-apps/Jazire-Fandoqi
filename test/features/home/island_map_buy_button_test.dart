@@ -30,6 +30,26 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
+    // ابزار تشخیص: اگر جایی سرریز چیدمانی رخ داد، به‌جای فقط «۸۲ پیکسل»،
+    // خطوطِ تعیین‌هویت (ویجتِ مقصر و زنجیرهٔ ساخت) داخل خود پیام خطا می‌آیند
+    // تا از لاگ CI قابل ردیابی باشد.
+    final originalOnError = FlutterError.onError;
+    FlutterError.onError = (details) {
+      final keep = details.toString().split('\n').where((line) {
+        return line.contains('overflowed') ||
+            line.contains('causing widget') ||
+            line.contains('Creator:') ||
+            line.contains('The relevant') ||
+            line.contains('When the exception was thrown');
+      }).join('\n');
+      originalOnError?.call(FlutterErrorDetails(
+        exception: StateError('سرریزِ تشخیص‌داده‌شده >>>\n$keep'),
+        library: details.library,
+        context: details.context,
+      ));
+    };
+    addTearDown(() => FlutterError.onError = originalOnError);
+
     await tester.pumpWidget(
       const ProviderScope(
         child: MaterialApp(home: IslandMapTab()),
