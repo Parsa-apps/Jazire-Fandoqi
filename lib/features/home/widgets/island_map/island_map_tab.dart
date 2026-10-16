@@ -16,6 +16,7 @@ import '../../../../core/learning/today_path.dart';
 import '../../../../presentation/providers/game_state_provider.dart';
 import '../../../../shared/widgets/today_complete_sheet.dart';
 import '../../../profile/profile_editor.dart';
+import '../../../shop/full_version_purchase_entry.dart';
 import '../../../stage_map/stage_map_screen.dart';
 import '../daily_gifts_dialog.dart';
 import '../fandoqi_hub_sheet.dart';
@@ -220,7 +221,17 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
             ),
           ),
 
-          // ── لایهٔ ۳: دکمه‌های شناور کنارهٔ صفحه ──
+          // ── لایهٔ ۳: مسیر واضحِ نسخهٔ کامل، مستقل از اسکرول مجموعه‌ها ──
+          // خود هاب‌ها رایگان‌اند؛ این قفل نشان می‌دهد نیمهٔ دومِ محتوا
+          // همچنان نیازمند خرید است، بدون آنکه راهِ ورود به نیمهٔ رایگان بسته شود.
+          const Positioned(
+            left: 10,
+            bottom: 22,
+            child: SafeArea(
+              top: false,
+              child: FullVersionPurchaseEntry(compact: true),
+            ),
+          ),
           Positioned(
             right: 10,
             bottom: 22,

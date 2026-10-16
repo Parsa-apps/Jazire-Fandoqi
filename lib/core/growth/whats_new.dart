@@ -1,18 +1,36 @@
 import 'package:flutter/material.dart';
 
 /// ═══════════════════════════════════════════════════════════════
-/// 🆕 تغییرات نسخهٔ ۷.۵.۴ «انتشار رسمی و پرداخت مایکت» — جزیره فندقی
+/// 🆕 تغییرات نسخهٔ ۷.۵.۵ «مسیر روشن خرید نسخهٔ کامل» — جزیره فندقی
 /// بعد از هر آپدیت یک‌بار به‌صورت خودکار نشان داده می‌شود.
 /// ═══════════════════════════════════════════════════════════════
 class WhatsNew {
   WhatsNew._();
 
-  static const String version = '۷.۵.۴';
-  static const String versionName = 'انتشار رسمی و پرداخت مایکت';
-  static const String buildNumber = '+۲۶';
+  static const String version = '۷.۵.۵';
+  static const String versionName = 'مسیر روشن خرید نسخهٔ کامل';
+  static const String buildNumber = '+۲۷';
 
   /// دسته‌بندی‌های تغییرات برای نمایش حرفه‌ای
   static const List<WhatsNewSection> sections = [
+    WhatsNewSection(
+      id: 'visible-full-version-entry',
+      title: '🔒 خرید نسخهٔ کامل در دسترس والدین',
+      emoji: '🔒',
+      color: Color(0xFFD99415),
+      items: [
+        WhatsNewItem(
+          emoji: '🏝️',
+          title: 'قفل و راه خرید روی نقشهٔ اصلی',
+          body: 'ورود به قصه‌ها و دنیاها برای دیدن نیمهٔ رایگان باز است؛ حالا روی نقشه هم قفل و راه رسیدن به خرید نسخهٔ کامل دیده می‌شود.',
+        ),
+        WhatsNewItem(
+          emoji: '👨‍👩‍👧',
+          title: 'خرید و بازیابی آسان‌تر برای والدین',
+          body: 'در مرکز والدین و درباره و پشتیبانی، راه خرید مشخص است. بازیابی خرید قبلی هم کنار آن است؛ خرید و بازیابی همچنان فقط با تأیید والد و رسید معتبر فعال می‌شوند.',
+        ),
+      ],
+    ),
     WhatsNewSection(
       id: 'production-myket-only',
       title: '💛 نسخهٔ کامل فقط با خرید مایکت',

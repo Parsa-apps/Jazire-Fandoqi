@@ -89,6 +89,13 @@ void main() {
     expect(find.byKey(const Key('music-volume-slider')), findsOneWidget);
     expect(find.text('صدای موسیقی'), findsOneWidget);
 
+    // هاب‌ها برای نیمهٔ رایگان بازند، ولی راه خرید و نشان قفل باید
+    // پیش از ورود به هر هاب روی خودِ نقشه دیده شود.
+    expect(find.byKey(const ValueKey('full_version_purchase_entry')),
+        findsOneWidget);
+    expect(find.text('خرید نسخه کامل'), findsOneWidget);
+    expect(find.text('نیمه رایگان • بقیه قفل'), findsOneWidget);
+
     // دکمه‌های شناور کناری (آیکونی، با برچسب دسترس‌پذیری)
     expect(find.bySemanticsLabel('هدیهٔ روزانه'), findsOneWidget);
     expect(find.bySemanticsLabel('کتابخانه'), findsOneWidget);
@@ -169,6 +176,10 @@ void main() {
       const MaterialApp(home: AboutScreen(vendorOverride: StoreVendor.myket)),
     );
     expect(find.text(AppLegal.developerName), findsOneWidget);
+    expect(find.byKey(const ValueKey('full_version_purchase_entry')),
+        findsOneWidget);
+    expect(find.text('خرید نسخه کامل'), findsOneWidget);
+    expect(find.text('بازیابی خرید نسخهٔ کامل'), findsOneWidget);
     expect(find.text(StoreListing.myketName), findsOneWidget);
     expect(find.text(StoreListing.buttonLabel(StoreVendor.myket)), findsOneWidget);
     expect(find.text(StoreListing.kicker), findsOneWidget);

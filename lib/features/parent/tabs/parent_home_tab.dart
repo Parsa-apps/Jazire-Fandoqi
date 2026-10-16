@@ -7,6 +7,7 @@ import '../../../core/growth/growth.dart';
 import '../../../core/growth/parent_insights.dart';
 import '../../../core/parental_health_radar.dart';
 import '../../growth/widgets/screen_time_chart.dart';
+import '../../shop/full_version_purchase_entry.dart';
 import '../widgets/parent_widgets.dart';
 
 /// تب خانه: کارنامه‌ی یک‌نگاه + هشدارهای معلم + دسترسی سریع.
@@ -49,6 +50,8 @@ class _ParentHomeTabState extends State<ParentHomeTab> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       children: [
         _buildHero(),
+        const SizedBox(height: 16),
+        const FullVersionPurchaseEntry(),
         const SizedBox(height: 16),
 
         // دسترسی سریع

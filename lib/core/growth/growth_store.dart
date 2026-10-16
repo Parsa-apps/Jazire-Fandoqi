@@ -12,7 +12,7 @@ class GrowthStore {
   GrowthStore._();
 
   static const String hiveKey = 'growth_v62';
-  static const String appVersion = '7.5.4';
+  static const String appVersion = '7.5.5';
 
   static final ValueNotifierLike changes = ValueNotifierLike();
 
