@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:jazireh_fandoghi/shared/widgets/animated_gold_lock.dart';
 
 /// ═══════════════════════════════════════════════════════════
 /// 🎭 ANIMATED LIST ITEMS — آیتم‌های لیست با انیمیشن
@@ -257,11 +258,7 @@ class _GameCard3DState extends State<GameCard3D>
                           color: Colors.black.withOpacity(0.4),
                         ),
                         child: const Center(
-                          child: Icon(
-                            Icons.lock_rounded,
-                            color: Colors.white,
-                            size: 40,
-                          ),
+                          child: AnimatedGoldLock(size: 56),
                         ),
                       ),
                     

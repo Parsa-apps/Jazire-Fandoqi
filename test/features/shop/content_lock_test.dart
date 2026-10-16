@@ -19,6 +19,7 @@ import 'package:jazireh_fandoghi/features/shop/game_access_gate.dart';
 import 'package:jazireh_fandoghi/features/stage_map/stage_map_screen.dart';
 import 'package:jazireh_fandoghi/features/stage_map/widgets/premium_stage_node.dart';
 import 'package:jazireh_fandoghi/shared/widgets/magnetic_drag.dart';
+import 'package:jazireh_fandoghi/shared/widgets/animated_gold_lock.dart';
 
 import '../../support/paywall_test_store.dart';
 
@@ -85,7 +86,7 @@ void main() {
     ));
     expect(builds, 0);
     expect(mounts, 0);
-    expect(find.byIcon(Icons.lock_rounded), findsOneWidget);
+    expect(find.byType(AnimatedGoldLock), findsOneWidget);
     expect(await Monetization.hasFullVersion(), isFalse);
     await _dispose(tester);
   });
@@ -188,6 +189,7 @@ void main() {
   testWidgets('body game has three playable parts and three real locks', (tester) async {
     await _open(tester, const BodyPartsGame());
     expect(find.byType(MagneticDraggable), findsNWidgets(3));
+    expect(find.byType(AnimatedGoldLock), findsWidgets);
     expect(tester.widgetList<LockedCardOverlay>(find.byType(LockedCardOverlay))
         .where((overlay) => overlay.locked).length, 3);
     final locked = find.byKey(const ValueKey('body_part_locked_3'));
@@ -208,6 +210,7 @@ void main() {
     await _buy(tester);
     expect(await Monetization.hasFullVersion(), isTrue);
     expect(find.byKey(const ValueKey('content_access_notice')), findsNothing);
+    expect(find.byType(AnimatedGoldLock), findsNothing);
     expect(find.byType(MagneticDraggable), findsNWidgets(6));
     expect(find.byKey(const ValueKey('body_part_locked_3')), findsNothing);
     expect(tester.takeException(), isNull);
@@ -223,6 +226,7 @@ void main() {
     expect(find.text('پرداخت کامل نشد'), findsOneWidget);
     expect(await Monetization.hasFullVersion(), isFalse);
     expect(find.byType(MagneticDraggable), findsNWidgets(3));
+    expect(find.byType(AnimatedGoldLock), findsWidgets);
     await _dispose(tester);
   });
 

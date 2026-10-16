@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:jazireh_fandoghi/shared/widgets/animated_gold_lock.dart';
 
 import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
@@ -620,11 +621,7 @@ class _StoryPlatformState extends State<_StoryPlatform>
                   Positioned(
                     top: coverSize * 0.73,
                     right: widget.width * 0.23,
-                    child: _statusBadge(
-                      icon: Icons.lock_rounded,
-                      color: const Color(0xFF7E57C2),
-                      label: 'قفل',
-                    ),
+                    child: const AnimatedGoldLock(size: 44),
                   ),
                 Positioned(
                   left: -18,

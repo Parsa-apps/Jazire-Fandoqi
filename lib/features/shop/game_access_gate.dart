@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:jazireh_fandoghi/shared/widgets/animated_gold_lock.dart';
 
 import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
@@ -210,34 +211,7 @@ class _GameAccessGateState extends State<GameAccessGate>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // ── Animated lock icon ──
-                  AnimatedBuilder(
-                    animation: _floatCtrl,
-                    builder: (_, __) {
-                      return Transform.translate(
-                        offset: Offset(0, -6 * _floatCtrl.value),
-                        child: Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                AppColors.primary.withOpacity(0.15),
-                                AppColors.primary.withOpacity(0.05),
-                                Colors.transparent,
-                              ],
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.lock_rounded,
-                            size: 72,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                  const AnimatedGoldLock(size: 128),
                   const SizedBox(height: 22),
                   Text(
                     '«${widget.gameName}»',

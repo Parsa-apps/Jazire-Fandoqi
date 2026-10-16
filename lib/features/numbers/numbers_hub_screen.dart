@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:jazireh_fandoghi/shared/widgets/animated_gold_lock.dart';
 import '../../app/app_colors.dart';
 import '../../app/design_tokens.dart';
 import '../../app/app_fonts.dart';
@@ -207,7 +208,7 @@ class _NumbersHubState extends State<NumbersHubScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (!_hasFullVersion && !ContentAccessPolicy.isGameFree(act.$5)) ...[
-                      const Icon(Icons.lock_rounded, size: 16),
+                      const AnimatedGoldLock(size: 24),
                       const SizedBox(width: 4),
                     ],
                     Text(act.$2, style: const TextStyle(fontSize: 16)),
@@ -381,13 +382,9 @@ class _NumbersHubState extends State<NumbersHubScreen> {
                 ),
                 if (locked)
                   const Positioned(
-                    top: 3,
-                    right: 4,
-                    child: Icon(
-                      Icons.lock_rounded,
-                      color: Colors.amberAccent,
-                      size: 11,
-                    ),
+                    top: 0,
+                    right: 0,
+                    child: AnimatedGoldLock(size: 24),
                   ),
               ],
             ),

@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:jazireh_fandoghi/shared/widgets/animated_gold_lock.dart';
 
 import '../../../../app/app_fonts.dart';
 import '../../../../core/audio_service.dart';
@@ -270,8 +271,9 @@ class _HubIslandNodeState extends State<HubIslandNode>
   Widget _lockBadge() => Container(
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFB300),
+          color: const Color(0xFFFFF4CE),
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFD99415)),
           boxShadow: const [
             BoxShadow(
               color: Color(0x33000000),
@@ -283,11 +285,11 @@ class _HubIslandNodeState extends State<HubIslandNode>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.lock_rounded, color: Colors.white, size: 12),
+            const AnimatedGoldLock(size: 24),
             const SizedBox(width: 3),
             Text(
               'نسخه کامل',
-              style: AppFonts.kids(fontSize: 11, color: Colors.white),
+              style: AppFonts.kids(fontSize: 11, color: const Color(0xFF714716)),
             ),
           ],
         ),

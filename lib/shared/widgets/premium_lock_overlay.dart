@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:jazireh_fandoghi/shared/widgets/animated_gold_lock.dart';
 
 import '../../app/app_fonts.dart';
 
@@ -37,26 +38,22 @@ class PremiumLockOverlay extends StatelessWidget {
                 ],
               ),
               child: compact
-                  ? const Icon(
-                      Icons.lock_rounded,
-                      color: Colors.white,
-                      size: 16,
-                    )
+                  ? const AnimatedGoldLock(size: 26)
                   : Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.lock_rounded,
-                          color: Colors.white,
-                          size: 17,
-                        ),
+                        const AnimatedGoldLock(size: 30),
                         const SizedBox(width: 5),
-                        Text(
-                          label,
-                          style: AppFonts.vazirmatn(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
+                        Flexible(
+                          child: Text(
+                            label,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppFonts.vazirmatn(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
                         ),
                       ],

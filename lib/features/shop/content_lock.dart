@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:jazireh_fandoghi/shared/widgets/animated_gold_lock.dart';
 
 import '../../app/app_fonts.dart';
 import '../../app/island_world_style.dart';
@@ -57,41 +58,12 @@ bool isContentLocked({required bool isFree, required bool hasFullVersion}) =>
 /// [ensureContentAccess] است تا لمسِ روی آیتمِ قفل‌شده پی‌وال را بیاورد، نه
 /// اینکه بی‌صدا هیچ اتفاقی نیفتد.
 class LockedItemBadge extends StatelessWidget {
-  const LockedItemBadge({
-    super.key,
-    this.size = 30,
-    this.color = const Color(0xFF5D4037),
-    this.background = const Color(0xFFFFF8E1),
-  });
+  const LockedItemBadge({super.key, this.size = 36});
 
   final double size;
-  final Color color;
-  final Color background;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: background,
-        shape: BoxShape.circle,
-        border: Border.all(color: color.withOpacity(0.55), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.14),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Icon(
-        Icons.lock_rounded,
-        size: size * 0.58,
-        color: color,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => AnimatedGoldLock(size: size);
 }
 
 /// لایهٔ آمادهٔ «قفل روی کارت»؛ وقتی [locked] است نشان قفل روی کارت می‌نشیند
@@ -104,7 +76,7 @@ class LockedCardOverlay extends StatelessWidget {
     super.key,
     required this.locked,
     required this.child,
-    this.badgeSize = 30,
+    this.badgeSize = 36,
   });
 
   final bool locked;

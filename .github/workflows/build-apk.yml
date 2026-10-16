@@ -84,6 +84,8 @@ jobs:
             test/core/decodable_stories_test.dart \
             test/core/paid_route_guard_test.dart \
             test/features/shop/content_lock_test.dart \
+            test/features/shop/gold_lock_collections_test.dart \
+            test/shared/widgets/animated_gold_lock_test.dart \
             > qa-gate-log/paywall-regression.log 2>&1
           status=$?
           cat qa-gate-log/paywall-regression.log
@@ -128,6 +130,7 @@ jobs:
             echo "build_mode=release"
             echo "store=myket"
             echo "paywall_regression_gate=passed"
+            echo "animated_gold_lock_tests=passed"
             sha256sum build/app/outputs/flutter-apk/app-release.apk
           } > build/app/outputs/flutter-apk/build-info.txt
           cat build/app/outputs/flutter-apk/build-info.txt
@@ -135,7 +138,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: jazire_fandoqi_v7.5.1_apk
+          name: jazire_fandoqi_v7.5.2_apk
           path: |
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/flutter-apk/build-info.txt
@@ -152,5 +155,5 @@ jobs:
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: jazire_fandoqi_v7.5.1_aab
+          name: jazire_fandoqi_v7.5.2_aab
           path: build/app/outputs/bundle/release/app-release.aab

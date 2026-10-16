@@ -1,18 +1,36 @@
 import 'package:flutter/material.dart';
 
 /// ═══════════════════════════════════════════════════════════════
-/// 🆕 تغییرات نسخهٔ ۷.۵.۱ «نیمهٔ رایگان، نیمهٔ نسخهٔ کامل» — جزیره فندقی
+/// 🆕 تغییرات نسخهٔ ۷.۵.۲ «قفل‌های طلایی متحرک» — جزیره فندقی
 /// بعد از هر آپدیت یک‌بار به‌صورت خودکار نشان داده می‌شود.
 /// ═══════════════════════════════════════════════════════════════
 class WhatsNew {
   WhatsNew._();
 
-  static const String version = '۷.۵.۱';
-  static const String versionName = 'نیمهٔ رایگان، نیمهٔ نسخهٔ کامل';
-  static const String buildNumber = '+۲۳';
+  static const String version = '۷.۵.۲';
+  static const String versionName = 'قفل‌های طلایی متحرک';
+  static const String buildNumber = '+۲۴';
 
   /// دسته‌بندی‌های تغییرات برای نمایش حرفه‌ای
   static const List<WhatsNewSection> sections = [
+    WhatsNewSection(
+      id: 'animated-gold-locks',
+      title: '🔐 قفل‌های طلایی متحرک',
+      emoji: '🔐',
+      color: Color(0xFFD99415),
+      items: [
+        WhatsNewItem(
+          emoji: '✨',
+          title: 'قفل‌های براق روی بخش‌های نسخهٔ کامل',
+          body: 'بخش‌های قفل حالا یک قفل طلایی با حرکت آرام و برق ملایم دارند؛ لمس همان بخش، مسیر امن خرید والدین را باز می‌کند.',
+        ),
+        WhatsNewItem(
+          emoji: '💛',
+          title: 'سبک، آفلاین و سازگار با کاهش حرکت',
+          body: 'قفل‌ها بدون دانلود تصویر کار می‌کنند و با فعال‌بودن کاهش حرکت ثابت می‌مانند. قانون نیمهٔ رایگان و بازشدن پس از پرداخت معتبر تغییری نکرده است.',
+        ),
+      ],
+    ),
     WhatsNewSection(
       id: 'payment-lock-fix',
       title: '🔒 اصلاح قفل‌های پرداخت',

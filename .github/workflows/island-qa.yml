@@ -92,6 +92,10 @@ jobs:
             lib/features/games/colors_lab/colors_lab_game.dart \
             lib/features/games/pattern/pattern_game.dart \
             lib/features/shop/game_access_gate.dart \
+            lib/features/shop/content_lock.dart \
+            lib/shared/widgets/animated_gold_lock.dart \
+            test/shared/widgets/animated_gold_lock_test.dart \
+            test/features/shop/gold_lock_collections_test.dart \
             lib/shared/widgets/island_kit.dart \
             lib/app/island_world_style.dart \
             lib/app/island_page_transition.dart \
@@ -142,6 +146,8 @@ jobs:
           test/features/home/hub_island_node_test.dart
           test/features/home/hero_fandoq_test.dart
           test/shared/island_kit_test.dart
+          test/shared/widgets/animated_gold_lock_test.dart
+          test/features/shop/gold_lock_collections_test.dart
           test/features/games/mini_games/mini_game_scaffold_test.dart
           test/app_smoke_test.dart
 

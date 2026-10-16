@@ -9,6 +9,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../app/app_colors.dart';
 import '../../../app/design_tokens.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
+import 'package:jazireh_fandoghi/shared/widgets/animated_gold_lock.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/content_access_policy.dart';
 import '../../../core/fandoghi_coach.dart';
@@ -1121,14 +1122,16 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                       showFullVersionPaywall(context, featureName: 'حرف «${_lesson.letter}»');
                     }
                   : _openTraceScreen,
-              icon: Icon(
-                locked
-                    ? Icons.lock_rounded
-                    : _ladder.canWrite
-                        ? Icons.draw_rounded
-                        : Icons.hearing_rounded,
-                size: 20,
-              ),
+              icon: _isPaywalled(_lessonIndex)
+                  ? const AnimatedGoldLock(size: 26)
+                  : Icon(
+                      locked
+                          ? Icons.lock_rounded
+                          : _ladder.canWrite
+                              ? Icons.draw_rounded
+                              : Icons.hearing_rounded,
+                      size: 20,
+                    ),
               label: Text(
                 _isTeacherLocked(_lessonIndex)
                     ? 'اول نشانهٔ قبلی 🔒'
@@ -1372,14 +1375,16 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
                         ),
                       ),
                       if (locked)
-                        const Positioned(
-                          top: 4,
-                          right: 4,
-                          child: Icon(
-                            Icons.lock_rounded,
-                            color: Colors.amberAccent,
-                            size: 12,
-                          ),
+                        Positioned(
+                          top: 1,
+                          right: 1,
+                          child: _isPaywalled(index)
+                              ? const AnimatedGoldLock(size: 24)
+                              : const Icon(
+                                  Icons.lock_rounded,
+                                  color: Colors.amberAccent,
+                                  size: 12,
+                                ),
                         )
                       else if (fluent)
                         const Positioned(
