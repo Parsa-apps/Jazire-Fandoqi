@@ -175,7 +175,7 @@ jobs:
             python3 tool/ci_annotate.py 'Native production tests failed' qa-gate-log/native-receipts.log
             tail -n 12 qa-gate-log/native-receipts.log | cut -c1-160 > qa-gate-log/native-tail.log
             python3 tool/ci_annotate.py 'Native tail (last 12)' qa-gate-log/native-tail.log
-            grep -nE '^e: |error: ' qa-gate-log/native-receipts.log | head -12 | cut -c1-160 > qa-gate-log/kotlin-errors.log
+            grep -E '^e: ' qa-gate-log/native-receipts.log | sed 's|file:///home/runner/work/Jazire-Fandoqi/Jazire-Fandoqi/||' | head -12 > qa-gate-log/kotlin-errors.log
             python3 tool/ci_annotate.py 'Kotlin compile errors' qa-gate-log/kotlin-errors.log
             # وضعیت سیستم هنگام مرگِ بی‌صدا: OOM یا دیسک؟
             {
