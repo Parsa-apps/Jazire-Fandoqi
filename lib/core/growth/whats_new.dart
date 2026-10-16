@@ -1,18 +1,36 @@
 import 'package:flutter/material.dart';
 
 /// ═══════════════════════════════════════════════════════════════
-/// 🆕 تغییرات نسخهٔ ۷.۵.۵ «مسیر روشن خرید نسخهٔ کامل» — جزیره فندقی
+/// 🆕 تغییرات نسخهٔ ۷.۵.۶ «دکمهٔ خرید در همهٔ هاب‌ها» — جزیره فندقی
 /// بعد از هر آپدیت یک‌بار به‌صورت خودکار نشان داده می‌شود.
 /// ═══════════════════════════════════════════════════════════════
 class WhatsNew {
   WhatsNew._();
 
-  static const String version = '۷.۵.۵';
-  static const String versionName = 'مسیر روشن خرید نسخهٔ کامل';
-  static const String buildNumber = '+۲۷';
+  static const String version = '۷.۵.۶';
+  static const String versionName = 'دکمهٔ خرید در همهٔ هاب‌ها';
+  static const String buildNumber = '+۲۸';
 
   /// دسته‌بندی‌های تغییرات برای نمایش حرفه‌ای
   static const List<WhatsNewSection> sections = [
+    WhatsNewSection(
+      id: 'buy-button-every-hub',
+      title: '🛒 دکمهٔ خرید، همیشه جلوی چشم',
+      emoji: '🛒',
+      color: Color(0xFFD99415),
+      items: [
+        WhatsNewItem(
+          emoji: '🛒',
+          title: 'دکمهٔ طلایی «خرید» بالای کارتون‌کده، قصه‌خانه و لالایی‌ها',
+          body: 'دیگر لازم نیست دنبال راهِ خرید بگردید؛ در نوار بالای این سه صفحه دکمهٔ خرید نسخهٔ کامل هست و کارتِ طلاییِ خرید هم پایین صفحه می‌ماند.',
+        ),
+        WhatsNewItem(
+          emoji: '⚖️',
+          title: 'همان قانون نیمه/نیمه، با مسیرِ خریدِ روشن',
+          body: 'نیمهٔ اول هر مجموعه رایگان است و نیمهٔ دوم با یک خرید دائمی باز می‌شود؛ حالا هم قفل‌ها را می‌بینید و هم راهِ بازکردن‌شان را.',
+        ),
+      ],
+    ),
     WhatsNewSection(
       id: 'visible-full-version-entry',
       title: '🔒 خرید نسخهٔ کامل در دسترس والدین',
