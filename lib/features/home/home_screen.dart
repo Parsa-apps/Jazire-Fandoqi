@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/app_fonts.dart';
 import '../../app/island_world_style.dart';
+import '../../shared/widgets/html_web_view.dart';
 import '../../core/audio_service.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/game_data.dart';
@@ -75,6 +76,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       body: Stack(
         children: [
+          // ── لایهٔ پس‌زمینهٔ لایو والپیپر فوق حرفه‌ای (HTML) ──
+          Positioned.fill(
+            child: IgnorePointer(
+              child: HtmlWebView(assetPath: 'assets/web/live_wallpaper.html'),
+            ),
+          ),
+
+          // ── لایهٔ پس‌زمینهٔ اپلیکیشن جادویی حیرت‌انگیز (HTML) ──
+          Positioned.fill(
+            child: IgnorePointer(
+              child: HtmlWebView(assetPath: 'assets/web/magic_wonder.html'),
+            ),
+          ),
+
           Positioned.fill(
             child: IndexedStack(
               index: _currentTab,
@@ -94,6 +109,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             left: 10,
             child: SafeArea(child: _buildSoundToggle()),
           ),
+
           if (_currentTab == 2)
             Positioned(
               left: 10,
@@ -623,3 +639,4 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 }
+
