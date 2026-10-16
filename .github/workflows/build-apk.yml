@@ -78,6 +78,7 @@ jobs:
           set +e
           flutter test --reporter expanded \
             test/core/monetization_test.dart \
+            test/core/store_vendor_test.dart \
             test/core/content_access_policy_test.dart \
             test/core/half_free_rule_test.dart \
             test/core/decodable_stories_test.dart \

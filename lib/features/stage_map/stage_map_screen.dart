@@ -386,8 +386,9 @@ class _StageMapState extends ConsumerState<StageMapScreen>
                   })
                 else
                   const SizedBox(width: 44),
-                const Spacer(),
-                Container(
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.25),
@@ -398,18 +399,23 @@ class _StageMapState extends ConsumerState<StageMapScreen>
                     children: [
                       const Text('🗺️', style: TextStyle(fontSize: 18)),
                       const SizedBox(width: 8),
-                      Text(
-                        'نقشه مراحل',
-                        style: AppFonts.vazirmatn(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 16,
+                      Expanded(
+                        child: Text(
+                          'نقشه مراحل',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppFonts.vazirmatn(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const Spacer(),
+                ),
+                const SizedBox(width: 8),
                 _buildProgressBadge(),
               ],
             ),
@@ -549,7 +555,7 @@ class _StageMapState extends ConsumerState<StageMapScreen>
       FandoghiCoach.judge('این مرحله هنوز قفل است؛ اول مرحله‌های قبلی را با هم کامل کنیم 🔒');
       return;
     }
-    final allowed = await ensureFullVersionAccess(
+    final allowed = await ensureContentAccess(
       context,
       featureName: stage.gameName,
       isFree: ContentAccessPolicy.isGameFree(stage.gameName),
