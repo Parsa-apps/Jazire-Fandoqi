@@ -10,7 +10,6 @@ import 'painters/sky_painter.dart';
 import 'painters/water_painter.dart';
 import 'painters/island_painter.dart';
 import 'widgets/floating_platform.dart';
-import 'island_professional_features.dart';
 
 /// ═══════════════════════════════════════════════
 /// 🏝️ LEARNING ISLAND — Custom Painted World
