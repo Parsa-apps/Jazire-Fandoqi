@@ -1,6 +1,6 @@
 # ساخت انتشار رسمی مایکت — جزیره فندقی
 
-**نسخهٔ فعلی: ۷.۵.۵+۲۷** (`pubspec.yaml`: `version: 7.5.5+27`)
+**نسخهٔ فعلی: ۷.۵.۶+۲۹** (`pubspec.yaml`: `version: 7.5.6+29`)
 
 این نسخه همان قانون **نصف رایگان، نصف قفل** را دارد. ورود به هاب‌های دارای محتوای رایگان باز می‌ماند؛ دکمهٔ خرید و نشان قفل در نقشه و مرکز والدین دیده می‌شوند و قفلِ آیتم‌های پولی داخل مجموعه‌ها است. نسخهٔ کامل فقط با خرید تکمیل‌شدهٔ `full_version` و رسید معتبر مایکت در APK رسمی انتشار فعال می‌شود. حالت دمو/آزمایشی، فلگ محلی یا رسید بازار مجوز دسترسی نیست.
 
@@ -12,7 +12,9 @@
 
 ## امضای انتشار
 
-keystore در `android/release.keystore` و تنظیمات محلی در `android/key.properties`:
+> **توقف انتشار عمومی:** keystore و رمزهای آن در تاریخ عمومی Git افشا شده‌اند. نسخه‌های فعلی دیگر این دو فایل را track نمی‌کنند، اما تاریخ قبلی پاک نشده و کلید باید افشاشده فرض شود. این APK فقط برای آزمون/ارزیابی است؛ پیش از انتشار در مایکت، مالک باید با پشتیبانی فروشگاه مسیر چرخش کلید سازگار را تعیین کند. راهنما: [`KEYSTORE_ROTATION_GUIDE.md`](KEYSTORE_ROTATION_GUIDE.md).
+
+keystore در `android/release.keystore` و تنظیمات محلی در `android/key.properties`:‌
 
 ```properties
 storeFile=release.keystore
@@ -59,8 +61,8 @@ AAB و APK هر دو متعلق به **مایکت** هستند. خروجی قد�
 
 آرتیفکت‌های نسخهٔ فعلی:
 
-- `jazire_fandoqi_v7.5.5_myket_production_apk` — `app-myket-release.apk` + `build-info.txt`
-- `jazire_fandoqi_v7.5.5_myket_production_aab`
+- `jazire_fandoqi_v7.5.6_myket_production_apk` — `app-myket-release.apk` + `build-info.txt`
+- `jazire_fandoqi_v7.5.6_myket_production_aab`
 
 QA مستقل فقط گزارش تست/تحلیل و نتایج JVM منتشر می‌کند؛ دیگر `island-qa-apk` ندارد.
 

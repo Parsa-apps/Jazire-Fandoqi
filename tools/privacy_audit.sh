@@ -49,13 +49,20 @@ else
   echo '✅ [کلاینت شبکه] فقط در سرویس کارتون آپارات است'
 fi
 
-# همه URLهای واقعی را parse کن؛ فقط HTTPS و دامنه‌های مشخص مجازند.
+# همه URLهای داخل کد را parse کن؛ فقط HTTPS و دامنه‌های مشخص مجازند.
+# آپارات تنها مقصدِ درخواست شبکه از خود اپ است (کلاینت HTTP هم بالاتر
+# محدود شده). myket.ir و cafebazaar.ir فقط لینک‌های کاربرخواستهٔ صفحهٔ
+# فروشگاه‌اند که با url_launcher در مرورگر/اپ بیرونی باز می‌شوند؛ داده‌ای
+# از کودک به آن‌ها ارسال نمی‌شود.
 if ! python3 - <<'PY'
 from pathlib import Path
 import re
 from urllib.parse import urlparse
 
-allowed_hosts = {'aparat.com', 'www.aparat.com', 'api.aparat.com', 't.me'}
+allowed_hosts = {
+    'aparat.com', 'www.aparat.com', 'api.aparat.com', 't.me',
+    'myket.ir', 'cafebazaar.ir',
+}
 url_pattern = re.compile(r"https?://[^\s'\"<>)}]+")
 violations = []
 for path in Path('lib').rglob('*.dart'):
@@ -72,7 +79,7 @@ if violations:
     print('❌ [URL خارج از allowlist] پیدا شد:')
     print('\n'.join(violations[:20]))
     raise SystemExit(1)
-print('✅ [URLها] فقط HTTPS آپارات و تلگرام مجاز هستند')
+print('✅ [URLها] فقط HTTPS آپارات/تلگرام و لینک رسمی فروشگاه مجاز هستند')
 PY
 then
   FAILED=1

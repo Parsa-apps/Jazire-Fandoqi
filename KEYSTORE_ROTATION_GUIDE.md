@@ -1,7 +1,8 @@
 # 🔑 راهنمای چرخش کلید امضا و انتقال به Secrets
 
 > **مکمل:** `CODE_REVIEW_REPORT.md` (یافتهٔ C1) و `CODE_REVIEW_DEEP_DIVE.md` (بخش A)
-> **وضعیت فعلی (به درخواست شما):** هیچ فایلی در ریپازیتوری تغییر نکرده است؛ این سند «دستورالعمل اجرا» است. هر بخش که نیازمند تغییر کد/CI است با برچسب ⏳ مشخص شده تا بعداً اعمال شود.
+> **وضعیت تاریخی سند:** این راهنما در ابتدا فقط دستورالعمل بود و فایل‌های امضا در Git باقی مانده بودند.
+> **اقدام فعلی (۲۰۲۶-۱۰-۱۷):** `android/key.properties` و `android/release.keystore` از درخت فعلی Git خارج و ignore شده‌اند؛ نسخه‌های commitهای قبلی در تاریخ عمومی Git هنوز قابل دسترسی‌اند. این حذف، تاریخ را پاک یا کلید را عوض نمی‌کند؛ کلید را افشاشده فرض کنید و پیش از انتشار عمومی، مسیر چرخش سازگار با فروشگاه را با مالک/پشتیبانی مایکت تعیین کنید. فایل محلی فعلی صرفاً برای build و آزمون نگه داشته شده و نباید دوباره commit شود.
 
 ---
 
@@ -114,60 +115,14 @@ git log --all --oneline -- android/key.properties android/release.keystore   # �
 
 ---
 
-## ۵. انتقال رمزها به GitHub Secrets ⏳ (تغییرات آینده — هنوز اعمال نشده)
+## ۵. وضعیت فعلی Secrets و pipeline ساخت
 
-### ۵-۱. ذخیرهٔ Secrets
+- `.github/workflows/build-apk.yml` امضای رسمی را از Secrets با نام‌های `KEYSTORE_B64` و `KEYSTORE_PASSWORD` بازیابی می‌کند؛ alias ثابت `fandoghi` است و نبود secret باعث توقف build می‌شود، نه fallback به debug.
+- امضای APK در CI با certificate مورد انتظار بررسی می‌شود. ساخت موفق CI، وجود تنظیمات امضا را تأیید می‌کند؛ اما افشای تاریخی کلید را بی‌اثر نمی‌کند.
+- در شاخهٔ فعلی، `android/key.properties` و `android/release.keystore` از index حذف و ignore شده‌اند. این کار از commitهای بعدی جلوگیری می‌کند، ولی فایل‌ها را از commitهای قدیمی/cloneها پاک نمی‌کند.
+- کلید فعلی را افشاشده فرض کنید. **تا تعیین و تکمیل چرخش سازگار با مایکت، artifactهای امضاشده را برای انتشار عمومی به‌کار نبرید.** تغییر secret در GitHub به‌تنهایی کافی نیست: اگر کلید عوض شود، سیاست امضا/anti-tamper و پذیرش به‌روزرسانی در فروشگاه نیز باید هماهنگ و روی دستگاه آزموده شود.
 
-```bash
-gh secret set KEYSTORE_B64 --repo Parsa-apps/Jazire-Fandoqi \
-  --body "$(base64 -w0 android/release.keystore.new)"
-gh secret set KEYSTORE_PASSWORD  --repo Parsa-apps/Jazire-Fandoqi --body '<رمز>'
-gh secret set KEY_ALIAS          --repo Parsa-apps/Jazire-Fandoqi --body 'fandoghi'
-gh secret set KEY_PASSWORD       --repo Parsa-apps/Jazire-Fandoqi --body '<رمز>'
-```
-(keystore فایل باینری است؛ به‌صورت base64 در secret می‌رود.)
-
-### ۵-۲. تغییر `key.properties` و `.gitignore` ⏳
-
-`key.properties` دیگر نباید وجود داشته باشد؛ `android/.gitignore` هم اضافه کند:
-```
-key.properties
-release.keystore
-*.keystore
-```
-
-### ۵-۳. تغییر workflow ⏳ (`.github/workflows/build-apk.yml`)
-
-الگویی که بعداً اعمال می‌شود (اسکلت پیشنهادی):
-
-```yaml
-      - name: Prepare signing config
-        if: env.KEYSTORE_B64 != ''
-        env:
-          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
-        run: |
-          echo "$KEYSTORE_B64" | base64 -d > android/release.keystore
-          cat > android/key.properties <<EOF
-          storeFile=release.keystore
-          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
-          keyAlias=${{ secrets.KEY_ALIAS }}
-          keyPassword=${{ secrets.KEY_PASSWORD }}
-          EOF
-```
-
-> نکتهٔ مهمِ طراحی build.gradle فعلی شما: وقتی `key.properties` نباشد، بیلد release در CI با `allowVerificationSigning` (چون `GITHUB_ACTIONS=true`) به امضای **debug** ساخته می‌شود و `EXPECTED_SIGNING_SHA256` خالی می‌ماند — یعنی build.gradle از قبل برای حالت «بدون کلید در ریپو» طراحی شده و فقط secrets بالا جای خالی را پر می‌کند. این طراحی خوب را حفظ کنید.
-
-### ۵-۴. تأیید امضای درست در CI ⏳
-
-بعد از بیلد، این دو خط را به workflow اضافه کنید تا اگر امضا اشتباه بود CI قرمز شود:
-
-```yaml
-      - name: Verify signature digest
-        run: |
-          keytool -printcert -jarfile build/app/outputs/flutter-apk/app-release.apk \
-            | grep -i "SHA256:" 
-          # هش چاپ‌شده باید با tools/print_cert_sha256.sh روی keystore جدید یکی باشد
-```
+برای چرخش، مالک باید با مایکت دربارهٔ امکان تعویض گواهی نسخهٔ منتشرشده تصمیم بگیرد. اگر کلید جدید تأیید شد، آن را خارج از Git بسازید و فقط Secrets را به‌روزرسانی کنید؛ رمز/فایل را در chat، log یا commit قرار ندهید. سپس CI را اجرا کنید و تطابق گواهی APK با secret، شروع برنامه، restore خرید و نصب update را روی دستگاه واقعی بررسی کنید. `build.gradle` و workflow فعلی signing release را الزامی می‌کنند؛ هرگونه استثنای debug/verification را برای تحویل حذف نکنید.
 
 ---
 
@@ -178,11 +133,12 @@ release.keystore
 - [ ] (A) keystore جدید ساخته شد و یک نسخهٔ بکاپ آفلاین امن از آن دارید — **گم شدن keystore یعنی دیگر هیچ‌وقت نمی‌توانید همان اپ را آپدیت کنید**
 - [ ] تاریخ git با `git filter-repo` پاک و force push شد
 - [ ] Clone تازه تأیید شد که فایل‌ها در تاریخ نیستند
-- [ ] Secrets در GitHub ثبت شد و workflow از آن‌ها می‌خواند
-- [ ] `EXPECTED_SIGNING_SHA256` بیلد release با هش گواهی جدید برابر است (`tools/print_cert_sha256.sh`)
-- [ ] یک بیلد آزمایشی روی گوشی واقعی: اپ اجرا می‌شود، TamperBlockScreen نمی‌آید، خرید/پین/بکاپ کار می‌کنند
+- [x] Secrets امضای فعلی در GitHub تنظیم شده‌اند و CI از آن‌ها build موفق گرفته است؛ این مورد به‌معنای سالم‌بودن کلید افشاشده نیست
+- [ ] `EXPECTED_SIGNING_SHA256` بیلد release با هش گواهیِ کلید جدید برابر است (`tools/print_cert_sha256.sh`)
+- [ ] یک بیلد با کلید جدید روی گوشی واقعی: اپ اجرا می‌شود، TamperBlockScreen نمی‌آید، خرید/پین/بکاپ کار می‌کنند
 - [ ] (B) اگر کلید قدیمی نگه داشته شد: برنامهٔ پایش ماهانهٔ نسخه‌های جعلی ثبت شد
-- [ ] یک بند «مدیریت اسرار بیلد» به `SECURITY_AUDIT_REPORT.md` یا `BUILD_INSTRUCTIONS.md` اضافه شد تا این اشتباه تکرار نشود
+- [x] هشدار مدیریت اسرار بیلد به `README.md` و `BUILD_INSTRUCTIONS.md` اضافه شد
+- [x] فایل‌های signing در شاخهٔ فعلی از Git خارج و ignore شده‌اند؛ تاریخ commitهای قبلی هنوز پاک نشده است
 
 ---
 

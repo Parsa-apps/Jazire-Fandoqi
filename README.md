@@ -2,7 +2,14 @@
 
 [![Build APK & AAB - جزیره فندقی v7.5](https://github.com/Parsa-apps/Jazire-Fandoqi/actions/workflows/build-apk.yml/badge.svg)](https://github.com/Parsa-apps/Jazire-Fandoqi/actions/workflows/build-apk.yml)
 
-## نسخه ۷.۵.۴+۲۶ — انتشار رسمی و پرداخت مایکت
+## نسخه ۷.۵.۶+۲۹ — رفع ایرادهای build و بهبود مسیر خرید
+
+- رفع خطاهای کامپایل Kotlin در PlatformView؛ ثبت WebView با API سازگار Flutter.
+- دکمهٔ خرید نسخهٔ کامل در نقشه و هاب‌ها؛ سرریز نوار بالای نقشه در گوشی باریک نیز پوشش تست دارد.
+- اجرای موفق Flutter analyze، کل تست‌ها، تست‌های native پرداخت، ساخت و راستی‌آزمایی امضای APK در CI روی commit `edf0f87`.
+- **هشدار امنیتی:** کلید امضا در تاریخ عمومی Git افشا شده است؛ فایل‌ها از درخت فعلی خارج شده‌اند اما تاریخ پاک نشده. APK فعلی را برای انتشار عمومی استفاده نکنید تا مسیر چرخش کلید با مایکت تعیین شود.
+
+## سابقهٔ نسخهٔ ۷.۵.۴+۲۶ — انتشار رسمی و پرداخت مایکت
 
 - طبق تأیید کاربر: **نصف هر مجموعه رایگان، نصف قفل**؛ قفل‌های پرداخت فقط با خرید تکمیل‌شدهٔ محصول `full_version` در مایکت باز می‌شوند.
 - هم امضای رسید و هم رسمی‌بودن APK انتشار بررسی می‌شود؛ debug/profile، APK تستی، امضای نامعتبر و رسید بازار دسترسی کامل نمی‌دهند.
@@ -228,17 +235,16 @@ flutter run
 برای اجرای کامل بررسی و بیلد از اسکریپت پروژه استفاده کنید:
 
 ```bash
-./build.sh                 # analyze، test و APK debug
-BUILD_MODE=release ./build.sh
+./build.sh  # فقط انتشار رسمی مایکت: analyze، test، APKهای split و AAB؛ کلید رسمی لازم است
 ```
 
-دستورات اصلی پایپ‌لاین:
+اسکریپت برای ساخت debug یا خروجی فروشگاه دیگر عمداً متوقف می‌شود. برای اجرای دستی مراحل:
 
 ```bash
 flutter analyze
 flutter test
-flutter build apk --release
-flutter build appbundle --release
+flutter build apk --release --flavor myket
+flutter build appbundle --release --flavor myket
 ```
 
 ## چک‌لیست پیش از انتشار
@@ -250,7 +256,7 @@ flutter build appbundle --release
    تطبیق داده شود.
 4. روی گوشی ضعیف و کوچک، رابط RTL، حالت شب، قطع اینترنت، بازگشت از پس‌زمینه و
    چرخش صفحه تست دستی انجام شود.
-5. پیش از انتشار، keystore واقعی در `android/key.properties` و کلید RSA بازار در `android/billing.properties` تنظیم شوند؛ ساخت release بدون امضای واقعی متوقف می‌شود.
+5. پیش از انتشار، امضای رسمی از Secrets/فایل محلی خارج از Git و کلید RSA مایکت در `android/billing.properties` تنظیم شوند؛ ساخت release بدون امضای واقعی متوقف می‌شود. **هشدار:** کلید قبلی در تاریخ عمومی Git افشا شده است؛ تا تعیین چرخش سازگار با مایکت، APK را برای انتشار عمومی/استوری استفاده نکنید (جزئیات: `KEYSTORE_ROTATION_GUIDE.md`).
 
 ## مستندات مرتبط
 
