@@ -16,6 +16,8 @@ import '../../core/learning_content/lullabies_data.dart';
 import '../../core/monetization.dart';
 import '../home/widgets/island_map/island_map_background.dart';
 import '../shop/full_version_paywall.dart';
+import '../shop/full_version_purchase_entry.dart';
+import '../shop/hub_purchase_button.dart';
 import 'lullaby_player_screen.dart';
 
 /// ═══════════════════════════════════════════════════════════════
@@ -186,7 +188,9 @@ class _LullabyHubScreenState extends State<LullabyHubScreen>
                   ),
                   padding: EdgeInsets.only(
                     top: topInset,
-                    bottom: MediaQuery.paddingOf(context).bottom + 34,
+                    // فاصلهٔ پایین، جای کارتِ شناورِ «خرید نسخهٔ کامل» را
+                    // نگه می‌دارد تا آخرین سکو زیرش پنهان نشود.
+                    bottom: MediaQuery.paddingOf(context).bottom + 92,
                   ),
                   child: _LullabyIslandMap(
                     width: constraints.maxWidth,
@@ -202,6 +206,19 @@ class _LullabyHubScreenState extends State<LullabyHubScreen>
                   ),
                 );
               },
+            ),
+          ),
+          // ── لایهٔ خرید: کارتِ «خرید نسخهٔ کامل» همیشه پایینِ صفحه است ──
+          // هماهنگ با کارتون‌کده و قصه‌خانه.
+          Positioned(
+            left: 12,
+            right: 12,
+            bottom: 12,
+            child: SafeArea(
+              top: false,
+              child: Center(
+                child: FullVersionPurchaseEntry(compact: true),
+              ),
             ),
           ),
           Positioned(
@@ -295,6 +312,9 @@ class _LullabyTopBar extends StatelessWidget {
                 ),
               ),
             ),
+            // دکمهٔ خریدِ همیشه‌نویدبار: هماهنگ با قصه‌خانه و کارتون‌کده.
+            const HubPurchaseChip(),
+            const SizedBox(width: 8),
             Container(
               constraints: const BoxConstraints(minWidth: 66),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),

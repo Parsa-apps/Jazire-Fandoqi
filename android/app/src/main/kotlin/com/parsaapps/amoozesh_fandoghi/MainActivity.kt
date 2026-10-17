@@ -1,5 +1,6 @@
 package com.parsaapps.amoozesh_fandoghi
 
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.net.Uri
@@ -7,6 +8,12 @@ import android.view.WindowManager
 import androidx.activity.result.contract.ActivityResultContracts
 import java.io.File
 import io.flutter.embedding.android.FlutterFragmentActivity
+import io.flutter.plugin.platform.PlatformViewFactory
+import io.flutter.plugin.platform.PlatformView
+import io.flutter.plugin.common.StandardMessageCodec
+import android.webkit.WebView
+import android.webkit.WebSettings
+import android.view.View
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.util.UUID
@@ -91,10 +98,8 @@ class MainActivity : FlutterFragmentActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         // 🌐 نمایش فایل‌های HTML پیوست‌شده (لایو والپیپر و اپ جادویی) داخل اپ
-        flutterEngine.platformViewsRegistry.registerViewFactory(
-            "html_webview",
-            HtmlWebViewFactory(applicationContext),
-        )
+        flutterEngine.platformViewsController.registry
+            .registerViewFactory("html_webview", HtmlWebViewFactory(applicationContext))
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
             .setMethodCallHandler { call, result ->
                 if (call.method in billingMethods && !productionBillingAllowed) {
@@ -340,5 +345,57 @@ class MainActivity : FlutterFragmentActivity() {
     override fun onDestroy() {
         if (myketClient.isInitialized()) myket.dispose()
         super.onDestroy()
+    }
+}
+
+
+/**
+ * یک PlatformView ساده که یک فایل HTML داخل assets فلاتر را در یک
+ * WebView اندرویدی نمایش می‌دهد (لایو والپیپر و اپ جادویی). کلاس‌ها
+ * عمداً همین‌جا کنار MainActivity هستند تا مرجعِ بین‌فایلیِ اضافه
+ * در سِت سورسِ کاتلین باقی نماند.
+ */
+class HtmlWebViewFactory(private val appContext: Context) :
+    PlatformViewFactory(StandardMessageCodec.INSTANCE) {
+    override fun create(context: Context, viewId: Int, args: Any?): PlatformView {
+        val params = args as? Map<*, *>
+        val assetPath = params?.get("assetPath") as? String ?: ""
+        return HtmlWebView(context, appContext, assetPath)
+    }
+}
+
+class HtmlWebView(
+    context: Context,
+    appContext: Context,
+    private val assetPath: String,
+) : PlatformView {
+    private val webView: WebView? = runCatching {
+        WebView(context).apply {
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
+            settings.allowFileAccess = true
+            settings.allowContentAccess = false
+            settings.blockNetworkLoads = true
+            settings.loadsImagesAutomatically = true
+            settings.cacheMode = WebSettings.LOAD_NO_CACHE
+            setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            val safePath = assetPath.trim()
+            if (safePath.startsWith("assets/web/") && !safePath.contains("..")) {
+                loadUrl("file:///android_asset/flutter_assets/$safePath")
+            }
+        }
+    }.getOrNull()
+
+    private val fallbackView: View by lazy {
+        View(appContext).apply {
+            setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        }
+    }
+
+    override fun getView(): View = webView ?: fallbackView
+
+    override fun dispose() {
+        webView?.stopLoading()
+        webView?.destroy()
     }
 }

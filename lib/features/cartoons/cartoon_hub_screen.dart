@@ -18,6 +18,8 @@ import 'package:jazireh_fandoghi/features/cartoons/cartoon_player_screen.dart';
 import 'package:jazireh_fandoghi/features/cartoons/widgets/cartoon_cover.dart';
 import 'package:jazireh_fandoghi/features/home/widgets/island_map/island_map_background.dart';
 import 'package:jazireh_fandoghi/features/shop/full_version_paywall.dart';
+import 'package:jazireh_fandoghi/features/shop/full_version_purchase_entry.dart';
+import 'package:jazireh_fandoghi/features/shop/hub_purchase_button.dart';
 import 'package:jazireh_fandoghi/shared/widgets/animated_gold_lock.dart';
 
 /// ═══════════════════════════════════════════════════════════════
@@ -203,7 +205,9 @@ class _CartoonHubScreenState extends State<CartoonHubScreen>
                   ),
                   padding: EdgeInsets.only(
                     top: topInset,
-                    bottom: MediaQuery.paddingOf(context).bottom + 34,
+                    // فاصلهٔ پایین، جای کارتِ شناورِ «خرید نسخهٔ کامل» را
+                    // نگه می‌دارد تا آخرین سکو زیرش پنهان نشود.
+                    bottom: MediaQuery.paddingOf(context).bottom + 92,
                   ),
                   child: _CartoonIslandMap(
                     width: constraints.maxWidth,
@@ -219,6 +223,20 @@ class _CartoonHubScreenState extends State<CartoonHubScreen>
                   ),
                 );
               },
+            ),
+          ),
+          // ── لایهٔ خرید: کارتِ «خرید نسخهٔ کامل» همیشه پایینِ صفحه است ──
+          // مثل نقشهٔ اصلی؛ نه با اسکرول می‌رود، نه راهِ نیمهٔ رایگان را
+          // می‌بندد. والد هر جای این صفحه که باشد، راهِ خرید جلوی چشمش است.
+          Positioned(
+            left: 12,
+            right: 12,
+            bottom: 12,
+            child: SafeArea(
+              top: false,
+              child: Center(
+                child: FullVersionPurchaseEntry(compact: true),
+              ),
             ),
           ),
           Positioned(
@@ -312,6 +330,10 @@ class _CartoonTopBar extends StatelessWidget {
                 ),
               ),
             ),
+            // دکمهٔ خریدِ همیشه‌نویدبار: والد بدون اسکرول و بدون لمسِ آیتمِ
+            // قفل، همین‌جا بالای صفحه راهِ نسخهٔ کامل را می‌بیند.
+            const HubPurchaseChip(),
+            const SizedBox(width: 8),
             Container(
               constraints: const BoxConstraints(minWidth: 66),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),

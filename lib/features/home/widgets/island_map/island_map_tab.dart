@@ -17,6 +17,7 @@ import '../../../../presentation/providers/game_state_provider.dart';
 import '../../../../shared/widgets/today_complete_sheet.dart';
 import '../../../profile/profile_editor.dart';
 import '../../../shop/full_version_purchase_entry.dart';
+import '../../../shop/hub_purchase_button.dart';
 import '../../../stage_map/stage_map_screen.dart';
 import '../daily_gifts_dialog.dart';
 import '../fandoqi_hub_sheet.dart';
@@ -236,6 +237,17 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
             right: 10,
             bottom: 22,
             child: SafeArea(top: false, child: _buildSideButtons()),
+          ),
+          // ── دکمهٔ طلایی «خرید نسخهٔ کامل» با هالهٔ نئونی، روی صفحهٔ اصلی ──
+          // بالای دکمه‌های کناری می‌نشیند تا در هیچ حالتی (حتی «کلاس روشن»)
+          // با سکوها و نوارهای بالا تصادم نکند؛ با اسکرول نقشه هم نمی‌رود.
+          const Positioned(
+            right: 10,
+            bottom: 142,
+            child: SafeArea(
+              top: false,
+              child: HubPurchaseChip(),
+            ),
           ),
 
           // ── لایهٔ ۴: نوار وضعیت ثابت بالای صفحه ──
@@ -676,12 +688,24 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _hubBubble(FandoqiHubs.math, 'ریاضی', 'bubble_math', bubbleW, 0.05),
-          _hubBubble(FandoqiHubs.lettersAndSounds, 'حروف', 'bubble_letters',
-              bubbleW, 0.30),
-          _hubBubble(
-              FandoqiHubs.science, 'علوم', 'bubble_science', bubbleW, 0.55),
-          _hubBubble(FandoqiHubs.art, 'هنر', 'bubble_art', bubbleW, 0.80),
+          // هر حباب انعطاف‌پذیر است: اگر برچسبِ پلاک در فونتِ دستگاهِ مقصد
+          // پهن‌تر از حباب شد، ردیفِ زیرِ آب کلوچ نمی‌زند.
+          Flexible(
+            child: _hubBubble(
+                FandoqiHubs.math, 'ریاضی', 'bubble_math', bubbleW, 0.05),
+          ),
+          Flexible(
+            child: _hubBubble(FandoqiHubs.lettersAndSounds, 'حروف',
+                'bubble_letters', bubbleW, 0.30),
+          ),
+          Flexible(
+            child: _hubBubble(
+                FandoqiHubs.science, 'علوم', 'bubble_science', bubbleW, 0.55),
+          ),
+          Flexible(
+            child: _hubBubble(
+                FandoqiHubs.art, 'هنر', 'bubble_art', bubbleW, 0.80),
+          ),
         ],
       ),
     );
@@ -794,9 +818,12 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        GestureDetector(
-          onTap: () => showProfileEditor(context),
-          child: Container(
+        // پروفایل انعطاف‌پذیر است: در گوشی‌های باریک متنِ سلام کوتاه می‌شود
+        // (سه‌نقطه) و دیگر هیچ‌وقت ردیفِ نوار بالا سرریز نمی‌کند.
+        Flexible(
+          child: GestureDetector(
+            onTap: () => showProfileEditor(context),
+            child: Container(
             padding: EdgeInsets.symmetric(
               horizontal: compact ? 4 : 10,
               vertical: compact ? 4 : 6,
@@ -848,13 +875,17 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
                 ),
                 if (!compact) ...[
                   const SizedBox(width: 8),
-                  Text(
-                    'سلام $childName!',
-                    style: AppFonts.kids(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.mapText,
-                      height: 1.2,
+                  Flexible(
+                    child: Text(
+                      'سلام $childName!',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppFonts.kids(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.mapText,
+                        height: 1.2,
+                      ),
                     ),
                   ),
                 ],
@@ -862,6 +893,8 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
             ),
           ),
         ),
+        ),
+        const SizedBox(width: 6),
         Row(
           children: [
             _statChip(

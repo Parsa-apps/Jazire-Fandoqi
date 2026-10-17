@@ -39,7 +39,6 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
   late int _currentEpIndex;
   bool _isPlaying = true;
   double _progress = 0.15;
-  int _secondsWatched = 0;
   Timer? _playbackTimer;
 
   // پخش‌کننده واقعی (لینک مستقیم از سرور آپارات / CDN ایران)
@@ -96,7 +95,6 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
           _durationMs = dur.inMilliseconds;
         });
         if (_controller!.value.isPlaying && !_childLock) {
-          _secondsWatched++;
           GameData.recordCartoonWatched(widget.cartoon.id, durationSeconds: 1);
         }
       }

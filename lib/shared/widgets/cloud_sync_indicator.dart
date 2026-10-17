@@ -25,15 +25,6 @@ class CloudSyncIndicator extends StatefulWidget {
 }
 
 class _CloudSyncIndicatorState extends State<CloudSyncIndicator> {
-  late final Stream<void> _syncStream;
-
-  @override
-  void initState() {
-    super.initState();
-    // تازه‌کردن هر ثانیه برای نمایش "دقیقه پیش"
-    _syncStream = Stream.periodic(const Duration(seconds: 1)).map((_) => null);
-  }
-
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(

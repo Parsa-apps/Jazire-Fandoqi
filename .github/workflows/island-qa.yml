@@ -168,11 +168,23 @@ jobs:
         run: |
           mkdir -p qa-gate-log
           set +e
-          (cd android && ./gradlew testMyketReleaseUnitTest --console=plain) > qa-gate-log/native-receipts.log 2>&1
+          (cd android && ./gradlew --no-daemon testMyketReleaseUnitTest --console=plain) > qa-gate-log/native-receipts.log 2>&1
           status=$?
           cat qa-gate-log/native-receipts.log
           if [ "$status" -ne 0 ]; then
             python3 tool/ci_annotate.py 'Native production tests failed' qa-gate-log/native-receipts.log
+            tail -n 12 qa-gate-log/native-receipts.log | cut -c1-160 > qa-gate-log/native-tail.log
+            python3 tool/ci_annotate.py 'Native tail (last 12)' qa-gate-log/native-tail.log
+            grep -E '^e: ' qa-gate-log/native-receipts.log | sed 's|file:///home/runner/work/Jazire-Fandoqi/Jazire-Fandoqi/||' | head -12 > qa-gate-log/kotlin-errors.log
+            python3 tool/ci_annotate.py 'Kotlin compile errors' qa-gate-log/kotlin-errors.log
+            # وضعیت سیستم هنگام مرگِ بی‌صدا: OOM یا دیسک؟
+            {
+              echo '── free ──'; free -h
+              echo '── df ──'; df -h / /home /tmp 2>/dev/null | head -6
+              echo '── oom/kill in dmesg ──'
+              (dmesg -T 2>/dev/null || sudo dmesg -T 2>/dev/null || journalctl -k --no-pager 2>/dev/null) | grep -iE "killed process|out of memory|oom" | tail -8
+            } > qa-gate-log/system-state.log 2>&1
+            python3 tool/ci_annotate.py 'System state at gradle death' qa-gate-log/system-state.log
           fi
           exit "$status"
 

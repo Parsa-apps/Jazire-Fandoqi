@@ -69,9 +69,9 @@ class PremiumAnimations {
     required VoidCallback onTap,
     double elevation = 8,
   }) {
+    bool isPressed = false;
     return StatefulBuilder(
       builder: (context, setState) {
-        bool isPressed = false;
         return GestureDetector(
           onTapDown: (_) => setState(() => isPressed = true),
           onTapUp: (_) => setState(() => isPressed = false),
@@ -104,9 +104,9 @@ class PremiumAnimations {
     required VoidCallback onPressed,
     Color? color,
   }) {
+    bool pressed = false;
     return StatefulBuilder(
       builder: (context, setState) {
-        bool pressed = false;
         return GestureDetector(
           onTapDown: (_) => setState(() => pressed = true),
           onTapUp: (_) => setState(() => pressed = false),

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:jazireh_fandoghi/shared/widgets/animated_gold_lock.dart';
-import '../../../app/app_colors.dart';
 
 /// ═══════════════════════════════════════════════
 /// 🎮 FLOATING PLATFORM — Professional Premium Design

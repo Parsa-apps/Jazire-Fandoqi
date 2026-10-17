@@ -9,7 +9,6 @@ import '../../../app/app_fonts.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
 import '../../../shared/widgets/child_touch_target.dart';
-import '../../../shared/widgets/fandoghi_premium.dart';
 
 /// ────────────────────────────────────────────────────────────
 /// 🏝️ ISLAND BUILDER PREMIUM V2 — پیشنهاد ۳۵ و ۵۵

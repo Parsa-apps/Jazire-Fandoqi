@@ -217,7 +217,6 @@ class PremiumStreakCalendar extends StatelessWidget {
   String _weekdayName(int indexFromStart) {
     // شنبه = 0 ... جمعه = 6 — ساده بر اساس امروز
     const names = ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'];
-    final todayWeekday = DateTime.now().weekday % 7; // شنبه 6؟ ساده
     // نمایش ساده: ۷ حرف متوالی
     return names[(indexFromStart) % 7];
   }

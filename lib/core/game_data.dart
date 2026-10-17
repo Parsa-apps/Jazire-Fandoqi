@@ -1183,11 +1183,9 @@ class GameData {
 
   static void recordCartoonWatched(String id, {int durationSeconds = 60}) {
     if (!_isLoaded || id.isEmpty) return;
-    var changed = false;
     if (!watchedCartoons.contains(id)) {
       watchedCartoons.add(id);
       coins = min(_maxStoredCounter, coins + 5);
-      changed = true;
     }
     cartoonWatchSeconds = min(_maxStoredCounter, cartoonWatchSeconds + durationSeconds);
     _autoAchieve();

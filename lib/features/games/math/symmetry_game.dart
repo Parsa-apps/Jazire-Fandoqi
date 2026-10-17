@@ -2,9 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 
-import '../../../app/app_colors.dart';
 import '../../../app/app_fonts.dart';
 import '../../../app/design_tokens.dart';
 import '../../../core/audio_service.dart';
@@ -13,7 +11,6 @@ import '../../../core/fandoghi_models.dart';
 import '../../../core/game_data.dart';
 import '../../../core/play_limit.dart';
 import '../../../shared/widgets/child_touch_target.dart';
-import '../../../shared/widgets/fandoghi_premium.dart';
 import '../../../shared/widgets/particle_celebration.dart';
 
 /// ────────────────────────────────────────────────────────────
