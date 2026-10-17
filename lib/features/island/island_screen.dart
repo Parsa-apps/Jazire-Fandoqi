@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
-import '../../app/app_colors.dart';
 import '../../core/audio_service.dart';
 import '../../core/game_data.dart';
 import '../../core/logger_service.dart';
@@ -58,8 +57,6 @@ class _IslandState extends State<LearningIsland>
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final responsiveScale = (screenWidth / 360).clamp(0.85, 1.3);
     final textScale = GameData.textScale.clamp(0.85, 1.4);
 
     return AnimatedBuilder(
@@ -370,22 +367,6 @@ class _IslandState extends State<LearningIsland>
   }
 
   // ─── FLOATING PLATFORMS ───────────────────
-  Widget _glassButton(IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.25),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withOpacity(0.2)),
-        ),
-        child: Icon(icon, color: Colors.white, size: 22),
-      ),
-    );
-  }
-
   Widget _buildPlatforms(BuildContext context) {
     final floatY = sin(_floatCtrl.value * pi) * 6;
     final h = MediaQuery.of(context).size.height;

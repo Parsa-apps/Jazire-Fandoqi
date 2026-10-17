@@ -91,7 +91,6 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
     _playerStateSub = null;
   }
 
-  ChildrenStoryPage get _currentPage => widget.story.pages[_currentPageIndex];
   bool get _isLastPage => _currentPageIndex == widget.story.pages.length - 1;
 
   Future<void> _playPageAudio(int pageIndex) async {

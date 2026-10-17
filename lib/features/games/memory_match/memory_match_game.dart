@@ -41,7 +41,6 @@ class _MemoryState extends State<MemoryMatchGame>
   // Game state
   late List<_CardData> _cards;
   int? _firstFlipped;
-  int? _secondFlipped;
   int _matches = 0;
   int _moves = 0;
   int _score = 0;
@@ -195,7 +194,6 @@ class _MemoryState extends State<MemoryMatchGame>
 
     setState(() {
       _firstFlipped = null;
-      _secondFlipped = null;
       _matches = 0;
       _moves = 0;
       _score = 0;
@@ -265,7 +263,6 @@ class _MemoryState extends State<MemoryMatchGame>
 
     setState(() {
       _cards[index].isFlipped = true;
-      _secondFlipped = index;
       _moves++;
       _busy = true;
       isMatch = _cards[firstIndex].emoji == _cards[index].emoji;
@@ -278,7 +275,6 @@ class _MemoryState extends State<MemoryMatchGame>
         _cards[firstIndex].isMatched = true;
         _cards[index].isMatched = true;
         _firstFlipped = null;
-        _secondFlipped = null;
         _busy = false;
         won = _matches == _cards.length ~/ 2;
       } else {
@@ -319,7 +315,6 @@ class _MemoryState extends State<MemoryMatchGame>
         _cards[firstIndex].isFlipped = false;
         _cards[index].isFlipped = false;
         _firstFlipped = null;
-        _secondFlipped = null;
         _busy = false;
       });
     });

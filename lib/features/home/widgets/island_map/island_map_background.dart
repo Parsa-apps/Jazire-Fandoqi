@@ -134,6 +134,9 @@ class _SkyOceanPainter extends CustomPainter {
       canvas.restore();
     }
     _paintDistantIslands(canvas, size, skyFade, ambientPhase);
+    if (ambientAnimation != null) {
+      _paintSailBoat(canvas, size, skyFade, ambientPhase);
+    }
     _paintWaves(canvas, size, ambientPhase);
     if (ambientAnimation != null) {
       _paintWaterGlimmers(canvas, size, ambientPhase);
@@ -360,6 +363,49 @@ class _SkyOceanPainter extends CustomPainter {
         palmPaint,
       );
     }
+  }
+
+  /// قایق بادبانی کوچک که آرام روی خط افق حرکت می‌کند (هماهنگ با لایو والپیپر)
+  void _paintSailBoat(
+    Canvas canvas,
+    Size size,
+    double fade,
+    double phase,
+  ) {
+    final horizonY = size.height * _horizon;
+    if (fade < 0.12 || horizonY < 16 || horizonY > size.height - 8) return;
+    final travel = (phase * 0.22 + 0.18) % 1.0;
+    final bx = travel * (size.width + 80) - 40;
+    final by = horizonY + 8 + sin(phase * 4 * pi) * 2.5;
+    final alpha = (cycle == DayCycle.night ? 0.55 : 0.85) * fade;
+
+    canvas.save();
+    canvas.translate(bx, by);
+
+    // بدنهٔ چوبی قایق
+    final hull = Path()
+      ..moveTo(-14, 0)
+      ..lineTo(14, 0)
+      ..lineTo(9, 8)
+      ..lineTo(-9, 8)
+      ..close();
+    canvas.drawPath(
+      hull,
+      Paint()..color = const Color(0xFFB45309).withOpacity(alpha),
+    );
+
+    // بادبان سفید
+    final sail = Path()
+      ..moveTo(0, -1)
+      ..lineTo(0, -18)
+      ..lineTo(12, -4)
+      ..close();
+    canvas.drawPath(
+      sail,
+      Paint()..color = Colors.white.withOpacity(alpha),
+    );
+
+    canvas.restore();
   }
 
   /// پرتوهای نورِ خورشید که وقتی کودک به عمق دریا می‌رسد، از سطح آب

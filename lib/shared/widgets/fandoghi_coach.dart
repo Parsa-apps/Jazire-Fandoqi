@@ -3,7 +3,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
 
 import '../../app/island_world_style.dart';
-import '../../core/audio_service.dart';
 import '../../core/fandoghi_coach.dart';
 import 'fandoghi_hazelnut_character.dart';
 

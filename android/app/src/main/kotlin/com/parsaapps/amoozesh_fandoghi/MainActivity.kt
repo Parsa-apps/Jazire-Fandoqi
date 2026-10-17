@@ -360,29 +360,42 @@ class HtmlWebViewFactory(private val appContext: Context) :
     override fun create(context: Context, viewId: Int, args: Any?): PlatformView {
         val params = args as? Map<*, *>
         val assetPath = params?.get("assetPath") as? String ?: ""
-        return HtmlWebView(appContext, assetPath)
+        return HtmlWebView(context, appContext, assetPath)
     }
 }
 
-class HtmlWebView(private val appContext: Context, private val assetPath: String) : PlatformView {
-    private val webView: WebView = WebView(appContext).apply {
-        settings.javaScriptEnabled = true
-        settings.domStorageEnabled = true
-        settings.allowFileAccess = true
-        settings.allowContentAccess = true
-        settings.loadsImagesAutomatically = true
-        settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-        settings.cacheMode = WebSettings.LOAD_DEFAULT
-        setBackgroundColor(android.graphics.Color.TRANSPARENT)
-        if (assetPath.isNotBlank()) {
-            loadUrl("file:///android_asset/flutter_assets/$assetPath")
+class HtmlWebView(
+    context: Context,
+    appContext: Context,
+    private val assetPath: String,
+) : PlatformView {
+    private val webView: WebView? = runCatching {
+        WebView(context).apply {
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
+            settings.allowFileAccess = true
+            settings.allowContentAccess = false
+            settings.blockNetworkLoads = true
+            settings.loadsImagesAutomatically = true
+            settings.cacheMode = WebSettings.LOAD_NO_CACHE
+            setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            val safePath = assetPath.trim()
+            if (safePath.startsWith("assets/web/") && !safePath.contains("..")) {
+                loadUrl("file:///android_asset/flutter_assets/$safePath")
+            }
+        }
+    }.getOrNull()
+
+    private val fallbackView: View by lazy {
+        View(appContext).apply {
+            setBackgroundColor(android.graphics.Color.TRANSPARENT)
         }
     }
 
-    override fun getView(): View = webView
+    override fun getView(): View = webView ?: fallbackView
 
     override fun dispose() {
-        webView.stopLoading()
-        webView.destroy()
+        webView?.stopLoading()
+        webView?.destroy()
     }
 }

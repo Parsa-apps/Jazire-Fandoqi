@@ -1,6 +1,5 @@
 import '../game_data.dart';
 import '../jalali_calendar.dart';
-import '../xp_system.dart';
 import 'growth_store.dart';
 import 'persian_digits.dart';
 

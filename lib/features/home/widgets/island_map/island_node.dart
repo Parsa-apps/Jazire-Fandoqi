@@ -880,14 +880,17 @@ class _BubbleNodeState extends State<BubbleNode>
           ),
         ],
       ),
-      child: Text(
-        widget.label,
-        maxLines: 1,
-        style: AppFonts.kids(
-          fontSize: fs,
-          fontWeight: FontWeight.w800,
-          color: const Color(0xFF2E4756),
-          height: 1.15,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          widget.label,
+          maxLines: 1,
+          style: AppFonts.kids(
+            fontSize: fs,
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF2E4756),
+            height: 1.15,
+          ),
         ),
       ),
     );

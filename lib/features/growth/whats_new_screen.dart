@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
-import '../../app/design_tokens.dart';
 import '../../core/growth/growth.dart';
 import '../../core/growth/whats_new.dart';
 

@@ -9,7 +9,6 @@ import '../../../core/achievement_system.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/fandoghi_coach.dart';
 import '../../../core/game_data.dart';
-import '../../../core/growth/growth.dart';
 import '../../../presentation/providers/game_state_provider.dart';
 import '../../../shared/widgets/premium_daily_missions.dart';
 import '../../../shared/widgets/premium_streak_calendar.dart';

@@ -875,15 +875,17 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
                 ),
                 if (!compact) ...[
                   const SizedBox(width: 8),
-                  Text(
-                    'سلام $childName!',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppFonts.kids(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.mapText,
-                      height: 1.2,
+                  Flexible(
+                    child: Text(
+                      'سلام $childName!',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppFonts.kids(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.mapText,
+                        height: 1.2,
+                      ),
                     ),
                   ),
                 ],
@@ -892,6 +894,7 @@ class _IslandMapTabState extends ConsumerState<IslandMapTab>
           ),
         ),
         ),
+        const SizedBox(width: 6),
         Row(
           children: [
             _statChip(

@@ -153,8 +153,6 @@ class _GlowingButtonState extends State<GlowingButton>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return AnimatedBuilder(
       animation: _pulseController,
       builder: (context, child) {

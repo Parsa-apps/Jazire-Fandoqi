@@ -165,7 +165,6 @@ class _LearningQuizGameState extends State<LearningQuizGame> {
 
   /// فاز ۱۹: اگر کودک ۳ ثانیه جواب ندهد، فندقی ملایم راهنمایی می‌کند.
   void _armNextHint() {
-    final question = _questions[_questionIndex];
     FandoghiCoach.armSmartHint(
       onHint: () {
         if (!mounted || _finished || _answerLocked) return;

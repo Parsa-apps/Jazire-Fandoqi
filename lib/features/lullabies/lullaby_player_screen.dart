@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:just_audio/just_audio.dart';
-import '../../app/app_colors.dart';
 import '../../app/app_fonts.dart';
 import '../../core/audio_service.dart';
 import '../../core/fandoghi_coach.dart';

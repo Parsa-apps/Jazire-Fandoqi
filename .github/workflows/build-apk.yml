@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       # A production release requires the official key. Missing credentials
       # fail the job; this workflow never falls back to a test/debug APK.
@@ -99,6 +101,8 @@ jobs:
             test/features/shop/content_lock_test.dart \
             test/features/shop/gold_lock_collections_test.dart \
             test/features/shop/full_version_purchase_entry_test.dart \
+            test/features/shop/hub_purchase_button_test.dart \
+            test/features/home/island_map_buy_button_test.dart \
             test/shared/widgets/animated_gold_lock_test.dart \
             test/shared/widgets/purchase_access_status_test.dart \
             > qa-gate-log/paywall-regression.log 2>&1
@@ -223,3 +227,31 @@ jobs:
         with:
           name: jazire_fandoqi_v7.5.6_myket_production_aab
           path: build/app/outputs/bundle/myketRelease/app-myket-release.aab
+
+      - name: Publish GitHub Release (APK & AAB)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="v7.5.6"
+          APK="build/app/outputs/flutter-apk/app-myket-release.apk"
+          AAB="build/app/outputs/bundle/myketRelease/app-myket-release.aab"
+          INFO="build/app/outputs/flutter-apk/build-info.txt"
+          cp "$APK" "jazire-fandoqi-v7.5.6-myket-release.apk"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" \
+              "$APK" \
+              "jazire-fandoqi-v7.5.6-myket-release.apk" \
+              "$AAB" \
+              "$INFO" \
+              --clobber
+          else
+            gh release create "$TAG" \
+              "$APK" \
+              "jazire-fandoqi-v7.5.6-myket-release.apk" \
+              "$AAB" \
+              "$INFO" \
+              --title "جزیره فندقی v7.5.6+29 — نسخهٔ انتشار رسمی مایکت (APK + AAB)" \
+              --notes-file RELEASE_NOTES.md \
+              --latest
+          fi
