@@ -10,7 +10,8 @@ class AppLegal {
   static const String telegramHandle = '@Parsaappsadmin';
   static const String telegramUrl = 'https://t.me/Parsaappsadmin';
   /// مشخصات وب‌سایت ناشر فقط برای اسناد انتشار بیرونی است؛ رابط کاربری
-  /// اپ (به‌ویژه بیلد مایکت) نباید کاربر را به این آدرس بفرستد.
+  /// هیچ بیلد فروشگاهی نباید والد را به این آدرس بفرستد (قانون هر دو
+  /// بازار)؛ به‌جایش نام و لینک همان فروشگاه نشان داده می‌شود.
   static const String websiteName = 'سایت پارسا اپس';
   static const String websiteAddress = 'parsa-apps.github.io';
   static const String websiteUrl = 'https://parsa-apps.github.io';

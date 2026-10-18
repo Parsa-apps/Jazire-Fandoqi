@@ -50,7 +50,7 @@ data class BillingOutcome(
 
         fun untrustedBuild() = BillingOutcome(
             false,
-            message = "خرید و فعال‌سازی فقط در نسخهٔ رسمی انتشار مایکت امکان‌پذیر است",
+            message = "خرید و فعال‌سازی فقط در نسخهٔ رسمی انتشار فروشگاه امکان‌پذیر است",
             status = "untrusted_build",
         )
 

@@ -24,23 +24,26 @@ class ProductionBillingPolicyTest {
         )
     }
 
-    private fun receipt() = BillingOutcome(
+    private fun receipt(store: String = "myket") = BillingOutcome(
         success = true, token = "native-test-token", status = "verified",
-        productId = "full_version", store = "myket", purchaseState = 0,
+        productId = "full_version", store = store, purchaseState = 0,
         signedData = "native-verified-data", signature = "native-verified-signature",
     )
 
     @Test
-    fun onlyOfficialMyketReleaseCanUseBilling() {
+    fun eachOfficialStoreFlavorCanUseItsOwnBilling() {
         assertTrue(BuildIdentity().allowed())
+        assertTrue(BuildIdentity(channel = "bazaar").allowed())
         assertTrue(BuildIdentity(actual = "A".repeat(64)).allowed())
     }
 
     @Test
     fun debugAndProfileBuildsAreAlwaysDenied() {
-        assertFalse(BuildIdentity(buildType = "debug").allowed())
-        assertFalse(BuildIdentity(buildType = "profile").allowed())
-        assertFalse(BuildIdentity(debuggable = true).allowed())
+        for (channel in listOf("bazaar", "myket")) {
+            assertFalse(BuildIdentity(channel = channel, buildType = "debug").allowed())
+            assertFalse(BuildIdentity(channel = channel, buildType = "profile").allowed())
+            assertFalse(BuildIdentity(channel = channel, debuggable = true).allowed())
+        }
     }
 
     @Test
@@ -62,20 +65,23 @@ class ProductionBillingPolicyTest {
     }
 
     @Test
-    fun anotherStoreOrUnknownBuildChannelIsDenied() {
-        for (channel in listOf("bazaar", "unknown", "", "MYKET")) {
+    fun unknownOrMalformedBuildChannelIsDenied() {
+        for (channel in listOf("unknown", "", "MYKET", "BAZAAR", "google", "bazaar ")) {
             assertFalse(BuildIdentity(channel = channel).allowed())
         }
     }
 
     @Test
-    fun missingMyketPublicKeyIsDenied() {
-        assertFalse(BuildIdentity(keyConfigured = false).allowed())
+    fun missingStorePublicKeyIsDenied() {
+        for (channel in listOf("bazaar", "myket")) {
+            assertFalse(BuildIdentity(channel = channel, keyConfigured = false).allowed())
+        }
     }
 
     @Test
-    fun configuredMyketKeyIsAnActualRsaPublicKey() {
-        val encoded = Base64.getDecoder().decode(BuildConfig.MYKET_RSA_PUBLIC_KEY)
+    fun configuredStoreKeyIsAnActualRsaPublicKey() {
+        // Each flavor embeds only its own store's public key in this field.
+        val encoded = Base64.getDecoder().decode(BuildConfig.STORE_RSA_PUBLIC_KEY)
         val key = KeyFactory.getInstance("RSA")
             .generatePublic(X509EncodedKeySpec(encoded)) as RSAPublicKey
         assertTrue(key.modulus.bitLength() >= 1024)
@@ -83,21 +89,36 @@ class ProductionBillingPolicyTest {
 
     @Test
     fun verifiedReceiptInAnUntrustedBuildStillCannotUnlock() {
-        val blocked = ProductionBillingPolicy.protect(receipt(), allowed = false)
-        assertFalse(blocked.success)
-        assertFalse(blocked.releaseVerified)
-        assertEquals("untrusted_build", blocked.status)
+        for (store in listOf("bazaar", "myket")) {
+            val blocked = ProductionBillingPolicy.protect(
+                receipt(store), allowed = false, expectedStore = store,
+            )
+            assertFalse(blocked.success)
+            assertFalse(blocked.releaseVerified)
+            assertEquals("untrusted_build", blocked.status)
+        }
     }
 
     @Test
-    fun bridgeAttestsOnlyVerifiedMyketReceiptInOfficialRelease() {
-        val approved = ProductionBillingPolicy.protect(receipt(), allowed = true)
-        assertTrue(approved.success)
-        assertTrue(approved.releaseVerified)
-        assertEquals(true, approved.toMap()["releaseVerified"])
-        val bazaar = ProductionBillingPolicy.protect(receipt().copy(store = "bazaar"), true)
-        assertFalse(bazaar.success)
-        assertFalse(bazaar.releaseVerified)
+    fun bridgeAttestsOnlyVerifiedReceiptOfTheSameStore() {
+        val myket = ProductionBillingPolicy.protect(receipt(), true, "myket")
+        assertTrue(myket.success)
+        assertTrue(myket.releaseVerified)
+        assertEquals(true, myket.toMap()["releaseVerified"])
+
+        val bazaar = ProductionBillingPolicy.protect(receipt("bazaar"), true, "bazaar")
+        assertTrue(bazaar.success)
+        assertTrue(bazaar.releaseVerified)
+
+        // Cross-store replay is never an entitlement.
+        for (outcome in listOf(
+            ProductionBillingPolicy.protect(receipt("bazaar"), true, "myket"),
+            ProductionBillingPolicy.protect(receipt("myket"), true, "bazaar"),
+        )) {
+            assertFalse(outcome.success)
+            assertFalse(outcome.releaseVerified)
+            assertEquals("invalid_receipt", outcome.status)
+        }
     }
 
     @Test
@@ -107,8 +128,9 @@ class ProductionBillingPolicyTest {
             receipt().copy(signedData = null),
             receipt().copy(token = ""),
             receipt().copy(purchaseState = 1),
+            receipt().copy(store = ""),
         )) {
-            assertFalse(ProductionBillingPolicy.protect(incomplete, true).success)
+            assertFalse(ProductionBillingPolicy.protect(incomplete, true, "myket").success)
         }
     }
 
@@ -122,7 +144,7 @@ class ProductionBillingPolicyTest {
     @Test
     fun consumptionCompletionIsNotAFullVersionReceipt() {
         val consumed = ProductionBillingPolicy.protect(
-            BillingOutcome.success(message = "consumed"), true,
+            BillingOutcome.success(message = "consumed"), true, "myket",
         )
         assertTrue(consumed.success)
         assertFalse(consumed.releaseVerified)

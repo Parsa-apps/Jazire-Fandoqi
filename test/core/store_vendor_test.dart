@@ -121,11 +121,24 @@ void main() {
   });
 
   group('billing availability', () {
-    test('only Myket can take a payment in the production release', () {
-      expect(StoreVendor.bazaar.supportsBilling, isFalse);
+    test('each store-isolated build can take its own payment', () {
+      // هر flavor فقط با درگاه فروشگاه خودش ساخته می‌شود؛ هر دو فروشگاه
+      // رسمی مجازند، ولی نصب مستقیم/ناشناخته هیچ درگاهی ندارد.
+      expect(StoreVendor.bazaar.supportsBilling, isTrue);
       expect(StoreVendor.myket.supportsBilling, isTrue);
-      // بدون فروشگاه، خرید باید محترمانه رد شود نه اینکه خطای مبهم بدهد.
       expect(StoreVendor.unknown.supportsBilling, isFalse);
+    });
+
+    test('store slugs match the native channel and receipt values', () {
+      expect(StoreVendor.bazaar.slug, 'bazaar');
+      expect(StoreVendor.myket.slug, 'myket');
+      expect(StoreVendor.unknown.slug, '');
+      expect(StoreVendor.isSupportedStoreSlug('bazaar'), isTrue);
+      expect(StoreVendor.isSupportedStoreSlug('myket'), isTrue);
+      for (final invalid in <String?>[null, '', 'BAZAAR', 'Myket', 'google']) {
+        expect(StoreVendor.isSupportedStoreSlug(invalid), isFalse,
+            reason: '$invalid');
+      }
     });
 
     test('the package constants match the official store ids', () {

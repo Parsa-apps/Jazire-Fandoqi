@@ -18,9 +18,13 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.util.UUID
 
-/** Production-only Myket billing. Legacy store links are kept for support,
- * but no alternate store, debug/profile APK or unsigned verification build
- * can purchase, restore or validate an offline full-version entitlement.
+/**
+ * پل بومی پرداخت برای هر دو بیلد فروشگاه‌محور.
+ *
+ * هر flavor فقط SDK فروشگاه خودش را کامپایل می‌کند ([BillingProvider])، اما
+ * این کلاس مشترک است و هیچ نامی از SDK یا فروشگاه رقیب نمی‌برد. هیچ APK
+ * دیباگ/profile، بیلد بدون امضای رسمی یا رسید فروشگاهِ دیگر نمی‌تواند خرید،
+ * بازیابی یا دسترسی آفلاین نسخهٔ کامل بسازد.
  */
 class MainActivity : FlutterFragmentActivity() {
     private val channelName = "kudake_iran/billing"
@@ -30,7 +34,7 @@ class MainActivity : FlutterFragmentActivity() {
         StoreReceiptVerifier(
             applicationContext.packageName,
             mapOf(
-                StoreVendor.MYKET to BuildConfig.MYKET_RSA_PUBLIC_KEY,
+                vendor to BillingProvider.storePublicKey,
             ),
         )
     }
@@ -62,14 +66,15 @@ class MainActivity : FlutterFragmentActivity() {
             testOnly = (flags and ApplicationInfo.FLAG_TEST_ONLY) != 0,
             expectedSigner = BuildConfig.EXPECTED_SIGNING_SHA256,
             actualSigner = SecurityModule(applicationContext).signingCertificateSha256(),
-            myketKeyConfigured = BuildConfig.MYKET_RSA_PUBLIC_KEY.isNotBlank(),
+            storeKeyConfigured = BillingProvider.storePublicKey.isNotBlank() &&
+                vendor != StoreVendor.UNKNOWN,
         )
     }
     private val billingMethods = setOf("purchase", "consume", "restore", "verifyReceipt")
-    private val myketClient = lazy(LazyThreadSafetyMode.NONE) {
-        MyketBilling(applicationContext, BuildConfig.MYKET_RSA_PUBLIC_KEY)
+    private val billingClient = lazy(LazyThreadSafetyMode.NONE) {
+        BillingProvider.create(this)
     }
-    private val myket: MyketBilling by myketClient
+    private val billing: StoreBilling by billingClient
 
     private val backupPicker = registerForActivityResult(
         ActivityResultContracts.OpenDocument(),
@@ -123,7 +128,7 @@ class MainActivity : FlutterFragmentActivity() {
                             BillingOutcome.invalidReceipt()
                         }
                         result.success(ProductionBillingPolicy.protect(
-                            outcome, productionBillingAllowed,
+                            outcome, productionBillingAllowed, vendor.name.lowercase(),
                         ).toMap())
                     }
                     // Flutter از این برای انتخاب متن/رفتار مناسب استفاده می‌کند.
@@ -225,7 +230,7 @@ class MainActivity : FlutterFragmentActivity() {
         purchaseInProgress = true
         // پاسخ فقط یک‌بار به Flutter برمی‌گردد، حتی اگر SDK دوبار callback بزند.
         val reply = singleReply(result) { purchaseInProgress = false }
-        myket.purchase(this, productId, payload, reply)
+        billing.purchase(this, activityResultRegistry, productId, payload, reply)
     }
 
     private fun consume(arguments: Map<*, *>?, result: MethodChannel.Result) {
@@ -235,12 +240,12 @@ class MainActivity : FlutterFragmentActivity() {
             return
         }
         val reply = singleReply(result)
-        myket.consume(token, reply)
+        billing.consume(token, reply)
     }
 
     private fun restore(result: MethodChannel.Result) {
         val reply = singleReply(result)
-        myket.restore(fullVersionProductId, reply)
+        billing.restore(fullVersionProductId, reply)
     }
 
     /**
@@ -259,7 +264,7 @@ class MainActivity : FlutterFragmentActivity() {
                 onFirst()
                 runOnUiThread {
                     result.success(ProductionBillingPolicy.protect(
-                        outcome, productionBillingAllowed,
+                        outcome, productionBillingAllowed, vendor.name.lowercase(),
                     ).toMap())
                 }
             }
@@ -343,7 +348,7 @@ class MainActivity : FlutterFragmentActivity() {
     private fun failure(message: String) = mapOf("success" to false, "message" to message)
 
     override fun onDestroy() {
-        if (myketClient.isInitialized()) myket.dispose()
+        if (billingClient.isInitialized()) billing.dispose()
         super.onDestroy()
     }
 }

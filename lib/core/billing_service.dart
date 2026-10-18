@@ -52,12 +52,15 @@ class BillingResult {
   final String? signature;
   final bool releaseVerified;
 
+  /// رسید معتبر یکی از فروشگاه‌های رسمی. هر بیلد فقط رسید فروشگاه خودش را
+  /// می‌پذیرد؛ تطبیق نهایی با کانال ساخت در لایهٔ نیتیو انجام می‌شود
+  /// (`verifyReceipt` و `ProductionBillingPolicy`).
   bool get hasStoreReceipt =>
       success &&
       releaseVerified &&
       status == BillingStatus.verified &&
       purchaseState == 0 &&
-      store == 'myket' &&
+      StoreVendor.isSupportedStoreSlug(store) &&
       (productId?.trim().isNotEmpty ?? false) &&
       (signedData?.trim().isNotEmpty ?? false) &&
       (signature?.trim().isNotEmpty ?? false) &&
@@ -67,11 +70,12 @@ class BillingResult {
   bool hasReceiptFor(String expectedProductId) =>
       hasStoreReceipt && productId == expectedProductId;
 
-  bool get hasMyketFullVersionReceipt =>
-      hasReceiptFor(BillingService.fullVersionProductId) && store == 'myket';
+  bool get hasFullVersionReceipt =>
+      hasReceiptFor(BillingService.fullVersionProductId);
 }
 
-/// Production Myket billing bridge. Native validates the APK's release
+/// Store-isolated billing bridge. Each build ships exactly one gateway
+/// (Bazaar/Poolakey or Myket) and native code validates the APK's release
 /// certificate before purchase, restore or offline receipt verification.
 /// A completed purchase needs signed data, product/package/state validation
 /// and native release attestation; debug/demo/local flags never unlock it.
@@ -114,9 +118,9 @@ class BillingService {
     required String signature,
     required String store,
   }) async {
-    if (store != 'myket') {
+    if (!StoreVendor.isSupportedStoreSlug(store)) {
       return const BillingResult.failure(
-        'نسخهٔ کامل فقط با رسید معتبر مایکت فعال می‌شود',
+        'نسخهٔ کامل فقط با رسید معتبر فروشگاه فعال می‌شود',
         status: BillingStatus.invalidReceipt,
       );
     }
@@ -187,7 +191,7 @@ class BillingService {
     final vendor = await StoreDetector.detect();
     if (!vendor.supportsBilling) {
       return const BillingResult.failure(
-        'خرید و فعال‌سازی فقط در نسخهٔ رسمی انتشار مایکت امکان‌پذیر است',
+        'خرید و فعال‌سازی فقط در نسخهٔ رسمی انتشار فروشگاه امکان‌پذیر است',
         status: BillingStatus.untrustedBuild,
       );
     }

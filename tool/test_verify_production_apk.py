@@ -5,16 +5,21 @@ from verify_production_apk import ProductionApkError, verify
 
 
 class ProductionApkVerificationTest(unittest.TestCase):
-    def inputs(self):
+    def inputs(self, store="myket"):
+        permission = (
+            "com.farsitel.bazaar.permission.PAY_THROUGH_BAZAAR"
+            if store == "bazaar" else "ir.mservices.market.BILLING"
+        )
         return dict(
             pubspec="version: 7.5.4+26\n",
-            badging=("package: name='com.parsaapps.amoozesh_fandoghi' "
-                     "versionCode='26' versionName='7.5.4'\n"
-                     "uses-permission: name='ir.mservices.market.BILLING'\n"),
+            badging=(f"package: name='com.parsaapps.amoozesh_fandoghi' "
+                     f"versionCode='26' versionName='7.5.4'\n"
+                     f"uses-permission: name='{permission}'\n"),
             manifest="A: android:debuggable(0x0101000f)=(type 0x12)0x0\n",
             signature=("Signer #1 certificate DN: CN=Fandoghi\n"
                        "Signer #1 certificate SHA-256 digest: " + "a" * 64 + "\n"),
             expected_signer="a" * 64,
+            store=store,
         )
 
     def rejected(self, **changes):
@@ -24,6 +29,7 @@ class ProductionApkVerificationTest(unittest.TestCase):
 
     def test_official_release_is_accepted(self):
         self.assertEqual(verify(**self.inputs())["store"], "myket")
+        self.assertEqual(verify(**self.inputs("bazaar"))["store"], "bazaar")
 
     def test_debuggable_apk_is_rejected(self):
         self.rejected(badging=self.inputs()["badging"] + "application-debuggable\n")
@@ -60,10 +66,17 @@ class ProductionApkVerificationTest(unittest.TestCase):
         self.rejected(badging=self.inputs()["badging"].replace("versionName='7.5.4'", "versionName='7.5.3'"))
         self.rejected(badging=self.inputs()["badging"].replace("amoozesh_fandoghi", "another_app"))
 
-    def test_wrong_store_or_missing_myket_permission_is_rejected(self):
-        self.rejected(badging=self.inputs()["badging"].replace("ir.mservices.market.BILLING", "other.BILLING"))
+    def test_wrong_store_or_missing_permission_is_rejected(self):
+        self.rejected(badging=self.inputs()["badging"].replace(
+            "ir.mservices.market.BILLING", "other.BILLING"))
         self.rejected(badging=self.inputs()["badging"] +
                       "uses-permission: name='com.farsitel.bazaar.permission.PAY_THROUGH_BAZAAR'\n")
+        # A Bazaar artifact must carry only Bazaar's billing permission.
+        self.rejected(badging=self.inputs("bazaar")["badging"].replace(
+            "com.farsitel.bazaar.permission.PAY_THROUGH_BAZAAR", "other.BILLING"))
+        self.rejected(badging=self.inputs("bazaar")["badging"] +
+                      "uses-permission: name='ir.mservices.market.BILLING'\n")
+        self.rejected(store="google")
 
 
 if __name__ == "__main__":

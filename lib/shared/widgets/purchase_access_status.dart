@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/monetization.dart';
+import '../../core/store_policy.dart';
 
 /// A safe support diagnostic: why access is free/full, never receipt contents,
 /// order IDs, tokens, signatures, PINs or other private purchase information.
@@ -17,13 +18,13 @@ class PurchaseAccessStatus extends StatelessWidget {
           FullVersionAccessStatus.free =>
             'نسخهٔ رایگان؛ خرید تأییدشده‌ای در فروشگاه پیدا نشد.',
           FullVersionAccessStatus.untrustedBuild =>
-            'فعال‌سازی فقط در نسخهٔ رسمی انتشار مایکت امکان‌پذیر است.',
+            StorePolicy.untrustedBuildNotice,
           FullVersionAccessStatus.needsRestore =>
             'مجوز قبلی قابل تأیید نیست. اگر خریده‌اید، «بازیابی خرید نسخهٔ کامل» را بزنید.',
           FullVersionAccessStatus.storeVerified =>
-            'نسخهٔ کامل؛ رسید امضاشدهٔ مایکت تأیید شد.',
+            StorePolicy.receiptVerifiedNotice,
           FullVersionAccessStatus.offlineVerified =>
-            'نسخهٔ کامل آفلاین؛ امضای رسید مایکت ذخیره‌شده تأیید شد.',
+            StorePolicy.offlineReceiptVerifiedNotice,
         };
         return Semantics(
           liveRegion: true,

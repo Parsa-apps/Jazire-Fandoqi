@@ -20,6 +20,7 @@ import 'core/growth/growth.dart';
 import 'core/logger_service.dart';
 import 'core/xp_system.dart';
 import 'core/security/security_hardening.dart';
+import 'core/store_vendor.dart';
 import 'features/about/about_screen.dart';
 import 'features/about/privacy_policy_screen.dart';
 import 'features/buddy/buddy_chat_screen.dart';
@@ -175,6 +176,9 @@ Future<void> main() async {
   // بنابراین حتی اگر کودک فوراً دکمه‌ای بزند صدا از دست نمی‌رود.
   WidgetsBinding.instance.addPostFrameCallback((_) {
     unawaited(AudioService.init());
+    // فروشگاه همین بیلد را از قبل تشخیص بده تا متن‌های پرداخت از اولین
+    // باز شدن پی‌وال نام درست (کافه‌بازار/مایکت) را نشان بدهند.
+    unawaited(StoreDetector.detect());
   });
 }
 

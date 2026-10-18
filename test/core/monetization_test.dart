@@ -265,18 +265,39 @@ void main() {
     expect(store.values['entitlement.receipt_token'], isNull);
   });
 
-  test('a Bazaar receipt cannot activate the full version even if signed',
-      () async {
-    StoreDetector.debugOverride(StoreVendor.bazaar);
-    store.purchaseResponse = <String, Object?>{
-      ...PaywallTestStore.verifiedPurchase, 'store': 'bazaar',
-    };
+  test('a Bazaar receipt cannot activate the Myket build', () async {
+    // Default test vendor is Myket; a receipt from the other market must
+    // never cross the store-isolation boundary.
+    store.purchaseResponse = PaywallTestStore.verifiedPurchaseFor('bazaar');
     store.restoreResponse = store.purchaseResponse;
     expect(await Monetization.purchaseFullVersion(), isFalse);
     expect(await Monetization.restoreFullVersion(), isFalse);
     expect(await Monetization.hasFullVersion(), isFalse);
-    expect(store.calls, isNot(contains('purchase')));
-    expect(store.calls, isNot(contains('verifyReceipt')));
+    expect(store.values, isEmpty);
+  });
+
+  test('a verified Bazaar purchase unlocks the Bazaar build and works offline',
+      () async {
+    store.storeName = 'bazaar';
+    StoreDetector.debugOverride(StoreVendor.bazaar);
+    store.purchaseResponse = PaywallTestStore.verifiedPurchaseFor('bazaar');
+    expect(await Monetization.purchaseFullVersion(), isTrue);
+    expect(Monetization.accessStatus.value, FullVersionAccessStatus.storeVerified);
+    expect(store.values[Monetization.signedReceiptKey], contains('"store":"bazaar"'));
+
+    SecureStore.resetForTesting();
+    Monetization.resetForTesting();
+    store.offline = true;
+    expect(await Monetization.hasFullVersion(), isTrue);
+    expect(Monetization.accessStatus.value, FullVersionAccessStatus.offlineVerified);
+    expect(store.calls, contains('verifyReceipt'));
+  });
+
+  test('a Myket receipt cannot unlock the Bazaar build', () async {
+    store.storeName = 'bazaar';
+    StoreDetector.debugOverride(StoreVendor.bazaar);
+    store.purchaseResponse = PaywallTestStore.verifiedPurchase;
+    expect(await Monetization.purchaseFullVersion(), isFalse);
     expect(store.values, isEmpty);
   });
 

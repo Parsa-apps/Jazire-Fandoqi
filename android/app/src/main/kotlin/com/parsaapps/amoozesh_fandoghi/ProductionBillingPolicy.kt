@@ -1,8 +1,16 @@
 package com.parsaapps.amoozesh_fandoghi
 
-/** No debug, profile, test-only, unsigned or other-store build can grant access. */
+/**
+ * سیاست واحد انتشار: هیچ APK دیباگ/تست‌تنها/بدون امضای رسمی و هیچ رسید
+ * فروشگاهِ دیگر نمی‌تواند دسترسی نسخهٔ کامل بسازد.
+ *
+ * هر flavor فقط کانال خودش را مجاز می‌داند (`bazaar` یا `myket`) و کلید
+ * عمومی همان فروشگاه باید پیکربندی شده باشد. نتیجهٔ SDK هم باید دقیقاً
+ * متعلق به همان کانال باشد؛ رسید بازار در بیلد مایکت (و برعکس) رد می‌شود.
+ */
 internal object ProductionBillingPolicy {
     const val FULL_VERSION_PRODUCT_ID = "full_version"
+    private val supportedChannels = setOf("bazaar", "myket")
     private val certificateDigest = Regex("[0-9a-fA-F]{64}")
 
     fun allowsBilling(
@@ -12,9 +20,9 @@ internal object ProductionBillingPolicy {
         testOnly: Boolean,
         expectedSigner: String,
         actualSigner: String,
-        myketKeyConfigured: Boolean,
-    ): Boolean = channel == "myket" && buildType == "release" &&
-        !debuggable && !testOnly && myketKeyConfigured &&
+        storeKeyConfigured: Boolean,
+    ): Boolean = channel in supportedChannels && buildType == "release" &&
+        !debuggable && !testOnly && storeKeyConfigured &&
         certificateDigest.matches(expectedSigner) &&
         certificateDigest.matches(actualSigner) &&
         expectedSigner.equals(actualSigner, ignoreCase = true)
@@ -25,12 +33,20 @@ internal object ProductionBillingPolicy {
     /** Only the native bridge can attest the installed release. Receipt RSA
      * verification alone (e.g. in an unsigned QA build) is not an entitlement.
      */
-    fun protect(outcome: BillingOutcome, allowed: Boolean): BillingOutcome {
+    fun protect(
+        outcome: BillingOutcome,
+        allowed: Boolean,
+        expectedStore: String,
+    ): BillingOutcome {
         if (!allowed) return BillingOutcome.untrustedBuild()
         if (outcome.success && outcome.status == "verified") {
-            if (outcome.store != "myket" || outcome.purchaseState != 0 ||
-                outcome.productId.isNullOrBlank() || outcome.token.isNullOrBlank() ||
-                outcome.signedData.isNullOrBlank() || outcome.signature.isNullOrBlank()
+            if (expectedStore !in supportedChannels ||
+                outcome.store != expectedStore ||
+                outcome.purchaseState != 0 ||
+                outcome.productId.isNullOrBlank() ||
+                outcome.token.isNullOrBlank() ||
+                outcome.signedData.isNullOrBlank() ||
+                outcome.signature.isNullOrBlank()
             ) {
                 return BillingOutcome.invalidReceipt()
             }

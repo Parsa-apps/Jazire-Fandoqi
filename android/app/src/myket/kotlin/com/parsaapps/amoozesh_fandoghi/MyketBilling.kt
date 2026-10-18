@@ -2,6 +2,7 @@ package com.parsaapps.amoozesh_fandoghi
 
 import android.app.Activity
 import android.content.Context
+import androidx.activity.result.ActivityResultRegistry
 import ir.myket.billingclient.IabHelper
 import ir.myket.billingclient.util.IabResult
 import ir.myket.billingclient.util.Purchase
@@ -9,14 +10,17 @@ import ir.myket.billingclient.util.Purchase
 /**
  * 🏪 درگاه پرداخت مایکت.
  *
- * هم‌شکلِ [BazaarBilling] عمل می‌کند تا [MainActivity] بدون دانستن نام
- * فروشگاه فقط یکی از این دو را صدا بزند.
+ * قرارداد مشترک [StoreBilling] را پیاده می‌کند تا [MainActivity] بدون
+ * دانستن نام SDK فقط همین درگاه را صدا بزند.
  *
  * نکتهٔ مهم امنیتی: کلید عمومی RSA در سازندهٔ [IabHelper] داده می‌شود و
  * خود SDK امضای رسید را محلی بررسی می‌کند. اگر کلید خالی باشد، پرداخت
  * راه‌اندازی نمی‌شود (مثل رفتار Poolakey در سمت کافه‌بازار).
  */
-class MyketBilling(context: Context, private val publicKey: String) {
+class MyketBilling(
+    context: Context,
+    override val publicKey: String,
+) : StoreBilling {
 
     private val receiptVerifier = StoreReceiptVerifier(
         context.packageName, mapOf(StoreVendor.MYKET to publicKey),
@@ -63,8 +67,9 @@ class MyketBilling(context: Context, private val publicKey: String) {
         }
     }
 
-    fun purchase(
+    override fun purchase(
         activity: Activity,
+        _registry: ActivityResultRegistry,
         productId: String,
         payload: String,
         callback: (BillingOutcome) -> Unit,
@@ -132,7 +137,7 @@ class MyketBilling(context: Context, private val publicKey: String) {
         }
     }
 
-    fun restore(productId: String, callback: (BillingOutcome) -> Unit) {
+    override fun restore(productId: String, callback: (BillingOutcome) -> Unit) {
         ensureSetup { ready ->
             if (!ready) {
                 callback(BillingOutcome.failure("اتصال به فروشگاه برقرار نیست؛ دوباره تلاش کنید"))
@@ -164,7 +169,7 @@ class MyketBilling(context: Context, private val publicKey: String) {
         }
     }
 
-    fun consume(purchaseToken: String, callback: (BillingOutcome) -> Unit) {
+    override fun consume(purchaseToken: String, callback: (BillingOutcome) -> Unit) {
         ensureSetup { ready ->
             if (!ready) {
                 callback(BillingOutcome.failure("اتصال به فروشگاه برقرار نیست؛ دوباره تلاش کنید"))
@@ -198,7 +203,7 @@ class MyketBilling(context: Context, private val publicKey: String) {
         }
     }
 
-    fun dispose() {
+    override fun dispose() {
         purchaseCallback?.let { cb ->
             purchaseCallback = null
             cb(BillingOutcome.failure("برنامه بسته شد؛ پرداخت ناتمام ماند"))

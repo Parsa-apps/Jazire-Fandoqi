@@ -2,9 +2,10 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// The production release explicitly uses Myket for payments. Only payment
-/// information, release notes and store support may name it; educational UI
-/// stays neutral and must never promote a competing billing gateway.
+/// هر بیلد فقط با فروشگاه خودش پرداخت می‌کند. نام فروشگاه‌ها تنها در
+/// store_vendor (شناسهٔ فنی) و store_listing (صفحهٔ پشتیبانی) مجاز است؛
+/// متن پرداخت و رسید از StorePolicy می‌آید تا بیلد بازار «مایکت» و بیلد
+/// مایکت «کافه‌بازار» نشان ندهد.
 void main() {
   /// نام فروشگاه‌ها به شکلی که ممکن است در متن فارسی بیاید.
   const storeNames = <String>[
@@ -27,14 +28,7 @@ void main() {
   bool hasStringLiteral(String line) =>
       line.contains("'") || line.contains('"');
 
-  const myketPaymentSurfaces = <String>{
-    'lib/core/billing_service.dart',
-    'lib/core/growth/whats_new.dart',
-    'lib/features/shop/full_version_paywall.dart',
-    'lib/shared/widgets/purchase_access_status.dart',
-  };
-
-  test('store branding stays inside the approved Myket payment and support surfaces', () {
+  test('store branding stays inside the approved vendor and support surfaces', () {
     final offenders = <String>[];
 
     final dartFiles = Directory('lib')
@@ -44,9 +38,10 @@ void main() {
 
     for (final file in dartFiles) {
       // این فایل‌ها عمداً نام فروشگاه را می‌شناسند:
-      //  - store_vendor: منطق مسیریابی درگاه (شناسهٔ فنی)
-      //  - store_listing: متن صفحهٔ «درباره» که مایکت صراحتاً نام و لینک
-      //    خودش را در برنامه‌های درون‌پرداخت می‌خواهد.
+      //  - store_vendor: شناسهٔ فنی flavorها (bazaar/myket)
+      //  - store_listing: متن صفحهٔ «درباره» که هر فروشگاه صراحتاً نام و
+      //    لینک خودش را در برنامه‌های درون‌پرداخت می‌خواهد.
+      // بقیهٔ UI فقط از StorePolicy استفاده می‌کند و نام ثابت ندارد.
       if (file.path.endsWith('store_vendor.dart')) continue;
       if (file.path.endsWith('store_listing.dart')) continue;
 
@@ -57,11 +52,6 @@ void main() {
         if (!hasStringLiteral(line)) continue;
         for (final name in storeNames) {
           if (line.contains(name)) {
-            final path = file.path.replaceAll('\\', '/');
-            if ((name == 'مایکت' || name == 'Myket') &&
-                myketPaymentSurfaces.contains(path)) {
-              continue;
-            }
             offenders.add('${file.path}:${i + 1} → $name');
           }
         }
@@ -97,13 +87,16 @@ void main() {
         reason: 'امتیازدهی باید به فروشگاه نصب‌کننده برود');
   });
 
-  test('payment and receipt status explicitly identify Myket, not another gateway', () {
+  test('payment and receipt status name the running store through StorePolicy', () {
     final paywall =
         File('lib/features/shop/full_version_paywall.dart').readAsStringSync();
     final status =
         File('lib/shared/widgets/purchase_access_status.dart').readAsStringSync();
-    expect(paywall, contains('در پرداخت مایکت'));
-    expect(status, contains('رسید امضاشدهٔ مایکت تأیید شد'));
+    expect(paywall, contains('StorePolicy.paymentMethodLabel'));
+    expect(paywall, contains('StorePolicy.finalPriceNotice'));
+    expect(status, contains('StorePolicy.receiptVerifiedNotice'));
+    expect(status, contains('StorePolicy.offlineReceiptVerifiedNotice'));
+    expect(status, contains('StorePolicy.untrustedBuildNotice'));
   });
 
   test('about screen source never links to the publisher website', () {

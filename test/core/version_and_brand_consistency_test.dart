@@ -28,32 +28,42 @@ void main() {
         reason: 'شمارهٔ بیلد صفحهٔ «تازه‌ها» باید با pubspec.yaml یکی باشد');
   });
 
-  test('the GitHub build workflow shows the app name and current version', () {
+  test('the GitHub build workflows show the app name and current version', () {
     final version = _PubspecVersion.read();
-    final workflow =
-        File('.github/workflows/build-apk.yml').readAsStringSync();
+    // هر فروشگاه ورک‌فلوی مستقل خودش را دارد؛ هر دو باید هم‌نام و
+    // هم‌نسخه با pubspec بمانند تا آرتیفکت اشتباهی منتشر نشود.
+    const workflows = {
+      '.github/workflows/build-apk.yml': 'Build APK & AAB - جزیره فندقی',
+      '.github/workflows/build-bazaar.yml':
+          'Build Bazaar APK & AAB - جزیره فندقی',
+    };
 
-    final workflowName = RegExp(
-      '^name: Build APK & AAB - جزیره فندقی '
-      'v${RegExp.escape(version.short)}\\s*\$',
-      multiLine: true,
-    );
-    expect(workflowName.hasMatch(workflow), isTrue,
-        reason: 'نام ورک‌فلو در تب Actions باید «جزیره فندقی '
-            'v${version.short}» باشد');
+    for (final entry in workflows.entries) {
+      final workflow = File(entry.key).readAsStringSync();
 
-    final artifactVersions =
-        RegExp(r'name:\s*jazire_fandoqi_v(\d+\.\d+\.\d+)_')
-            .allMatches(workflow)
-            .map((m) => m.group(1))
-            .toList();
-    expect(artifactVersions, isNotEmpty,
-        reason: 'آرتیفکت‌های APK/AAB باید با نام jazire_fandoqi_v<نسخه>_ '
-            'آپلود شوند');
-    expect(artifactVersions, everyElement(version.full),
-        reason: 'نسخهٔ نام آرتیفکت‌ها باید با pubspec.yaml یکی باشد');
-    expect(workflow.contains('kudake_iran_v'), isFalse,
-        reason: 'نام قدیمی آرتیفکت‌ها نباید برگردد');
+      final workflowName = RegExp(
+        '^name: ${RegExp.escape(entry.value)} '
+        'v${RegExp.escape(version.short)}\\s*\$',
+        multiLine: true,
+      );
+      expect(workflowName.hasMatch(workflow), isTrue,
+          reason: 'نام ${entry.key} در تب Actions باید '
+              '«${entry.value} v${version.short}» باشد');
+
+      final artifactVersions =
+          RegExp(r'name:\s*jazire_fandoqi_v(\d+\.\d+\.\d+)_')
+              .allMatches(workflow)
+              .map((m) => m.group(1))
+              .toList();
+      expect(artifactVersions, isNotEmpty,
+          reason: 'آرتیفکت‌های ${entry.key} باید با نام '
+              'jazire_fandoqi_v<نسخه>_ آپلود شوند');
+      expect(artifactVersions, everyElement(version.full),
+          reason: 'نسخهٔ نام آرتیفکت‌های ${entry.key} باید با pubspec.yaml '
+              'یکی باشد');
+      expect(workflow.contains('kudake_iran_v'), isFalse,
+          reason: 'نام قدیمی آرتیفکت‌ها نباید برگردد');
+    }
   });
 
   test('no user-visible string hard-codes an app version number', () {

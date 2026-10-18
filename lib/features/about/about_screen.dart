@@ -24,8 +24,9 @@ import '../shop/full_version_purchase_entry.dart';
 /// Publisher, support and privacy information for parents and store review.
 /// It intentionally does not invent a registration number or address.
 ///
-/// برنامه‌های درون‌پرداخت مایکت نباید کاربر را به وب‌سایت ناشر بفرستند؛
-/// به‌جایش نام و لینک همان فروشگاه در این صفحه می‌آید.
+/// نسخه‌های دارای پرداخت درون‌برنامه‌ای نباید کاربر را به وب‌سایت ناشر
+/// بفرستند؛ به‌جایش نام و لینک همان فروشگاهی که بیلد را منتشر کرده در این
+/// صفحه می‌آید.
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key, this.vendorOverride});
 

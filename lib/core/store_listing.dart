@@ -20,9 +20,8 @@ class StoreListing {
 
   static const String kicker = 'صفحهٔ رسمی برنامه در فروشگاه';
 
-  // Support/listing links are independent from permission to take payments.
-  // Legacy Bazaar installations can still find their store page, but only
-  // Myket has billing/ownership authority in the production release.
+  // هر بیلد فقط صفحهٔ فروشگاه خودش را نشان می‌دهد. لینک پشتیبانی از مجوز
+  // پرداخت جداست؛ مرجع اعطای دسترسی همیشه رسید امضاشدهٔ همان فروشگاه است.
   static bool hasStorePage(StoreVendor vendor) =>
       vendor == StoreVendor.myket || vendor == StoreVendor.bazaar;
 

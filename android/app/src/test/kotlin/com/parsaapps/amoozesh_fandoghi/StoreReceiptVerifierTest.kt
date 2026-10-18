@@ -66,16 +66,23 @@ class StoreReceiptVerifierTest {
         assertEquals("signed-test-purchase-token", result.token)
         // RSA is separate from the bridge's official-release attestation.
         assertFalse(result.releaseVerified)
-        assertTrue(ProductionBillingPolicy.protect(result, true).releaseVerified)
-        assertFalse(ProductionBillingPolicy.protect(result, false).success)
+        assertTrue(ProductionBillingPolicy.protect(result, true, "myket").releaseVerified)
+        assertFalse(ProductionBillingPolicy.protect(result, false, "myket").success)
     }
 
     @Test
-    fun evenCorrectlySignedBazaarReceiptCannotGrantFullVersion() {
+    fun eachStoreIsolatedBuildVerifiesOnlyItsOwnSignedReceipt() {
         val data = receipt()
-        val result = verifier().verify(StoreVendor.BAZAAR, data, sign(data), PRODUCT)
-        assertFalse(result.success)
-        assertEquals("invalid_receipt", result.status)
+        val signature = sign(data)
+        // The Bazaar flavor's verifier accepts the Bazaar receipt...
+        val bazaar = verifier().verify(StoreVendor.BAZAAR, data, signature, PRODUCT)
+        assertTrue(bazaar.success)
+        assertEquals("bazaar", bazaar.store)
+        assertTrue(ProductionBillingPolicy.protect(bazaar, true, "bazaar").releaseVerified)
+        // ...but the same result can never be attested as a Myket purchase.
+        assertFalse(ProductionBillingPolicy.protect(bazaar, true, "myket").success)
+        assertEquals("invalid_receipt",
+            ProductionBillingPolicy.protect(bazaar, true, "myket").status)
     }
 
     @Test

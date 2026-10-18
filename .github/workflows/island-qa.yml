@@ -7,8 +7,9 @@ name: Island QA - analyze, test, build
 #   2. Hard gate: the redesigned island code must be analyzer-clean.
 #   3. Mandatory full test suite (findings republished).
 #   4. Hard gate: island + home smoke tests must pass.
-#   5. Native Myket production/receipt tests and compilation only.
-#      QA never publishes an installable debug/verification APK.
+#   5. Native store-isolated production/receipt tests and compilation for
+#      both flavors (Bazaar/Poolakey and Myket). QA never publishes an
+#      installable debug/verification APK.
 on:
   push:
     branches: ['arena/**']
@@ -164,11 +165,11 @@ jobs:
       - name: Production APK policy tests
         run: python3 -m unittest discover -s tool -p 'test_verify_production_apk.py' -v
 
-      - name: Native Myket tests and compilation (no APK)
+      - name: Native Bazaar + Myket tests and compilation (no APK)
         run: |
           mkdir -p qa-gate-log
           set +e
-          (cd android && ./gradlew --no-daemon testMyketReleaseUnitTest --console=plain) > qa-gate-log/native-receipts.log 2>&1
+          (cd android && ./gradlew --no-daemon testMyketReleaseUnitTest testBazaarReleaseUnitTest --console=plain) > qa-gate-log/native-receipts.log 2>&1
           status=$?
           cat qa-gate-log/native-receipts.log
           if [ "$status" -ne 0 ]; then
@@ -199,4 +200,5 @@ jobs:
             test-output.txt
             qa-gate-log/
             build/app/test-results/testMyketReleaseUnitTest/
+            build/app/test-results/testBazaarReleaseUnitTest/
           if-no-files-found: ignore

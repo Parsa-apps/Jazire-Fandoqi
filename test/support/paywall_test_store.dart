@@ -35,6 +35,16 @@ class PaywallTestStore {
     'message': 'خرید نسخه کامل یافت نشد',
   };
 
+  /// The same native-verified payload for the other store-isolated build.
+  static Map<String, Object?> verifiedPurchaseFor(String store) =>
+      <String, Object?>{...verifiedPurchase, 'store': store};
+
+  /// Store reported by the mocked native bridge and embedded in receipts.
+  String storeName = 'myket';
+
+  StoreVendor get storeVendor => storeName == 'bazaar'
+      ? StoreVendor.bazaar : StoreVendor.myket;
+
   Object? purchaseResponse = const <String, Object?>{
     'success': false,
     'message': 'پرداخت لغو شد',
@@ -51,25 +61,25 @@ class PaywallTestStore {
     HivePlayerStore.useMemoryStorage(clear: true);
     SecureStore.resetForTesting();
     Monetization.resetForTesting();
-    StoreDetector.debugOverride(StoreVendor.myket);
+    StoreDetector.debugOverride(storeVendor);
     final messenger =
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(billing, (call) async {
       calls.add(call.method);
-      if (call.method == 'storeVendor') return 'myket';
+      if (call.method == 'storeVendor') return storeName;
       if (!trustedRelease) {
         return <String, Object?>{
           'success': false,
           'status': 'untrusted_build',
-          'message': 'نسخهٔ رسمی انتشار مایکت لازم است',
+          'message': 'نسخهٔ رسمی انتشار فروشگاه لازم است',
         };
       }
       if (call.method == 'verifyReceipt') {
         final args = call.arguments as Map;
         if (!rejectReceiptVerification &&
             args['signedData'] == signedData &&
-            args['signature'] == signature && args['store'] == 'myket') {
-          return verifiedPurchase;
+            args['signature'] == signature && args['store'] == storeName) {
+          return verifiedPurchaseFor(storeName);
         }
         return <String, Object?>{
           'success': false,
@@ -80,11 +90,14 @@ class PaywallTestStore {
       if (offline) throw PlatformException(code: 'offline');
       switch (call.method) {
         case 'purchase':
-          if (identical(purchaseResponse, verifiedPurchase)) {
+          final response = purchaseResponse;
+          if (response is Map &&
+              response['status'] == 'verified' &&
+              response['store'] == storeName) {
             // A real successful transaction also updates the store inventory.
-            restoreResponse = verifiedPurchase;
+            restoreResponse = response;
           }
-          return purchaseResponse;
+          return response;
         case 'restore':
           final override = restoreOverride;
           return override != null ? await override() : restoreResponse;

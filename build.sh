@@ -5,8 +5,15 @@ set -Eeuo pipefail
 
 BUILD_MODE="${BUILD_MODE:-release}"
 STORE_FLAVOR="${STORE_FLAVOR:-myket}"
-if [[ "$BUILD_MODE" != "release" || "$STORE_FLAVOR" != "myket" ]]; then
-  echo "Only an official Myket release is distributable; debug/test and alternate-store APKs are disabled." >&2
+case "$STORE_FLAVOR" in
+  bazaar|myket) ;;
+  *)
+    echo "STORE_FLAVOR must be 'bazaar' or 'myket'." >&2
+    exit 2
+    ;;
+esac
+if [[ "$BUILD_MODE" != "release" ]]; then
+  echo "Only an official release is distributable; debug/test APKs are disabled." >&2
   exit 2
 fi
 PROJECT_NAME="amoozesh_fandoghi"

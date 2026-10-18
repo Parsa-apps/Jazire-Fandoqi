@@ -3,12 +3,11 @@ import 'package:flutter/services.dart';
 
 /// 🏪 فروشگاهی که اپ از آن نصب شده است.
 ///
-/// اپ روی چند فروشگاه ایرانی منتشر می‌شود و هر کدام سرویس پرداخت
-/// درون‌برنامه‌ای خودش را دارد. در خرید و بازی‌ها نام فروشگاه نشان داده
-/// نمی‌شود و کاربر چیزی انتخاب نمی‌کند؛ خودِ اپ از روی flavor ساخت
-/// (`STORE_CHANNEL`) درگاه را انتخاب می‌کند. تنها استثنا صفحهٔ «درباره و
-/// پشتیبانی» است که به‌خاطر قانون درون‌پرداخت مایکت باید نام و لینک همان
-/// فروشگاه را نشان بدهد، نه وب‌سایت ناشر.
+/// اپ برای هر فروشگاه یک بیلد جدا دارد و هر بیلد فقط سرویس پرداخت
+/// درون‌برنامه‌ای همان فروشگاه را در خود دارد. کاربر چیزی انتخاب نمی‌کند؛
+/// خودِ اپ از روی flavor ساخت (`STORE_CHANNEL`) درگاه را انتخاب می‌کند.
+/// تنها استثنا صفحهٔ «درباره و پشتیبانی» است که طبق قانون هر دو فروشگاه
+/// باید نام و لینک همان فروشگاه را نشان بدهد، نه وب‌سایت ناشر.
 enum StoreVendor {
   /// کافه‌بازار (`com.farsitel.bazaar`) → پرداخت با Poolakey.
   bazaar,
@@ -20,9 +19,25 @@ enum StoreVendor {
   /// در این حالت درگاه پرداختی وجود ندارد و خرید باید محترمانه رد شود.
   unknown;
 
-  /// Legacy vendors remain identifiable for support links, but this release
-  /// accepts payments and permanent ownership only through Myket.
-  bool get supportsBilling => this == StoreVendor.myket;
+  /// هر بیلد فقط با درگاه فروشگاه خودش پرداخت می‌کند: flavor «bazaar» با
+  /// Poolakey و flavor «myket» با Myket Billing. نصب مستقیم/ناشناخته هیچ
+  /// درگاهی ندارد.
+  bool get supportsBilling => this != StoreVendor.unknown;
+
+  /// شناسهٔ فنی فروشگاه؛ همان رشته‌ای که رسید امضاشده و لایهٔ نیتیو
+  /// (`BuildConfig.STORE_CHANNEL`) استفاده می‌کنند. برای `unknown` خالی است.
+  String get slug => switch (this) {
+        StoreVendor.bazaar => 'bazaar',
+        StoreVendor.myket => 'myket',
+        StoreVendor.unknown => '',
+      };
+
+  /// آیا این رشته یکی از فروشگاه‌های رسمیِ پشتیبانی‌شده است؟
+  ///
+  /// مقایسه عمداً دقیق و case-sensitive است تا مقدار ساختگی مثل `BAZAAR`
+  /// هرگز با رسید فروشگاه اشتباه گرفته نشود.
+  static bool isSupportedStoreSlug(String? slug) =>
+      slug == StoreVendor.bazaar.slug || slug == StoreVendor.myket.slug;
 }
 
 /// تشخیص فروشگاه نصب‌کننده و انتخاب خودکار درگاه پرداخت.
@@ -54,6 +69,11 @@ class StoreDetector {
 
   /// آخرین مقدار تشخیص‌داده‌شده (بدون فراخوانی مجدد نیتیو).
   static StoreVendor? get cached => _cached;
+
+  /// مقدار همگام برای متن‌های UI. اگر هنوز تشخیص انجام نشده باشد،
+  /// `unknown` برمی‌گردد و متن‌ها به واژهٔ عمومی «فروشگاه» می‌روند؛ هیچ‌وقت
+  /// نام فروشگاه رقیب به کاربر نشان داده نمی‌شود.
+  static StoreVendor get lastKnown => _cached ?? StoreVendor.unknown;
 
   /// فروشگاهی که اپ باید با درگاه آن کار کند.
   ///

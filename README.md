@@ -1,6 +1,20 @@
 # جزیره فندقی — اپلیکیشن آفلاین آموزشی کودکان
 
 [![Build APK & AAB - جزیره فندقی v7.5](https://github.com/Parsa-apps/Jazire-Fandoqi/actions/workflows/build-apk.yml/badge.svg)](https://github.com/Parsa-apps/Jazire-Fandoqi/actions/workflows/build-apk.yml)
+[![Build Bazaar APK & AAB](https://github.com/Parsa-apps/Jazire-Fandoqi/actions/workflows/build-bazaar.yml/badge.svg)](https://github.com/Parsa-apps/Jazire-Fandoqi/actions/workflows/build-bazaar.yml)
+
+## نسخه ۷.۵.۶+۲۹ — نسخهٔ اختصاصی کافه‌بازار
+
+- بیلد `bazaar` فقط با SDK رسمی **Poolakey** و مجوز `PAY_THROUGH_BAZAAR`؛ کد و
+  مجوز مایکت داخل APK بازار نیست و برعکس.
+- همان قانون فعلی: **نصف هر مجموعه رایگان، نصف قفل**؛ قیمت هم همان
+  **۴۹٬۰۰۰ تومان** است که در پیشخان بازار ثبت می‌شود (برنامه عدد hard-code
+  نمی‌کند و مبلغ نهایی را پنجرهٔ پرداخت بازار نشان می‌دهد).
+- رسید امضاشدهٔ بازار (و نه رسید مایکت) نسخهٔ کامل را فعال می‌کند؛ خرید و
+  بازیابی پشت پین والد و تأیید رسمی APK است. متن‌های پی‌وال نام همان فروشگاه
+  نصب‌کننده را نشان می‌دهند.
+- [قرارداد نسخهٔ بازار و چک‌لیست](docs/BAZAAR_EDITION_7_5_6_FA.md) ·
+  [دستور ساخت هر دو نسخه](BUILD_INSTRUCTIONS.md).
 
 ## نسخه ۷.۵.۴+۲۶ — انتشار رسمی و پرداخت مایکت
 

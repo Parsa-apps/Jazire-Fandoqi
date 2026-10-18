@@ -5,8 +5,11 @@
 -keep class com.parsaapps.amoozesh_fandoghi.SecureStore { *; }
 -keep class com.parsaapps.amoozesh_fandoghi.SecurityModule { *; }
 -keep class com.parsaapps.amoozesh_fandoghi.BuildConfig { *; }
--keep class com.parsaapps.amoozesh_fandoghi.BazaarBilling { *; }
--keep class com.parsaapps.amoozesh_fandoghi.MyketBilling { *; }
+# The concrete billing client lives in the flavor source set; keeping the
+# shared provider and its interface protects both variants without naming a
+# class that is absent from the other flavor's classpath.
+-keep class com.parsaapps.amoozesh_fandoghi.BillingProvider { *; }
+-keep class com.parsaapps.amoozesh_fandoghi.StoreBilling { *; }
 -keep class com.parsaapps.amoozesh_fandoghi.BillingOutcome { *; }
 -keep class com.parsaapps.amoozesh_fandoghi.StoreVendor { *; }
 # Store billing SDKs: both use AIDL/reflection over their own model classes,

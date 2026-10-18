@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../data/datasources/hive_player_store.dart';
 import 'billing_service.dart';
 import 'security/secure_store.dart';
+import 'store_vendor.dart';
 
 enum FullVersionAccessStatus {
   checking,
@@ -62,7 +63,7 @@ class Monetization {
       // official release. It still must not unlock any paid destination.
       return _publish(FullVersionAccessStatus.untrustedBuild);
     }
-    if (restored.hasMyketFullVersionReceipt) {
+    if (restored.hasFullVersionReceipt) {
       final accepted = await _acceptReceipt(restored, expectedRevision: revision);
       if (accepted || revision != _revision) return _lastDecision;
       return _revoke(revision, FullVersionAccessStatus.needsRestore);
@@ -81,7 +82,7 @@ class Monetization {
     if (saved != null) {
       final proof = await _verifySavedReceipt(saved);
       if (revision != _revision) return _lastDecision;
-      return _publish(proof.hasMyketFullVersionReceipt
+      return _publish(proof.hasFullVersionReceipt
           ? FullVersionAccessStatus.offlineVerified
           : FullVersionAccessStatus.needsRestore);
     }
@@ -99,11 +100,23 @@ class Monetization {
           record['schema'] == receiptCacheSchema &&
           record['signedData'] is String &&
           record['signature'] is String &&
-          record['store'] == 'myket') {
+          record['store'] is String &&
+          StoreVendor.isSupportedStoreSlug(record['store'] as String)) {
+        final receiptStore = record['store'] as String;
+        // A receipt from one market never unlocks the other market's build.
+        // The native bridge enforces the same rule; this early check avoids a
+        // pointless channel round-trip on an offline, cross-store cache.
+        final vendor = await StoreDetector.detect();
+        if (vendor == StoreVendor.unknown || receiptStore != vendor.slug) {
+          return const BillingResult.failure(
+            'رسید ذخیره‌شده متعلق به فروشگاه همین نسخه نیست',
+            status: BillingStatus.invalidReceipt,
+          );
+        }
         return BillingService.verifyFullVersionReceipt(
           signedData: record['signedData'] as String,
           signature: record['signature'] as String,
-          store: record['store'] as String,
+          store: receiptStore,
         );
       }
     } catch (_) {
@@ -122,7 +135,7 @@ class Monetization {
     BillingResult result, {
     int? expectedRevision,
   }) async {
-    if (!result.hasMyketFullVersionReceipt) {
+    if (!result.hasFullVersionReceipt) {
       lastPurchaseError = result.message.isNotEmpty
           ? result.message : 'رسید امضاشدهٔ نسخهٔ کامل دریافت نشد';
       return false;
@@ -137,7 +150,7 @@ class Monetization {
     if (expectedRevision != null && expectedRevision != _revision) {
       return _lastDecision;
     }
-    if (!proof.hasMyketFullVersionReceipt) {
+    if (!proof.hasFullVersionReceipt) {
       lastPurchaseError = 'امضای رسید نسخهٔ کامل تأیید نشد';
       return false;
     }

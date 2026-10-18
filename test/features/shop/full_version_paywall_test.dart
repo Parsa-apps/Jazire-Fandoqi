@@ -25,9 +25,9 @@ void main() {
 
     expect(source, isNot(contains('49/000')));
     expect(source, isNot(contains('چهل و نه هزار تومان')));
-    expect(
-      source,
-      contains('مبلغ نهایی را مایکت در پنجرهٔ پرداخت نشان می‌دهد.'),
-    );
+    // The text is built at runtime from the installing store, so a Bazaar
+    // build can never show the other market's name or a hard-coded amount.
+    expect(source, contains('StorePolicy.finalPriceNotice'));
+    expect(source, isNot(contains('مبلغ نهایی را مایکت')));
   });
 }
