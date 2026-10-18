@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     env:
       KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
 
@@ -205,6 +205,33 @@ jobs:
         with:
           name: jazire_fandoqi_v7.5.6_bazaar_production_aab
           path: build/app/outputs/bundle/bazaarRelease/app-bazaar-release.aab
+
+      - name: Publish GitHub Release (Bazaar APK & AAB)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="v7.5.6-bazaar"
+          APK="build/app/outputs/flutter-apk/app-bazaar-release.apk"
+          AAB="build/app/outputs/bundle/bazaarRelease/app-bazaar-release.aab"
+          INFO="build/app/outputs/flutter-apk/build-info-bazaar.txt"
+          cp "$APK" "jazire-fandoqi-v7.5.6-bazaar-release.apk"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" \
+              "$APK" \
+              "jazire-fandoqi-v7.5.6-bazaar-release.apk" \
+              "$AAB" \
+              "$INFO" \
+              --clobber
+          else
+            gh release create "$TAG" \
+              "$APK" \
+              "jazire-fandoqi-v7.5.6-bazaar-release.apk" \
+              "$AAB" \
+              "$INFO" \
+              --title "جزیره فندقی v7.5.6+29 — نسخهٔ اختصاصی کافه‌بازار (APK + AAB)" \
+              --notes-file docs/BAZAAR_EDITION_7_5_6_FA.md
+          fi
 
       - name: Upload QA gate log
         if: failure()

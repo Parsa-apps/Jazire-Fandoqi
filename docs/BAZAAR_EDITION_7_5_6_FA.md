@@ -110,6 +110,8 @@ BUILD_MODE=release STORE_FLAVOR=bazaar ./build.sh
 - APK: `build/app/outputs/flutter-apk/app-bazaar-release.apk`
 - AAB: `build/app/outputs/bundle/bazaarRelease/app-bazaar-release.aab`
 - ورک‌فلو: `.github/workflows/build-bazaar.yml`
+- انتشار دانلودی: GitHub Release با تگ `v7.5.6-bazaar`
+  (`jazire-fandoqi-v7.5.6-bazaar-release.apk` + AAB + `build-info-bazaar.txt`)
 
 ## ۶. چک‌لیست پیش از ارسال به بازار
 

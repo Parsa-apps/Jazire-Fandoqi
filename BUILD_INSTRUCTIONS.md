@@ -86,7 +86,8 @@ debug/profile حتی با یک رسید واقعی، مجوز محتوای پو�
 ## GitHub Actions
 
 - `.github/workflows/build-bazaar.yml` → APK/AAB کافه‌بازار
-  (`jazire_fandoqi_v7.5.6_bazaar_production_apk` و `_aab`).
+  (`jazire_fandoqi_v7.5.6_bazaar_production_apk` و `_aab`) و انتشار
+  GitHub Release با تگ `v7.5.6-bazaar`.
 - `.github/workflows/build-apk.yml` → APK/AAB مایکت
   (`jazire_fandoqi_v7.5.6_myket_production_apk` و `_aab`).
 - `.github/workflows/island-qa.yml` → analyze، کل تست‌های Flutter و
