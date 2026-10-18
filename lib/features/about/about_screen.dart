@@ -12,6 +12,7 @@ import '../../core/growth/persian_digits.dart';
 import '../../core/growth/whats_new.dart';
 import '../../core/monetization.dart';
 import '../../core/store_listing.dart';
+import '../../core/store_policy.dart';
 import '../../core/store_rating_service.dart';
 import '../../core/store_vendor.dart';
 import '../../shared/widgets/parsa_gold_aura.dart';
@@ -239,7 +240,7 @@ class AboutScreen extends StatelessWidget {
                   const Text(
                     // نام فایل داخلی هرگز در رابط کاربریِ منتشرشده نشت نکند؛
                     // والد فقط باید بداند متن کامل کجاست.
-                    'متن کامل سیاست حریم خصوصی در همین برنامه و نیز در صفحهٔ انتشار برنامه در فروشگاه در دسترس است.',
+                    'متن کامل سیاست حریم خصوصی در همین برنامه و نیز در صفحهٔ انتشار برنامه در دسترس است.',
                     style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 12,
@@ -261,18 +262,7 @@ class AboutScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           // فاز ۷۶: ریتینگ هوشمند (فقط برای والدین — داخل پنل اطلاعات)
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.star_rounded, color: Colors.amber),
-              title: Text(
-                'امتیاز به جزیره فندقی',
-                style: AppFonts.vazirmatn(fontWeight: FontWeight.w800),
-              ),
-              subtitle: const Text('اگر از اپ راضی هستید، نظر بدهید'),
-              trailing: const Icon(Icons.chevron_left_rounded),
-              onTap: () => _showRatingDialog(context),
-            ),
-          ),
+          _buildRatingCard(context),
           const SizedBox(height: 12),
           // فاز ۹۴: بازخورد داخل اپ — نظر مامان/بابا
           Card(
@@ -340,6 +330,51 @@ class AboutScreen extends StatelessWidget {
 
   Widget _buildPublisherCard() {
     return const ParsaGoldAuraCard();
+  }
+
+  /// کارت امتیاز، نام فروشگاهی را می‌نویسد که همین بیلد را منتشر کرده است.
+  ///
+  /// بازار اجازه نمی‌دهد محتوای اپ به فروشگاه دیگری ارجاع بدهد؛ پس متن
+  /// تکراری «در فروشگاه ...» نداریم و مقدار از [StorePolicy] می‌آید. تا
+  /// وقتی تشخیص فروشگاه تمام نشده، متن خنثی (بدون نام هیچ فروشگاهی)
+  /// نمایش داده می‌شود و با تکمیل تشخیص، کارت دوباره ساخته می‌شود.
+  Widget _buildRatingCard(BuildContext context) {
+    if (vendorOverride != null) {
+      return _ratingCard(context, vendorOverride!);
+    }
+    return FutureBuilder<StoreVendor>(
+      future: StoreDetector.detect(),
+      builder: (context, snapshot) => _ratingCard(
+        context,
+        snapshot.data ?? StoreDetector.lastKnown,
+      ),
+    );
+  }
+
+  Widget _ratingCard(BuildContext context, StoreVendor vendor) {
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.star_rounded, color: Colors.amber),
+        title: Text(
+          'امتیاز به جزیره فندقی',
+          style: AppFonts.vazirmatn(fontWeight: FontWeight.w800),
+        ),
+        subtitle: Text(StorePolicy.ratingCardSubtitleFor(vendor)),
+        trailing: const Icon(Icons.chevron_left_rounded),
+        onTap: () async {
+          // نام فروشگاه باید پیش از باز شدن دیالوگ قطعی باشد.
+          if (vendor == StoreVendor.unknown) await StorePolicy.ensureResolved();
+          if (context.mounted) {
+            _showRatingDialog(
+              context,
+              vendor == StoreVendor.unknown
+                  ? StoreDetector.lastKnown
+                  : vendor,
+            );
+          }
+        },
+      ),
+    );
   }
 
   Widget _buildStoreCard(BuildContext context) {
@@ -430,24 +465,24 @@ class AboutScreen extends StatelessWidget {
 }
 
 /// فاز ۷۶: دیالوگ امتیاز (۵ ستاره، آفلاین — بدون درخواست فروشگاه).
-void _showRatingDialog(BuildContext context) {
+void _showRatingDialog(BuildContext context, StoreVendor vendor) {
   showDialog<void>(
     context: context,
     builder: (dialogContext) => AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       title: const Text('از جزیره فندقی چقدر راضی هستید؟ ⭐'),
-      content: const Column(
+      content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
+          const Text(
             'انتخاب شما فقط روی همین دستگاه ذخیره می‌شود و به ما کمک می‌کند بهتر شویم.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 13, height: 1.6),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+            children: const [
               Text('⭐', style: TextStyle(fontSize: 30)),
               Text('⭐', style: TextStyle(fontSize: 30)),
               Text('⭐', style: TextStyle(fontSize: 30)),
@@ -455,9 +490,9 @@ void _showRatingDialog(BuildContext context) {
               Text('⭐', style: TextStyle(fontSize: 30)),
             ],
           ),
-          SizedBox(height: 6),
-          Text('می‌توانید در فروشگاه هم به ما امتیاز بدهید 💚',
-              style: TextStyle(fontSize: 12, color: Colors.grey)),
+          const SizedBox(height: 6),
+          Text(StorePolicy.ratingDialogHintFor(vendor),
+              style: const TextStyle(fontSize: 12, color: Colors.grey)),
         ],
       ),
       actions: [

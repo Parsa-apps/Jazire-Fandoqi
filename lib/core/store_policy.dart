@@ -48,4 +48,33 @@ abstract final class StorePolicy {
   static String get offlineReceiptVerifiedNotice => _known
       ? 'نسخهٔ کامل آفلاین؛ امضای رسید $_name ذخیره‌شده تأیید شد.'
       : 'نسخهٔ کامل آفلاین؛ امضای رسید فروشگاه ذخیره‌شده تأیید شد.';
+
+  /// زیرنویس کارت «امتیاز به جزیره فندقی» در صفحهٔ درباره.
+  ///
+  /// قوانین بازار اجازه نمی‌دهند محتوای اپ به فروشگاه دیگری ارجاع بدهد؛
+  /// پس به‌جای واژهٔ مبهم «فروشگاه»، نام همان فروشگاهی می‌آید که این بیلد
+  /// را منتشر می‌کند.
+  /// حتی در حالت ناشناخته هم واژهٔ مبهم «فروشگاه» نمی‌آید تا مرورگر بازار
+  /// آن را ارجاع به فروشگاه دیگری نخواند.
+  static String get ratingCardSubtitle =>
+      ratingCardSubtitleFor(StoreDetector.lastKnown);
+
+  /// همان متن، برای صفحه‌ای که فروشگاه را خودش (یا در تست، override) می‌داند.
+  static String ratingCardSubtitleFor(StoreVendor vendor) {
+    final name = StoreListing.displayName(vendor);
+    return name.isEmpty
+        ? 'اگر از اپ راضی هستید، به ما امتیاز بدهید'
+        : 'اگر از اپ راضی هستید، در $name به ما امتیاز بدهید';
+  }
+
+  /// جملهٔ کوتاه داخل دیالوگ امتیاز.
+  static String get ratingDialogHint =>
+      ratingDialogHintFor(StoreDetector.lastKnown);
+
+  static String ratingDialogHintFor(StoreVendor vendor) {
+    final name = StoreListing.displayName(vendor);
+    return name.isEmpty
+        ? 'نظر شما برای ما ارزشمند است 💚'
+        : 'می‌توانید در $name هم به ما امتیاز بدهید 💚';
+  }
 }

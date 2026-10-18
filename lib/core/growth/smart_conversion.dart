@@ -1,4 +1,6 @@
 import '../game_data.dart';
+import '../store_listing.dart';
+import '../store_vendor.dart';
 import 'growth_store.dart';
 import 'seasonal_events.dart';
 
@@ -25,7 +27,11 @@ class SmartConversion {
   static String shareAppText() {
     final name =
         GameData.childName.isNotEmpty ? GameData.childName : 'فرزندتان';
-    return 'ما با $name جزیره فندقی بازی می‌کنیم — آموزش الفبا و بازی آفلاین بدون تبلیغ. در فروشگاه برنامه‌ها جستجو کنید: جزیره فندقی';
+    // فقط به فروشگاه همین بیلد ارجاع می‌دهیم؛ نام فروشگاه رقیب در متن
+    // اشتراک‌گذاری بیلد بازار نباید ظاهر شود.
+    final store = StoreListing.displayName(StoreDetector.lastKnown);
+    final where = store.isEmpty ? 'فروشگاه برنامه‌ها' : store;
+    return 'ما با $name جزیره فندقی بازی می‌کنیم — آموزش الفبا و بازی آفلاین بدون تبلیغ. در $where جستجو کنید: جزیره فندقی';
   }
 
   static bool claimReferralCoins({int reward = 20}) {

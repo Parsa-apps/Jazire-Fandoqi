@@ -20,6 +20,8 @@ void main() {
     expect(StorePolicy.untrustedBuildNotice, contains('کافه‌بازار'));
     expect(StorePolicy.receiptVerifiedNotice, contains('کافه‌بازار'));
     expect(StorePolicy.offlineReceiptVerifiedNotice, contains('کافه‌بازار'));
+    expect(StorePolicy.ratingCardSubtitle, contains('کافه‌بازار'));
+    expect(StorePolicy.ratingDialogHint, contains('کافه‌بازار'));
     for (final text in <String>[
       StorePolicy.storeName,
       StorePolicy.paymentMethodLabel,
@@ -27,6 +29,8 @@ void main() {
       StorePolicy.untrustedBuildNotice,
       StorePolicy.receiptVerifiedNotice,
       StorePolicy.offlineReceiptVerifiedNotice,
+      StorePolicy.ratingCardSubtitle,
+      StorePolicy.ratingDialogHint,
     ]) {
       expect(text, isNot(contains('مایکت')), reason: text);
     }
@@ -44,6 +48,8 @@ void main() {
       StorePolicy.untrustedBuildNotice,
       StorePolicy.receiptVerifiedNotice,
       StorePolicy.offlineReceiptVerifiedNotice,
+      StorePolicy.ratingCardSubtitle,
+      StorePolicy.ratingDialogHint,
     ]) {
       expect(text, isNot(contains('کافه‌بازار')), reason: text);
     }
@@ -56,6 +62,16 @@ void main() {
     expect(StorePolicy.finalPriceNotice, contains('فروشگاه'));
     expect(StorePolicy.finalPriceNotice, isNot(contains('مایکت')));
     expect(StorePolicy.finalPriceNotice, isNot(contains('کافه‌بازار')));
+    // متن امتیاز حتی پیش از تشخیص هم نباید واژهٔ مبهم «فروشگاه» را بیاورد؛
+    // مرورگر بازار می‌تواند آن را ارجاع به فروشگاه دیگر بخواند.
+    for (final text in <String>[
+      StorePolicy.ratingCardSubtitle,
+      StorePolicy.ratingDialogHint,
+    ]) {
+      expect(text, isNot(contains('فروشگاه')), reason: text);
+      expect(text, isNot(contains('مایکت')), reason: text);
+      expect(text, isNot(contains('کافه‌بازار')), reason: text);
+    }
   });
 
   test('the paywall never hard-codes a store name or an amount', () {

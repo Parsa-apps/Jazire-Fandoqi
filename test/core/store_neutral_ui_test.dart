@@ -99,6 +99,101 @@ void main() {
     expect(status, contains('StorePolicy.untrustedBuildNotice'));
   });
 
+  group('Cafe Bazaar review compliance (store isolation)', () {
+    // گزارش بررسی بازار: «پرداخت درون‌برنامه‌ای مارکت‌های دیگر —
+    // ir.mservices.market.BILLING باید از برنامه حذف شود». این تست دقیقاً
+    // همان چیزی را قفل می‌کند که باعث رد شدن نسخه شده بود.
+    test('the Bazaar flavor strips the Myket billing permission', () {
+      final manifest = File(
+        'android/app/src/bazaar/AndroidManifest.xml',
+      ).readAsStringSync();
+      expect(
+        manifest,
+        contains('com.farsitel.bazaar.permission.PAY_THROUGH_BAZAAR'),
+      );
+      expect(manifest, contains('ir.mservices.market.BILLING'));
+      expect(
+        RegExp(
+          r'<uses-permission\s+android:name="ir\.mservices\.market\.BILLING"'
+          r'\s+tools:node="remove"\s*/>',
+        ).hasMatch(manifest),
+        isTrue,
+        reason: 'مجوز پرداخت مایکت باید با tools:node="remove" حذف شود',
+      );
+      // هیچ اعلان مستقیمی از مجوز مایکت در flavor بازار نماند.
+      expect(
+        RegExp(
+          r'<uses-permission\s+android:name="ir\.mservices\.market\.BILLING"\s*/>',
+        ).hasMatch(manifest),
+        isFalse,
+      );
+    });
+
+    test('the Myket flavor strips the Bazaar billing permission', () {
+      final manifest = File(
+        'android/app/src/myket/AndroidManifest.xml',
+      ).readAsStringSync();
+      expect(
+        RegExp(
+          r'<uses-permission\s+android:name="com\.farsitel\.bazaar\.permission'
+          r'\.PAY_THROUGH_BAZAAR"\s+tools:node="remove"\s*/>',
+        ).hasMatch(manifest),
+        isTrue,
+      );
+    });
+
+    test('the Bazaar source set contains no Myket SDK reference', () {
+      final offenders = <String>[];
+      final bazaarSources = Directory('android/app/src/bazaar')
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.kt'));
+      for (final file in bazaarSources) {
+        final text = file.readAsStringSync();
+        if (text.contains('ir.myket.billingclient')) {
+          offenders.add(file.path);
+        }
+      }
+      expect(offenders, isEmpty,
+          reason: 'SDK مایکت نباید در بیلد بازار وجود داشته باشد');
+    });
+
+    test('store dependencies are flavor-scoped, never shared', () {
+      final gradle = File('android/app/build.gradle').readAsStringSync();
+      expect(gradle, contains('bazaarImplementation "com.github.cafebazaar'));
+      expect(gradle, contains('myketImplementation("com.github.myketstore'));
+      // استفادهٔ مشترک از SDK فروشگاه‌ها، مجوز فروشگاه رقیب را وارد APK
+      // می‌کند؛ این الگو نباید برگردد.
+      expect(
+        RegExp(r'^\s*implementation\s+"com\.github\.cafebazaar', multiLine: true)
+            .hasMatch(gradle),
+        isFalse,
+      );
+      expect(
+        RegExp(
+          r'^\s*implementation\s*\(?\s*"com\.github\.myketstore',
+          multiLine: true,
+        ).hasMatch(gradle),
+        isFalse,
+      );
+    });
+  });
+
+  test('the rating section names only the shipping store', () {
+    // گزارش بازار: متن «امتیاز به جزیره فندقی» نباید به فروشگاه دیگری
+    // ارجاع بدهد. متن از StorePolicy می‌آید و عبارت مبهم «در فروشگاه»
+    // (که مرورگر آن را به فروشگاه دیگر تعبیر کرد) حذف شده است.
+    final about =
+        File('lib/features/about/about_screen.dart').readAsStringSync();
+    expect(about, contains('StorePolicy.ratingCardSubtitle'));
+    expect(about, contains('StorePolicy.ratingDialogHint'));
+    expect(about, isNot(contains('می‌توانید در فروشگاه هم به ما امتیاز بدهید')));
+    expect(about, contains('StorePolicy.ensureResolved()'));
+
+    final policy = File('lib/core/store_policy.dart').readAsStringSync();
+    expect(policy, isNot(contains('در فروشگاه به ما امتیاز بدهید')));
+  });
+
   test('about screen source never links to the publisher website', () {
     final about =
         File('lib/features/about/about_screen.dart').readAsStringSync();

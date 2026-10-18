@@ -164,8 +164,17 @@ jobs:
           set -euo pipefail
           AAPT="$(ls "$ANDROID_HOME"/build-tools/*/aapt 2>/dev/null | sort -V | tail -1)"
           test -n "$AAPT"
-          "$AAPT" dump badging build/app/outputs/flutter-apk/app-bazaar-release.apk > qa-gate-log/apk-info.txt
-          "$AAPT" dump xmltree build/app/outputs/flutter-apk/app-bazaar-release.apk AndroidManifest.xml > qa-gate-log/manifest.txt
+          APK="build/app/outputs/flutter-apk/app-bazaar-release.apk"
+          "$AAPT" dump badging "$APK" > qa-gate-log/apk-info.txt
+          "$AAPT" dump xmltree "$APK" AndroidManifest.xml > qa-gate-log/manifest.txt
+          # Evidence for the store review: the artifact must not request a
+          # competing market's billing permission.
+          "$AAPT" dump permissions "$APK" | tee qa-gate-log/permissions.txt
+          if grep -Fq 'ir.mservices.market.BILLING' qa-gate-log/permissions.txt; then
+            echo '::error::Bazaar APK requests the Myket billing permission'
+            exit 1
+          fi
+          grep -Fq 'com.farsitel.bazaar.permission.PAY_THROUGH_BAZAAR' qa-gate-log/permissions.txt
           python3 tool/verify_production_apk.py \
             --pubspec pubspec.yaml --badging qa-gate-log/apk-info.txt \
             --manifest qa-gate-log/manifest.txt --signature qa-gate-log/release-signature.txt \
@@ -187,6 +196,7 @@ jobs:
             echo "native_rsa_receipt_tests=passed"
             echo "native_production_policy_tests=passed"
             echo "full_version_store=bazaar_only"
+            echo "myket_billing_permission=absent"
             echo "entitlement_receipt_schema=2"
             sha256sum build/app/outputs/flutter-apk/app-bazaar-release.apk
           } > build/app/outputs/flutter-apk/build-info-bazaar.txt
@@ -199,6 +209,7 @@ jobs:
           path: |
             build/app/outputs/flutter-apk/app-bazaar-release.apk
             build/app/outputs/flutter-apk/build-info-bazaar.txt
+            qa-gate-log/permissions.txt
 
       - name: Upload Bazaar AAB
         uses: actions/upload-artifact@v4

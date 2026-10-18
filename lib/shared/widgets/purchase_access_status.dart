@@ -16,7 +16,7 @@ class PurchaseAccessStatus extends StatelessWidget {
         final message = switch (status) {
           FullVersionAccessStatus.checking => 'وضعیت خرید هنوز بررسی نشده است.',
           FullVersionAccessStatus.free =>
-            'نسخهٔ رایگان؛ خرید تأییدشده‌ای در فروشگاه پیدا نشد.',
+            'نسخهٔ رایگان؛ خریدی برای نسخهٔ کامل پیدا نشد.',
           FullVersionAccessStatus.untrustedBuild =>
             StorePolicy.untrustedBuildNotice,
           FullVersionAccessStatus.needsRestore =>
