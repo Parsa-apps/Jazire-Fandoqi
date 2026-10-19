@@ -14,8 +14,10 @@ import 'package:jazireh_fandoghi/core/growth/whats_new.dart';
 /// همه‌جا «جزیره فندقی» است.
 ///
 /// هنگام ارتقای نسخه این‌ها را با هم عوض کنید: `pubspec.yaml`،
-/// `GrowthStore.appVersion`، `WhatsNew` و نام ورک‌فلو و آرتیفکت‌های
-/// `.github/workflows/build-apk.yml`.
+/// `GrowthStore.appVersion`، `WhatsNew` و نام ورک‌فلو در تب Actions
+/// (`.github/workflows/build-apk.yml`). نام آرتیفکت‌ها و تگ ریلیز نیازی به
+/// ویرایش ندارند: مرحلهٔ `version` ورک‌فلو آن‌ها را از `pubspec.yaml`
+/// می‌سازد.
 void main() {
   test('app version constants match pubspec.yaml', () {
     final version = _PubspecVersion.read();
@@ -42,16 +44,35 @@ void main() {
         reason: 'نام ورک‌فلو در تب Actions باید «جزیره فندقی '
             'v${version.short}» باشد');
 
-    final artifactVersions =
-        RegExp(r'name:\s*jazire_fandoqi_v(\d+\.\d+\.\d+)_')
-            .allMatches(workflow)
-            .map((m) => m.group(1))
-            .toList();
-    expect(artifactVersions, isNotEmpty,
-        reason: 'آرتیفکت‌های APK/AAB باید با نام jazire_fandoqi_v<نسخه>_ '
-            'آپلود شوند');
-    expect(artifactVersions, everyElement(version.full),
-        reason: 'نسخهٔ نام آرتیفکت‌ها باید با pubspec.yaml یکی باشد');
+    // نسخه در ورک‌فلو ثابت نیست: مرحلهٔ `version` آن را از pubspec.yaml
+    // می‌خواند و نام آرتیفکت‌ها و تگ انتشار از خروجیٔ همان مرحله ساخته
+    // می‌شوند، پس ارتقای نسخه دیگر چیزی را جا نمی‌گذارد.
+    expect(workflow.contains('id: version'), isTrue,
+        reason: 'ورک‌فلو باید مرحله‌ای با id: version داشته باشد که نسخه را '
+            'از pubspec.yaml بخواند');
+    expect(RegExp(r'version:.*pubspec\.yaml').hasMatch(workflow), isTrue,
+        reason: 'نسخهٔ انتشار باید از pubspec.yaml خوانده شود، نه عدد ثابت');
+
+    for (final flavor in const ['apk', 'aab']) {
+      expect(
+        workflow.contains('name: jazire_fandoqi_v'
+            r'${{ steps.version.outputs.name }}'
+            '_myket_production_$flavor'),
+        isTrue,
+        reason: 'نام آرتیفکت $flavor باید از خروجیِ مرحلهٔ version '
+            'ساخته شود',
+      );
+    }
+
+    final staleVersions = RegExp(r'jazire_fandoqi_v\d+\.\d+\.\d+_')
+        .allMatches(workflow)
+        .map((m) => m.group(0))
+        .toList();
+    expect(staleVersions, isEmpty,
+        reason: 'نسخهٔ آرتیفکت‌ها باید از pubspec گرفته شود؛ نام ثابت با '
+            'اولین ارتقای نسخه کهنه می‌شود');
+    expect(workflow.contains('v${version.full}'), isFalse,
+        reason: 'نسخهٔ انتشار (تگ ریلیز) نباید در ورک‌فلو ثابت نوشته شود');
     expect(workflow.contains('kudake_iran_v'), isFalse,
         reason: 'نام قدیمی آرتیفکت‌ها نباید برگردد');
   });
