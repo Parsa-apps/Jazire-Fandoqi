@@ -1,12 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
+<!-- پس‌زمینهٔ بوت: مشکیِ یکدست، بدون آیکون.
+     لوگو فقط یک‌بار و با انیمیشن سینمایی در اسپلش فلاتر ظاهر می‌شود؛
+     نمایش زودهنگام آیکون اینجا همان «پرش تصویر» آزاردهنده را می‌ساخت. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="?android:colorBackground" />
-
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
-        <bitmap
-            android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+    <item>
+        <color android:color="@color/splash_background" />
+    </item>
 </layer-list>

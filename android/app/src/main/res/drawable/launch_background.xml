@@ -1,14 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- پس‌زمینهٔ بوت: مشکیِ یکدست، بدون آیکون.
+     لوگو فقط یک‌بار و با انیمیشن سینمایی در اسپلش فلاتر ظاهر می‌شود؛
+     نمایش زودهنگام آیکون اینجا همان «پرش تصویر» آزاردهنده را می‌ساخت. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Teal sky background matching the new walnut-island launcher icon -->
     <item>
-        <color android:color="#67C6F5"/>
-    </item>
-    <!-- Centered launcher icon on the splash screen -->
-    <item
-        android:width="192dp"
-        android:height="192dp"
-        android:gravity="center">
-        <bitmap android:src="@mipmap/ic_launcher"/>
+        <color android:color="@color/splash_background" />
     </item>
 </layer-list>

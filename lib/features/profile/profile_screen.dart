@@ -10,6 +10,7 @@ import '../../core/growth/persian_digits.dart';
 import '../../core/xp_system.dart';
 import '../../presentation/providers/game_state_provider.dart';
 import '../../shared/widgets/fandoghi_v2.dart';
+import '../../shared/widgets/parsa_apps_logo.dart';
 import '../../shared/widgets/star_field.dart';
 import 'painters/skill_radar_painter.dart';
 import 'painters/stat_ring_painter.dart';
@@ -203,13 +204,28 @@ class _ProfileState extends ConsumerState<ProfileScreen>
                 icon: const Icon(Icons.edit_rounded, color: Colors.white),
               )),
             ),
+            // نشان برند پارسا اپس در سربرگ پروفایل — راه ورود به «درباره».
+            // اندازهٔ لمسی ۴۸ پیکسل حفظ می‌شود و لوگو در قاب گرد قرار می‌گیرد.
             Positioned(
-              top: 12, right: 16,
-              child: SafeArea(child: IconButton(
-                tooltip: 'درباره ما',
-                onPressed: () => Navigator.pushNamed(context, '/about'),
-                icon: const Icon(Icons.info_outline_rounded, color: Colors.white),
-              )),
+              top: 8,
+              right: 10,
+              child: SafeArea(
+                child: Semantics(
+                  button: true,
+                  label: 'درباره پارسا اپس',
+                  child: Tooltip(
+                    message: 'درباره پارسا اپس',
+                    child: InkWell(
+                      onTap: () => Navigator.pushNamed(context, '/about'),
+                      customBorder: const CircleBorder(),
+                      child: const Padding(
+                        padding: EdgeInsets.all(5),
+                        child: ParsaAppsLogo(size: 38, borderRadius: 11),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
             // Profile content
             SafeArea(

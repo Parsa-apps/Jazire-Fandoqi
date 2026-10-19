@@ -1,5 +1,7 @@
 import 'package:hive_flutter/hive_flutter.dart';
 
+import 'hive_player_store.dart';
+
 abstract class LocalDataSource {
   Future<void> init();
   Map<dynamic, dynamic>? getPlayerData();
@@ -12,8 +14,8 @@ class HiveLocalDataSource implements LocalDataSource {
 
   @override
   Future<void> init() async {
-    await Hive.initFlutter();
-    await Hive.openBox(_playerBoxName);
+    // همان مسیر امنِ راه‌اندازی؛ فقط یک‌جا Hive را init می‌کند.
+    await HivePlayerStore.openStorage();
   }
 
   @override

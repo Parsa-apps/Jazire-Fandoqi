@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'dart:ui';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:jazireh_fandoghi/app/app_fonts.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'app/parsa_brand.dart';
 import 'app/theme_controller.dart';
 import 'core/audio_service.dart';
 import 'core/background_music_observer.dart';
@@ -18,8 +17,8 @@ import 'core/game_launch.dart';
 import 'core/island_level_watcher.dart';
 import 'core/growth/growth.dart';
 import 'core/logger_service.dart';
+import 'core/startup/startup_coordinator.dart';
 import 'core/xp_system.dart';
-import 'core/security/security_hardening.dart';
 import 'features/about/about_screen.dart';
 import 'features/about/privacy_policy_screen.dart';
 import 'features/buddy/buddy_chat_screen.dart';
@@ -126,48 +125,12 @@ Future<void> main() async {
   // اگر فونت کش نشده باشد، AppFonts به fallback می‌رود
   AppFonts.configure();
 
-  // بنیادهای فنی - فاز ۴، ۶ و ۸
-  // فقط چیزهایی که اولین فریم واقعاً به آن‌ها وابسته است اینجا await می‌شوند:
-  // ThemeController در همان build اول `GameData.textScale`/`activeTheme` و
-  // GrowthAppShell مقادیر `GrowthStore` را می‌خواند.
-  await Hive.initFlutter();
-  await Hive.openBox('playerBox');
-
-  // 🛡️ فاز امنیتی (+H2): بررسی صحت بیلد هیچ وابستگی‌ای به وضعیت بازیکن ندارد،
-  // پس همین‌جا شروع می‌شود تا هم‌زمان با خواندن حافظه پیش برود؛ نتیجه‌اش
-  // همچنان *قبل از* runApp انتظار کشیده می‌شود و رفتار عوض نمی‌شود.
-  // بعد از Hive شروع می‌شود چون مسیر لاگ خطایش به CrashReportStore (Hive) می‌رسد.
-  final Future<bool> securityBlockedFuture = kReleaseMode
-      ? SecurityHardeningService.assess().then((a) => a.tampered)
-      : Future<bool>.value(false);
-
-  try {
-    await GameData.load();
-    // فاز ۴۳: فندقی اسم کودک را به یاد می‌آورد
-    FandoghiCoach.rememberChild(GameData.childName);
-    try {
-      await GrowthStore.load();
-    } catch (_) {
-      GrowthStore.useMemoryFallback();
-    }
-  } catch (error, stackTrace) {
-    // Storage failures should degrade to a playable session, not a crash or a
-    // blank screen. The next launch can retry persistence automatically.
-    LoggerService.e('Game data storage unavailable', error, stackTrace);
-    GameData.useMemoryFallback();
-    GrowthStore.useMemoryFallback();
-  }
-
-  // اگر بیلد دستکاری‌شده باشد (امضا، debuggable، دیباگر، Frida/Xposed، روت)
-  // اپ فقط صفحهٔ امنیتی را نشان می‌دهد. مثل قبل، مسیر اولیه تا مشخص‌شدن
-  // نتیجه تعیین نمی‌شود؛ فقط انتظار با خواندن حافظه هم‌پوشانی پیدا کرده است.
-  final bool securityBlocked = await securityBlockedFuture;
-
-  runApp(
-    ProviderScope(
-      child: JazirehFandoghiApp(securityBlocked: securityBlocked),
-    ),
-  );
+  // ⏱️ همهٔ کارهای سنگینِ راه‌اندازی (Hive، پروفایل بازیکن، تنظیمات
+  // خانواده و بررسی امنیتی) به StartupCoordinator منتقل شده‌اند و
+  // *هم‌زمان با* انیمیشن اسپلش اجرا می‌شوند. بنابراین اولین فریم فوراً
+  // رسم می‌شود؛ نه صفحهٔ سفید، نه انتظارِ طولانی روی اسپلش سیستمی.
+  // تا وقتی این مراحل تمام نشوند، اسپلش اجازهٔ ورود به برنامه را نمی‌دهد.
+  runApp(const ProviderScope(child: JazirehFandoghiApp()));
 
   // فاز H2: راه‌اندازی صدا (۸ پلیر native + bind شدن به موتور TTS سیستم)
   // گران‌ترین کار startup بود و هیچ صدایی در اسپلش پخش نمی‌شود؛ پس بعد از
@@ -179,17 +142,24 @@ Future<void> main() async {
 }
 
 class JazirehFandoghiApp extends StatefulWidget {
-  const JazirehFandoghiApp({super.key, this.securityBlocked = false});
+  const JazirehFandoghiApp({
+    super.key,
+    this.securityBlocked = false,
+    this.startupCoordinator,
+  });
 
   /// اگر release دستکاری‌شده باشد، فقط صفحهٔ مسدود امنیتی نمایش داده می‌شود.
   final bool securityBlocked;
+
+  /// فقط برای تست: هماهنگ‌کنندهٔ آماده‌سازی تزریق می‌شود.
+  final StartupCoordinator? startupCoordinator;
 
   @override
   State<JazirehFandoghiApp> createState() => _JazirehFandoghiAppState();
 }
 
 class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   /// ⭐ نسخهٔ ۷.۱: کلید ناوبری سراسری — کال‌بک نگهبانِ سطح جزیره به
   /// BuildContext دسترسی ندارد؛ با این کلید، جشن گواهی نقاط عطف از هر
   /// صفحه‌ای (حین هر بازی) قابل نمایش است.
@@ -200,6 +170,14 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
   final BackgroundMusicObserver _backgroundMusicObserver =
       BackgroundMusicObserver();
 
+  /// آماده‌سازی واقعی برنامه؛ درصدِ نوار پیشرفت اسپلش از همین می‌آید.
+  late final StartupCoordinator _startup;
+
+  /// پردهٔ سیاهِ ورود: بعد از اسپلش کنار می‌رود تا صفحهٔ اصلی نرم
+  /// و آرام نمایان شود (و تعویض مسیر زیر آن دیده نشود).
+  late final AnimationController _reveal;
+  bool _revealStarted = false;
+
   /// ⭐ نسخه ۷: جشن سراسری ارتقای «سطح جزیره» — در هر صفحه‌ای که
   /// کودک پیشرفت کند (بازی‌های قدیمی و جدید) یک‌بار جشن گرفته می‌شود.
   late final IslandLevelWatcher _islandLevelWatcher;
@@ -208,6 +186,12 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _startup = widget.startupCoordinator ?? StartupCoordinator();
+    _reveal = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 520),
+      value: 1,
+    );
     _islandLevelWatcher = IslandLevelWatcher(
       onLevelUp: (from, to) {
         unawaited(AudioService.levelUp());
@@ -242,6 +226,15 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
     _islandLevelWatcher.handleChange();
   }
 
+  /// اسپلش پیش از جانشینی مسیر این را صدا می‌زند: پرده سیاه می‌شود
+  /// (همان لحظه‌ای که اسپلش کاملاً محو شده) و بعد آهسته کنار می‌رود.
+  void _beginReveal() {
+    if (_revealStarted) return;
+    _revealStarted = true;
+    _reveal.value = 0;
+    _reveal.forward();
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // فاز ۷: هنگام برگشت از پس‌زمینه، تم و فونت به‌روز می‌شوند
@@ -254,6 +247,8 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
   void dispose() {
     GameData.changes.removeListener(_onGameDataChanged);
     WidgetsBinding.instance.removeObserver(this);
+    _reveal.dispose();
+    if (widget.startupCoordinator == null) _startup.dispose();
     _themeController.dispose();
     super.dispose();
   }
@@ -278,16 +273,22 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
           themeMode: ThemeMode.system,
           navigatorKey: navigatorKey,
           navigatorObservers: <NavigatorObserver>[_backgroundMusicObserver],
-          builder: (context, child) => GrowthAppShell(
-            child: FandoghiCoachOverlay(
-              child: _PlayTimeTracker(
-                child: child ?? const SizedBox.shrink(),
+          builder: (context, child) => _StartupReveal(
+            animation: _reveal,
+            child: GrowthAppShell(
+              child: FandoghiCoachOverlay(
+                child: _PlayTimeTracker(
+                  child: child ?? const SizedBox.shrink(),
+                ),
               ),
             ),
           ),
           initialRoute: widget.securityBlocked ? '/security-blocked' : '/',
-      routes: {
-        '/': (context) => const SplashScreen(),
+          routes: <String, WidgetBuilder>{
+        '/': (context) => SplashScreen(
+              coordinator: _startup,
+              onEnterApp: _beginReveal,
+            ),
         '/security-blocked': (context) => const TamperBlockScreen(),
         '/tutorial': (context) => const AppTutorialScreen(),
         '/gateway': (context) => const AppGatewayScreen(),
@@ -829,6 +830,41 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
       topic: launch.gameName,
       stageId: launch.stageId,
       stageNumber: launch.stageNumber,
+    );
+  }
+}
+
+/// پردهٔ سیاهِ ورود به برنامه.
+///
+/// مقدار ۱ یعنی «پرده کنار است». اسپلش پیش از تعویض مسیر مقدار را صفر
+/// می‌کند؛ در نتیجه صفحهٔ اصلی زیر یک لایهٔ سیاه ساخته می‌شود و بعد در
+/// ۵۲۰ میلی‌ثانیه آرام ظاهر می‌شود. هیچ کلیک یا اسکرولی مسدود نمی‌شود.
+class _StartupReveal extends StatelessWidget {
+  const _StartupReveal({required this.animation, required this.child});
+
+  final Animation<double> animation;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (BuildContext context, Widget? child) {
+        final hidden = 1.0 - animation.value;
+        return Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            child!,
+            if (hidden > 0.001)
+              IgnorePointer(
+                child: ColoredBox(
+                  color: ParsaBrand.ink.withOpacity(hidden),
+                ),
+              ),
+          ],
+        );
+      },
+      child: child,
     );
   }
 }
