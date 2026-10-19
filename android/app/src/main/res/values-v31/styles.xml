@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- اندروید ۱۲+ اسپلش سیستمی خودش را با SplashScreen API می‌کشد.
+         آیکونِ آن عمداً شفاف است: اگر لوگو اینجا هم دیده شود، کاربر یک
+         بار لوگوی ثابت و بعد همان لوگو با انیمیشن می‌بیند — همان تکرار
+         آزاردهنده‌ای که باید حذف شود. نتیجه: سیاهِ یکدست، سپس انیمیشن. -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/splash_background</item>
+        <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:statusBarColor">@color/splash_background</item>
+        <item name="android:navigationBarColor">@color/splash_background</item>
+    </style>
+</resources>

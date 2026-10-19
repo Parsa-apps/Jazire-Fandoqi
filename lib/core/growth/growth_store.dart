@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import '../../data/datasources/hive_player_store.dart';
 import '../game_data.dart';
 import '../jalali_calendar.dart';
@@ -410,7 +412,7 @@ class GrowthStore {
 }
 
 /// ناتیفایر سبک بدون وابستگی به Flutter در لایهٔ داده.
-class ValueNotifierLike {
+class ValueNotifierLike implements Listenable {
   final List<void Function()> _listeners = <void Function()>[];
   int value = 0;
 

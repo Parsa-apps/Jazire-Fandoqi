@@ -1,403 +1,384 @@
 import 'dart:async';
-import 'dart:math';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../app/app_colors.dart';
-import '../../app/design_tokens.dart';
-import 'package:jazireh_fandoghi/app/app_fonts.dart';
+
+import '../../app/app_fonts.dart';
+import '../../app/parsa_brand.dart';
 import '../../core/game_data.dart';
 import '../../core/growth/growth_store.dart';
-import '../../shared/widgets/star_field.dart';
-import '../../shared/widgets/parsa_apps_logo.dart';
+import '../../core/growth/persian_digits.dart';
+import '../../core/startup/startup_coordinator.dart';
+import 'widgets/splash_backdrop.dart';
+import 'widgets/splash_brand.dart';
+import 'widgets/splash_progress_bar.dart';
 
-/// ═══════════════════════════════════════════════
-/// 🚀 SPLASH SCREEN — Stunning First Impression
-/// Animated star field + floating Fandoghi + logo
-/// ═══════════════════════════════════════════════
+/// ═══════════════════════════════════════════════════════════════
+/// 🎬 SPLASH SCREEN — ورود سینمایی Parsa Apps
+///
+/// پنج مرحلهٔ هم‌زمان با آماده‌سازی *واقعی* برنامه:
+///   ۱. نور آبی مرکزی از تاریکی گسترش می‌یابد و ذرات به مرکز می‌آیند.
+///   ۲. هالهٔ آبی/طلایی شکل می‌گیرد و لوگوی رسمی با Fade+Scale روشن می‌شود.
+///   ۳. نور آبی روی نماد P عبور می‌کند و جزئیات طلایی شیمر می‌گیرند.
+///   ۴. نوار پیشرفت باریک، متصل به [StartupCoordinator]، ظاهر می‌شود.
+///   ۵. بعد از آمادهٔ واقعیِ برنامه، صفحه با Fade نرم به برنامه می‌رود.
+///
+/// زمان کل ≈ ۳ ثانیه است، اما نوار تا پایانِ کارِ واقعی صبر می‌کند؛
+/// اگر آماده‌سازی زودتر تمام شود، بیش از حدِ لازم معطل نمی‌کند و اگر
+/// دیرتر طول بکشد، نوار صادقانه همان وضعیت را نشان می‌دهد.
+/// ═══════════════════════════════════════════════════════════════
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  const SplashScreen({super.key, this.coordinator, this.onEnterApp});
+
+  /// برای تست؛ در برنامهٔ واقعی از پوستهٔ برنامه تزریق می‌شود.
+  final StartupCoordinator? coordinator;
+
+  /// پیش از جانشینی مسیر صدا زده می‌شود تا پوستهٔ برنامه بتواند پردهٔ
+  /// سیاه را نرم کنار بزند و صفحهٔ اصلی «آرام نمایان» شود.
+  final VoidCallback? onEnterApp;
 
   @override
-  State<SplashScreen> createState() => _SplashState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashState extends State<SplashScreen>
+class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
-  late AnimationController _fadeCtrl;
-  late AnimationController _scaleCtrl;
-  late AnimationController _slideCtrl;
-  late AnimationController _glowCtrl;
-  late AnimationController _orbitCtrl;
-  Timer? _navigationTimer;
+  static const Duration _entranceDuration = Duration(milliseconds: 2200);
+  static const Duration _reducedEntrance = Duration(milliseconds: 700);
+  static const Duration _exitDuration = Duration(milliseconds: 340);
+  static const Duration _minVisible = Duration(milliseconds: 2650);
+  static const Duration _minVisibleReduced = Duration(milliseconds: 900);
+  static const Duration _holdAfterComplete = Duration(milliseconds: 420);
+
+  late final AnimationController _master;
+  late final AnimationController _ambient;
+  late final AnimationController _exit;
+  late final Listenable _stage;
+  late final StartupCoordinator _coordinator;
+  late final bool _ownsCoordinator;
+
+  Timer? _minTimer;
+  Timer? _holdTimer;
+  bool _minElapsed = false;
+  bool _holdDone = false;
+  bool _started = false;
+  bool _leaving = false;
+  bool _reduceMotion = false;
+  bool _completionNoted = false;
 
   @override
   void initState() {
     super.initState();
-    
-    _fadeCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1400),
-    );
-    _scaleCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1600),
-    );
-    _slideCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1100),
-    );
-    _glowCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2400),
-    );
-    _orbitCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 9),
-    );
+    _coordinator = widget.coordinator ?? StartupCoordinator();
+    _ownsCoordinator = widget.coordinator == null;
+    _coordinator.addListener(_handleStartup);
 
-    // Premium staggered animation sequence
-    _scaleCtrl.forward();
-    Future.delayed(const Duration(milliseconds: 280), () {
-      if (mounted) _fadeCtrl.forward();
-    });
-    Future.delayed(const Duration(milliseconds: 620), () {
-      if (mounted) _slideCtrl.forward();
-    });
-    _glowCtrl.repeat(reverse: true);
-    _orbitCtrl.repeat();
+    _master = AnimationController(vsync: this, duration: _entranceDuration);
+    _ambient = AnimationController(vsync: this, duration: const Duration(seconds: 5));
+    _exit = AnimationController(vsync: this, duration: _exitDuration);
+    _stage = Listenable.merge(<Listenable>[_master, _ambient]);
+    _exit.addStatusListener(_handleExitStatus);
 
-    // Premium timing with haptic feedback
-    _navigationTimer = Timer(const Duration(milliseconds: 1650), () {
-      if (!mounted) return;
-      HapticFeedback.lightImpact();
-      // آموزش فقط در اولین اجرا نمایش داده می‌شود؛ ورودهای بعدی
-      // مستقیم به صفحهٔ اصلی می‌روند.
-      final destination =
-          GameData.onboardingSeen ? '/gateway' : '/tutorial';
-      // نسخه ۷: بعد از نصب آپدیت، «تازه‌های نسخه» یک‌بار و به‌صورت
-      // خودکار نمایش داده می‌شود؛ سپس مقصد اصلی (دروازه یا آموزش).
-      final showWhatsNew = GrowthStore.shouldShowWhatsNew;
-      Navigator.pushReplacementNamed(
-        context,
-        showWhatsNew ? '/whats-new' : destination,
-        arguments: showWhatsNew ? destination : null,
-      );
+    // کارِ واقعی از همان لحظهٔ ساخته‌شدن شروع می‌شود؛ زمان‌بندی بصری در
+    // didChangeDependencies تنظیم می‌شود، چون به MediaQuery نیاز دارد.
+    unawaited(_coordinator.ensureStarted());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+
+    final media = MediaQuery.maybeOf(context);
+    _reduceMotion =
+        (media?.disableAnimations ?? false) || GrowthStore.reduceMotion;
+
+    if (_reduceMotion) {
+      _master.duration = _reducedEntrance;
+      _exit.duration = const Duration(milliseconds: 200);
+    }
+    _master.forward();
+    if (!_reduceMotion) _ambient.repeat();
+
+    _minTimer = Timer(
+      _reduceMotion ? _minVisibleReduced : _minVisible,
+      () {
+        _minElapsed = true;
+        _maybeLeave();
+      },
+    );
+    _noteCompletion();
+  }
+
+  void _handleStartup() {
+    if (!mounted) return;
+    _noteCompletion();
+    setState(() {});
+    _maybeLeave();
+  }
+
+  void _noteCompletion() {
+    if (!_coordinator.isComplete || _completionNoted) return;
+    _completionNoted = true;
+    _holdTimer = Timer(_holdAfterComplete, () {
+      _holdDone = true;
+      _maybeLeave();
     });
+  }
+
+  void _maybeLeave() {
+    if (!mounted || _leaving) return;
+    if (!_minElapsed || !_holdDone || !_coordinator.isComplete) return;
+    _leaving = true;
+    // بدون لرزش یا صدای اضافه: گذار فقط بصری است تا برای کودکِ در حال
+    // استراحت هم آزاردهنده نباشد.
+    _exit.forward();
+  }
+
+  void _handleExitStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed) return;
+    _goToApp();
+  }
+
+  void _goToApp() {
+    if (!mounted) return;
+    final blocked = _coordinator.blocked;
+    final destination = blocked
+        ? '/security-blocked'
+        : (GameData.onboardingSeen ? '/gateway' : '/tutorial');
+
+    // «تازه‌های نسخه» فقط بعد از نصب آپدیت و یک‌بار نمایش داده می‌شود؛
+    // مقصد بعدی‌اش همان دروازه/آموزش است.
+    final showWhatsNew = !blocked && GrowthStore.shouldShowWhatsNew;
+    final route = showWhatsNew ? '/whats-new' : destination;
+    final arguments = showWhatsNew ? destination : null;
+
+    widget.onEnterApp?.call();
+    Navigator.of(context).pushReplacementNamed(
+      route,
+      arguments: arguments,
+    );
   }
 
   @override
   void dispose() {
-    _fadeCtrl.dispose();
-    _scaleCtrl.dispose();
-    _slideCtrl.dispose();
-    _glowCtrl.dispose();
-    _orbitCtrl.dispose();
-    _navigationTimer?.cancel();
+    _minTimer?.cancel();
+    _holdTimer?.cancel();
+    _exit.removeStatusListener(_handleExitStatus);
+    _coordinator.removeListener(_handleStartup);
+    if (_ownsCoordinator) _coordinator.dispose();
+    _master.dispose();
+    _ambient.dispose();
+    _exit.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppGradients.nightSky,
-        ),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Image.asset(
-                'assets/gateway/island_hero_bg.png',
-                fit: BoxFit.cover,
-                // فندقی و وسایل یادگیری‌اش پایین قاب هستند؛ با لنگر پایین
-                // روی نمایشگرهای کوتاه‌تر یا پهن‌تر هم بریده نمی‌شوند.
-                alignment: Alignment.bottomCenter,
-                errorBuilder: (_, __, ___) => Image.asset(
-                  'assets/gateway/coral_island_bg.webp',
-                  fit: BoxFit.cover,
-                  alignment: Alignment.bottomCenter,
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      const Color(0xFF023E8A).withOpacity(0.28),
-                      Colors.transparent,
-                      const Color(0xFF023E8A).withOpacity(0.45),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            // هالهٔ نرم پشت عنوان: آبِ فیروزه‌ای روشن است و متن سفید روی آن
-            // گم می‌شد. این لایه فقط مرکز قاب را کمی عمق می‌دهد و لبه‌ها و
-            // خودِ فندقی را دست‌نخورده می‌گذارد.
-            Positioned.fill(
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: RadialGradient(
-                      center: const Alignment(0, -0.22),
-                      radius: 0.95,
-                      colors: [
-                        const Color(0xFF012A5E).withOpacity(0.42),
-                        const Color(0xFF012A5E).withOpacity(0.18),
-                        Colors.transparent,
-                      ],
-                      stops: const [0.0, 0.55, 1.0],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const StarFieldBackground(starCount: 36),
-            _buildOrbitingParticles(),
-            Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                  ScaleTransition(
-                    scale: CurvedAnimation(
-                      parent: _scaleCtrl,
-                      curve: Curves.elasticOut,
-                    ),
-                    child: _buildGlowRing(),
-                  ),
-                  const SizedBox(height: 12),
-                  FadeTransition(
-                    opacity: _fadeCtrl,
-                    child: Text(
-                      SeasonalTokens.greeting,
-                      textAlign: TextAlign.center,
-                      style: AppFonts.vazirmatn(
-                        fontSize: 18,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                      ).copyWith(shadows: _textShadows),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  
-                  // App name with shimmer
-                  FadeTransition(
-                    opacity: _fadeCtrl,
-                    child: _buildShimmerText(),
-                  ),
-                  
-                  const SizedBox(height: 12),
-                  
-                  // Subtitle
-                  SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 0.5),
-                      end: Offset.zero,
-                    ).animate(CurvedAnimation(
-                      parent: _slideCtrl,
-                      curve: Curves.easeOutCubic,
-                    )),
-                    child: FadeTransition(
-                      opacity: _slideCtrl,
-                      child: Text(
-                        'دنیای یادگیری و بازی',
-                        style: AppFonts.vazirmatn(
-                          fontSize: 18,
-                          // روی آبِ روشن، white70 تقریباً محو می‌شد.
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 1.5,
-                        ).copyWith(shadows: _textShadows),
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 50),
-                  
-                  // Loading indicator
-                  FadeTransition(
-                    opacity: _fadeCtrl,
-                    child: _buildLoadingDots(),
-                  ),
-                  ],
-                ),
-              ),
-            ),
-            
-            // پردهٔ محو پشت برندینگ: بلوک پایین روی آب و شن می‌افتد که هر دو
-            // روشن‌اند. این لایه فقط نوار پایین را تیره می‌کند و بالای قاب را
-            // دست نمی‌زند.
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 250,
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [
-                        const Color(0xFF012A5E).withOpacity(0.72),
-                        const Color(0xFF012A5E).withOpacity(0.45),
-                        Colors.transparent,
-                      ],
-                      stops: const [0.0, 0.55, 1.0],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+    final media = MediaQuery.of(context);
+    final dpr = media.devicePixelRatio;
 
-            // Bottom branding
-            Positioned(
-              bottom: 24,
-              left: 0,
-              right: 0,
-              child: FadeTransition(
-                opacity: _fadeCtrl,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const ParsaAppsLogo(
-                            size: 44,
-                            borderRadius: 12,
-                            showShadow: false,
-                          ),
-                          const SizedBox(width: 12),
-                          Flexible(
-                            child: Text(
-                              'ساخته‌شده توسط فرشاد پارسا',
-                              textAlign: TextAlign.center,
-                              style: AppFonts.exo2(
-                                fontSize: 14,
-                                color: Colors.white70,
-                                fontWeight: FontWeight.w300,
-                                letterSpacing: 2,
-                              ).copyWith(shadows: _textShadows),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      _buildStarDivider(),
-                      const SizedBox(height: 8),
-                      Text(
-                        'نسخه ${_toPersianDigits(GrowthStore.appVersion)}'
-                        ' — پاییز ${_toPersianDigits('1405')}',
-                        textAlign: TextAlign.center,
-                        textDirection: TextDirection.rtl,
-                        style: AppFonts.vazirmatn(
-                          fontSize: 13,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                        ).copyWith(shadows: _textShadows),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        // نام هیچ فروشگاهی و هیچ وب‌سایت ناشری اینجا نمی‌آید.
-                        // بخش درباره، صفحهٔ همان فروشگاهِ این بیلد را نشان می‌دهد.
-                        'آموزش امن و آفلاین برای کودکان ایران',
-                        textAlign: TextAlign.center,
-                        textDirection: TextDirection.rtl,
-                        style: AppFonts.vazirmatn(
-                          fontSize: 11,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                          height: 1.5,
-                        ).copyWith(shadows: _textShadows),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        'Parsa-Apps™',
-                        textAlign: TextAlign.center,
-                        textDirection: TextDirection.ltr,
-                        style: AppFonts.exo2(
-                          fontSize: 13,
-                          color: const Color(0xFFFFD166),
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.5,
-                        ).copyWith(shadows: _textShadows),
-                      ),
-                      const SizedBox(height: 8),
-                      _buildStarDivider(),
-                    ],
-                  ),
+    return Scaffold(
+      backgroundColor: ParsaBrand.ink,
+      body: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light.copyWith(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+          systemNavigationBarColor: ParsaBrand.ink,
+          systemNavigationBarDividerColor: ParsaBrand.ink,
+          systemNavigationBarIconBrightness: Brightness.light,
+        ),
+        child: FadeTransition(
+          opacity: ReverseAnimation(_exit),
+          child: Stack(
+            children: <Widget>[
+              Positioned.fill(
+                child: SplashBackdrop(
+                  master: _master,
+                  ambient: _ambient,
+                  repaint: _stage,
+                  reduceMotion: _reduceMotion,
                 ),
               ),
-            ),
-          ],
+              SafeArea(
+                child: LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                    return _buildStage(constraints, dpr);
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildGlowRing() {
-    return AnimatedBuilder(
-      animation: _glowCtrl,
-      builder: (_, __) {
-        return Container(
-          width: 160,
-          height: 160,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: RadialGradient(
-              colors: [
-                AppColors.primary.withOpacity(0.15 + _glowCtrl.value * 0.1),
-                AppColors.accent.withOpacity(0.05),
-                Colors.transparent,
-              ],
+  Widget _buildStage(BoxConstraints constraints, double dpr) {
+    final width = constraints.maxWidth;
+    final height = constraints.maxHeight;
+    final horizontal = math.max(20.0, width * 0.055);
+
+    // اندازهٔ لوگو با عرض و ارتفاعِ واقعی قاب تطبیق می‌یابد تا در گوشی
+    // باریک یا صفحهٔ کوتاه نه بریده شود و نه نوار پیشرفت را هل بدهد.
+    final availableWidth = math.max(120.0, width - horizontal * 2);
+    final logoSize = math
+        .min(availableWidth * 0.78, math.max(96.0, height - 150.0))
+        .clamp(96.0, 400.0)
+        .toDouble();
+    final barWidth = math.min(logoSize * 0.95, 320.0);
+    final cacheWidth = (logoSize * dpr).round().clamp(256, 1024).toInt();
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(horizontal, 6, horizontal, 16),
+      child: Column(
+        children: <Widget>[
+          Expanded(
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: SplashBrand(
+                  size: logoSize,
+                  master: _master,
+                  ambient: _ambient,
+                  repaint: _stage,
+                  reduceMotion: _reduceMotion,
+                  cacheWidth: cacheWidth,
+                ),
+              ),
             ),
           ),
-        );
-      },
+          const SizedBox(height: 8),
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: barWidth),
+            child: ListenableBuilder(
+              listenable: _coordinator,
+              builder: (BuildContext context, Widget? _) => _buildProgress(),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildOrbitingParticles() {
-    return AnimatedBuilder(
-      animation: _orbitCtrl,
-      builder: (_, __) {
-        return Stack(
-          children: List.generate(6, (i) {
-            final angle = _orbitCtrl.value * 2 * pi + (i * pi / 3);
-            final radius = 120.0 + i * 15;
-            return Positioned(
-              left: MediaQuery.of(context).size.width / 2 +
-                  cos(angle) * radius - 4,
-              top: MediaQuery.of(context).size.height / 2 -
-                  80 + sin(angle) * radius - 4,
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: [
-                    AppColors.primary,
-                    AppColors.accent,
-                    AppColors.warning,
-                    AppColors.candy1,
-                    AppColors.forest1,
-                    AppColors.ocean1,
-                  ][i].withOpacity(0.6),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 8,
+  Widget _buildProgress() {
+    final complete = _coordinator.isComplete;
+    final progress = _coordinator.progress;
+    final degraded = _coordinator.degraded || _coordinator.hadTimeout;
+    final indeterminate = !complete && progress < 0.02;
+    final percent = (progress * 100).round().clamp(0, 100).toInt();
+
+    final String caption;
+    if (!complete) {
+      caption = 'در حال آماده‌سازی...';
+    } else if (degraded) {
+      caption = 'با حالت ایمن آماده شد';
+    } else {
+      caption = 'آماده شد ✨';
+    }
+
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      label: 'در حال آماده‌سازی برنامه',
+      value: indeterminate
+          ? null
+          : '${PersianDigits.toFa(percent)} درصد',
+      child: ExcludeSemantics(
+        child: Column(
+          key: const ValueKey<String>('parsa_splash_progress'),
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(end: progress),
+              duration: const Duration(milliseconds: 380),
+              curve: Curves.easeOutCubic,
+              builder: (BuildContext context, double value, Widget? _) {
+                return SplashProgressBar(
+                  progress: value,
+                  indeterminate: indeterminate,
+                  ready: complete,
+                  shimmer: _ambient,
+                );
+              },
+            ),
+            const SizedBox(height: 9),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 260),
+                    child: Text(
+                      caption,
+                      key: ValueKey<String>(caption),
+                      textAlign: TextAlign.start,
+                      style: AppFonts.vazirmatn(
+                        fontSize: 12.5,
+                        color: Colors.white.withOpacity(0.74),
+                        fontWeight: FontWeight.w600,
+                        height: 1.4,
+                      ),
                     ),
-                  ],
+                  ),
                 ),
+                const SizedBox(width: 10),
+                if (indeterminate)
+                  _PulsingDot(ambient: _ambient)
+                else
+                  Text(
+                    '${PersianDigits.toFa(percent)}٪',
+                    textDirection: TextDirection.rtl,
+                    style: AppFonts.vazirmatn(
+                      fontSize: 11.5,
+                      color: ParsaBrand.gold.withOpacity(0.82),
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 15),
+            const _PoweredBy(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PulsingDot extends StatelessWidget {
+  const _PulsingDot({required this.ambient});
+
+  final Animation<double> ambient;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: ambient,
+      builder: (BuildContext context, Widget? _) {
+        final wave = 0.5 - 0.5 * math.cos(ambient.value * 2 * math.pi);
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List<Widget>.generate(3, (int index) {
+            final value =
+                (wave + index * 0.22) % 1.0;
+            final opacity = 0.25 + 0.55 * value;
+            return Container(
+              width: 4,
+              height: 4,
+              margin: EdgeInsets.only(left: index == 2 ? 0 : 5),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: ParsaBrand.iceBlue.withOpacity(opacity),
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: ParsaBrand.neonBlue.withOpacity(0.35 * opacity),
+                    blurRadius: 6,
+                  ),
+                ],
               ),
             );
           }),
@@ -405,132 +386,51 @@ class _SplashState extends State<SplashScreen>
       },
     );
   }
+}
 
-  /// ارقام لاتین را به فارسی برمی‌گرداند تا «6.2.1» در متن فارسی ناهمگون
-  /// دیده نشود. نقطه و بقیهٔ کاراکترها دست‌نخورده می‌مانند.
-  static String _toPersianDigits(String input) {
-    const fa = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-    final buffer = StringBuffer();
-    for (final rune in input.runes) {
-      if (rune >= 0x30 && rune <= 0x39) {
-        buffer.write(fa[rune - 0x30]);
-      } else {
-        buffer.writeCharCode(rune);
-      }
-    }
-    return buffer.toString();
-  }
+class _PoweredBy extends StatelessWidget {
+  const _PoweredBy();
 
-  /// نوار ستاره‌ای برندینگ پایین صفحه: ۶ ستارهٔ پر، ۷ ستارهٔ تهی، ۷ ستارهٔ پر.
-  /// با آیکون ساخته می‌شود نه کاراکتر ★/☆، چون رندر آن کاراکترها به فونت
-  /// نصب‌شده روی دستگاه وابسته است و ممکن است مربع خالی نشان دهد.
-  Widget _buildStarDivider() {
-    const filled = Color(0xFFFFD166);
-    const hollow = Colors.white54;
+  @override
+  Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (var i = 0; i < 20; i++)
-          Icon(
-            (i < 6 || i >= 13) ? Icons.star_rounded : Icons.star_border_rounded,
-            size: 11,
-            color: (i < 6 || i >= 13) ? filled : hollow,
-            shadows: const [
-              Shadow(color: Color(0x99012A5E), blurRadius: 6),
-            ],
+      children: <Widget>[
+        const Expanded(child: _Hairline()),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Text(
+            ParsaBrand.poweredBy,
+            textDirection: TextDirection.ltr,
+            style: const TextStyle(
+              fontSize: 9.5,
+              letterSpacing: 2.3,
+              fontWeight: FontWeight.w500,
+              color: Color(0x73FFFFFF),
+            ),
           ),
+        ),
+        const Expanded(child: _Hairline()),
       ],
     );
   }
+}
 
-  /// سایهٔ مشترک متن‌های اسپلش — پس‌زمینه آبِ فیروزه‌ای روشن است و متن سفید
-  /// بدون سایه روی آن گم می‌شود.
-  static const List<Shadow> _textShadows = [
-    Shadow(color: Color(0x99012A5E), blurRadius: 12, offset: Offset(0, 2)),
-    Shadow(color: Color(0x66012A5E), blurRadius: 26),
-  ];
+class _Hairline extends StatelessWidget {
+  const _Hairline();
 
-  Widget _buildShimmerText() {
-    return AnimatedBuilder(
-      animation: _glowCtrl,
-      builder: (_, __) {
-        // ShaderMask رنگ متن را بازنویسی می‌کند و سایهٔ داخل TextStyle را
-        // می‌بلعد؛ پس سایه را زیر آن به‌صورت یک لایهٔ جدا می‌گذاریم.
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            Text(
-              'جزیره فندقی',
-              style: AppFonts.vazirmatn(
-                fontSize: 48,
-                fontWeight: FontWeight.w900,
-                color: Colors.transparent,
-                letterSpacing: 2,
-              ).copyWith(shadows: _titleShadows),
-            ),
-            _buildShimmerLayer(),
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 1,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: <Color>[
+            Colors.transparent,
+            ParsaBrand.gold.withOpacity(0.22),
+            Colors.transparent,
           ],
-        );
-      },
-    );
-  }
-
-  static const List<Shadow> _titleShadows = [
-    Shadow(color: Color(0xB3012A5E), blurRadius: 18, offset: Offset(0, 3)),
-    Shadow(color: Color(0x80012A5E), blurRadius: 38),
-  ];
-
-  Widget _buildShimmerLayer() {
-    return ShaderMask(
-      shaderCallback: (bounds) {
-        return LinearGradient(
-          colors: const [
-            Color(0xFFFFFFFF),
-            Color(0xFFFFD700),
-            Color(0xFFFFFFFF),
-          ],
-          stops: [
-            (_glowCtrl.value - 0.3).clamp(0.0, 1.0).toDouble(),
-            _glowCtrl.value,
-            (_glowCtrl.value + 0.3).clamp(0.0, 1.0).toDouble(),
-          ],
-        ).createShader(bounds);
-      },
-      child: Text(
-        'جزیره فندقی',
-        style: AppFonts.vazirmatn(
-          fontSize: 48,
-          fontWeight: FontWeight.w900,
-          color: Colors.white,
-          letterSpacing: 2,
         ),
       ),
-    );
-  }
-
-  Widget _buildLoadingDots() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(3, (i) {
-        return AnimatedBuilder(
-          animation: _glowCtrl,
-          builder: (_, __) {
-            final delay = i * 0.3;
-            final opacity =
-                (sin((_glowCtrl.value * 2 * pi) + delay) + 1) / 2;
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 6),
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.3 + opacity * 0.7),
-              ),
-            );
-          },
-        );
-      }),
     );
   }
 }

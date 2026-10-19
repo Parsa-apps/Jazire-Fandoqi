@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- اندروید ۱۲+ در حالت شب.
+         بدون این فایل، انتخاب منابع اندروید به values-night می‌رسد و
+         صفت‌های SplashScreen API را از دست می‌دهد؛ نتیجه: یک بار آیکون
+         ثابتِ سیستم و بعد لوگوی متحرک. اینجا هر دو شرط (شب + v31) با هم
+         برآورده می‌شود تا فقط مشکیِ یکدست و سپس انیمیشن دیده شود. -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/splash_background</item>
+        <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:statusBarColor">@color/splash_background</item>
+        <item name="android:navigationBarColor">@color/splash_background</item>
+    </style>
+</resources>

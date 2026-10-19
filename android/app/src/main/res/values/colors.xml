@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Pastel edge color matching the new Fandoghi lantern app icon. -->
-    <color name="ic_launcher_background">#E6F1E8</color>
+    <!-- آیکون تطبیقی روی مشکیِ برند؛ حلقه و تاج طلایی خود می‌درخشند. -->
+    <color name="ic_launcher_background">#000000</color>
+    <!-- اسپلش سیستمی دقیقاً هم‌رنگ اولین فریم اسپلش فلاتر است تا هیچ
+         پرش یا فلاش روشنی بین بوت اندروید و انیمیشن آغازین دیده نشود. -->
+    <color name="splash_background">#000000</color>
 </resources>

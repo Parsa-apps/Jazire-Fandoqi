@@ -106,6 +106,13 @@ jobs:
             lib/shared/widgets/island_kit.dart \
             lib/app/island_world_style.dart \
             lib/app/island_page_transition.dart \
+            lib/app/parsa_brand.dart \
+            lib/core/startup \
+            lib/features/splash \
+            lib/shared/widgets/parsa_apps_logo.dart \
+            lib/shared/widgets/parsa_gold_aura.dart \
+            lib/features/growth/growth_app_shell.dart \
+            test/features/splash \
             test/features/home/island_node_test.dart \
             test/features/home/hub_island_node_test.dart \
             test/features/home/hero_fandoq_test.dart \
@@ -160,6 +167,8 @@ jobs:
           test/features/shop/full_version_purchase_entry_test.dart
           test/features/games/mini_games/mini_game_scaffold_test.dart
           test/app_smoke_test.dart
+          test/features/splash/startup_coordinator_test.dart
+          test/features/splash/splash_screen_test.dart
 
       - name: Production APK policy tests
         run: python3 -m unittest discover -s tool -p 'test_verify_production_apk.py' -v

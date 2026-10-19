@@ -12,7 +12,13 @@
 import argparse, pathlib
 from PIL import Image
 
-KEEP_PNG = {"assets/icons/app_icon.png", "assets/icons/app_icon_foreground.png"}
+# لوگوی اصلی برند «مرجع» است و هرگز نباید فشرده یا حذف شود؛ نسخهٔ
+# شفاف و آیکون‌ها از همین فایل مشتق می‌شوند.
+KEEP_PNG = {
+    "assets/icons/app_icon.png",
+    "assets/icons/app_icon_foreground.png",
+    "assets/branding/parsa_apps_logo.png",
+}
 
 def main():
     ap = argparse.ArgumentParser()
