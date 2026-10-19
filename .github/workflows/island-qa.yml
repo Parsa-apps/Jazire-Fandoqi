@@ -141,6 +141,12 @@ jobs:
             clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
             echo "::error::$clean"
           done
+          # Failure context (assertion + first stack frames) so a red run is
+          # actionable without downloading the log artifact.
+          grep -A 16 -E '\[E\]' test-output.txt | head -n 110 | while IFS= read -r line; do
+            clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
+            echo "::error::detail: $clean"
+          done
           grep -E 'Some tests failed|All tests passed' test-output.txt | tail -1 | while IFS= read -r line; do
             clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
             echo "::notice::$clean"
