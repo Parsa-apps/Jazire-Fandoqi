@@ -57,10 +57,49 @@ AAB و APK هر دو متعلق به **مایکت** هستند. خروجی قد�
 3. `apksigner` صحت امضا را بررسی می‌کند؛ `tool/verify_production_apk.py` گواهی را با keystore رسمی مقایسه می‌کند.
 4. از خود APK، package، versionName/versionCode، مجوز پرداخت مایکت و نبود debug/testOnly بررسی می‌شود.
 
-آرتیفکت‌های نسخهٔ فعلی:
+نام آرتیفکت‌ها و تگ انتشار از `version` در `pubspec.yaml` ساخته می‌شود (نسخهٔ فعلی `7.5.7+30`):
 
-- `jazire_fandoqi_v7.5.7_myket_production_apk` — `app-myket-release.apk` + `build-info.txt`
-- `jazire_fandoqi_v7.5.7_myket_production_aab`
+- `jazire_fandoqi_v<versionName>_myket_production_apk` — `app-myket-release.apk` + `build-info.txt`
+- `jazire_fandoqi_v<versionName>_myket_production_aab`
+
+## دانلود و بررسی صحت APK/AAB
+
+**ساده‌ترین راه: از صفحهٔ Release دانلود کنید، نه از آرتیفکت Actions.** فایل‌های Release زیپ نیستند و مستقیماً روی گوشی نصب یا در پیشخوان مایکت بارگذاری می‌شوند:
+
+```text
+https://github.com/Parsa-apps/Jazire-Fandoqi/releases/download/v7.5.7/jazire-fandoqi-v7.5.7-myket-release.apk
+https://github.com/Parsa-apps/Jazire-Fandoqi/releases/download/v7.5.7/jazire-fandoqi-v7.5.7-myket-release.aab
+```
+
+کنار هر فایل یک فایل `.sha256` هم منتشر می‌شود. پس از دانلود، صحت آن را بررسی کنید:
+
+```bash
+# لینوکس / macOS
+sha256sum -c jazire-fandoqi-v7.5.7-myket-release.apk.sha256
+```
+
+```powershell
+# ویندوز (PowerShell)
+Get-FileHash jazire-fandoqi-v7.5.7-myket-release.apk -Algorithm SHA256
+# خروجی باید برابر محتوای فایل .sha256 باشد
+```
+
+خلاصهٔ هر اجرای CI (Job Summary) هم لینک دانلود، حجم دقیق و SHA-256 را چاپ می‌کند.
+
+### اگر زیپِ آرتیفکت Actions هنگام استخراج خطا داد
+
+فایل زیپ روی سرور سالم است؛ تقریباً همیشه مشکل از **دانلود ناقص** است. به‌ترتیب چک کنید:
+
+1. **حجم فایل دانلودی را با عدد اعلام‌شده مقایسه کنید.** مثلاً آرتیفکت APK نسخهٔ ۷.۵.۷ دقیقاً `97,825,865` بایت و آرتیفکت AAB دقیقاً `100,432,061` بایت است. کوچک‌تر بودن یعنی دانلود قطع شده؛ دوباره بگیرید.
+2. **اگر حجم چند کیلوبایت بود، فایل را با Notepad باز کنید.** در این حالت یک صفحهٔ خطا/ورود (HTML) ذخیره شده — معمولاً به‌خاطر لاگین‌نبودن، منقضی‌شدن لینک آرتیفکت (نگهداری ۹۰ روز) یا بلاک‌شدن هاست دانلود. با حساب مالک ریپو وارد شوید یا از Release استفاده کنید.
+3. **هاست دانلود را عوض کنید.** آرتیفکت‌های Actions از `*.blob.core.windows.net` و فایل‌های Release از `objects.githubusercontent.com` سرو می‌شوند. اگر شبکه، VPN یا پروکسی یکی از این دو را قطع یا محدود می‌کند، مسیر دیگر را امتحان کنید.
+4. **دانلود را با ابزار خط فرمان انجام بدهید** تا در صورت قطع شدن، ادامه یا تکرار آن ساده باشد:
+
+```bash
+gh run download <run-id> -n jazire_fandoqi_v7.5.7_myket_production_apk -D ./out
+```
+
+اگر بعد از این مراحل باز هم خطا داشتید، قبل از هر کاری **برنامه را از روی گوشی حذف نکنید**؛ ابتدا APK سالم را از Release بگیرید و به‌صورت به‌روزرسانی نصب کنید (`adb install -r`).
 
 QA مستقل فقط گزارش تست/تحلیل و نتایج JVM منتشر می‌کند؛ دیگر `island-qa-apk` ندارد.
 

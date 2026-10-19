@@ -20,6 +20,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Resolve release version
+        id: version
+        run: |
+          set -euo pipefail
+          RAW="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1 | tr -d '\r')"
+          test -n "$RAW" || { echo '::error::version not found in pubspec.yaml'; exit 1; }
+          NAME="${RAW%%+*}"
+          if [ "$NAME" != "$RAW" ]; then CODE="${RAW#*+}"; else CODE=""; fi
+          test -n "$NAME" || { echo '::error::invalid version in pubspec.yaml'; exit 1; }
+          {
+            echo "raw=$RAW"
+            echo "name=$NAME"
+            echo "code=$CODE"
+            echo "tag=v$NAME"
+          } >> "$GITHUB_OUTPUT"
+          echo "Release identity: $RAW (tag v$NAME)"
+
       - name: Require production signing
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -205,13 +222,42 @@ jobs:
           } > build/app/outputs/flutter-apk/build-info.txt
           cat build/app/outputs/flutter-apk/build-info.txt
 
+      - name: Prepare release assets and checksums
+        id: assets
+        env:
+          VER: ${{ steps.version.outputs.name }}
+        run: |
+          set -euo pipefail
+          DIST="build/dist"
+          APK_NAME="jazire-fandoqi-v${VER}-myket-release.apk"
+          AAB_NAME="jazire-fandoqi-v${VER}-myket-release.aab"
+          mkdir -p "$DIST"
+          cp build/app/outputs/flutter-apk/app-myket-release.apk "$DIST/$APK_NAME"
+          cp build/app/outputs/bundle/myketRelease/app-myket-release.aab "$DIST/$AAB_NAME"
+          # A checksum lets anyone detect a truncated or corrupted download:
+          # the size shown by the browser must match and `sha256sum -c` must pass.
+          ( cd "$DIST" && sha256sum "$APK_NAME" > "$APK_NAME.sha256" && sha256sum "$AAB_NAME" > "$AAB_NAME.sha256" )
+          {
+            echo "dir=$DIST"
+            echo "apk=$APK_NAME"
+            echo "aab=$AAB_NAME"
+            echo "apk_sha256=$(cut -d' ' -f1 "$DIST/$APK_NAME.sha256")"
+            echo "aab_sha256=$(cut -d' ' -f1 "$DIST/$AAB_NAME.sha256")"
+            echo "apk_bytes=$(wc -c < "$DIST/$APK_NAME")"
+            echo "aab_bytes=$(wc -c < "$DIST/$AAB_NAME")"
+          } >> "$GITHUB_OUTPUT"
+          echo "APK: $APK_NAME ($(wc -c < "$DIST/$APK_NAME") bytes)"
+          echo "AAB: $AAB_NAME ($(wc -c < "$DIST/$AAB_NAME") bytes)"
+          cat "$DIST/$APK_NAME.sha256" "$DIST/$AAB_NAME.sha256"
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: jazire_fandoqi_v7.5.7_myket_production_apk
+          name: jazire_fandoqi_v${{ steps.version.outputs.name }}_myket_production_apk
           path: |
             build/app/outputs/flutter-apk/app-myket-release.apk
             build/app/outputs/flutter-apk/build-info.txt
+          if-no-files-found: error
 
       - name: Upload QA gate log
         if: failure()
@@ -225,33 +271,58 @@ jobs:
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: jazire_fandoqi_v7.5.7_myket_production_aab
+          name: jazire_fandoqi_v${{ steps.version.outputs.name }}_myket_production_aab
           path: build/app/outputs/bundle/myketRelease/app-myket-release.aab
+          if-no-files-found: error
 
       - name: Publish GitHub Release (APK & AAB)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+          RAW: ${{ steps.version.outputs.raw }}
+          DIST: ${{ steps.assets.outputs.dir }}
+          APK_NAME: ${{ steps.assets.outputs.apk }}
+          AAB_NAME: ${{ steps.assets.outputs.aab }}
         run: |
           set -euo pipefail
-          TAG="v7.5.7"
-          APK="build/app/outputs/flutter-apk/app-myket-release.apk"
-          AAB="build/app/outputs/bundle/myketRelease/app-myket-release.aab"
           INFO="build/app/outputs/flutter-apk/build-info.txt"
-          cp "$APK" "jazire-fandoqi-v7.5.7-myket-release.apk"
+          # One clearly named APK (the old duplicate app-myket-release.apk upload
+          # is gone) plus a .sha256 sidecar so downloads can be verified.
+          ASSETS=(
+            "$DIST/$APK_NAME" "$DIST/$APK_NAME.sha256"
+            "$DIST/$AAB_NAME" "$DIST/$AAB_NAME.sha256"
+            "$INFO"
+          )
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" \
-              "$APK" \
-              "jazire-fandoqi-v7.5.7-myket-release.apk" \
-              "$AAB" \
-              "$INFO" \
-              --clobber
+            gh release upload "$TAG" "${ASSETS[@]}" --clobber
           else
-            gh release create "$TAG" \
-              "$APK" \
-              "jazire-fandoqi-v7.5.7-myket-release.apk" \
-              "$AAB" \
-              "$INFO" \
-              --title "جزیره فندقی v7.5.7+30 — نسخهٔ انتشار رسمی مایکت (APK + AAB)" \
+            gh release create "$TAG" "${ASSETS[@]}" \
+              --title "جزیره فندقی v${RAW} — نسخهٔ انتشار رسمی مایکت (APK + AAB)" \
               --notes-file RELEASE_NOTES.md \
               --latest
           fi
+
+      - name: Publish download links and checksums
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          APK_NAME: ${{ steps.assets.outputs.apk }}
+          AAB_NAME: ${{ steps.assets.outputs.aab }}
+          APK_BYTES: ${{ steps.assets.outputs.apk_bytes }}
+          AAB_BYTES: ${{ steps.assets.outputs.aab_bytes }}
+          APK_SHA256: ${{ steps.assets.outputs.apk_sha256 }}
+          AAB_SHA256: ${{ steps.assets.outputs.aab_sha256 }}
+        run: |
+          set -euo pipefail
+          BASE="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}"
+          {
+            echo "## دانلود مستقیم (بدون زیپ) — ${TAG}"
+            echo
+            echo "| فایل | حجم (بایت) | SHA-256 |"
+            echo "|---|---|---|"
+            echo "| [${APK_NAME}](${BASE}/${APK_NAME}) | ${APK_BYTES} | \`${APK_SHA256}\` |"
+            echo "| [${AAB_NAME}](${BASE}/${AAB_NAME}) | ${AAB_BYTES} | \`${AAB_SHA256}\` |"
+            echo
+            echo 'فایل‌های Release زیپ نیستند. اگر زیپِ آرتیفکتِ Actions هنگام استخراج خطا داد،'
+            echo 'همین فایل‌ها را مستقیماً دانلود کنید و با `sha256sum -c` صحت آن‌ها را بررسی کنید.'
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat "$GITHUB_STEP_SUMMARY"
