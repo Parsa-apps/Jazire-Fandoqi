@@ -1,5 +1,7 @@
 import 'package:hive_flutter/hive_flutter.dart';
 
+import 'hive_player_store.dart';
+
 /// ────────────────────────────────────────────────────────────
 /// 🛠️ فاز ۸: ذخیره‌سازی آفلاین خطاها (Crash Report Store)
 ///
@@ -19,6 +21,11 @@ class CrashReportStore {
 
   static Future<Box<dynamic>> _getBox() async {
     if (_box != null && _box!.isOpen) return _box!;
+    // پیش از آماده‌شدن Hive هیچ باکسی باز نمی‌شود؛ خطای asyncِ Hive نباید
+    // به حلقهٔ «خطا ← ثبت خطا» تبدیل شود. logError این را بی‌صدا رد می‌کند.
+    if (!HivePlayerStore.hiveReady) {
+      throw StateError('Hive storage is not ready');
+    }
     final box = Hive.isBoxOpen(_boxName)
         ? Hive.box(_boxName)
         : await Hive.openBox(_boxName);

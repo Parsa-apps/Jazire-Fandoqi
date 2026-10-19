@@ -2,8 +2,6 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-
 import '../../data/datasources/hive_player_store.dart';
 import '../fandoghi_coach.dart';
 import '../game_data.dart';
@@ -305,8 +303,6 @@ class StartupCoordinator extends ChangeNotifier {
   // مراحل پیش‌فرض — همان کارهایی که قبلاً در main انجام می‌شد.
   // ─────────────────────────────────────────────────────────────
 
-  static bool _hiveReady = false;
-
   static List<StartupStep> _defaultSteps() {
     return <StartupStep>[
       StartupStep(
@@ -345,26 +341,5 @@ class StartupCoordinator extends ChangeNotifier {
     ];
   }
 
-  static Future<void> _openStorage() async {
-    if (_hiveReady) return;
-    // اگر Hive قبلاً (hot restart یا تست) راه‌اندازی شده باشد، صدا زدن
-    // دوبارهٔ `initFlutter` لازم نیست و ممکن است خطا بدهد؛ در آن حالت
-    // باز کردن باکس همچنان کار می‌کند. اگر هم واقعاً راه‌اندازی نشده باشد،
-    // `openBox` خطا می‌دهد و مرحله به مسیر جایگزین حافظه می‌رود.
-    try {
-      await Hive.initFlutter();
-    } catch (_) {
-      // عمداً نادیده گرفته می‌شود؛ نتیجهٔ واقعی را openBox مشخص می‌کند.
-    }
-    if (!Hive.isBoxOpen(HivePlayerStore.boxName)) {
-      await Hive.openBox<dynamic>(HivePlayerStore.boxName);
-    }
-    _hiveReady = true;
-  }
-
-  /// فقط برای تست‌ها: پرچم آماده‌بودن حافظه را پاک می‌کند.
-  @visibleForTesting
-  static void resetStorageProbeForTesting() {
-    _hiveReady = false;
-  }
+  static Future<void> _openStorage() => HivePlayerStore.openStorage();
 }

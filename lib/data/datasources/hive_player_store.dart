@@ -34,8 +34,39 @@ class HivePlayerStore {
     _memoryOnly = false;
   }
 
+  static bool _hiveReady = false;
+
+  /// آیا Hive راه‌اندازی شده و باکس بازیکن باز است؟
+  ///
+  /// تا پیش از [openStorage] هیچ‌جا `Hive.openBox` صدا زده نمی‌شود؛ Hive در
+  /// حالت init‌نشده یک Future خطادارِ بدون شنونده می‌سازد که فلاتر آن را
+  /// به‌عنوان خطای async سراسری گزارش می‌کند (و مسیر «خطا ← لاگ ← خطای
+  /// دوبارهٔ Hive» را باز می‌کند).
+  static bool get hiveReady => _hiveReady;
+
+  /// راه‌اندازی امنِ Hive و باز کردن باکس بازیکن.
+  ///
+  /// فقط یک‌بار انجام می‌شود و در صورت نبودن مسیر ذخیره‌سازی، خطای روشن
+  /// می‌دهد تا `StartupCoordinator` به حالت حافظه‌ای برود؛ هرگز روی اسپلش
+  /// قفل نمی‌شود.
+  static Future<void> openStorage() async {
+    if (_hiveReady) return;
+    try {
+      await Hive.initFlutter();
+    } catch (error) {
+      throw StateError('Hive storage is unavailable: $error');
+    }
+    if (!Hive.isBoxOpen(boxName)) {
+      await Hive.openBox<dynamic>(boxName);
+    }
+    _hiveReady = true;
+  }
+
   static Future<Box<dynamic>> _getBox() async {
     if (_box != null && _box!.isOpen) return _box!;
+    if (!_hiveReady) {
+      throw StateError('Hive storage has not been initialized yet');
+    }
     final box = Hive.isBoxOpen(boxName)
         ? Hive.box(boxName)
         : await Hive.openBox(boxName);
