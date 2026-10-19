@@ -8,6 +8,7 @@ import 'package:jazireh_fandoghi/core/game_data.dart';
 import 'package:jazireh_fandoghi/core/growth/growth_store.dart';
 import 'package:jazireh_fandoghi/core/startup/startup_coordinator.dart';
 import 'package:jazireh_fandoghi/features/splash/splash_screen.dart';
+import 'package:jazireh_fandoghi/features/splash/widgets/splash_brand.dart';
 
 /// 🎬 تست‌های صفحهٔ آغازین سینمایی.
 ///
@@ -164,6 +165,47 @@ void main() {
     expect(find.text('gateway'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('keeps the mark square and proportionate on a tablet',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1024, 1366);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final coordinator = StartupCoordinator(
+      securityCheck: false,
+      steps: <StartupStep>[
+        StartupStep(id: 'fast', weight: 1, run: () async {}),
+      ],
+    );
+
+    await tester.pumpWidget(harness(coordinator));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(tester.takeException(), isNull);
+
+    // هیچ کشیدگی/برشی: قاب لوگو دقیقاً مربع می‌ماند و تصویر با BoxFit.contain
+    // رسم می‌شود، پس روی صفحهٔ بزرگ فقط بزرگ‌تر می‌شود.
+    final markSize = tester.getSize(find.byType(SplashBrand));
+    expect(markSize.width, closeTo(markSize.height, 0.01));
+    expect(markSize.width, greaterThan(280));
+    expect(markSize.width, lessThan(1024 * 0.55));
+
+    final image = tester.widget<Image>(
+      find
+          .descendant(
+            of: find.byType(SplashBrand),
+            matching: find.byType(Image),
+          )
+          .first,
+    );
+    expect(image.fit, BoxFit.contain);
+
+    await pumpUntil(tester, find.text('gateway'));
+    expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
