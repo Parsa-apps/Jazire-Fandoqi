@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
 import 'package:jazireh_fandoghi/core/game_data.dart';
 import 'package:jazireh_fandoghi/core/growth/growth_store.dart';
+import 'package:jazireh_fandoghi/core/startup/startup_coordinator.dart';
 import 'package:jazireh_fandoghi/features/gateway/app_gateway_screen.dart';
 import 'package:jazireh_fandoghi/features/growth/whats_new_screen.dart';
 import 'package:jazireh_fandoghi/features/splash/splash_screen.dart';
@@ -13,6 +14,21 @@ import 'package:jazireh_fandoghi/features/tutorial/app_tutorial_screen.dart';
 import 'package:jazireh_fandoghi/main.dart';
 
 /// تست میزبان برای رندر پوستهٔ برنامه و عبور زمان‌بندی‌شده از اسپلش.
+///
+/// در این تست، هماهنگ‌کنندهٔ راه‌اندازی با مراحلِ خالی تزریق می‌شود تا
+/// زمان‌بندیِ اسپلش سنجیده شود، نه سرعت I/O دیسک در محیط CI. کارِ واقعیِ
+/// راه‌اندازی در تست‌های اختصاصی [StartupCoordinator] پوشش داده شده است.
+Widget _testApp() {
+  return ProviderScope(
+    child: JazirehFandoghiApp(
+      startupCoordinator: StartupCoordinator(
+        securityCheck: false,
+        steps: const <StartupStep>[],
+      ),
+    ),
+  );
+}
+
 void main() {
   setUp(() {
     GoogleFonts.config.allowRuntimeFetching = false;
@@ -25,7 +41,7 @@ void main() {
   testWidgets('fresh install reaches tutorial directly after splash',
       (tester) async {
     await tester.pumpWidget(
-      const ProviderScope(child: JazirehFandoghiApp()),
+      _testApp(),
     );
     await tester.pump();
 
@@ -55,7 +71,7 @@ void main() {
     GameData.onboardingSeen = true;
 
     await tester.pumpWidget(
-      const ProviderScope(child: JazirehFandoghiApp()),
+      _testApp(),
     );
     await tester.pump(const Duration(seconds: 3));
     for (var frame = 0; frame < 5; frame++) {
@@ -86,7 +102,7 @@ void main() {
     GrowthStore.lastWhatsNewVersion = '6.2.6';
 
     await tester.pumpWidget(
-      const ProviderScope(child: JazirehFandoghiApp()),
+      _testApp(),
     );
     await tester.pump(const Duration(seconds: 3));
     for (var frame = 0; frame < 5; frame++) {
