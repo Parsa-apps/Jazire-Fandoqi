@@ -393,15 +393,15 @@ class _PoweredBy extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return const Row(
       children: <Widget>[
-        const Expanded(child: _Hairline()),
+        Expanded(child: _Hairline()),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: EdgeInsets.symmetric(horizontal: 10),
           child: Text(
             ParsaBrand.poweredBy,
             textDirection: TextDirection.ltr,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 9.5,
               letterSpacing: 2.3,
               fontWeight: FontWeight.w500,
@@ -409,7 +409,7 @@ class _PoweredBy extends StatelessWidget {
             ),
           ),
         ),
-        const Expanded(child: _Hairline()),
+        Expanded(child: _Hairline()),
       ],
     );
   }

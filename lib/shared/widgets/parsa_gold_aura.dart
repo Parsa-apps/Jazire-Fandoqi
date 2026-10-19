@@ -176,7 +176,7 @@ class _ParsaGoldAuraCardState extends State<ParsaGoldAuraCard>
                 blendMode: BlendMode.srcIn,
                 shaderCallback: (Rect bounds) {
                   return LinearGradient(
-                    colors: <Color>[
+                    colors: const <Color>[
                       Colors.white,
                       ParsaBrand.brightGold,
                       ParsaBrand.gold,

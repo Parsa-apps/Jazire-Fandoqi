@@ -888,12 +888,6 @@ class _PlayTimeTrackerState extends State<_PlayTimeTracker>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _startup = widget.startupCoordinator ?? StartupCoordinator();
-    _reveal = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 520),
-      value: 1,
-    );
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (_foreground && GameData.onboardingSeen && !GameData.isDailyLimitReached) {
         GameData.addPlayTime();
