@@ -393,19 +393,29 @@ class _PoweredBy extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // روی گوشیِ باریک یا با فونت/مقیاس متنی متفاوت، متن برند باید کوچک
+    // شود نه اینکه سرریز کند؛ دو خط طلایی هم فضای باقی‌مانده را پر می‌کنند.
     return const Row(
       children: <Widget>[
         Expanded(child: _Hairline()),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10),
-          child: Text(
-            ParsaBrand.poweredBy,
-            textDirection: TextDirection.ltr,
-            style: TextStyle(
-              fontSize: 9.5,
-              letterSpacing: 2.3,
-              fontWeight: FontWeight.w500,
-              color: Color(0x73FFFFFF),
+        Flexible(
+          flex: 6,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.center,
+              child: Text(
+                ParsaBrand.poweredBy,
+                maxLines: 1,
+                textDirection: TextDirection.ltr,
+                style: TextStyle(
+                  fontSize: 9.5,
+                  letterSpacing: 1.9,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0x73FFFFFF),
+                ),
+              ),
             ),
           ),
         ),

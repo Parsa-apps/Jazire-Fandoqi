@@ -34,8 +34,13 @@ void main() {
 
     // SplashScreen and tutorial intentionally own repeating animations, so
     // pumpAndSettle can never complete. Advance by bounded durations instead.
+    // The splash now fades itself out (340ms) before swapping routes, and a
+    // timer only starts the fade at the end of the minimum-visible window;
+    // several short frames are needed for the fade + route transition.
     await tester.pump(const Duration(seconds: 3));
-    await tester.pump(const Duration(milliseconds: 500));
+    for (var frame = 0; frame < 5; frame++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
 
     expect(find.byType(AppTutorialScreen), findsOneWidget);
     expect(find.text('به جزیره فندقی خوش آمدی'), findsOneWidget);
@@ -53,7 +58,9 @@ void main() {
       const ProviderScope(child: JazirehFandoghiApp()),
     );
     await tester.pump(const Duration(seconds: 3));
-    await tester.pump(const Duration(milliseconds: 500));
+    for (var frame = 0; frame < 5; frame++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
 
     // آموزش نمایش داده نمی‌شود — مستقیم به دروازه (صفحه اصلی) می‌رود
     expect(find.byType(AppTutorialScreen), findsNothing);
@@ -82,7 +89,9 @@ void main() {
       const ProviderScope(child: JazirehFandoghiApp()),
     );
     await tester.pump(const Duration(seconds: 3));
-    await tester.pump(const Duration(milliseconds: 500));
+    for (var frame = 0; frame < 5; frame++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
 
     // تازه‌های نسخه روی صفحه است (نه آموزش)
     expect(find.byType(WhatsNewScreen), findsOneWidget);
