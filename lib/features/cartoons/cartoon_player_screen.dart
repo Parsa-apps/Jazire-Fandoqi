@@ -51,6 +51,20 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
   int _positionMs = 0;
   int _durationMs = 0;
 
+  // شمارندهٔ بارگذاری: پاسخ‌های دیررسِ قسمت/کیفیت قبلی نباید وضعیت تازه را
+  // خراب کنند یا کنترلرِ فعال را از کار بیندازند.
+  int _loadToken = 0;
+  bool _advancingEpisode = false;
+  bool _recoveringPlayback = false;
+  int _autoRecoveries = 0;
+
+  // هدرهایی که برخی CDNهای آپارات برای پخش انتظار دارند. اگر پلیر با این
+  // هدرها شکست بخورد، همان لینک بدون هدر هم امتحان می‌شود.
+  static const Map<String, String> _mediaHeaders = {
+    'User-Agent': 'Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+    'Referer': 'https://www.aparat.com/',
+  };
+
   // Pro cinema features
   bool _cinemaDimMode = false;
   bool _childLock = false;
@@ -114,6 +128,7 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
 
   @override
   void dispose() {
+    _loadToken++;
     _playbackTimer?.cancel();
     _controller?.removeListener(_videoListener);
     _controller?.dispose();
@@ -125,55 +140,174 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
   CartoonEpisode get _currentEpisode => widget.cartoon.episodes[_currentEpIndex];
 
   void _videoListener() {
-    if (!mounted || _controller == null) return;
-    if (_controller!.value.isInitialized) {
-      final dur = _controller!.value.duration.inMilliseconds;
-      final pos = _controller!.value.position.inMilliseconds;
-      if (dur > 1000 && pos >= dur - 600) {
-        _onEpisodeFinished();
-      }
+    if (!mounted) return;
+    final controller = _controller;
+    if (controller == null || !_videoReady) return;
+
+    final value = controller.value;
+    if (value.hasError) {
+      _recoverFromPlaybackError();
+      return;
     }
+    if (!value.isInitialized) return;
+
+    final dur = value.duration.inMilliseconds;
+    final pos = value.position.inMilliseconds;
+    if (dur > 1000 && pos >= dur - 600) {
+      _onEpisodeFinished();
+    }
+  }
+
+  /// اگر ویدیو وسط پخش قطع شد (مثلاً امضای لینک منقضی شد یا CDN پاسخ
+  /// نداد)، یک‌بار به‌صورت خودکار لینک تازه می‌گیریم و از کیفیت بعدی شروع
+  /// می‌کنیم؛ کودک نباید با صفحهٔ سیاه تنها بماند.
+  void _recoverFromPlaybackError() {
+    if (_recoveringPlayback) return;
+    // حداکثر دو بازیابی خودکار برای هر بار ورود به قسمت؛ در غیر این صورت
+    // یک لینک خراب می‌تواند حلقهٔ بی‌پایانِ درخواست بسازد.
+    if (_autoRecoveries >= 2) return;
+    _recoveringPlayback = true;
+    _autoRecoveries++;
+    Future.microtask(() async {
+      try {
+        await _loadCurrentEpisode(forceRefresh: true, allowRetry: false);
+      } finally {
+        _recoveringPlayback = false;
+      }
+    });
   }
 
   void _onEpisodeFinished() {
+    if (_advancingEpisode) return;
+    _advancingEpisode = true;
     _progress = 0.0;
+
     if (_currentEpIndex + 1 < widget.cartoon.episodes.length) {
-      _selectEpisode(_currentEpIndex + 1);
-    } else {
-      _isPlaying = false;
-      if (_controller != null && _videoReady) {
-        _controller!.pause();
+      if (mounted) {
+        setState(() {
+          _currentEpIndex += 1;
+          _isPlaying = true;
+        });
+        FandoghiCoach.say(
+          'قسمت ${_currentEpisode.episodeNumber}: ${_currentEpisode.title} شروع شد! 🎬',
+          mood: FandoghiMood.happy,
+        );
       }
-      // Auto open trivia after finishing all
-      _openTrivia();
+      _loadCurrentEpisode().whenComplete(() => _advancingEpisode = false);
+      return;
+    }
+
+    _isPlaying = false;
+    _controller?.pause();
+    _advancingEpisode = false;
+    // Auto open trivia after finishing all
+    _openTrivia();
+  }
+
+  /// ترتیب اولویت کاندیدهای پخش.
+  ///
+  /// ۱) کیفیت انتخابی (HLS قبل از MP4 چون پخش بومی آپارات است و به
+  ///    امضای لینک MP4 حساس نیست)
+  /// ۲) اولین گزینهٔ HLS (پلی‌لیست master آپارات) — حتی وقتی MP4های
+  ///    تکی 403 می‌دهند، این مسیر معمولاً باز است
+  /// ۳) بقیهٔ کیفیت‌ها: سبک‌ترها قبل از سنگین‌ها
+  List<VideoStream> _playbackCandidates(AparatResolved resolved) {
+    final wanted = _selectedQuality.toLowerCase();
+    final streams = List<VideoStream>.of(resolved.streams);
+
+    int qualityRank(VideoStream stream) {
+      final quality = stream.quality.toLowerCase();
+      if (quality == wanted) return 0;
+      switch (quality) {
+        case '480p':
+          return 10;
+        case '360p':
+          return 20;
+        case '720p':
+          return 30;
+        case '1080p':
+          return 40;
+        case '240p':
+          return 50;
+        case '144p':
+          return 60;
+        case 'auto':
+          return 90;
+        default:
+          return 70;
+      }
+    }
+
+    streams.sort((a, b) {
+      final byQuality = qualityRank(a).compareTo(qualityRank(b));
+      if (byQuality != 0) return byQuality;
+      return (a.isHls ? 0 : 1).compareTo(b.isHls ? 0 : 1);
+    });
+
+    final ordered = <VideoStream>[];
+    void add(VideoStream? stream) {
+      if (stream != null && !ordered.contains(stream)) ordered.add(stream);
+    }
+
+    for (final stream in streams) {
+      if (stream.quality.toLowerCase() == wanted) add(stream);
+    }
+    for (final stream in streams) {
+      if (stream.isHls) {
+        add(stream);
+        break;
+      }
+    }
+    for (final stream in streams) {
+      add(stream);
+    }
+    return ordered;
+  }
+
+  Future<VideoPlayerController?> _tryInitialize(
+    VideoStream stream, {
+    required bool withHeaders,
+  }) async {
+    VideoPlayerController? controller;
+    try {
+      controller = VideoPlayerController.networkUrl(
+        Uri.parse(stream.url),
+        httpHeaders: withHeaders ? _mediaHeaders : const <String, String>{},
+      );
+      // بدون تایم‌اوت، یک اتصال نیمه‌باز می‌تواند اسپینر را تا ابد نگه دارد.
+      await controller.initialize().timeout(const Duration(seconds: 12));
+      return controller;
+    } catch (_) {
+      try {
+        await controller?.dispose();
+      } catch (_) {
+        // dispose کنترلرِ نیمه‌ساخته هم ممکن است خطا بدهد؛ مهم نیست.
+      }
+      return null;
     }
   }
 
-  String? _pickUrl(AparatResolved resolved) {
-    if (!resolved.hasSource) return null;
-    final wanted = _selectedQuality;
-    VideoStream? exact;
-    VideoStream? fallback;
-    for (final s in resolved.streams) {
-      final q = s.quality.toLowerCase();
-      if (q.contains(wanted.toLowerCase()) || wanted.toLowerCase().contains(q)) {
-        exact ??= s;
-      } else if (q.contains('480') || q.contains('360')) {
-        fallback ??= s;
-      } else if (fallback == null) {
-        fallback = s;
-      }
-    }
-    return (exact ?? fallback ?? resolved.streams.first).url;
-  }
-
-  Future<void> _loadCurrentEpisode() async {
+  Future<void> _loadCurrentEpisode({
+    bool forceRefresh = false,
+    bool allowRetry = true,
+  }) async {
     if (_childLock) return;
-    _controller?.removeListener(_videoListener);
-    await _controller?.dispose();
-    _controller = null;
 
-    if (!mounted) return;
+    // فقط بارگذاری‌های آغازشده توسط کاربر شمارندهٔ بازیابی را صفر می‌کنند؛
+    // مسیر بازیابی خودکار با allowRetry=false می‌آید تا حلقه نسازد.
+    if (allowRetry) _autoRecoveries = 0;
+
+    final token = ++_loadToken;
+    final previous = _controller;
+    _controller = null;
+    previous?.removeListener(_videoListener);
+    try {
+      await previous?.dispose();
+    } catch (_) {
+      // کنترلرِ قبلی ممکن است هنوز در حال initialize باشد؛ مهم نیست.
+    }
+
+    if (!mounted || token != _loadToken) return;
     setState(() {
       _videoReady = false;
       _videoError = false;
@@ -184,6 +318,9 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
     });
 
     final ep = _currentEpisode;
+    if (forceRefresh) {
+      AparatService.invalidateCache(videoHash: ep.aparatHash);
+    }
 
     // 🛡️ ایمنی کودک (C2): فقط قسمت‌های تأییدشدهٔ کاتالوگ پخش می‌شوند.
     // اگر لینک CDN ثابتی در بانک اطلاعاتی تعریف شده باشد، باید از دامنه‌های
@@ -191,73 +328,119 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
     // هیچ جستجوی متنی و هیچ ویدیوی جایگزینی در کار نیست.
     AparatResolved resolved;
     final directUrl = ep.streamUrl?.trim() ?? '';
-    if (directUrl.isNotEmpty && AparatService.isPlayableStreamUrl(directUrl)) {
-      resolved = AparatResolved(
-        streams: [VideoStream(url: directUrl, quality: 'auto')],
-      );
-    } else {
-      resolved = await AparatService.resolve(videoHash: ep.aparatHash);
-    }
-
-    if (!mounted) return;
-
-    final url = _pickUrl(resolved);
-    // آخرین خط دفاعی قبل از تحویل آدرس به پلیر.
-    if (url != null && !AparatService.isPlayableStreamUrl(url)) {
+    try {
+      if (directUrl.isNotEmpty && AparatService.isPlayableStreamUrl(directUrl)) {
+        resolved = AparatResolved(
+          streams: [VideoStream(url: directUrl, quality: 'auto')],
+        );
+      } else {
+        resolved = await AparatService.resolve(videoHash: ep.aparatHash);
+      }
+    } catch (_) {
+      if (!mounted || token != _loadToken) return;
       setState(() {
         _videoLoading = false;
         _videoError = true;
-        _videoErrorMsg = 'این قسمت الان قابل پخش نیست. بعداً دوباره امتحان کن.';
+        _videoErrorMsg = 'دریافت لینک پخش ناموفق بود. اینترنت را بررسی کن و دوباره تلاش کن.';
       });
       return;
     }
-    if (url == null) {
+
+    if (!mounted || token != _loadToken) return;
+
+    final candidates = _playbackCandidates(resolved);
+
+    if (candidates.isEmpty) {
+      // ممکن است کش، نتیجهٔ ناقصِ قبلی را نگه داشته باشد؛ یک‌بار با کش تازه
+      // دوباره تلاش می‌کنیم و بعد پیام خطا می‌دهیم.
+      if (allowRetry) {
+        AparatService.invalidateCache(videoHash: ep.aparatHash);
+        await _loadCurrentEpisode(forceRefresh: true, allowRetry: false);
+        return;
+      }
+      if (!mounted || token != _loadToken) return;
       setState(() {
         _videoLoading = false;
         _videoError = true;
         _videoErrorMsg = 'لینک پخش در دسترس نیست. اینترنت را بررسی کن یا بعداً امتحان کن.';
+        _posterUrl = resolved.posterUrl;
       });
       return;
     }
 
-    try {
-      final controller = VideoPlayerController.networkUrl(
-        Uri.parse(url),
-        httpHeaders: const {
-          'User-Agent': 'Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-          'Referer': 'https://www.aparat.com/',
-        },
-      );
-      _controller = controller;
-      controller.addListener(_videoListener);
-      await controller.initialize();
-      if (!mounted) {
-        controller.dispose();
+    // دو مرحله: اول با هدرهای آپارات، بعد بدون هدر (برای CDNهایی که
+    // Referer/User-Agent سفارشی را رد می‌کنند). هر مرحله حداکثر ۳ کاندید،
+    // ولی کل تلاش‌ها سقف زمانی دارد تا اسپینر بی‌نهایت نشود.
+    VideoPlayerController? controller;
+    var timedOut = false;
+    final attemptDeadline = DateTime.now().add(const Duration(seconds: 40));
+    for (final withHeaders in const [true, false]) {
+      for (final candidate in candidates.take(3)) {
+        if (DateTime.now().isAfter(attemptDeadline)) {
+          timedOut = true;
+          break;
+        }
+        if (!mounted || token != _loadToken) {
+          await controller?.dispose();
+          return;
+        }
+        controller = await _tryInitialize(candidate, withHeaders: withHeaders);
+        if (controller != null) break;
+      }
+      if (controller != null) break;
+      if (DateTime.now().isAfter(attemptDeadline)) {
+        timedOut = true;
+        break;
+      }
+    }
+
+    if (!mounted || token != _loadToken) {
+      await controller?.dispose();
+      return;
+    }
+
+    if (controller == null) {
+      // اگر زمان تمام شده، تلاش دوباره فقط انتظار کودک را دو برابر می‌کند؛
+      // کاربر خودش دکمهٔ «تلاش دوباره» را دارد.
+      if (allowRetry && !timedOut) {
+        AparatService.invalidateCache(videoHash: ep.aparatHash);
+        await _loadCurrentEpisode(forceRefresh: true, allowRetry: false);
         return;
       }
+      setState(() {
+        _videoLoading = false;
+        _videoError = true;
+        _videoErrorMsg = 'پخش این قسمت ممکن نشد. اتصال اینترنت را بررسی کن و دوباره تلاش کن.';
+        _posterUrl = resolved.posterUrl;
+      });
+      return;
+    }
+
+    _controller = controller;
+    controller.addListener(_videoListener);
+    try {
       await controller.setLooping(false);
       await controller.setVolume(AudioService.canPlayAudio ? 1.0 : 0.0);
       await controller.setPlaybackSpeed(_playbackSpeed.clamp(0.5, 2.0));
-      if (_isPlaying) {
-        await controller.play();
-      }
-      setState(() {
-        _videoReady = true;
-        _videoLoading = false;
-        _posterUrl = resolved.posterUrl;
-      });
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _videoLoading = false;
-          _videoError = true;
-          _videoErrorMsg = 'خطا در بارگذاری ویدیو. دوباره تلاش کن.';
-        });
-      }
+      if (_isPlaying) await controller.play();
+    } catch (_) {
+      // تنظیمات جانبی (صدا/سرعت) نباید تصویرِ آماده را از بین ببرد.
     }
+
+    if (!mounted || token != _loadToken) {
+      await controller.dispose();
+      return;
+    }
+    setState(() {
+      _videoReady = true;
+      _videoLoading = false;
+      _videoError = false;
+      _videoErrorMsg = null;
+      _posterUrl = resolved.posterUrl;
+    });
   }
 
-  Future<void> _retryLoad() => _loadCurrentEpisode();
+  Future<void> _retryLoad() => _loadCurrentEpisode(forceRefresh: true);
 
   Future<void> _changeQuality(String quality) async {
     if (_childLock) return;
@@ -271,6 +454,10 @@ class _CartoonPlayerScreenState extends State<CartoonPlayerScreen>
 
   void _enterFullscreen() {
     if (_childLock) return;
+    if (_controller == null || !_videoReady) {
+      FandoghiCoach.say('اول صبر کن کارتون آماده بشه! ⏳', mood: FandoghiMood.thinking);
+      return;
+    }
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => _FullscreenVideo(controller: _controller, color: widget.cartoon.themeColor),
