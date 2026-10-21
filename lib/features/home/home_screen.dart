@@ -11,10 +11,10 @@ import '../../core/fandoghi_coach.dart';
 import '../../core/game_data.dart';
 import '../../presentation/providers/game_state_provider.dart';
 import '../gateway/learning_library_screen.dart';
+import '../island_home/living_island_home.dart';
 import '../profile/profile_screen.dart';
 import '../stage_map/stage_map_screen.dart';
 import 'widgets/achievements_tab.dart';
-import 'widgets/island_map/island_map_tab.dart';
 import 'widgets/report_card_tab.dart';
 
 /// ═══════════════════════════════════════════════
@@ -37,11 +37,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     _musicVolume = GameData.musicVolume;
-    _tabWidgets[2] = IslandMapTab(
-      onOpenStageMap: () => _openStageMapScreen(),
-      onOpenBackpack: () => _selectTab(1),
-      onOpenAchievements: () => _selectTab(0),
-    );
+    _tabWidgets[2] = _buildIslandHome();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -333,6 +329,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  /// 🏝️ تبِ خانه: دنیای زندهٔ جزیره.
+  ///
+  /// نقشهٔ کامل ([IslandMapTab]) حذف نشده است؛ از درونِ همین صفحه با
+  /// «نقشه جزیره» باز می‌شود، بنابراین همهٔ هاب‌ها سرِ جای خود مانده‌اند.
+  Widget _buildIslandHome() {
+    return LivingIslandHome(
+      onOpenStageMap: _openStageMapScreen,
+      onOpenBackpack: () => _selectTab(1),
+      onOpenAchievements: () => _selectTab(0),
+      onOpenProfile: () => _selectTab(4),
+    );
+  }
+
   Widget _tabFor(int index) {
     final existing = _tabWidgets[index];
     if (existing != null) return existing;
@@ -340,16 +349,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final Widget widget = switch (index) {
       0 => const AchievementsTab(),
       1 => const LearningLibraryScreen(embedded: true),
-      2 => IslandMapTab(
-          onOpenStageMap: () => _openStageMapScreen(),
-          onOpenBackpack: () => _selectTab(1),
-          onOpenAchievements: () => _selectTab(0),
-        ),
+      2 => _buildIslandHome(),
       3 => const ReportCardTab(),
       4 => const ProfileScreen(embedded: true),
-      _ => IslandMapTab(
-          onOpenStageMap: () => _openStageMapScreen(),
-        ),
+      _ => _buildIslandHome(),
     };
     _tabWidgets[index] = widget;
     return widget;

@@ -13,6 +13,7 @@ import 'package:jazireh_fandoghi/features/about/about_screen.dart';
 import 'package:jazireh_fandoghi/features/cartoons/cartoon_hub_screen.dart';
 import 'package:jazireh_fandoghi/features/gateway/app_gateway_screen.dart';
 import 'package:jazireh_fandoghi/features/home/home_screen.dart';
+import 'package:jazireh_fandoghi/features/home/widgets/island_map/island_map_tab.dart';
 
 Future<void> _disposeAnimatedTree(WidgetTester tester) async {
   await tester.pumpWidget(const SizedBox.shrink());
@@ -50,7 +51,7 @@ void main() {
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 
-  testWidgets('home island screen renders all 6 learning & game hubs and navigation', (tester) async {
+  testWidgets('home opens the living island with the three main paths', (tester) async {
     GameData.resetForTesting();
     GameData.onboardingSeen = true;
 
@@ -61,15 +62,18 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 250));
 
-    // ۶ هاب اصلی جزیره فندقی
-    expect(find.text('فارسی'), findsOneWidget);
-    expect(find.text('ریاضی'), findsOneWidget);
-    // Bubble labels intentionally stay short enough for the underwater map.
-    expect(find.text('حروف'), findsOneWidget);
-    expect(find.text('علوم'), findsOneWidget);
-    expect(find.text('بازی‌ها'), findsOneWidget);
-    expect(find.text('هنر'), findsOneWidget);
-    expect(find.text('پروفایل من'), findsOneWidget);
+    // بزرگ‌ترین کنترلِ صفحه و سه مسیرِ اصلی — هر سه فقط با نشان هم قابل
+    // تشخیص‌اند، برچسبِ فارسی همراهشان است اما شرطِ استفاده نیست.
+    expect(find.text('شروع بازی'), findsOneWidget);
+    expect(find.text('بازی'), findsOneWidget);
+    expect(find.text('آموزش'), findsOneWidget);
+    expect(find.text('داستان'), findsOneWidget);
+
+    // لوگو و هویتِ بصری
+    expect(find.text('جزیره فندقی'), findsOneWidget);
+
+    // ورودیِ نقشهٔ کاملِ جزیره (هیچ هابی حذف نشده است)
+    expect(find.byKey(const ValueKey('living_island_map_chip')), findsOneWidget);
 
     // نوار ناوبری پایینی
     expect(find.text('خانه'), findsOneWidget);
@@ -89,8 +93,7 @@ void main() {
     expect(find.byKey(const Key('music-volume-slider')), findsOneWidget);
     expect(find.text('صدای موسیقی'), findsOneWidget);
 
-    // هاب‌ها برای نیمهٔ رایگان بازند، ولی راه خرید و نشان قفل باید
-    // پیش از ورود به هر هاب روی خودِ نقشه دیده شود.
+    // مسیرِ خرید دست‌نخورده روی خانهٔ جدید هم دیده می‌شود.
     expect(find.byKey(const ValueKey('full_version_purchase_entry')),
         findsOneWidget);
     expect(find.text('خرید نسخه کامل'), findsOneWidget);
@@ -99,6 +102,63 @@ void main() {
     // دکمه‌های شناور کناری (آیکونی، با برچسب دسترس‌پذیری)
     expect(find.bySemanticsLabel('هدیهٔ روزانه'), findsOneWidget);
     expect(find.bySemanticsLabel('کتابخانه'), findsOneWidget);
+    expect(find.bySemanticsLabel('تنظیمات والدین'), findsOneWidget);
+
+    await _disposeAnimatedTree(tester);
+  });
+
+  testWidgets('the classic island map with all 6 hubs is still reachable',
+      (tester) async {
+    GameData.resetForTesting();
+    GameData.onboardingSeen = true;
+
+    // سطحِ بلندترِ آگاهانه: چیپِ نقشه در انتهای یک ستونِ اسکرول‌شونده است و
+    // روی سطحِ پیش‌فرضِ ۸۰۰×۶۰۰ باید ابتدا اسکرول شود. اسکرول‌کردن و سپس
+    // لمس‌کردن به مختصاتی وابسته می‌ماند که در هر اجرا کمی فرق می‌کند؛ با
+    // این اندازه چیپ از ابتدا در دید است و لمس پایدار می‌ماند.
+    tester.view.physicalSize = const Size(800, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(home: HomeScreen()),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 250));
+
+    final chip = find.byKey(const ValueKey('living_island_map_chip'));
+    await tester.ensureVisible(chip);
+    await tester.pump();
+    // لمس درست در مرکزِ چیپ انجام می‌شود: اگر فقط یک نقطهٔ خاص از دکمه
+    // پاسخ بدهد، کودک در عمل بخشِ بزرگی از آن را لمس‌ناپذیر می‌یابد.
+    await tester.tap(chip);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    // ابتدا ثابت می‌کنیم ناوبری واقعاً انجام شده و خطایی رخ نداده است؛
+    // اگر فقط برچسب‌ها بررسی شوند، علتِ واقعیِ شکست پنهان می‌ماند.
+    expect(tester.takeException(), isNull);
+    expect(find.byType(IslandMapTab), findsOneWidget);
+
+    // حباب خوش‌آمدِ فندقی روی نقشه می‌تواند روی برچسب‌ها بنشیند.
+    FandoghiCoach.clear();
+    await tester.pump();
+
+    // ۶ هاب اصلی جزیره فندقی — بازطراحیِ خانه آن‌ها را حذف نکرده است.
+    expect(find.text('فارسی'), findsOneWidget);
+    expect(find.text('ریاضی'), findsOneWidget);
+    expect(find.text('حروف'), findsOneWidget);
+    expect(find.text('علوم'), findsOneWidget);
+    expect(find.text('بازی‌ها'), findsOneWidget);
+    expect(find.text('هنر'), findsOneWidget);
+    expect(find.text('پروفایل من'), findsOneWidget);
+
+    // برگشت به خانهٔ جدید
+    await tester.binding.handlePopRoute();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byKey(const ValueKey('living_island_map_chip')), findsOneWidget);
 
     await _disposeAnimatedTree(tester);
   });
@@ -115,8 +175,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 250));
 
     expect(find.text('خانه'), findsOneWidget);
-    expect(find.text('فارسی'), findsOneWidget);
-    expect(find.text('علوم'), findsOneWidget);
+    expect(find.text('شروع بازی'), findsOneWidget);
+    expect(find.text('بازی'), findsOneWidget);
+    expect(find.text('آموزش'), findsOneWidget);
+    expect(find.text('داستان'), findsOneWidget);
 
     await _disposeAnimatedTree(tester);
   });
