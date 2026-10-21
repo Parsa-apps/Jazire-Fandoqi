@@ -464,10 +464,11 @@ class _Category3DCard extends StatelessWidget {
       button: true,
       label: '${item.title} — ${item.subtitle}',
       onTap: onTap,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Stack(
+      child: ExcludeSemantics(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: Stack(
           children: <Widget>[
             // لایهٔ زیرینِ سه‌بعدی
             Positioned(
@@ -610,6 +611,7 @@ class _Category3DCard extends StatelessWidget {
               ),
           ],
         ),
+      ),
       ),
     );
   }
