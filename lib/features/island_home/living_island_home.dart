@@ -336,6 +336,7 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
                         Center(
                           child: PrimaryStartButton(
                             height: startHeight,
+                            maxWidth: w - 24,
                             onTap: _startToday,
                           ),
                         ),

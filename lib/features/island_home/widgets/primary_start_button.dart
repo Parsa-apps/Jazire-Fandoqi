@@ -20,12 +20,24 @@ class PrimaryStartButton extends StatefulWidget {
     this.label = IslandHomeStrings.start,
     this.height = IslandCinemaMetrics.startButtonHeight,
     this.enabled = true,
+    this.maxWidth = double.infinity,
   });
+
+  /// فاصله‌ها و اندازهٔ نشان؛ برای محاسبهٔ عرضِ در-دسترسِ برچسب هم به کار
+  /// می‌روند، پس اینجا یک‌جا تعریف شده‌اند تا با هم ناهمخوان نشوند.
+  static const double _hPad = 22;
+  static const double _iconBox = 46;
+  static const double _iconGap = 12;
 
   final VoidCallback onTap;
   final String label;
   final double height;
   final bool enabled;
+
+  /// بیشینهٔ عرضی که دکمه می‌تواند بگیرد. روی گوشیِ ۳۲۰dp اگر برچسب از
+  /// فضایِ باقی‌مانده بزرگ‌تر بود کوچک می‌شود — نه خودِ دکمه، چون پیچیدنِ
+  /// یک هدفِ لمسی در FittedBox لمس را از کار می‌اندازد.
+  final double maxWidth;
 
   @override
   State<PrimaryStartButton> createState() => _PrimaryStartButtonState();
@@ -62,6 +74,13 @@ class _PrimaryStartButtonState extends State<PrimaryStartButton>
     super.dispose();
   }
 
+  /// عرضِ در-دسترس برای برچسب پس از کسرِ فاصله‌ها و نشانِ پخش.
+  double get _labelMaxWidth {
+    if (!widget.maxWidth.isFinite) return double.infinity;
+    final available = widget.maxWidth - (_hPad * 2) - _iconBox - _iconGap;
+    return available < 48 ? 48 : available;
+  }
+
   @override
   Widget build(BuildContext context) {
     const textColor = IslandCinemaPalette.woodDeep;
@@ -83,14 +102,14 @@ class _PrimaryStartButtonState extends State<PrimaryStartButton>
         semanticLabel: widget.label,
         semanticHint: IslandHomeStrings.startHint,
         onTap: widget.onTap,
-        padding: const EdgeInsets.symmetric(horizontal: 22),
+        padding: const EdgeInsets.symmetric(horizontal: _hPad),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Container(
-              width: 46,
-              height: 46,
+              width: _iconBox,
+              height: _iconBox,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: IslandCinemaGradients.goldFace,
@@ -112,26 +131,30 @@ class _PrimaryStartButtonState extends State<PrimaryStartButton>
                 color: textColor,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: _iconGap),
             // بدون Flexible: در یک Row با mainAxisSize.min، Flexible تمامِ
             // فضایِ باقی‌مانده را می‌خورد و دکمه عرضِ کلِ صفحه می‌شد.
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                widget.label,
-                maxLines: 1,
-                textDirection: TextDirection.rtl,
-                style: AppFonts.kids(
-                  fontSize: 25,
-                  fontWeight: FontWeight.w800,
-                  color: textColor,
-                  shadows: <Shadow>[
-                    Shadow(
-                      color: Colors.white.withOpacity(0.55),
-                      blurRadius: 1.5,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
+            // به‌جای آن فقط برچسب محدود و مقیاس می‌شود.
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: _labelMaxWidth),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  widget.label,
+                  maxLines: 1,
+                  textDirection: TextDirection.rtl,
+                  style: AppFonts.kids(
+                    fontSize: 25,
+                    fontWeight: FontWeight.w800,
+                    color: textColor,
+                    shadows: <Shadow>[
+                      Shadow(
+                        color: Colors.white.withOpacity(0.55),
+                        blurRadius: 1.5,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
