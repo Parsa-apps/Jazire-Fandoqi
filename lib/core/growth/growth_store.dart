@@ -31,6 +31,8 @@ class GrowthStore {
   static bool storiesAllowed = true;
   static bool quietHoursEnabled = true;
   static bool reduceMotion = false;
+  /// راهنمای صوتیِ فارسی برای کودکی که هنوز نمی‌خواند (پیش‌فرض: خاموش)
+  static bool voiceGuide = false;
   static bool colorBlindMode = false;
   static bool focusMode = false;
   static bool dataSaver = false;
@@ -127,6 +129,7 @@ class GrowthStore {
         'storiesAllowed': storiesAllowed,
         'quietHoursEnabled': quietHoursEnabled,
         'reduceMotion': reduceMotion,
+        'voiceGuide': voiceGuide,
         'colorBlindMode': colorBlindMode,
         'focusMode': focusMode,
         'dataSaver': dataSaver,
@@ -206,6 +209,7 @@ class GrowthStore {
     storiesAllowed = asBool('storiesAllowed', true);
     quietHoursEnabled = asBool('quietHoursEnabled', true);
     reduceMotion = asBool('reduceMotion', false);
+    voiceGuide = asBool('voiceGuide', false);
     colorBlindMode = asBool('colorBlindMode', false);
     focusMode = asBool('focusMode', false);
     dataSaver = asBool('dataSaver', false);
@@ -333,6 +337,13 @@ class GrowthStore {
     _notify();
   }
 
+  /// راهنمای صوتی فقط وقتی صدا دارد که موتورِ فارسی در دسترس باشد؛
+  /// در غیر این صورت رابط کاربری همان حالتِ خاموش را نشان می‌دهد.
+  static void setVoiceGuide(bool value) {
+    voiceGuide = value;
+    _notify();
+  }
+
   static void setColorBlindMode(bool value) {
     colorBlindMode = value;
     _notify();
@@ -372,6 +383,7 @@ class GrowthStore {
     storiesAllowed = true;
     quietHoursEnabled = true;
     reduceMotion = false;
+    voiceGuide = false;
     colorBlindMode = false;
     focusMode = false;
     dataSaver = false;

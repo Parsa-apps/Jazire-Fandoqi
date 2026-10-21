@@ -11,6 +11,7 @@ import '../../core/growth/growth_store.dart';
 import '../../core/growth/persian_digits.dart';
 import '../../core/startup/startup_coordinator.dart';
 import 'widgets/splash_backdrop.dart';
+import 'widgets/splash_island_cinema.dart';
 import 'widgets/splash_brand.dart';
 import 'widgets/splash_progress_bar.dart';
 
@@ -128,6 +129,16 @@ class _SplashScreenState extends State<SplashScreen>
     });
   }
 
+  /// لمسِ هر جایِ اسپلش بعد از آماده‌شدنِ واقعی، زودتر وارد برنامه
+  /// می‌شود. تا وقتی راه‌اندازی تمام نشده باشد هیچ اثری ندارد — پس
+  /// هرگز برنامه زودتر از آمادگی باز نمی‌شود.
+  void _skipIfReady() {
+    if (_leaving || !_coordinator.isComplete) return;
+    _minElapsed = true;
+    _holdDone = true;
+    _maybeLeave();
+  }
+
   void _maybeLeave() {
     if (!mounted || _leaving) return;
     if (!_minElapsed || !_holdDone || !_coordinator.isComplete) return;
@@ -191,26 +202,43 @@ class _SplashScreenState extends State<SplashScreen>
           systemNavigationBarDividerColor: ParsaBrand.ink,
           systemNavigationBarIconBrightness: Brightness.light,
         ),
-        child: FadeTransition(
-          opacity: ReverseAnimation(_exit),
-          child: Stack(
-            children: <Widget>[
-              Positioned.fill(
-                child: SplashBackdrop(
-                  master: _master,
-                  ambient: _ambient,
-                  repaint: _stage,
-                  reduceMotion: _reduceMotion,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _skipIfReady,
+          child: FadeTransition(
+            opacity: ReverseAnimation(_exit),
+            child: Stack(
+              children: <Widget>[
+                Positioned.fill(
+                  child: SplashBackdrop(
+                    master: _master,
+                    ambient: _ambient,
+                    repaint: _stage,
+                    reduceMotion: _reduceMotion,
+                  ),
                 ),
-              ),
-              SafeArea(
-                child: LayoutBuilder(
-                  builder: (BuildContext context, BoxConstraints constraints) {
-                    return _buildStage(constraints, dpr);
-                  },
+                // 🏝️ صحنهٔ سینمایی: بیدارشدنِ جزیره و ورودِ فندقی.
+                // این لایه کاملاً تزئینی است و هیچ تصمیمی دربارهٔ
+                // آماده‌بودنِ برنامه نمی‌گیرد؛ آن منطق دست‌نخورده مانده.
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: SplashIslandCinema(
+                      master: _master,
+                      ambient: _ambient,
+                      reduceMotion: _reduceMotion,
+                    ),
+                  ),
                 ),
-              ),
-            ],
+                SafeArea(
+                  child: LayoutBuilder(
+                    builder:
+                        (BuildContext context, BoxConstraints constraints) {
+                      return _buildStage(constraints, dpr);
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -275,9 +303,9 @@ class _SplashScreenState extends State<SplashScreen>
     if (!complete) {
       caption = 'در حال آماده‌سازی...';
     } else if (degraded) {
-      caption = 'با حالت ایمن آماده شد';
+      caption = 'با حالت ایمن آماده شد — لمس کن تا بروی';
     } else {
-      caption = 'آماده شد ✨';
+      caption = 'آماده شد ✨ — لمس کن تا بروی';
     }
 
     return Semantics(
