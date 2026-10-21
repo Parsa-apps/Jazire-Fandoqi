@@ -279,7 +279,7 @@ https://github.com/Parsa-apps/Jazire-Fandoqi/releases/download/v7.5.7/jazire-fan
 
 ## ۱۰. Commitها و شاخهٔ کاری
 
-شاخه: `arena/0db08bb6-jazire-fandoqi` (بر پایهٔ `eb780c2`) • آخرین کامیت: **`4d66042`**
+شاخه: `arena/0db08bb6-jazire-fandoqi` (بر پایهٔ `eb780c2`) • آخرین کامیتِ بررسی‌شده در این گزارش: **`f33f643`**
 Pull Request: **[#179](https://github.com/Parsa-apps/Jazire-Fandoqi/pull/179)**
 
 | Commit | پیام |
@@ -304,6 +304,8 @@ Pull Request: **[#179](https://github.com/Parsa-apps/Jazire-Fandoqi/pull/179)**
 | `50aed65` | wip: isolate the chip tap - standalone harness vs HomeScreen |
 | `d3a15b1` | fix(island): the map chip ignored taps on most of its surface |
 | `4d66042` | test(island): dispose the animated tree before ending the map-chip test |
+
+| `f33f643` | docs: replace assumed results with executed CI evidence |
 
 Push انجام شد (`git push origin arena/0db08bb6-jazire-fandoqi`).
 هیچ `reset --hard`، force-push یا بازنویسیِ تاریخچه‌ای انجام نشد.
