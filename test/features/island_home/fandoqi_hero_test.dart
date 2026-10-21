@@ -90,7 +90,10 @@ void main() {
 
   test('the cheer burst painter is a no-op outside its animation window', () {
     const painter = HeroCheerBurstPainter(progress: 0, color: Colors.amber);
-    final opposite = HeroCheerBurstPainter(progress: 0.5, color: Colors.amber);
+    const opposite = HeroCheerBurstPainter(
+      progress: 0.5,
+      color: Colors.amber,
+    );
     expect(painter.shouldRepaint(opposite), isTrue);
     expect(
       painter.shouldRepaint(

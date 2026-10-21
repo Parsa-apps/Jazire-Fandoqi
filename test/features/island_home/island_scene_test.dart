@@ -70,50 +70,54 @@ void main() {
     // نکته: عنصرِ `for` در یک لیترالِ const مجاز نیست (const_eval_for_element)،
     // بنابراین فقط بخشِ ثابت const می‌ماند و گالریِ آیکون‌ها خارج از آن ساخته
     // می‌شود — هر دو حالتِ صحنه همچنان رسم می‌شوند.
+    // روی سطحِ ۸۰۰×۶۰۰ تست، ستونِ همهٔ نقاش‌ها بلندتر از صفحه است؛
+    // بدون اسکرول یک سرریزِ عمودی (و نه نقصِ طراحی) گزارش می‌شد.
     await tester.pumpWidget(
       MaterialApp(
-        home: Column(
-          children: <Widget>[
-            const SizedBox(
-              width: 120,
-              height: 120,
-              child: CustomPaint(painter: IslandSkyPainter()),
-            ),
-            const SizedBox(
-              width: 120,
-              height: 120,
-              child: CustomPaint(painter: IslandSeaPainter(phase: 0.35)),
-            ),
-            const SizedBox(
-              width: 120,
-              height: 120,
-              child: CustomPaint(painter: IslandLandPainter(phase: 0.6)),
-            ),
-            const SizedBox(
-              width: 120,
-              height: 120,
-              child: CustomPaint(
-                painter: IslandAtmospherePainter(phase: 0.2),
+        home: SingleChildScrollView(
+          child: Column(
+            children: <Widget>[
+              const SizedBox(
+                width: 120,
+                height: 120,
+                child: CustomPaint(painter: IslandSkyPainter()),
               ),
-            ),
-            const SizedBox(
-              width: 80,
-              height: 80,
-              child: CustomPaint(painter: IslandCrestPainter()),
-            ),
-            for (final IslandPathIcon icon in IslandPathIcon.values)
-              SizedBox(
-                width: 64,
-                height: 64,
+              const SizedBox(
+                width: 120,
+                height: 120,
+                child: CustomPaint(painter: IslandSeaPainter(phase: 0.35)),
+              ),
+              const SizedBox(
+                width: 120,
+                height: 120,
+                child: CustomPaint(painter: IslandLandPainter(phase: 0.6)),
+              ),
+              const SizedBox(
+                width: 120,
+                height: 120,
                 child: CustomPaint(
-                  painter: PathIconPainter(
-                    icon: icon,
-                    baseColor: Colors.purple,
-                    deepColor: Colors.indigo,
-                  ),
+                  painter: IslandAtmospherePainter(phase: 0.2),
                 ),
               ),
-          ],
+              const SizedBox(
+                width: 80,
+                height: 80,
+                child: CustomPaint(painter: IslandCrestPainter()),
+              ),
+              for (final IslandPathIcon icon in IslandPathIcon.values)
+                SizedBox(
+                  width: 64,
+                  height: 64,
+                  child: CustomPaint(
+                    painter: PathIconPainter(
+                      icon: icon,
+                      baseColor: Colors.purple,
+                      deepColor: Colors.indigo,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

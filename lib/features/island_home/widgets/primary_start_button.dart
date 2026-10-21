@@ -64,7 +64,7 @@ class _PrimaryStartButtonState extends State<PrimaryStartButton>
 
   @override
   Widget build(BuildContext context) {
-    final textColor = IslandCinemaPalette.woodDeep;
+    const textColor = IslandCinemaPalette.woodDeep;
 
     return AnimatedBuilder(
       animation: _pulse,

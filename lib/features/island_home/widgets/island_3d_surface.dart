@@ -170,7 +170,7 @@ class _Island3DSurfaceState extends State<Island3DSurface> {
                 ],
               ),
               child: ConstrainedBox(
-                constraints: BoxConstraints(
+                constraints: const BoxConstraints(
                   minHeight: IslandCinemaMetrics.minTouch,
                   minWidth: IslandCinemaMetrics.minTouch,
                 ),

@@ -186,6 +186,16 @@ jobs:
           if [ "$status" -ne 0 ]; then
             python3 tool/ci_annotate.py 'Full suite failed' test-output.txt
           fi
+          # A layout overflow is reported as a one-line summary
+          # ("A RenderFlex overflowed by N pixels") that does not name the
+          # widget. Publish the creator chain too, otherwise a red run is
+          # not actionable when raw logs cannot be downloaded.
+          if grep -q 'overflowed by' test-output.txt; then
+            grep -n -B 2 -A 28 'overflowed by' test-output.txt \
+              | cut -c1-260 | head -80 > overflow-detail.txt
+            python3 tool/ci_annotate.py 'Layout overflow detail (creator chain)' \
+              overflow-detail.txt || true
+          fi
           grep -E '\[E\]' test-output.txt | head -30 | while IFS= read -r line; do
             clean=$(printf '%s' "$line" | tr -d '%' | cut -c1-280)
             echo "::error::$clean"
@@ -267,6 +277,7 @@ jobs:
             test-output.txt
             format-report.txt
             format-changed.txt
+            overflow-detail.txt
             qa-gate-log/
             build/app/test-results/testMyketReleaseUnitTest/
           if-no-files-found: ignore

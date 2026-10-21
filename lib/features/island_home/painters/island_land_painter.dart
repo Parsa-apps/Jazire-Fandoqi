@@ -66,7 +66,7 @@ class IslandLandPainter extends CustomPainter {
             IslandCinemaPalette.cliffShade,
             IslandCinemaPalette.cliffDeep,
           ],
-          stops: const <double>[0.0, 0.45, 1.0],
+          stops: <double>[0.0, 0.45, 1.0],
         ).createShader(bounds),
     );
 
@@ -98,7 +98,7 @@ class IslandLandPainter extends CustomPainter {
     canvas.drawPath(
       silhouette.shift(Offset(0, geo.sandThickness)),
       Paint()
-        ..shader = LinearGradient(
+        ..shader = const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: <Color>[
@@ -242,7 +242,7 @@ class IslandLandPainter extends CustomPainter {
         Radius.circular(width * 0.72),
       ),
       Paint()
-        ..shader = LinearGradient(
+        ..shader = const LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
           colors: <Color>[
@@ -358,7 +358,7 @@ class IslandLandPainter extends CustomPainter {
     );
 
     // تخته‌ها
-    final planks = 8;
+    const planks = 8;
     final plankPaint = Paint()
       ..color = IslandCinemaPalette.wood
       ..strokeCap = StrokeCap.round

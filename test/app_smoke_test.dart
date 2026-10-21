@@ -118,8 +118,12 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 250));
 
-    await tester.tap(find.byKey(const ValueKey('living_island_map_chip')));
+    // چیپِ نقشه پایینِ ستون است و روی سطحِ ۸۰۰×۶۰۰ تست بیرون از دید قرار
+    // می‌گیرد؛ tester.tap خودکار اسکرول نمی‌کند، پس ابتدا در دید می‌آید.
+    final chip = find.byKey(const ValueKey('living_island_map_chip'));
+    await tester.ensureVisible(chip);
     await tester.pump();
+    await tester.tap(chip);
     await tester.pump(const Duration(milliseconds: 400));
     // حباب خوش‌آمدِ فندقی روی نقشه می‌تواند روی برچسب‌ها بنشیند.
     FandoghiCoach.clear();

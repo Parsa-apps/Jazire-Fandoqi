@@ -316,9 +316,12 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
                         _buildTopBar(context, w),
                         SizedBox(height: gap),
                         Center(
-                          child: IslandLogo(
-                            fontSize: logoFont,
-                            crestSize: crestSize,
+                          child: _fitToWidth(
+                            maxWidth: w - 24,
+                            child: IslandLogo(
+                              fontSize: logoFont,
+                              crestSize: crestSize,
+                            ),
                           ),
                         ),
                         SizedBox(height: gap),
@@ -331,15 +334,18 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
                         ),
                         SizedBox(height: gap),
                         Center(
-                          child: PrimaryStartButton(
-                            height: startHeight,
-                            onTap: _startToday,
+                          child: _fitToWidth(
+                            maxWidth: w - 24,
+                            child: PrimaryStartButton(
+                              height: startHeight,
+                              onTap: _startToday,
+                            ),
                           ),
                         ),
                         SizedBox(height: gap),
                         _buildPathRow(cardHeight),
                         SizedBox(height: gap * 0.6),
-                        _buildMapChip(),
+                        _buildMapChip(w),
                         const SizedBox(height: 132),
                       ],
                     ),
@@ -372,6 +378,17 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
         GrowthStore.reduceMotion;
   }
 
+  /// روی گوشی‌های خیلی باریک (۳۲۰dp) محتوا هرگز از عرضِ صفحه بیرون
+  /// نمی‌زند: اگر از فضایِ موجود بزرگ‌تر بود، با همان نسبت کوچک می‌شود
+  /// (در غیر این صورت یک RenderFlex سرریز می‌داد). روی صفحهٔ معمولی
+  /// هیچ اثری ندارد، چون [BoxFit.scaleDown] هرگز چیزی را بزرگ نمی‌کند.
+  Widget _fitToWidth({required double maxWidth, required Widget child}) {
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      child: FittedBox(fit: BoxFit.scaleDown, child: child),
+    );
+  }
+
   /// نوارِ بالا: پروفایل، سطحِ واقعی، راهنمای صوتی و تنظیماتِ والدین.
   ///
   /// همهٔ این‌ها در یک ردیفِ «چسبیده به آغاز» (سمتِ راست در RTL) جمع
@@ -382,6 +399,10 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
     // نام فقط وقتی جا دارد که عرض واقعاً کافی باشد؛ در غیر این صورت
     // فقط آواتار نمایش داده می‌شود تا چهار کنترلِ ردیف روی هم سوار نشوند.
     final showName = width >= 430 && name.isNotEmpty;
+    // روی گوشیِ ۳۲۰dp فاصله‌ها و نشانِ سطح کمی جمع می‌شوند تا چهار
+    // کنترلِ این ردیف قطعاً در عرضِ در-دسترس جا بگیرند.
+    final tight = width < 380;
+    final barGap = tight ? 6.0 : 8.0;
 
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(10, 4, 10, 0),
@@ -392,12 +413,13 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
             name: showName ? name : null,
             onTap: _openProfile,
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: barGap),
           _LevelBadge(
             level: GameData.islandLevel,
             progress: GameData.islandLevelProgress,
+            width: tight ? 74.0 : 96.0,
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: barGap),
           _RoundGlassButton(
             icon: _voiceGuide
                 ? Icons.record_voice_over
@@ -490,54 +512,57 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
     );
   }
 
-  Widget _buildMapChip() {
+  Widget _buildMapChip(double width) {
     return Center(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(22),
-          onTap: _openIslandMap,
-          child: Semantics(
-            button: true,
-            label: IslandHomeStrings.islandMap,
-            hint: IslandHomeStrings.islandMapHint,
-            child: Container(
-              key: const ValueKey<String>('living_island_map_chip'),
-              height: 46,
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              decoration: BoxDecoration(
-                color: IslandCinemaPalette.paper.withOpacity(0.94),
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(
-                  color: IslandCinemaPalette.forest.withOpacity(0.7),
-                  width: 2,
+      child: _fitToWidth(
+        maxWidth: width - 24,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(22),
+            onTap: _openIslandMap,
+            child: Semantics(
+              button: true,
+              label: IslandHomeStrings.islandMap,
+              hint: IslandHomeStrings.islandMapHint,
+              child: Container(
+                key: const ValueKey<String>('living_island_map_chip'),
+                height: 46,
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                decoration: BoxDecoration(
+                  color: IslandCinemaPalette.paper.withOpacity(0.94),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(
+                    color: IslandCinemaPalette.forest.withOpacity(0.7),
+                    width: 2,
+                  ),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: IslandCinemaPalette.shade.withOpacity(0.16),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                boxShadow: <BoxShadow>[
-                  BoxShadow(
-                    color: IslandCinemaPalette.shade.withOpacity(0.16),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const Icon(
-                    Icons.explore_rounded,
-                    size: 22,
-                    color: IslandCinemaPalette.forestDeep,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    IslandHomeStrings.islandMap,
-                    textDirection: TextDirection.rtl,
-                    style: AppFonts.kids(
-                      fontSize: 16,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    const Icon(
+                      Icons.explore_rounded,
+                      size: 22,
                       color: IslandCinemaPalette.forestDeep,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Text(
+                      IslandHomeStrings.islandMap,
+                      textDirection: TextDirection.rtl,
+                      style: AppFonts.kids(
+                        fontSize: 16,
+                        color: IslandCinemaPalette.forestDeep,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -631,10 +656,17 @@ class _ProfileChip extends StatelessWidget {
 
 /// نشانِ سطح: فقط عددِ واقعیِ [XpSystem]، هیچ امتیازِ ساختگی
 class _LevelBadge extends StatelessWidget {
-  const _LevelBadge({required this.level, required this.progress});
+  const _LevelBadge({
+    required this.level,
+    required this.progress,
+    this.width = 96,
+  });
 
   final int level;
   final double progress;
+
+  /// روی صفحهٔ باریک باریک‌تر می‌شود تا ردیفِ بالا سرریز نکند.
+  final double width;
 
   @override
   Widget build(BuildContext context) {
@@ -645,7 +677,7 @@ class _LevelBadge extends StatelessWidget {
       value: '${(clampedProgress * 100).round()} درصد تا سطح بعد',
       child: ExcludeSemantics(
         child: Container(
-          width: 96,
+          width: width,
           height: 48,
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
