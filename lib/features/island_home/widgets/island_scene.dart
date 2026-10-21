@@ -1,16 +1,17 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../../app/island_cinema_style.dart';
 import '../../../core/growth/growth_store.dart';
 import '../painters/island_atmosphere_painter.dart';
-import '../painters/island_land_painter.dart';
-import '../painters/island_sea_painter.dart';
-import '../painters/island_sky_painter.dart';
 
 /// 🎬 صحنهٔ زنده و سه‌بعدیِ جزیره فندقی.
 ///
 /// تصویرِ سه‌بعدیِ اصلیِ جزیره و فندقی (`assets/theme_v2/home_scene.webp`)
-/// را به‌همراهِ لایه‌های پشتیبان و ذراتِ درخشانِ محیطی نمایش می‌دهد.
+/// کاملاً کدر است (VP8 بدونِ کانالِ آلفا با ابعادِ ۱۰۷۲×۱۹۲۰ و `BoxFit.cover`)،
+/// بنابراین نقاش‌های برداریِ زیرین (آسمان، دریا، خشکی) حذف شده‌اند تا در هر فریم
+/// بازرسمِ پنهان رخ ندهد و فقط ذراتِ درخشانِ محیطی (`IslandAtmospherePainter`) رسم شوند.
 class IslandScene extends StatefulWidget {
   const IslandScene({
     super.key,
@@ -22,6 +23,66 @@ class IslandScene extends StatefulWidget {
   final int sparkleCount;
 
   static const String homeSceneAsset = 'assets/theme_v2/home_scene.webp';
+
+  /// ابعادِ پیکسلیِ واقعیِ تصویرِ `assets/theme_v2/home_scene.webp`.
+  static const Size homeSceneImageSize = Size(1072, 1920);
+
+  /// مستطیلِ نرمال‌شدهٔ سنجابِ پخته‌شده درونِ `home_scene.webp` (۱۰۷۲×۱۹۲۰):
+  /// از نوکِ دم در چپ (`0.210`) تا پنجهٔ راست (`0.692`) و از نوکِ گوش‌ها (`0.530`)
+  /// تا کفِ پاها روی مسیرِ خاکی (`0.812`).
+  static const Rect bakedSquirrelNormalizedRect = Rect.fromLTRB(
+    0.210,
+    0.530,
+    0.692,
+    0.812,
+  );
+
+  /// مختصاتِ افقیِ نرمال‌شدهٔ مرکزِ سرِ سنجاب در `home_scene.webp` (بینِ دو گوش).
+  static const double bakedSquirrelHeadNormalizedX = 0.492;
+
+  static Rect _coverDestinationRect(
+    Size sceneSize, {
+    Alignment alignment = Alignment.center,
+  }) {
+    final scale = math.max(
+      sceneSize.width / homeSceneImageSize.width,
+      sceneSize.height / homeSceneImageSize.height,
+    );
+    final renderedWidth = homeSceneImageSize.width * scale;
+    final renderedHeight = homeSceneImageSize.height * scale;
+    final left = (sceneSize.width - renderedWidth) * (alignment.x + 1.0) * 0.5;
+    final top =
+        (sceneSize.height - renderedHeight) * (alignment.y + 1.0) * 0.5;
+    return Rect.fromLTWH(left, top, renderedWidth, renderedHeight);
+  }
+
+  /// نگاشتِ یک مستطیلِ نرمال‌شده در فضایِ `home_scene.webp` به مختصاتِ واقعیِ صحنه
+  /// دقیقاً مطابقِ `BoxFit.cover` و `Alignment.center`.
+  static Rect projectNormalizedRect(
+    Size sceneSize,
+    Rect normalizedRect, {
+    Alignment alignment = Alignment.center,
+  }) {
+    if (sceneSize.isEmpty) return Rect.zero;
+    final dest = _coverDestinationRect(sceneSize, alignment: alignment);
+    return Rect.fromLTRB(
+      dest.left + dest.width * normalizedRect.left,
+      dest.top + dest.height * normalizedRect.top,
+      dest.left + dest.width * normalizedRect.right,
+      dest.top + dest.height * normalizedRect.bottom,
+    );
+  }
+
+  /// مستطیلِ پیکسلیِ سنجابِ پخته‌شده روی صحنه در ابعادِ فعلیِ نما.
+  static Rect bakedSquirrelRect(Size sceneSize) =>
+      projectNormalizedRect(sceneSize, bakedSquirrelNormalizedRect);
+
+  /// مختصاتِ افقیِ مرکزِ سرِ سنجاب روی صحنه در ابعادِ فعلیِ نما.
+  static double bakedSquirrelHeadX(Size sceneSize) {
+    if (sceneSize.isEmpty) return 0;
+    final dest = _coverDestinationRect(sceneSize);
+    return dest.left + dest.width * bakedSquirrelHeadNormalizedX;
+  }
 
   @override
   State<IslandScene> createState() => _IslandSceneState();
@@ -38,6 +99,7 @@ class _IslandSceneState extends State<IslandScene>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    GrowthStore.changes.addListener(_onGrowthChanged);
     _ambient = AnimationController(
       vsync: this,
       duration: IslandCinemaMotion.ambientLoop,
@@ -47,12 +109,23 @@ class _IslandSceneState extends State<IslandScene>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _updateReduceMotion();
+  }
+
+  void _onGrowthChanged() {
+    if (!mounted) return;
+    final changed = _updateReduceMotion();
+    if (changed) setState(() {});
+  }
+
+  bool _updateReduceMotion() {
     final systemReduce =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     final next = systemReduce || GrowthStore.reduceMotion;
-    if (next == _reduceMotion) return;
+    final changed = next != _reduceMotion;
     _reduceMotion = next;
     _syncAmbient();
+    return changed;
   }
 
   @override
@@ -74,6 +147,7 @@ class _IslandSceneState extends State<IslandScene>
 
   @override
   void dispose() {
+    GrowthStore.changes.removeListener(_onGrowthChanged);
     WidgetsBinding.instance.removeObserver(this);
     _ambient.dispose();
     super.dispose();
@@ -87,73 +161,52 @@ class _IslandSceneState extends State<IslandScene>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _ambient,
-      builder: (BuildContext context, Widget? child) {
-        final phase = _ambient.value;
-        return Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            // لایه‌های پشتیبانِ برداری
-            const RepaintBoundary(
-              child: CustomPaint(
-                painter: IslandSkyPainter(),
-                size: Size.infinite,
+    return Stack(
+      fit: StackFit.expand,
+      children: <Widget>[
+        // رنگِ پایهٔ سبک برای لحظهٔ بارگذاری یا خطای احتمالیِ تصویر
+        const ColoredBox(color: IslandCinemaPalette.seaDeep),
+        // تصویرِ سه‌بعدیِ کدرِ جزیره و فندقی (بیرون از AnimatedBuilder تا هر فریم بازسازی نشود)
+        Positioned.fill(
+          child: RepaintBoundary(
+            child: Image.asset(
+              IslandScene.homeSceneAsset,
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+              filterQuality: FilterQuality.medium,
+              excludeFromSemantics: true,
+              errorBuilder: (
+                BuildContext context,
+                Object error,
+                StackTrace? stack,
+              ) {
+                return const SizedBox.expand();
+              },
+            ),
+          ),
+        ),
+        // تنها لایهٔ متحرکِ محیط: ذراتِ نورِ طلایی در RepaintBoundary ایزوله
+        Positioned.fill(
+          child: IgnorePointer(
+            child: RepaintBoundary(
+              child: AnimatedBuilder(
+                animation: _ambient,
+                builder: (BuildContext context, Widget? _) {
+                  return CustomPaint(
+                    painter: IslandAtmospherePainter(
+                      phase: _ambient.value,
+                      reduceMotion: _reduceMotion,
+                      sparkleCount: _effectiveSparkles,
+                    ),
+                    size: Size.infinite,
+                  );
+                },
               ),
             ),
-            RepaintBoundary(
-              child: CustomPaint(
-                painter: IslandSeaPainter(
-                  phase: phase,
-                  reduceMotion: _reduceMotion,
-                ),
-                size: Size.infinite,
-              ),
-            ),
-            RepaintBoundary(
-              child: CustomPaint(
-                painter: IslandLandPainter(
-                  phase: phase,
-                  reduceMotion: _reduceMotion,
-                ),
-                size: Size.infinite,
-              ),
-            ),
-            // تصویرِ سه‌بعدیِ اصلیِ جزیره و سنجابِ ماجراجو (مطابقِ طرحِ مرجع)
-            Positioned.fill(
-              child: RepaintBoundary(
-                child: Image.asset(
-                  IslandScene.homeSceneAsset,
-                  fit: BoxFit.cover,
-                  alignment: Alignment.center,
-                  filterQuality: FilterQuality.medium,
-                  excludeFromSemantics: true,
-                  errorBuilder: (
-                    BuildContext context,
-                    Object error,
-                    StackTrace? stack,
-                  ) {
-                    return const SizedBox.expand();
-                  },
-                ),
-              ),
-            ),
-            // لایهٔ اتمسفر و ذراتِ نورِ طلایی
-            RepaintBoundary(
-              child: CustomPaint(
-                painter: IslandAtmospherePainter(
-                  phase: phase,
-                  reduceMotion: _reduceMotion,
-                  sparkleCount: _effectiveSparkles,
-                ),
-                size: Size.infinite,
-              ),
-            ),
-            if (child != null) child,
-          ],
-        );
-      },
-      child: widget.child,
+          ),
+        ),
+        if (widget.child != null) widget.child!,
+      ],
     );
   }
 }

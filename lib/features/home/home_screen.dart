@@ -5,10 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/app_fonts.dart';
 import '../../app/island_world_style.dart';
-import '../../shared/widgets/html_web_view.dart';
 import '../../core/audio_service.dart';
 import '../../core/fandoghi_coach.dart';
 import '../../core/game_data.dart';
+import '../../core/growth/growth_store.dart';
 import '../../presentation/providers/game_state_provider.dart';
 import '../gateway/learning_library_screen.dart';
 import '../island_home/living_island_home.dart';
@@ -73,20 +73,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // ── لایهٔ پس‌زمینهٔ لایو والپیپر فوق حرفه‌ای (HTML) ──
-          Positioned.fill(
-            child: IgnorePointer(
-              child: HtmlWebView(assetPath: 'assets/web/live_wallpaper.html'),
-            ),
-          ),
-
-          // ── لایهٔ پس‌زمینهٔ اپلیکیشن جادویی حیرت‌انگیز (HTML) ──
-          Positioned.fill(
-            child: IgnorePointer(
-              child: HtmlWebView(assetPath: 'assets/web/magic_wonder.html'),
-            ),
-          ),
-
           Positioned.fill(
             child: IndexedStack(
               index: _currentTab,
@@ -378,7 +364,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // ─── نوار ناوبری شیشه‌ای سه‌بعدی هماهنگ با طرح مرجع جزیره ───────────────────────
   Widget _buildBottomNav() {
     final animationsDisabled =
-        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+        (MediaQuery.maybeOf(context)?.disableAnimations ?? false) ||
+            GrowthStore.reduceMotion;
 
     return Container(
       decoration: BoxDecoration(

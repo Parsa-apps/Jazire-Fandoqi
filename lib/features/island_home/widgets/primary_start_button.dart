@@ -1,9 +1,12 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app/app_fonts.dart';
 import '../../../app/island_cinema_style.dart';
 import '../../../core/audio_service.dart';
+import '../../../core/growth/growth_store.dart';
 
 /// ▶️ دکمهٔ سه‌بعدیِ طلاییِ «شروع ماجراجویی» در صفحهٔ اصلی (مطابقِ طرحِ مرجع).
 ///
@@ -27,6 +30,10 @@ class PrimaryStartButton extends StatefulWidget {
   final bool enabled;
   final double maxWidth;
 
+  /// اوجِ تپشِ آرامِ دکمه (~۱٫۰۴ در چرخهٔ ۲۴۰۰ میلی‌ثانیه‌ای).
+  static const double pulsePeakScale = 1.04;
+  static const Duration pulseDuration = Duration(milliseconds: 2400);
+
   @override
   State<PrimaryStartButton> createState() => _PrimaryStartButtonState();
 }
@@ -41,24 +48,34 @@ class _PrimaryStartButtonState extends State<PrimaryStartButton>
     super.initState();
     _pulse = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2400),
+      duration: PrimaryStartButton.pulseDuration,
     );
+    GrowthStore.changes.addListener(_syncMotion);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-    if (reduce) {
+    _syncMotion();
+  }
+
+  bool get _reduceMotion =>
+      (MediaQuery.maybeOf(context)?.disableAnimations ?? false) ||
+      GrowthStore.reduceMotion;
+
+  void _syncMotion() {
+    if (!mounted) return;
+    if (_reduceMotion) {
       _pulse.stop();
-      _pulse.value = 0.25;
+      _pulse.value = 0.0;
     } else if (!_pulse.isAnimating) {
-      _pulse.repeat(reverse: true);
+      _pulse.repeat();
     }
   }
 
   @override
   void dispose() {
+    GrowthStore.changes.removeListener(_syncMotion);
     _pulse.dispose();
     super.dispose();
   }
@@ -87,8 +104,10 @@ class _PrimaryStartButtonState extends State<PrimaryStartButton>
         child: AnimatedBuilder(
           animation: _pulse,
           builder: (BuildContext context, Widget? child) {
-            final scale =
-                _pressed ? 0.96 : (1.0 + (_pulse.value - 0.5).abs() * 0.018);
+            final wave = 0.5 - 0.5 * math.cos(_pulse.value * 2 * math.pi);
+            final idleScale =
+                1.0 + wave * (PrimaryStartButton.pulsePeakScale - 1.0);
+            final scale = _pressed ? 0.96 : idleScale;
             return Transform.scale(scale: scale, child: child);
           },
           child: GestureDetector(
@@ -191,8 +210,7 @@ class _PrimaryStartButtonState extends State<PrimaryStartButton>
                             ),
                           ),
                           Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 18),
+                            padding: const EdgeInsets.symmetric(horizontal: 18),
                             child: FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Stack(
