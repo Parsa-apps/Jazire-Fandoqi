@@ -51,7 +51,7 @@ void main() {
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 
-  testWidgets('home opens the living island with the three main paths', (tester) async {
+  testWidgets('home opens the living island with four feature shortcuts', (tester) async {
     GameData.resetForTesting();
     GameData.onboardingSeen = true;
 
@@ -62,18 +62,19 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 250));
 
-    // بزرگ‌ترین کنترلِ صفحه و سه مسیرِ اصلی — هر سه فقط با نشان هم قابل
-    // تشخیص‌اند، برچسبِ فارسی همراهشان است اما شرطِ استفاده نیست.
+    // دکمهٔ شروع و چهار میان‌برِ اصلیِ صفحهٔ خانه.
     expect(find.text('شروع بازی'), findsOneWidget);
-    expect(find.text('بازی'), findsOneWidget);
-    expect(find.text('آموزش'), findsOneWidget);
-    expect(find.text('داستان'), findsOneWidget);
+    expect(find.text('کارتون‌ها'), findsOneWidget);
+    expect(find.text('قصه‌ها'), findsOneWidget);
+    expect(find.text('لالایی'), findsOneWidget);
+    expect(find.text('بازی‌ها'), findsOneWidget);
 
     // لوگو و هویتِ بصری
     expect(find.text('جزیره فندقی'), findsOneWidget);
 
     // ورودیِ نقشهٔ کاملِ جزیره (هیچ هابی حذف نشده است)
     expect(find.byKey(const ValueKey('living_island_map_chip')), findsOneWidget);
+    expect(find.text('نقشه ماجراجویی'), findsOneWidget);
 
     // نوار ناوبری پایینی
     expect(find.text('خانه'), findsOneWidget);
@@ -176,9 +177,10 @@ void main() {
 
     expect(find.text('خانه'), findsOneWidget);
     expect(find.text('شروع بازی'), findsOneWidget);
-    expect(find.text('بازی'), findsOneWidget);
-    expect(find.text('آموزش'), findsOneWidget);
-    expect(find.text('داستان'), findsOneWidget);
+    expect(find.text('کارتون‌ها'), findsOneWidget);
+    expect(find.text('قصه‌ها'), findsOneWidget);
+    expect(find.text('لالایی'), findsOneWidget);
+    expect(find.text('بازی‌ها'), findsOneWidget);
 
     await _disposeAnimatedTree(tester);
   });

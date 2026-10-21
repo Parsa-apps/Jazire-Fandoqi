@@ -14,7 +14,7 @@ import '../../support/paywall_test_store.dart';
 /// 🏝️ تست‌های خانهٔ زندهٔ فندقی.
 ///
 /// این تست‌ها فقط رفتارِ قابل‌مشاهده را قفل می‌کنند:
-///   * کودک سه مسیر و یک دکمهٔ شروع می‌بیند؛
+///   * کودک چهار میان‌بر اصلی و یک دکمهٔ شروع می‌بیند؛
 ///   * هر مسیر واقعاً باز می‌شود (نه دکمهٔ بی‌عملکرد)؛
 ///   * روی گوشیِ باریک و در حالتِ کاهشِ حرکت هم خطایی رخ نمی‌دهد؛
 ///   * نقشهٔ قدیمی با همهٔ هاب‌ها هنوز در دسترس است.
@@ -54,6 +54,8 @@ void main() {
         ),
         routes: <String, WidgetBuilder>{
           '/games-carnival': (BuildContext context) => const Text('games route'),
+          '/cartoons': (BuildContext context) => const Text('cartoons route'),
+          '/lullabies': (BuildContext context) => const Text('lullabies route'),
           '/learning-library': (BuildContext context) =>
               const Text('library route'),
           '/stories': (BuildContext context) => const Text('stories route'),
@@ -74,43 +76,39 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
   }
 
-  testWidgets('shows the start button and the three main paths',
+  testWidgets('shows the start button and four feature shortcuts',
       (WidgetTester tester) async {
     await pumpHome(tester);
 
     expect(find.text('شروع بازی'), findsOneWidget);
-    expect(find.text('بازی'), findsOneWidget);
-    expect(find.text('آموزش'), findsOneWidget);
-    expect(find.text('داستان'), findsOneWidget);
+    expect(find.text('کارتون‌ها'), findsOneWidget);
+    expect(find.text('قصه‌ها'), findsOneWidget);
+    expect(find.text('لالایی'), findsOneWidget);
+    expect(find.text('بازی‌ها'), findsOneWidget);
     expect(find.text('جزیره فندقی'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('each of the three paths really navigates',
+  testWidgets('each home shortcut really navigates',
       (WidgetTester tester) async {
     await pumpHome(tester);
 
-    await tester.tap(find.text('بازی'));
-    // pumpAndSettle اینجا ممنوع است: انیمیشنِ محیطِ جزیره بی‌پایان است.
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('games route'), findsOneWidget);
-    await tester.binding.handlePopRoute();
-    await tester.pump(const Duration(milliseconds: 300));
-
-    await tester.tap(find.text('آموزش'));
-    // pumpAndSettle اینجا ممنوع است: انیمیشنِ محیطِ جزیره بی‌پایان است.
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('library route'), findsOneWidget);
-    await tester.binding.handlePopRoute();
-    await tester.pump(const Duration(milliseconds: 300));
-
-    await tester.tap(find.text('داستان'));
-    // pumpAndSettle اینجا ممنوع است: انیمیشنِ محیطِ جزیره بی‌پایان است.
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('stories route'), findsOneWidget);
+    final shortcuts = <(String, String)>[
+      ('کارتون‌ها', 'cartoons route'),
+      ('قصه‌ها', 'stories route'),
+      ('لالایی', 'lullabies route'),
+      ('بازی‌ها', 'games route'),
+    ];
+    for (final (label, destination) in shortcuts) {
+      await tester.tap(find.text(label));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text(destination), findsOneWidget);
+      if (label != 'بازی‌ها') {
+        await tester.binding.handlePopRoute();
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+    }
 
     expect(tester.takeException(), isNull);
   });
@@ -129,7 +127,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('the island map chip opens the classic map',
+  testWidgets('the adventure map button opens the island map',
       (WidgetTester tester) async {
     await pumpHome(tester);
 
@@ -161,7 +159,8 @@ void main() {
     await pumpHome(tester, size: const Size(320, 568));
 
     expect(find.text('شروع بازی'), findsOneWidget);
-    expect(find.text('بازی'), findsOneWidget);
+    expect(find.text('بازی‌ها'), findsOneWidget);
+    expect(find.text('نقشه ماجراجویی'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

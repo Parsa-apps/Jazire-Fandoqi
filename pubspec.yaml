@@ -59,8 +59,8 @@ flutter_launcher_icons:
   ios: false
   image_path: "assets/icons/app_icon.png"
   min_sdk_android: 21
-  adaptive_icon_background: "#000000"
-  adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"
+  adaptive_icon_background: "#008589"
+  adaptive_icon_foreground: "assets/icons/fandoghi_app_icon.png"
 
 flutter:
   uses-material-design: true
@@ -70,6 +70,7 @@ flutter:
     # مرجع تولید آیکون/نسخه‌های مشتق است و برای صرفه‌جویی در حجم نصب بسته
     # نمی‌شود؛ app_icon*.png هم فقط خوراک flutter_launcher_icons هستند.
     - assets/branding/parsa_apps_logo_alpha.webp
+    - assets/branding/fandoghi_app_logo_alpha.webp
     - assets/hero_kids.webp
     - assets/learn_world.webp
     - assets/play_world.webp

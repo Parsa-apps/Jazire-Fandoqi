@@ -7,16 +7,14 @@ import '../../../app/parsa_brand.dart';
 import '../splash_timeline.dart';
 
 /// ─────────────────────────────────────────────────────────────
-/// 👑 لوگوی Parsa Apps در قاب سینمایی
+/// 🌰 لوگوی جزیرهٔ فندقی در قاب آغازین سینمایی
 ///
 /// سه لایه، همه با یک زمان‌بند:
 ///   ۱. هالهٔ آبی/طلایی که *قبل از* لوگو شکل می‌گیرد.
 ///   ۲. ذرات نور که از بیرون به سمت لوگو می‌آیند و بعد محو می‌شوند.
-///   ۳. خود لوگو با Fade + Scale + نورپردازی تدریجی، و عبور نور آبی
-///      روی نماد P و درخشش فلزی طلایی روی جزئیات تاج.
+///   ۳. لوگوی فندقی با Fade + Scale و نورپردازی تدریجی.
 ///
-/// تصویر، همان لوگوی رسمی با پس‌زمینهٔ شفاف است تا هاله واقعاً پشت آن
-/// دیده شود؛ نسبت ۱:۱ و تمام جزئیات طرح دست‌نخورده می‌مانند.
+/// پس‌زمینهٔ سفیدِ فایل مرجع شفاف شده تا صحنهٔ جزیره از پشت لوگو دیده شود.
 /// ─────────────────────────────────────────────────────────────
 class SplashBrand extends StatelessWidget {
   const SplashBrand({
@@ -86,7 +84,7 @@ class SplashBrand extends StatelessWidget {
           // ۳) لوگوی رسمی.
           Positioned.fill(
             child: _SplashLogo(
-              key: const ValueKey<String>('parsa_splash_logo'),
+              key: const ValueKey<String>('fandoghi_splash_logo'),
               master: master,
               reduceMotion: reduceMotion,
               cacheWidth: cacheWidth,
@@ -164,11 +162,11 @@ class _SplashLogo extends StatelessWidget {
       children: <Widget>[
         Opacity(
           opacity: 0.0,
-          child: _parsaBrandImage(),
+          child: _logoPrecacheImage(),
         ),
         _brandImage(),
 
-        // عبور نور آبی از روی نماد P (و کل طرح، مثل نور روی فلز).
+        // عبور نور آبی از روی لوگو، مثل نور روی فلز.
         if (blueSweep > 0.001 && blueSweep < 0.999)
           ShaderMask(
             blendMode: BlendMode.srcATop,
@@ -189,7 +187,7 @@ class _SplashLogo extends StatelessWidget {
             child: _brandImage(),
           ),
 
-        // درخشش فلزی طلایی روی تاج و حاشیه‌ها — بعد از نور آبی.
+        // درخشش فلزی طلایی روی نشان و حاشیه‌ها — بعد از نور آبی.
         if (goldSweep > 0.001 && goldSweep < 0.999)
           ShaderMask(
             blendMode: BlendMode.srcATop,
@@ -213,9 +211,9 @@ class _SplashLogo extends StatelessWidget {
     );
   }
 
-  Widget _parsaBrandImage() {
+  Widget _logoPrecacheImage() {
     return Image.asset(
-      ParsaBrand.logoAsset,
+      'assets/branding/fandoghi_app_logo_alpha.webp',
       fit: BoxFit.contain,
       filterQuality: FilterQuality.high,
       cacheWidth: cacheWidth,
@@ -229,7 +227,7 @@ class _SplashLogo extends StatelessWidget {
 
   Widget _brandImage() {
     return Image.asset(
-      'assets/theme_v2/logo_3d.webp',
+      'assets/branding/fandoghi_app_logo_alpha.webp',
       fit: BoxFit.contain,
       alignment: const Alignment(0, -0.65),
       filterQuality: FilterQuality.high,
@@ -243,8 +241,7 @@ class _SplashLogo extends StatelessWidget {
   }
 }
 
-/// اگر (فقط در حالت خرابی دارایی) تصویر قابل خواندن نباشد، صفحه هرگز
-/// خالی نمی‌ماند و نام برند با همان رنگ طلایی/آبی نمایش داده می‌شود.
+/// اگر (فقط در حالت خرابی دارایی) لوگو خوانده نشود، صفحه خالی نمی‌ماند.
 class _BrandFallback extends StatelessWidget {
   const _BrandFallback();
 
@@ -255,14 +252,12 @@ class _BrandFallback extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Text(
-            'P',
+            '🐿️',
             style: TextStyle(
               fontSize: 64,
-              fontWeight: FontWeight.w900,
-              color: ParsaBrand.gold,
               shadows: <Shadow>[
                 Shadow(
-                  color: ParsaBrand.neonBlue.withOpacity(0.55),
+                  color: ParsaBrand.gold.withOpacity(0.55),
                   blurRadius: 24,
                 ),
               ],
@@ -270,13 +265,12 @@ class _BrandFallback extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           const Text(
-            ParsaBrand.wordmark,
-            textDirection: TextDirection.ltr,
+            'جزیره فندقی',
+            textDirection: TextDirection.rtl,
             style: TextStyle(
-              fontSize: 11,
-              letterSpacing: 3.2,
-              fontWeight: FontWeight.w700,
-              color: Colors.white70,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
             ),
           ),
         ],

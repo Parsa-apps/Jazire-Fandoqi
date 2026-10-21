@@ -184,13 +184,21 @@ abstract final class IslandHomeStrings {
   /// دکمهٔ اصلی
   static const String start = 'شروع بازی';
 
-  /// سه مسیر اصلی
+  /// نام‌های قدیمیِ مسیرهای اصلی (برای سازگاری با بخش‌های دیگر)
   static const String play = 'بازی';
   static const String learn = 'آموزش';
   static const String story = 'داستان';
 
   /// مسیرِ فرعی: نقشهٔ کامل جزیره (هاب‌های قدیمی)
   static const String islandMap = 'نقشه جزیره';
+  static const String adventureMap = 'نقشه ماجراجویی';
+  static const String adventureMapHint = 'بازکردن نقشه کامل جزیره';
+
+  /// میان‌برهای مستقیمِ صفحهٔ اصلی
+  static const String cartoons = 'کارتون‌ها';
+  static const String stories = 'قصه‌ها';
+  static const String lullabies = 'لالایی';
+  static const String games = 'بازی‌ها';
 
   /// برچسب‌های دسترس‌پذیری و راهنما
   static const String startHint = 'شروع بازی و یادگیری امروز';

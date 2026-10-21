@@ -6,10 +6,14 @@ import 'package:flutter/material.dart';
 import '../../core/fandoghi_models.dart';
 
 /// ═══════════════════════════════════════════════════════════════
-/// 🌰 FANDOGHI HAZELNUT CHARACTER — کاراکتر فندق بامزه و کودکانه
-/// فندق تپل، مهربان و باانرژی با کلاه برگی، چشمان درخشان و لپ‌های گل‌انداخته
+/// 🐿️ FANDOGHI CHARACTER — همراه کودکانهٔ فندقی
+/// نام قدیمی این ویجت برای حفظ سازگاری API نگه داشته شده؛ تصویر اصلیِ
+/// سنجابِ فندقی از اینجا در همهٔ پیام‌ها و فعالیت‌ها نمایش داده می‌شود.
 /// ═══════════════════════════════════════════════════════════════
 class FandoghiHazelnutCharacter extends StatefulWidget {
+  /// Shared transparent artwork for Fandoghi's primary squirrel design.
+  static const String mascotAsset = 'assets/theme_v2/squirrel_hero.webp';
+
   final double size;
   final FandoghiMood mood;
   final bool isTalking;
@@ -112,13 +116,50 @@ class _FandoghiHazelnutCharacterState extends State<FandoghiHazelnutCharacter>
             child: SizedBox(
               width: widget.size,
               height: widget.size,
-              child: CustomPaint(
-                painter: _HazelnutPainter(
-                  mood: widget.mood,
-                  blinkValue: _blinkCtrl.value,
-                  talkValue: _talkCtrl.value,
-                  idleProgress: _idleCtrl.value,
-                ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: <Widget>[
+                  Image.asset(
+                    FandoghiHazelnutCharacter.mascotAsset,
+                    width: widget.size,
+                    height: widget.size,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.medium,
+                    excludeFromSemantics: true,
+                    errorBuilder: (context, error, stackTrace) => CustomPaint(
+                      size: Size(widget.size, widget.size),
+                      painter: _HazelnutPainter(
+                        mood: widget.mood,
+                        blinkValue: _blinkCtrl.value,
+                        talkValue: _talkCtrl.value,
+                        idleProgress: _idleCtrl.value,
+                      ),
+                    ),
+                  ),
+                  if (widget.mood != FandoghiMood.happy)
+                    Positioned(
+                      top: -widget.size * 0.04,
+                      right: -widget.size * 0.04,
+                      child: Container(
+                        width: widget.size * 0.34,
+                        height: widget.size * 0.34,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.96),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFFFFD166),
+                            width: widget.size * 0.025,
+                          ),
+                        ),
+                        child: Text(
+                          widget.mood.emoji,
+                          style: TextStyle(fontSize: widget.size * 0.22),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),

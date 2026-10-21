@@ -28,7 +28,7 @@ class _RewardCelebrationCard extends StatelessWidget {
 
   final int bonusStars;
 
-  static const String rewardAsset = 'assets/theme_v2/squirrel_reward.webp';
+  static const String rewardAsset = 'assets/theme_v2/squirrel_hero.webp';
 
   @override
   Widget build(BuildContext context) {

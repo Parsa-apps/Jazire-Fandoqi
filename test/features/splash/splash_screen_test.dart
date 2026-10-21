@@ -50,7 +50,7 @@ void main() {
     }
   }
 
-  testWidgets('shows the official brand mark and waits for real readiness',
+  testWidgets('shows the Fandoghi app logo and waits for real readiness',
       (WidgetTester tester) async {
     final gate = Completer<void>();
     final coordinator = StartupCoordinator(
@@ -69,7 +69,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 120));
 
     expect(
-      find.byKey(const ValueKey<String>('parsa_splash_logo')),
+      find.byKey(const ValueKey<String>('fandoghi_splash_logo')),
       findsOneWidget,
     );
     expect(find.text('در حال آماده‌سازی...'), findsOneWidget);
@@ -157,7 +157,7 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(
-      find.byKey(const ValueKey<String>('parsa_splash_logo')),
+      find.byKey(const ValueKey<String>('fandoghi_splash_logo')),
       findsOneWidget,
     );
 
