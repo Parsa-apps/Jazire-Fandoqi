@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:jazireh_fandoghi/app/island_cinema_style.dart';
 import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
 import 'package:jazireh_fandoghi/core/game_data.dart';
 import 'package:jazireh_fandoghi/core/growth/growth_store.dart';
@@ -54,7 +56,8 @@ void main() {
           child: const SizedBox.expand(child: LivingIslandHome()),
         ),
         routes: <String, WidgetBuilder>{
-          '/games-carnival': (BuildContext context) => const Text('games route'),
+          '/games-carnival': (BuildContext context) =>
+              const Text('games route'),
           '/cartoons': (BuildContext context) => const Text('cartoons route'),
           '/lullabies': (BuildContext context) => const Text('lullabies route'),
           '/learning-library': (BuildContext context) =>
@@ -82,12 +85,67 @@ void main() {
     await pumpHome(tester);
 
     expect(find.text('شروع بازی'), findsOneWidget);
+    expect(find.text('شروع ماجراجویی'), findsOneWidget);
     expect(find.text('کارتون‌ها'), findsOneWidget);
     expect(find.text('قصه‌ها'), findsOneWidget);
     expect(find.text('لالایی'), findsOneWidget);
     expect(find.text('بازی‌ها'), findsOneWidget);
     expect(find.text('جزیره فندقی'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'places a dedicated kid-friendly logo above each home button text',
+      (WidgetTester tester) async {
+    await pumpHome(tester);
+
+    const buttons = <(String, String, String)>[
+      ('home_logo_start', 'شروع ماجراجویی', IslandHomeLogos.adventure),
+      ('home_logo_cartoons', 'کارتون‌ها', IslandHomeLogos.cartoons),
+      ('home_logo_stories', 'قصه‌ها', IslandHomeLogos.stories),
+      ('home_logo_lullabies', 'لالایی', IslandHomeLogos.lullabies),
+      ('home_logo_games', 'بازی‌ها', IslandHomeLogos.games),
+    ];
+
+    for (final (logoKey, visibleText, assetPath) in buttons) {
+      final bytes = await tester.runAsync(() => rootBundle.load(assetPath));
+      expect(bytes, isNotNull);
+      expect(bytes!.lengthInBytes, greaterThan(1024));
+
+      final logoFinder = find.byKey(ValueKey<String>(logoKey));
+      final textFinder = find.text(visibleText);
+      expect(logoFinder, findsOneWidget);
+      expect(textFinder, findsOneWidget);
+
+      final logoRect = tester.getRect(logoFinder);
+      final textRect = tester.getRect(textFinder);
+      expect(logoRect.center.dy, lessThan(textRect.center.dy));
+      expect(logoRect.bottom, lessThanOrEqualTo(textRect.top + 2.0));
+    }
+
+    // لمسِ مستقیمِ لوگوی هر ۵ دکمه نیز دقیقاً مسیرِ همان دکمه را باز می‌کند.
+    final logoRoutes = <(String, String)>[
+      ('home_logo_cartoons', 'cartoons route'),
+      ('home_logo_stories', 'stories route'),
+      ('home_logo_lullabies', 'lullabies route'),
+      ('home_logo_games', 'games route'),
+    ];
+    for (final (logoKey, destination) in logoRoutes) {
+      await tester.tap(find.byKey(ValueKey<String>(logoKey)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text(destination), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    await tester.tap(find.byKey(const ValueKey<String>('home_logo_start')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(IslandMapTab), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await _disposeAnimatedTree(tester);
   });
 
   testWidgets('each home shortcut really navigates',

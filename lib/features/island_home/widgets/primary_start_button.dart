@@ -5,7 +5,9 @@ import '../../../app/app_fonts.dart';
 import '../../../app/island_cinema_style.dart';
 import '../../../core/audio_service.dart';
 
-/// ▶️ دکمهٔ سه‌بعدیِ طلاییِ «شروع ماجراجویی» در صفحهٔ اصلی (مطابقِ طرحِ مرجع).
+/// ▶️ دکمهٔ سه‌بعدیِ طلاییِ «شروع ماجراجویی» در صفحهٔ اصلی به‌همراهِ لوگوی
+/// تصویریِ کودک‌پسند در بالای متن تا کودکانِ پیش‌دبستانی نیز بدونِ نیاز به
+/// خواندن، مسیرِ ورود به نقشهٔ ماجراجویی را بشناسند.
 ///
 /// برچسبِ ظاهریِ دکمه «شروع ماجراجویی» است و در عینِ حال برچسبِ `widget.label`
 /// («شروع بازی») را نیز در درختِ ویجت‌ها و Semantics حفظ می‌کند.
@@ -15,7 +17,8 @@ class PrimaryStartButton extends StatefulWidget {
     required this.onTap,
     this.label = IslandHomeStrings.start,
     this.displayLabel = 'شروع ماجراجویی',
-    this.height = 60,
+    this.logoAsset = IslandHomeLogos.adventure,
+    this.height = 102,
     this.enabled = true,
     this.maxWidth = double.infinity,
   });
@@ -23,9 +26,12 @@ class PrimaryStartButton extends StatefulWidget {
   final VoidCallback onTap;
   final String label;
   final String displayLabel;
+  final String logoAsset;
   final double height;
   final bool enabled;
   final double maxWidth;
+
+  static const Key logoKey = ValueKey<String>('home_logo_start');
 
   @override
   State<PrimaryStartButton> createState() => _PrimaryStartButtonState();
@@ -73,9 +79,14 @@ class _PrimaryStartButtonState extends State<PrimaryStartButton>
   @override
   Widget build(BuildContext context) {
     final targetWidth = widget.maxWidth.isFinite
-        ? widget.maxWidth.clamp(180.0, 290.0)
-        : 270.0;
-    final buttonHeight = widget.height.clamp(50.0, 68.0);
+        ? widget.maxWidth.clamp(180.0, 248.0)
+        : 244.0;
+    final buttonHeight = widget.height.clamp(74.0, 114.0);
+    final logoSize = buttonHeight * 0.61;
+    final pillTop = buttonHeight * 0.42;
+    final lipDepth = (buttonHeight * 0.052).clamp(4.0, 6.0);
+    final dpr = MediaQuery.maybeOf(context)?.devicePixelRatio ?? 2.0;
+    final cacheWidth = (logoSize * dpr).round().clamp(112, 420);
 
     return Semantics(
       button: true,
@@ -108,16 +119,17 @@ class _PrimaryStartButtonState extends State<PrimaryStartButton>
               height: buttonHeight,
               child: Stack(
                 alignment: Alignment.center,
+                clipBehavior: Clip.none,
                 children: <Widget>[
                   // لایهٔ زیرینِ سه‌بعدی (برجستگیِ طلایی-کهربایی)
                   Positioned(
                     left: 0,
                     right: 0,
-                    top: 5,
+                    top: pillTop + lipDepth,
                     bottom: 0,
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(999),
+                        borderRadius: BorderRadius.circular(28),
                         gradient: const LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
@@ -145,11 +157,11 @@ class _PrimaryStartButtonState extends State<PrimaryStartButton>
                   Positioned(
                     left: 0,
                     right: 0,
-                    top: 0,
-                    bottom: 5,
+                    top: pillTop,
+                    bottom: lipDepth,
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(999),
+                        borderRadius: BorderRadius.circular(28),
                         gradient: const LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
@@ -171,67 +183,131 @@ class _PrimaryStartButtonState extends State<PrimaryStartButton>
                           // درخششِ شیشه‌ایِ بالا
                           Positioned(
                             top: 3,
-                            left: 18,
-                            right: 18,
-                            height: buttonHeight * 0.34,
+                            left: 16,
+                            right: 16,
+                            height: (buttonHeight - pillTop) * 0.30,
                             child: IgnorePointer(
                               child: DecoratedBox(
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(999),
+                                  borderRadius: BorderRadius.circular(24),
                                   gradient: LinearGradient(
                                     begin: Alignment.topCenter,
                                     end: Alignment.bottomCenter,
                                     colors: <Color>[
-                                      Colors.white.withOpacity(0.68),
-                                      Colors.white.withOpacity(0.05),
+                                      Colors.white.withOpacity(0.66),
+                                      Colors.white.withOpacity(0.04),
                                     ],
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 18),
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: <Widget>[
-                                  Text(
-                                    widget.displayLabel,
-                                    maxLines: 1,
-                                    textDirection: TextDirection.rtl,
-                                    style: AppFonts.kids(
-                                      fontSize: 23,
-                                      fontWeight: FontWeight.w900,
-                                      color: const Color(0xFF4A2500),
-                                      shadows: <Shadow>[
-                                        Shadow(
-                                          color: Colors.white.withOpacity(0.75),
-                                          blurRadius: 1.5,
-                                          offset: const Offset(0, 1),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (widget.label != widget.displayLabel)
-                                    Opacity(
-                                      opacity: 0.0,
-                                      child: Text(
-                                        widget.label,
-                                        maxLines: 1,
-                                        textDirection: TextDirection.rtl,
-                                        style: AppFonts.kids(
-                                          fontSize: 23,
-                                          fontWeight: FontWeight.w900,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // هالهٔ نورِ گرم پشتِ لوگوی سه‌بعدی در بالای دکمه
+                  Positioned(
+                    top: 0,
+                    width: logoSize * 1.32,
+                    height: logoSize,
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: <Color>[
+                              const Color(0xFFFFF8E1).withOpacity(0.55),
+                              const Color(0xFFFFCA28).withOpacity(0.0),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // لوگوی سه‌بعدیِ جزیرهٔ ماجراجویی دقیقاً در بالای متن
+                  Positioned(
+                    top: 0,
+                    width: logoSize,
+                    height: logoSize,
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        key: PrimaryStartButton.logoKey,
+                        decoration: BoxDecoration(
+                          boxShadow: <BoxShadow>[
+                            BoxShadow(
+                              color: const Color(0xFF4A2500).withOpacity(0.26),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Image.asset(
+                          widget.logoAsset,
+                          width: logoSize,
+                          height: logoSize,
+                          fit: BoxFit.contain,
+                          filterQuality: FilterQuality.medium,
+                          cacheWidth: cacheWidth,
+                          excludeFromSemantics: true,
+                          errorBuilder: (
+                            BuildContext context,
+                            Object error,
+                            StackTrace? stack,
+                          ) {
+                            return Icon(
+                              Icons.explore_rounded,
+                              size: logoSize * 0.72,
+                              color: const Color(0xFF4A2500),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  // متنِ دکمه در بخشِ پایینیِ رویهٔ طلایی
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    top: buttonHeight * 0.61,
+                    bottom: lipDepth + 3,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: <Widget>[
+                          Text(
+                            widget.displayLabel,
+                            maxLines: 1,
+                            textDirection: TextDirection.rtl,
+                            style: AppFonts.kids(
+                              fontSize: 21,
+                              fontWeight: FontWeight.w900,
+                              height: 1.12,
+                              color: const Color(0xFF4A2500),
+                              shadows: <Shadow>[
+                                Shadow(
+                                  color: Colors.white.withOpacity(0.78),
+                                  blurRadius: 1.5,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
                             ),
                           ),
+                          if (widget.label != widget.displayLabel)
+                            Opacity(
+                              opacity: 0.0,
+                              child: Text(
+                                widget.label,
+                                maxLines: 1,
+                                textDirection: TextDirection.rtl,
+                                style: AppFonts.kids(
+                                  fontSize: 21,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.12,
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
