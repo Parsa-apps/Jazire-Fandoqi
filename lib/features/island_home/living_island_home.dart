@@ -517,9 +517,17 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
     return Center(
       child: Material(
         color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(22),
-            onTap: _openIslandMap,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: _openIslandMap,
+          child: Listener(
+            // InkWell به‌طور پیش‌فرض فقط جایی لمس را قبول می‌کند که یکی از
+            // فرزندانش خودش قابل‌لمس باشد (deferToChild). آیکون و متن کلِ
+            // سطحِ این چیپ را نمی‌پوشانند، پس لمسِ وسطِ دکمه عملاً گم می‌شد
+            // و نقشه باز نمی‌شد. این Listener با رفتارِ translucent کلِ سطح
+            // را قابل‌لمس می‌کند، بی‌آنکه رویداد را ببلعد — پس موجِ InkWell
+            // هم سر جایش می‌ماند.
+            behavior: HitTestBehavior.translucent,
             child: Semantics(
               button: true,
               label: IslandHomeStrings.islandMap,
@@ -572,6 +580,7 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
             ),
           ),
         ),
+      ),
     );
   }
 }

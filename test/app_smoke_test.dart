@@ -131,27 +131,11 @@ void main() {
     final chip = find.byKey(const ValueKey('living_island_map_chip'));
     await tester.ensureVisible(chip);
     await tester.pump();
-    // ── تشخیصیِ موقت (بعد از پیداکردنِ علت حذف می‌شود) ──
-    const spots = <Offset>[
-      Offset(0.5, 0.5),
-      Offset(0.12, 0.5),
-      Offset(0.9, 0.5),
-      Offset(0.5, 0.2),
-      Offset(0.5, 0.8),
-    ];
-    final rect0 = tester.getRect(chip);
-    final probes = <String>[];
-    for (final spot in spots) {
-      await tester.tapAt(Offset(
-        rect0.left + rect0.width * spot.dx,
-        rect0.top + rect0.height * spot.dy,
-      ));
-      await tester.pump(const Duration(milliseconds: 500));
-      probes.add('(${spot.dx},${spot.dy})='
-          '${find.byType(IslandMapTab).evaluate().length}');
-      if (find.byType(IslandMapTab).evaluate().isNotEmpty) break;
-    }
-    expect('PROBES ${probes.join(" ")} rect=$rect0', equals('__DIAG__'));
+    // لمس درست در مرکزِ چیپ انجام می‌شود: اگر فقط یک نقطهٔ خاص از دکمه
+    // پاسخ بدهد، کودک در عمل بخشِ بزرگی از آن را لمس‌ناپذیر می‌یابد.
+    await tester.tap(chip);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
     // ابتدا ثابت می‌کنیم ناوبری واقعاً انجام شده و خطایی رخ نداده است؛
     // اگر فقط برچسب‌ها بررسی شوند، علتِ واقعیِ شکست پنهان می‌ماند.
