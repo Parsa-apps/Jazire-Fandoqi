@@ -250,6 +250,28 @@ jobs:
           echo "AAB: $AAB_NAME ($(wc -c < "$DIST/$AAB_NAME") bytes)"
           cat "$DIST/$APK_NAME.sha256" "$DIST/$AAB_NAME.sha256"
 
+      # The artifact itself is a signed zip on blob storage that cannot be
+      # fetched from every network. Publishing the exact identity as check
+      # annotations keeps the build verifiable (path, size, digest, type)
+      # without downloading a single byte.
+      - name: Record APK identity for verification
+        env:
+          VER: ${{ steps.version.outputs.name }}
+          APK_NAME: ${{ steps.assets.outputs.apk }}
+          APK_BYTES: ${{ steps.assets.outputs.apk_bytes }}
+          APK_SHA256: ${{ steps.assets.outputs.apk_sha256 }}
+          AAB_NAME: ${{ steps.assets.outputs.aab }}
+          AAB_BYTES: ${{ steps.assets.outputs.aab_bytes }}
+          AAB_SHA256: ${{ steps.assets.outputs.aab_sha256 }}
+        run: |
+          echo "build_type=release"
+          echo "signing=official_release_keystore"
+          echo "::notice::artifact=apk name=jazire_fandoqi_v${VER}_myket_production_apk"
+          echo "::notice::artifact=apk file=${APK_NAME} bytes=${APK_BYTES} sha256=${APK_SHA256}"
+          echo "::notice::artifact=aab name=jazire_fandoqi_v${VER}_myket_production_aab file=${AAB_NAME} bytes=${AAB_BYTES} sha256=${AAB_SHA256}"
+          echo "::notice::apk_path=build/app/outputs/flutter-apk/app-myket-release.apk"
+          echo "::notice::run_url=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:

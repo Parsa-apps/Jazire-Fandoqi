@@ -106,7 +106,7 @@ class _PrimaryStartButtonState extends State<PrimaryStartButton>
                   ),
                 ],
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.play_arrow_rounded,
                 size: 34,
                 color: textColor,
