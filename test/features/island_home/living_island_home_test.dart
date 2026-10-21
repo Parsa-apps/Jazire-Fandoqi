@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:jazireh_fandoghi/core/fandoghi_coach.dart';
 import 'package:jazireh_fandoghi/core/game_data.dart';
 import 'package:jazireh_fandoghi/core/growth/growth_store.dart';
+import 'package:jazireh_fandoghi/features/home/widgets/island_map/island_map_tab.dart';
 import 'package:jazireh_fandoghi/features/island_home/living_island_home.dart';
 
 import '../../support/paywall_test_store.dart';
@@ -126,6 +127,22 @@ void main() {
     // اولین ایستگاهِ امروز برای یک پروفایلِ تازه، الفباست.
     expect(find.text('alphabet route'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the island map chip opens the classic map',
+      (WidgetTester tester) async {
+    await pumpHome(tester);
+
+    final chip = find.byKey(const ValueKey<String>('living_island_map_chip'));
+    expect(chip, findsOneWidget);
+    await tester.ensureVisible(chip);
+    await tester.pump();
+    await tester.tap(chip);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(IslandMapTab), findsOneWidget);
   });
 
   testWidgets('renders without overflow on a narrow 320x568 phone',

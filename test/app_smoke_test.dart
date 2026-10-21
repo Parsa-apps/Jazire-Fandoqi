@@ -132,25 +132,26 @@ void main() {
     await tester.ensureVisible(chip);
     await tester.pump();
     // ── تشخیصیِ موقت (بعد از پیداکردنِ علت حذف می‌شود) ──
-    int tabs() => find.byType(IslandMapTab).evaluate().length;
-    await tester.ensureVisible(chip);
-    await tester.pump();
-    await tester.tap(chip);
-    await tester.pump(const Duration(milliseconds: 600));
-    final exc = tester.takeException();
-    final texts = find
-        .byType(Text)
-        .evaluate()
-        .take(6)
-        .map((Element e) => (e.widget as Text).data)
-        .toList();
-    expect(
-      'ONLY chip=${chip.evaluate().length} tabs=${tabs()} exc=$exc '
-      'scaffolds=${find.byType(Scaffold).evaluate().length} '
-      'routes=${tester.widget<Navigator>(find.byType(Navigator)).observers} '
-      'texts=$texts',
-      equals('__DIAG__'),
-    );
+    const spots = <Offset>[
+      Offset(0.5, 0.5),
+      Offset(0.12, 0.5),
+      Offset(0.9, 0.5),
+      Offset(0.5, 0.2),
+      Offset(0.5, 0.8),
+    ];
+    final rect0 = tester.getRect(chip);
+    final probes = <String>[];
+    for (final spot in spots) {
+      await tester.tapAt(Offset(
+        rect0.left + rect0.width * spot.dx,
+        rect0.top + rect0.height * spot.dy,
+      ));
+      await tester.pump(const Duration(milliseconds: 500));
+      probes.add('(${spot.dx},${spot.dy})='
+          '${find.byType(IslandMapTab).evaluate().length}');
+      if (find.byType(IslandMapTab).evaluate().isNotEmpty) break;
+    }
+    expect('PROBES ${probes.join(" ")} rect=$rect0', equals('__DIAG__'));
 
     // ابتدا ثابت می‌کنیم ناوبری واقعاً انجام شده و خطایی رخ نداده است؛
     // اگر فقط برچسب‌ها بررسی شوند، علتِ واقعیِ شکست پنهان می‌ماند.
