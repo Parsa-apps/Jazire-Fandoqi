@@ -237,18 +237,23 @@ void main() {
         );
         for (final region in page.regions) {
           expect(region.label.trim(), isNotEmpty, reason: page.id);
-          // Rect فقط isEmpty دارد؛ isNotEmpty روی آن وجود ندارد.
+          // ناحیه باید «مساحت» داشته باشد؛ Rect فقط width/height را
+          // می‌دهد (isEmpty برای خطِ افقی هم true است، پس اینجا کافی نیست).
+          final bounds = region.buildPath(size).getBounds();
           expect(
-            region.buildPath(size).getBounds().isEmpty,
-            isFalse,
-            reason: '${page.id}/${region.id}: مسیرِ خالی',
+            bounds.width > 0 && bounds.height > 0,
+            isTrue,
+            reason: '${page.id}/${region.id}: ناحیهٔ بی‌مساحت',
           );
         }
         for (final detail in page.details) {
+          // جزئیاتِ خطی (مثل سبیل یا spokes) عمداً یک‌بُعدی‌اند؛ فقط نباید
+          // به یک نقطه فرو بپاشند.
+          final bounds = detail.buildPath(size).getBounds();
           expect(
-            detail.buildPath(size).getBounds().isEmpty,
-            isFalse,
-            reason: '${page.id}: جزئیاتِ خالی',
+            bounds.width > 0 || bounds.height > 0,
+            isTrue,
+            reason: '${page.id}: جزئیاتِ نقطه‌ای',
           );
         }
       }

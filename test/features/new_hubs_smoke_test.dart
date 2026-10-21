@@ -60,14 +60,19 @@ void main() {
     await tester.pump(const Duration(milliseconds: 700));
 
     expect(find.text(title), findsWidgets, reason: title);
-    await verify?.call();
     expect(tester.takeException(), isNull, reason: title);
 
-    await tester.pumpWidget(const SizedBox.shrink());
-    FandoghiCoach.clear();
-    FandoghiCoach.cancelSmartHint();
-    FandoghiCoach.disablePersistentPresence();
-    await tester.pump(const Duration(seconds: 6));
+    try {
+      await verify?.call();
+    } finally {
+      // پاک‌سازیِ درخت حتی وقتی بررسیِ درونِ هاب شکست می‌خورد، وگرنه
+      // تایمرهای معلق یا انیمیشن‌های نصفه پیامِ خطا را می‌پوشانند.
+      await tester.pumpWidget(const SizedBox.shrink());
+      FandoghiCoach.clear();
+      FandoghiCoach.cancelSmartHint();
+      FandoghiCoach.disablePersistentPresence();
+      await tester.pump(const Duration(seconds: 6));
+    }
   }
 
   testWidgets('استودیوی موسیقی باز می‌شود', (tester) async {
@@ -98,7 +103,7 @@ void main() {
       tester,
       const QuranKidsScreen(),
       'قرآنِ کودک',
-      verify: () => expect(find.byType(LockedItemBadge), findsNothing),
+      verify: () async => expect(find.byType(LockedItemBadge), findsNothing),
     );
   });
 
