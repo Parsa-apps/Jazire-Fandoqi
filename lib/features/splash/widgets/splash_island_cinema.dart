@@ -146,6 +146,8 @@ class SplashIslandPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (size.width <= 0 || size.height <= 0) return;
+
     final w = size.width;
     final h = size.height;
     final horizon = h * 0.60;
@@ -322,6 +324,8 @@ class SplashLeafPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (size.width <= 0 || size.height <= 0) return;
+
     final unit = math.min(size.width, size.height) * 0.30;
     final sway = math.sin(ambient * 2 * math.pi) * 0.022;
     // با ورودِ فندقی، برگ کمی عقب می‌رود تا راه باز شود

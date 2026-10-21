@@ -288,7 +288,10 @@ class _FandoqiHeroState extends State<FandoqiHero>
                     ),
                   ),
                   Image.asset(
-                    _cheering || _cheer.value > 0
+                    // فقط پرچمِ _cheering تصویر را عوض می‌کند، نه مقدارِ
+                    // کنترلر: مقدارِ کنترلر بعد از پایان روی ۱ می‌ماند و
+                    // اگر مبنا قرار بگیرد فندقی تا ابد لباسِ جشن می‌پوشد.
+                    _cheering
                         ? FandoqiHero.celebrateAsset
                         : FandoqiHero.waveAsset,
                     width: widget.size,
@@ -309,7 +312,7 @@ class _FandoqiHeroState extends State<FandoqiHero>
                       );
                     },
                   ),
-                  if (_cheer.value > 0)
+                  if (_cheering)
                     Positioned.fill(
                       child: IgnorePointer(
                         child: CustomPaint(

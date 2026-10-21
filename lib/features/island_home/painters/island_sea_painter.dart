@@ -28,6 +28,8 @@ class IslandSeaPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (size.width <= 0 || size.height <= 0) return;
+
     final geo = IslandSceneGeometry(size);
     final top = geo.horizon;
     final rect = Rect.fromLTWH(0, top, size.width, size.height - top);

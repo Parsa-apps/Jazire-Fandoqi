@@ -4,7 +4,6 @@ import '../../../app/island_cinema_style.dart';
 import '../../../core/growth/growth_store.dart';
 import '../painters/island_atmosphere_painter.dart';
 import '../painters/island_land_painter.dart';
-import '../painters/island_scene_geometry.dart';
 import '../painters/island_sea_painter.dart';
 import '../painters/island_sky_painter.dart';
 
@@ -147,23 +146,4 @@ class _IslandSceneState extends State<IslandScene>
       child: widget.child,
     );
   }
-}
-
-/// 📍 راهنمایِ چیدمان: کجای صحنه برای نشستنِ فندقی امن است؟
-///
-/// ویجت‌های روی صحنه با این کلاس مختصاتِ نسبیِ سکوی فندقی را
-/// می‌خوانند تا شخصیت روی چمن بماند، نه روی آب یا آسمان.
-class IslandSceneAnchor {
-  const IslandSceneAnchor._();
-
-  /// مرکزِ سکو به صورتِ کسر از ارتفاعِ صحنه
-  static const double mascotCenterY = 0.40;
-
-  /// پهنایِ امنِ سکو به صورتِ کسر از عرضِ صحنه
-  static const double mascotSafeWidth = 0.62;
-
-  static Offset mascotCenterFor(Size size) => Offset(
-        size.width * 0.5,
-        size.height * mascotCenterY,
-      );
 }

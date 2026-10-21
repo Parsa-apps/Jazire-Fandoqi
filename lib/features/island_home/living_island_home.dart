@@ -266,40 +266,43 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
   Widget build(BuildContext context) {
     ref.watch(gameStateProvider);
 
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        final w = constraints.maxWidth;
-        final h = constraints.maxHeight;
-        final compact = h < 660;
+    return IslandScene(
+      child: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          // نوارِ وضعیت حذف می‌شود؛ فضایِ نوارِ پایین را خودِ
+          // BottomNavigationBar مدیریت می‌کند. LayoutBuilder *داخل*
+          // SafeArea است تا ارتفاعِ در-دسترس دقیق باشد و ستون به‌خاطر
+          // نوارِ وضعیت قابلیتِ اسکرولِ اضافه پیدا نکند.
+          SafeArea(
+            bottom: false,
+            child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                final w = constraints.maxWidth;
+                final h = constraints.maxHeight;
+                final compact = h < 660;
 
-        final heroSize = (math.min(w, h) * 0.40).clamp(112.0, 250.0);
-        final startHeight = compact ? 66.0 : IslandCinemaMetrics.startButtonHeight;
-        final cardHeight = compact ? 104.0 : IslandCinemaMetrics.pathCardHeight;
-        final logoFont = (w * 0.072).clamp(20.0, 34.0);
-        final crestSize = (w * 0.11).clamp(34.0, 52.0);
+                final heroSize = (math.min(w, h) * 0.40).clamp(112.0, 250.0);
+                final startHeight =
+                    compact ? 66.0 : IslandCinemaMetrics.startButtonHeight;
+                final cardHeight =
+                    compact ? 104.0 : IslandCinemaMetrics.pathCardHeight;
+                final logoFont = (w * 0.072).clamp(20.0, 34.0);
+                final crestSize = (w * 0.11).clamp(34.0, 52.0);
 
-        // فاصله‌ها بر اساسِ فضایِ آزاد پخش می‌شوند تا روی صفحهٔ بلند
-        // کشیده و روی صفحهٔ کوتاه فشرده شود — همیشه بدون سرریز.
-        final fixed = 56.0 + // نوارِ بالا
-            (crestSize + 14) +
-            heroSize +
-            (startHeight + 9) +
-            (cardHeight + 9) +
-            46 + // چیپِ نقشه
-            132; // فضایِ رزرو برای دکمه‌های شناور و کنترلِ موسیقی
-        final rawGap = (h - fixed) / 6;
-        final gap = rawGap.isFinite ? rawGap.clamp(6.0, 30.0) : 8.0;
+                // فاصله‌ها بر اساسِ فضایِ آزاد پخش می‌شوند تا روی صفحهٔ
+                // بلند کشیده و روی صفحهٔ کوتاه فشرده شود — همیشه بدون سرریز.
+                final fixed = 56.0 + // نوارِ بالا
+                    (crestSize + 14) +
+                    heroSize +
+                    (startHeight + 9) +
+                    (cardHeight + 9) +
+                    46 + // چیپِ نقشه
+                    132; // فضایِ رزرو برای دکمه‌های شناور و کنترلِ موسیقی
+                final rawGap = (h - fixed) / 6;
+                final gap = rawGap.isFinite ? rawGap.clamp(6.0, 30.0) : 8.0;
 
-        return IslandScene(
-          child: Stack(
-            fit: StackFit.expand,
-            children: <Widget>[
-              // نوارِ وضعیت حذف می‌شود؛ فضایِ نوارِ پایین را خودِ
-              // BottomNavigationBar مدیریت می‌کند. با این کار ارتفاعِ
-              // درونِ LayoutBuilder دقیقاً همان چیزی است که در دسترس است.
-              SafeArea(
-                bottom: false,
-                child: SingleChildScrollView(
+                return SingleChildScrollView(
                   physics: const ClampingScrollPhysics(),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(minHeight: h),
@@ -337,26 +340,26 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
                       ],
                     ),
                   ),
-                ),
-              ),
-
-              // مسیرِ خرید (هرگز حذف یا شبیه‌سازی نمی‌شود)
-              const PositionedDirectional(
-                bottom: 112,
-                start: 10,
-                child: FullVersionPurchaseEntry(compact: true),
-              ),
-
-              // هدیهٔ روزانه و کتابخانه
-              PositionedDirectional(
-                bottom: 112,
-                end: 10,
-                child: _buildFloatingShortcuts(),
-              ),
-            ],
+                );
+              },
+            ),
           ),
-        );
-      },
+
+          // مسیرِ خرید (هرگز حذف یا شبیه‌سازی نمی‌شود)
+          const PositionedDirectional(
+            bottom: 112,
+            start: 10,
+            child: FullVersionPurchaseEntry(compact: true),
+          ),
+
+          // هدیهٔ روزانه و کتابخانه
+          PositionedDirectional(
+            bottom: 112,
+            end: 10,
+            child: _buildFloatingShortcuts(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -571,7 +574,7 @@ class _ProfileChip extends StatelessWidget {
             color: IslandCinemaPalette.paper.withOpacity(0.94),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: IslandCinemaPalette.gold.withOpacity(0.85),
+              color: IslandCinemaPalette.goldDeep.withOpacity(0.9),
               width: 2,
             ),
             boxShadow: <BoxShadow>[

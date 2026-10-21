@@ -17,6 +17,8 @@ class IslandCrestPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (size.width <= 0 || size.height <= 0) return;
+
     final w = size.width;
     final h = size.height;
     final cx = w * 0.5;

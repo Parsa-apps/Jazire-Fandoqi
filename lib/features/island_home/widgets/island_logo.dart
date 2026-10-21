@@ -6,15 +6,18 @@ import '../painters/island_crest_painter.dart';
 
 /// 🏅 لوگوی «جزیره فندقی» — هویتِ طلایی، چوبی و طبیعی.
 ///
-/// تصمیمِ طراحی: هیچ فایلِ تصویری برای واژه‌نما اضافه نشده است؛
-/// نشان با [IslandCrestPainter] و نوشته با `ShaderMask` روی فونتِ
-/// کودکانهٔ موجود کشیده می‌شوند. سه دلیل:
-///   ۱. در هر اندازه‌ای (از ۳۲۰ تا تبلت) تیز می‌ماند؛
-///   ۲. حجمِ APK افزایش نمی‌یابد؛
-///   ۳. راست‌به‌چپ و شکل‌دهیِ فارسی دقیقاً همان فونتِ برنامه است.
-///
-/// سایهٔ تیرهٔ پشتِ نوشته عمداً دو لایه است تا روی آسمانِ روشن و روی
-/// برگ‌های تیره هر دو خوانا بماند (کنتراست برای کودکِ کم‌بینا).
+/// تصمیم‌های طراحی:
+///   * هیچ فایلِ تصویری برای واژه‌نما اضافه نشده است؛ نشان با
+///     [IslandCrestPainter] و نوشته با فونتِ کودکانهٔ موجود کشیده
+///     می‌شوند. سه دلیل: در هر اندازه‌ای (از ۳۲۰ تا تبلت) تیز
+///     می‌ماند، حجمِ APK افزایش نمی‌یابد، و راست‌به‌چپ و شکل‌دهیِ
+///     فارسی دقیقاً همان فونتِ برنامه است.
+///   * برجستگی با سه سایه روی **یک** ویجتِ `Text` ساخته شده است
+///     (تیرهٔ پایین، تیرهٔ دورخط، هایلایتِ بالا) — نه با دو `Text`
+///     روی هم؛ با این کار برچسبِ لوگو در درختِ ویجت‌ها یکتا می‌ماند
+///     و تست‌های دسترس‌پذیری و متن درست کار می‌کنند.
+///   * کنتراستِ نوشته روی آسمانِ روشن با سایهٔ تیرهٔ دورخط تضمین
+///     می‌شود (برای کودکِ کم‌بینا و نورِ زیادِ محیط).
 class IslandLogo extends StatelessWidget {
   const IslandLogo({
     super.key,
@@ -31,62 +34,38 @@ class IslandLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textStyle = AppFonts.kids(
-      fontSize: fontSize,
-      fontWeight: FontWeight.w800,
-      height: 1.15,
-      color: Colors.white,
-    );
-
-    final wordmark = Stack(
-      alignment: Alignment.center,
-      children: <Widget>[
-        // لایهٔ پشت: فقط سایه (بدنهِ شفاف) برای کنتراست
-        Text(
-          title,
-          textDirection: TextDirection.rtl,
-          maxLines: 1,
-          overflow: TextOverflow.fade,
-          softWrap: false,
-          style: textStyle.copyWith(
-            color: Colors.transparent,
-            shadows: <Shadow>[
-              Shadow(
-                color: IslandCinemaPalette.shade.withOpacity(0.55),
-                blurRadius: 12,
-                offset: const Offset(0, 3),
-              ),
-              Shadow(
-                color: IslandCinemaPalette.bronze.withOpacity(0.95),
-                blurRadius: 1.6,
-                offset: const Offset(0, 1.6),
-              ),
-            ],
+    final wordmark = Text(
+      title,
+      textDirection: TextDirection.rtl,
+      maxLines: 1,
+      overflow: TextOverflow.fade,
+      softWrap: false,
+      style: AppFonts.kids(
+        fontSize: fontSize,
+        fontWeight: FontWeight.w800,
+        height: 1.15,
+        color: IslandCinemaPalette.gold,
+        shadows: <Shadow>[
+          // دورخطِ تیره: خوانایی روی آسمانِ روشن
+          Shadow(
+            color: IslandCinemaPalette.woodDeep.withOpacity(0.95),
+            blurRadius: 2,
+            offset: const Offset(0, 1.4),
           ),
-        ),
-        // لایهٔ رویی: شیبِ طلایی
-        ShaderMask(
-          shaderCallback: (Rect bounds) => const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: <Color>[
-              IslandCinemaPalette.goldLight,
-              IslandCinemaPalette.gold,
-              IslandCinemaPalette.goldDeep,
-            ],
-            stops: <double>[0.0, 0.45, 1.0],
-          ).createShader(bounds),
-          blendMode: BlendMode.srcIn,
-          child: Text(
-            title,
-            textDirection: TextDirection.rtl,
-            maxLines: 1,
-            overflow: TextOverflow.fade,
-            softWrap: false,
-            style: textStyle,
+          // سایهٔ نرم: جداشدن از پس‌زمینه
+          Shadow(
+            color: IslandCinemaPalette.shade.withOpacity(0.45),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
-        ),
-      ],
+          // هایلایتِ بالا: حسِ برجستگیِ طلایی
+          Shadow(
+            color: IslandCinemaPalette.goldLight.withOpacity(0.9),
+            blurRadius: 1,
+            offset: const Offset(0, -1.2),
+          ),
+        ],
+      ),
     );
 
     if (!showCrest) {

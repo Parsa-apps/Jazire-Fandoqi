@@ -30,6 +30,8 @@ class IslandLandPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (size.width <= 0 || size.height <= 0) return;
+
     final geo = IslandSceneGeometry(size);
     final silhouette = geo.islandSilhouette();
 

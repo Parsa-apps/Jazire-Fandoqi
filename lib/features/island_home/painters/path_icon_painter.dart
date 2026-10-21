@@ -34,6 +34,8 @@ class PathIconPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (size.width <= 0 || size.height <= 0) return;
+
     final unit = math.min(size.width, size.height);
     // سایهٔ نرمِ زیرِ نشان
     canvas.drawOval(
@@ -208,7 +210,7 @@ class PathIconPainter extends CustomPainter {
 
       // جلدِ زیرین (نمایِ ضخامت)
       canvas.drawPath(
-        page.shift(const Offset(0, 0)),
+        page,
         Paint()
           ..color = deepColor.withOpacity(0.30)
           ..style = PaintingStyle.stroke

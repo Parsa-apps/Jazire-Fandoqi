@@ -27,6 +27,8 @@ class IslandAtmospherePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (size.width <= 0 || size.height <= 0) return;
+
     final geo = IslandSceneGeometry(size);
 
     _paintSunRays(canvas, geo);

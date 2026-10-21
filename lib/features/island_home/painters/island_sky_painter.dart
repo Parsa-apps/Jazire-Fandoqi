@@ -17,6 +17,10 @@ class IslandSkyPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // یک فریمِ صفر (تغییرِ اندازه، حاشیهٔ پنجره، تبلتِ چندپنجره‌ای)
+    // نباید به رسمِ بی‌فایده یا حلقهٔ بی‌پایان منجر شود.
+    if (size.width <= 0 || size.height <= 0) return;
+
     final geo = IslandSceneGeometry(size);
     final rect = Offset.zero & size;
 

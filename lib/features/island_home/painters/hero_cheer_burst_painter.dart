@@ -24,6 +24,7 @@ class HeroCheerBurstPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (progress <= 0 || progress >= 1) return;
+    if (size.width <= 0 || size.height <= 0) return;
 
     final center = size.center(Offset.zero);
     final radius = math.min(size.width, size.height);
