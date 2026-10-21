@@ -334,12 +334,9 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
                         ),
                         SizedBox(height: gap),
                         Center(
-                          child: _fitToWidth(
-                            maxWidth: w - 24,
-                            child: PrimaryStartButton(
-                              height: startHeight,
-                              onTap: _startToday,
-                            ),
+                          child: PrimaryStartButton(
+                            height: startHeight,
+                            onTap: _startToday,
                           ),
                         ),
                         SizedBox(height: gap),
@@ -513,11 +510,12 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
   }
 
   Widget _buildMapChip(double width) {
+    // نکتهٔ مهم: ویجتِ لمسی (InkWell) هرگز داخل FittedBox پیچیده نمی‌شود،
+    // چون FittedBox مختصاتِ اشاره‌گر را تبدیل نمی‌کند و لمس به خطا می‌رود.
+    // فقط برچسبِ متنی کوچک می‌شود.
     return Center(
-      child: _fitToWidth(
-        maxWidth: width - 24,
-        child: Material(
-          color: Colors.transparent,
+      child: Material(
+        color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(22),
             onTap: _openIslandMap,
@@ -553,12 +551,18 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
                       color: IslandCinemaPalette.forestDeep,
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      IslandHomeStrings.islandMap,
-                      textDirection: TextDirection.rtl,
-                      style: AppFonts.kids(
-                        fontSize: 16,
-                        color: IslandCinemaPalette.forestDeep,
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: width * 0.5),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          IslandHomeStrings.islandMap,
+                          textDirection: TextDirection.rtl,
+                          style: AppFonts.kids(
+                            fontSize: 16,
+                            color: IslandCinemaPalette.forestDeep,
+                          ),
+                        ),
                       ),
                     ),
                   ],

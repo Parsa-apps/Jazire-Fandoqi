@@ -13,6 +13,7 @@ import 'package:jazireh_fandoghi/features/about/about_screen.dart';
 import 'package:jazireh_fandoghi/features/cartoons/cartoon_hub_screen.dart';
 import 'package:jazireh_fandoghi/features/gateway/app_gateway_screen.dart';
 import 'package:jazireh_fandoghi/features/home/home_screen.dart';
+import 'package:jazireh_fandoghi/features/home/widgets/island_map/island_map_tab.dart';
 
 Future<void> _disposeAnimatedTree(WidgetTester tester) async {
   await tester.pumpWidget(const SizedBox.shrink());
@@ -125,8 +126,15 @@ void main() {
     await tester.pump();
     await tester.tap(chip);
     await tester.pump(const Duration(milliseconds: 400));
+
+    // ابتدا ثابت می‌کنیم ناوبری واقعاً انجام شده و خطایی رخ نداده است؛
+    // اگر فقط برچسب‌ها بررسی شوند، علتِ واقعیِ شکست پنهان می‌ماند.
+    expect(tester.takeException(), isNull);
+    expect(find.byType(IslandMapTab), findsOneWidget);
+
     // حباب خوش‌آمدِ فندقی روی نقشه می‌تواند روی برچسب‌ها بنشیند.
     FandoghiCoach.clear();
+    await tester.pump();
 
     // ۶ هاب اصلی جزیره فندقی — بازطراحیِ خانه آن‌ها را حذف نکرده است.
     expect(find.text('فارسی'), findsOneWidget);
