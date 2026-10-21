@@ -8,11 +8,9 @@ import '../../core/audio_service.dart';
 import '../../core/game_data.dart';
 import '../../core/growth/growth_store.dart';
 import '../../core/growth/persian_digits.dart';
-import '../../core/learning/today_path.dart';
 import '../../core/monetization.dart';
 import '../../presentation/providers/game_state_provider.dart';
 import '../../shared/widgets/parent_pin_gate.dart';
-import '../../shared/widgets/today_complete_sheet.dart';
 import '../home/widgets/daily_gifts_dialog.dart';
 import '../home/widgets/island_map/island_map_tab.dart';
 import '../profile/profile_editor.dart';
@@ -65,43 +63,14 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
     super.dispose();
   }
 
-  Future<void> _startToday() async {
-    HapticFeedback.mediumImpact();
-    AudioService.select();
-
-    if (GameData.isDailyLimitReached) {
-      await _showRestDaySheet();
-      return;
-    }
-
-    final before = TodayPath.countDone();
-    final task = TodayPath.forChild();
-
-    if (task.allDone) {
-      await showTodayCompleteSheet(context);
-      if (!mounted) return;
-      _hero.cheer();
-      return;
-    }
-
-    await Navigator.of(context).pushNamed(task.route);
-    if (!mounted) return;
-
-    final after = TodayPath.countDone();
-    if (after > before) {
-      _hero.cheer();
-      AudioService.success();
-      if (_voiceGuide) AudioService.speakWord(IslandHomeStrings.cheer);
-    }
-  }
-
   Future<void> _openPath(String route, String spokenLabel) async {
     if (_voiceGuide) AudioService.speakWord(spokenLabel);
     await Navigator.of(context).pushNamed(route);
   }
 
+  /// دکمهٔ اصلیِ «شروع ماجراجویی» مستقیم نقشهٔ کاملِ جزیره را باز می‌کند.
   Future<void> _openIslandMap() async {
-    HapticFeedback.lightImpact();
+    HapticFeedback.mediumImpact();
     AudioService.select();
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -156,77 +125,6 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
     await Navigator.of(context).pushNamed('/learning-library');
   }
 
-  Future<void> _showRestDaySheet() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext sheetContext) {
-        return Container(
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-          padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
-          decoration: BoxDecoration(
-            color: IslandCinemaPalette.paper,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: IslandCinemaPalette.gold, width: 2),
-            boxShadow: <BoxShadow>[
-              BoxShadow(
-                color: IslandCinemaPalette.shade.withOpacity(0.20),
-                blurRadius: 24,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              const Text('🌙', style: TextStyle(fontSize: 46)),
-              const SizedBox(height: 10),
-              Text(
-                IslandHomeStrings.restDay,
-                textDirection: TextDirection.rtl,
-                style: AppFonts.kids(
-                  fontSize: 22,
-                  color: IslandCinemaPalette.ink,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                IslandHomeStrings.dailyLimitBody,
-                textAlign: TextAlign.center,
-                textDirection: TextDirection.rtl,
-                style: AppFonts.vazirmatn(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  height: 1.7,
-                  color: IslandCinemaPalette.inkSoft,
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: FilledButton(
-                  onPressed: () => Navigator.of(sheetContext).pop(),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: IslandCinemaPalette.gold,
-                    foregroundColor: IslandCinemaPalette.woodDeep,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: Text(
-                    'باشه',
-                    style: AppFonts.kids(fontSize: 19),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   bool _reduceMotionOf(BuildContext context) {
     return (MediaQuery.maybeOf(context)?.disableAnimations ?? false) ||
         GrowthStore.reduceMotion;
@@ -254,7 +152,6 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
                   (h * (compact ? 0.24 : 0.28)).clamp(112.0, 220.0);
               final startHeight = compact ? 52.0 : 58.0;
               final quickLinksHeight = compact ? 52.0 : 58.0;
-              final mapChipHeight = compact ? 44.0 : 48.0;
 
               return Stack(
                 fit: StackFit.expand,
@@ -311,18 +208,11 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
                           child: PrimaryStartButton(
                             height: startHeight,
                             maxWidth: (w - sidePad * 2).clamp(180.0, 280.0),
-                            onTap: _startToday,
+                            onTap: _openIslandMap,
                           ),
                         ),
                         SizedBox(height: compact ? 6 : 8),
                         _buildBottomQuickStrip(height: quickLinksHeight),
-                        SizedBox(height: compact ? 4 : 6),
-                        Center(
-                          child: _buildMapChip(
-                            height: mapChipHeight,
-                            maxWidth: w - sidePad * 2,
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -708,75 +598,6 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// ورودیِ مستقل و واضح برای بازکردن نقشهٔ کاملِ جزیره.
-  Widget _buildMapChip({required double height, required double maxWidth}) {
-    final pillHeight = height.clamp(44.0, 52.0).toDouble();
-    final pillWidth = maxWidth.clamp(190.0, 260.0).toDouble();
-    return Semantics(
-      button: true,
-      label: IslandHomeStrings.adventureMap,
-      hint: IslandHomeStrings.adventureMapHint,
-      onTap: _openIslandMap,
-      child: ExcludeSemantics(
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            key: const ValueKey<String>('living_island_map_chip'),
-            borderRadius: BorderRadius.circular(999),
-            onTap: _openIslandMap,
-            child: Container(
-              width: pillWidth,
-              height: pillHeight,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(999),
-                gradient: const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: <Color>[
-                    Color(0xD8134E5E),
-                    Color(0xEB092C36),
-                  ],
-                ),
-                border: Border.all(
-                  color: const Color(0xCC4DB6AC),
-                  width: 1.6,
-                ),
-                boxShadow: <BoxShadow>[
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.30),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  const Icon(
-                    Icons.explore_rounded,
-                    size: 19,
-                    color: Color(0xFF80DEEA),
-                  ),
-                  const SizedBox(width: 7),
-                  Text(
-                    IslandHomeStrings.adventureMap,
-                    textDirection: TextDirection.rtl,
-                    style: AppFonts.kids(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
                     ),
                   ),
                 ],

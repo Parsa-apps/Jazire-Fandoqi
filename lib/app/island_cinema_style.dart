@@ -189,7 +189,9 @@ abstract final class IslandHomeStrings {
   static const String learn = 'آموزش';
   static const String story = 'داستان';
 
-  /// مسیرِ فرعی: نقشهٔ کامل جزیره (هاب‌های قدیمی)
+  /// نقشهٔ کامل جزیره — مقصدِ دکمهٔ اصلیِ «شروع ماجراجویی».
+  /// نام‌های قدیمیِ `adventureMap` برای سازگاری نگه داشته شده‌اند
+  /// (دکمهٔ جداگانهٔ نقشه از صفحهٔ اصلی حذف شده است).
   static const String islandMap = 'نقشه جزیره';
   static const String adventureMap = 'نقشه ماجراجویی';
   static const String adventureMapHint = 'بازکردن نقشه کامل جزیره';
@@ -201,7 +203,7 @@ abstract final class IslandHomeStrings {
   static const String games = 'بازی‌ها';
 
   /// برچسب‌های دسترس‌پذیری و راهنما
-  static const String startHint = 'شروع بازی و یادگیری امروز';
+  static const String startHint = 'بازکردن نقشه کامل جزیره';
   static const String playHint = 'شهربازی و بازی‌های فندقی';
   static const String learnHint = 'حروف، اعداد و یادگیری';
   static const String storyHint = 'قصه‌ها و لالایی‌ها';

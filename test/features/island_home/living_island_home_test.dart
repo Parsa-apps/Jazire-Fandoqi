@@ -17,7 +17,8 @@ import '../../support/paywall_test_store.dart';
 ///   * کودک چهار میان‌بر اصلی و یک دکمهٔ شروع می‌بیند؛
 ///   * هر مسیر واقعاً باز می‌شود (نه دکمهٔ بی‌عملکرد)؛
 ///   * روی گوشیِ باریک و در حالتِ کاهشِ حرکت هم خطایی رخ نمی‌دهد؛
-///   * نقشهٔ قدیمی با همهٔ هاب‌ها هنوز در دسترس است.
+///   * نقشهٔ جزیره با همهٔ هاب‌ها با دکمهٔ اصلیِ شروع باز می‌شود و
+///     دکمهٔ جداگانهٔ «نقشه ماجراجویی» دیگر روی خانه نیست.
 void main() {
   late PaywallTestStore store;
 
@@ -113,36 +114,32 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('the start button follows the real guided path of today',
+  testWidgets('the start button opens the island map',
       (WidgetTester tester) async {
     await pumpHome(tester);
 
     await tester.tap(find.text('شروع بازی'));
     // pumpAndSettle اینجا ممنوع است: انیمیشنِ محیطِ جزیره بی‌پایان است.
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-
-    // اولین ایستگاهِ امروز برای یک پروفایلِ تازه، الفباست.
-    expect(find.text('alphabet route'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('the adventure map button opens the island map',
-      (WidgetTester tester) async {
-    await pumpHome(tester);
-
-    final chip = find.byKey(const ValueKey<String>('living_island_map_chip'));
-    expect(chip, findsOneWidget);
-    await tester.ensureVisible(chip);
-    await tester.pump();
-    await tester.tap(chip);
-    await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
+    // دکمهٔ اصلیِ «شروع ماجراجویی» مستقیم نقشهٔ کاملِ جزیره را باز می‌کند.
     expect(tester.takeException(), isNull);
     expect(find.byType(IslandMapTab), findsOneWidget);
 
     await _disposeAnimatedTree(tester);
+  });
+
+  testWidgets('there is no separate adventure map button on home',
+      (WidgetTester tester) async {
+    await pumpHome(tester);
+
+    expect(
+      find.byKey(const ValueKey<String>('living_island_map_chip')),
+      findsNothing,
+    );
+    expect(find.text('نقشه ماجراجویی'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('renders without overflow on a narrow 320x568 phone',
@@ -160,7 +157,7 @@ void main() {
 
     expect(find.text('شروع بازی'), findsOneWidget);
     expect(find.text('بازی‌ها'), findsOneWidget);
-    expect(find.text('نقشه ماجراجویی'), findsOneWidget);
+    expect(find.text('نقشه ماجراجویی'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
