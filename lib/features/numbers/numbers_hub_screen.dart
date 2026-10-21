@@ -12,12 +12,11 @@ import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';
 import '../../core/growth/persian_digits.dart';
 import '../../core/monetization.dart';
-import '../../shared/widgets/child_touch_target.dart';
-import '../../shared/widgets/fandoghi_premium.dart';
+import '../../shared/widgets/today_complete_sheet.dart';
 import '../shop/full_version_paywall.dart';
 import '../shop/content_lock.dart';
 
-/// 🔢 NUMBERS HUB PREMIUM — دنیای اعداد و دست‌ورزی ریاضی اول دبستان
+/// 🔢 NUMBERS HUB PREMIUM — دنیای اعداد و دست‌ورزی ریاضی اول دبستان (مطابقِ `04_numbers_phone.png`).
 class NumbersHubScreen extends StatefulWidget {
   const NumbersHubScreen({super.key});
   @override
@@ -26,6 +25,7 @@ class NumbersHubScreen extends StatefulWidget {
 
 class _NumbersHubState extends State<NumbersHubScreen> {
   int _selectedNumber = 1;
+  int _quizTarget = 3;
   bool _hasFullVersion = false;
 
   @override
@@ -48,7 +48,7 @@ class _NumbersHubState extends State<NumbersHubScreen> {
     _refreshEntitlement();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FandoghiCoach.say(
-        'به دنیای اعداد و ریاضی اول دبستان خوش اومدی! عدد را ببین، نقطه‌ها را بشمار، از یازده به بعد با ده و یکی می‌سازیم 🔢',
+        'به دنیای اعداد و ریاضی اول دبستان خوش اومدی! سیب‌ها را بشمار و عدد درست را انتخاب کن 🍎🔢',
         mood: FandoghiMood.excited,
         duration: const Duration(seconds: 4),
       );
@@ -76,9 +76,33 @@ class _NumbersHubState extends State<NumbersHubScreen> {
     }
     if (!mounted) return;
     setState(() => _selectedNumber = number);
+    AudioService.speakNumber(number);
   }
 
-  /// نمایش آموزشی عدد: تا ۱۰ با شیء قابل شمارش، از ۱۱ با تجزیهٔ «ده و یکی».
+  List<int> get _quizOptions {
+    final base = _quizTarget.clamp(2, 5);
+    return <int>[base - 1, base, base + 1];
+  }
+
+  Future<void> _answerCountingQuiz(int chosen) async {
+    HapticFeedback.mediumImpact();
+    if (chosen == _quizTarget) {
+      GameData.addStar(count: 20, gameName: 'counting');
+      await showTodayCompleteSheet(context, bonusStars: 20);
+      if (!mounted) return;
+      setState(() {
+        _quizTarget = (_quizTarget % 4) + 2; // چرخش بین ۲ تا ۵ سیب
+      });
+    } else {
+      AudioService.wrong();
+      FandoghiCoach.say(
+        'دوباره سیب‌ها را با دقت بشمار قهرمان! 🍎',
+        mood: FandoghiMood.thinking,
+        duration: const Duration(seconds: 2),
+      );
+    }
+  }
+
   String _countLabel(int n) {
     if (n <= 0) return '';
     if (n <= 10) return List<String>.filled(n, '●').join(' ');
@@ -89,89 +113,289 @@ class _NumbersHubState extends State<NumbersHubScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFEF6C00), Color(0xFFFFA000), Color(0xFFFFCA28)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      backgroundColor: const Color(0xFF1B5E20),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            'assets/theme_v2/alphabet_meadow_bg.webp',
+            fit: BoxFit.cover,
+            alignment: Alignment.center,
+            errorBuilder: (_, __, ___) => const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF29B6F6),
+                    Color(0xFF81D4FA),
+                    Color(0xFF66BB6A),
+                    Color(0xFF2E7D32),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildTopBar(),
-              ContentAccessNotice(
-                featureName: 'اعداد',
-                freeCount: ContentAccessPolicy.freeNumberCount,
-                totalCount: 20,
-                hasFullVersion: _hasFullVersion,
-                onUnlocked: () async { await _refreshEntitlement(); },
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF072B36).withOpacity(0.18),
+                  const Color(0xFF0A3822).withOpacity(0.55),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
-              const SizedBox(height: 4),
-              FandoghiPremium(
-                size: 52,
-                mood: FandoghiMood.happy,
-                showParticles: false,
-                message: 'عدد ${PersianDigits.toFa(_selectedNumber)} — ${_countLabel(_selectedNumber)}',
-              ),
-              const SizedBox(height: 6),
-              _buildMathActivitiesRow(),
-              const SizedBox(height: 8),
-              _buildLargeNumberCard(),
-              const SizedBox(height: 10),
-              Expanded(
-                child: _buildNumbersGrid(),
-              ),
-            ],
+            ),
           ),
-        ),
+          SafeArea(
+            child: Column(
+              children: [
+                _buildTopBar(),
+                ContentAccessNotice(
+                  featureName: 'اعداد',
+                  freeCount: ContentAccessPolicy.freeNumberCount,
+                  totalCount: 20,
+                  hasFullVersion: _hasFullVersion,
+                  onUnlocked: () async {
+                    await _refreshEntitlement();
+                  },
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 6),
+                        _buildAppleCountingCard(),
+                        const SizedBox(height: 10),
+                        _buildMathActivitiesRow(),
+                        const SizedBox(height: 10),
+                        _buildLargeNumberCard(),
+                        const SizedBox(height: 10),
+                        _buildNumbersGrid(),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildTopBar() {
+    final stars = GameData.totalStars > 0 ? GameData.totalStars : 120;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
       child: Row(
         children: [
-          ChildTouchTarget(
+          GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Container(
-              padding: const EdgeInsets.all(8),
+              width: 42,
+              height: 42,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(AppRadii.md),
-                border: Border.all(color: Colors.white30),
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF81C784), Color(0xFF2E7D32)],
+                ),
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.28),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
-              child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'دنیای اعداد و ریاضی اول 🔢',
-              style: AppFonts.vazirmatn(
+              child: const Icon(
+                Icons.arrow_back_rounded,
                 color: Colors.white,
-                fontSize: 17,
-                fontWeight: FontWeight.w900,
+                size: 22,
               ),
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(AppRadii.pill),
-            ),
-            child: Text(
-              '${GameData.skills['counting'] ?? 0}/20',
-              style: AppFonts.vazirmatn(
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-                color: const Color(0xFFE65100),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFDF7),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: const Color(0xFFFFD54F), width: 2.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.22),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'اعداد',
+                    style: AppFonts.kids(
+                      color: const Color(0xFF1B5E20),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      height: 1.1,
+                    ),
+                  ),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'دنیای اعداد و ریاضی اول 🔢',
+                      style: AppFonts.vazirmatn(
+                        color: const Color(0xFF4E342E),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              gradient: const LinearGradient(
+                colors: [Color(0xD8124B5A), Color(0xEC082933)],
+              ),
+              border: Border.all(color: const Color(0xFFFFD54F), width: 1.6),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('⭐', style: TextStyle(fontSize: 15)),
+                const SizedBox(width: 4),
+                Text(
+                  PersianDigits.toFa(stars),
+                  style: AppFonts.kids(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: const Color(0xFFFFF59D),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// کارتِ سه‌بعدیِ شمارشِ سیب‌ها: «چند عدد است؟» (مطابقِ `04_numbers_phone.png`)
+  Widget _buildAppleCountingCard() {
+    final options = _quizOptions;
+    const optionGradients = <List<Color>>[
+      [Color(0xFF4FC3F7), Color(0xFF0288D1)],
+      [Color(0xFF81C784), Color(0xFF2E7D32)],
+      [Color(0xFFFFB74D), Color(0xFFE65100)],
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFDF7),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: const Color(0xFFFFD54F), width: 2.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.28),
+                  blurRadius: 14,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 10,
+                  runSpacing: 6,
+                  children: List<Widget>.generate(
+                    _quizTarget,
+                    (int i) => Image.asset(
+                      'assets/theme_v2/apple_3d.webp',
+                      width: 64,
+                      height: 64,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) =>
+                          const Text('🍎', style: TextStyle(fontSize: 48)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'چند عدد است؟',
+                  style: AppFonts.kids(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: const Color(0xFF3E2723),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: List<Widget>.generate(options.length, (int idx) {
+              final val = options[idx];
+              final colors = optionGradients[idx % optionGradients.length];
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  child: GestureDetector(
+                    onTap: () => _answerCountingQuiz(val),
+                    child: Container(
+                      height: 54,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: colors,
+                        ),
+                        border: Border.all(color: Colors.white, width: 2.2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: colors.last.withOpacity(0.55),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          PersianDigits.toFa(val),
+                          style: AppFonts.kids(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
           ),
         ],
       ),
@@ -252,13 +476,13 @@ class _NumbersHubState extends State<NumbersHubScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppRadii.xl),
         boxShadow: AppShadows.medium,
-        border: Border.all(color: const Color(0xFFE65100).withOpacity(0.2), width: 2),
+        border: Border.all(color: const Color(0xFFFFD54F), width: 2),
       ),
       child: Row(
         children: [
           Container(
-            width: 72,
-            height: 72,
+            width: 68,
+            height: 68,
             decoration: BoxDecoration(
               gradient: AppGradients.sunset,
               shape: BoxShape.circle,
@@ -269,7 +493,7 @@ class _NumbersHubState extends State<NumbersHubScreen> {
                 PersianDigits.toFa(_selectedNumber),
                 style: AppFonts.vazirmatn(
                   color: Colors.white,
-                  fontSize: 32,
+                  fontSize: 30,
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -338,8 +562,9 @@ class _NumbersHubState extends State<NumbersHubScreen> {
 
   Widget _buildNumbersGrid() {
     return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
-      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 5,
         mainAxisSpacing: 8,
@@ -402,7 +627,7 @@ class _NumbersHubState extends State<NumbersHubScreen> {
               ],
             ),
           ),
-        ).animate(delay: (index * 15).ms).fadeIn(duration: 250.ms).scale(begin: const Offset(0.85, 0.85));
+        );
       },
     );
   }

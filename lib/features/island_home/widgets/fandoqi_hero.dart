@@ -9,35 +9,17 @@ import '../../../core/audio_service.dart';
 import '../painters/hero_cheer_burst_painter.dart';
 
 /// کنترلرِ سبک برای جشن‌گرفتنِ فندقی از بیرونِ ویجت
-/// (مثلاً وقتی کودک از یک فعالیت برمی‌گردد و موفق شده است).
 class FandoqiHeroController {
   final ValueNotifier<int> _cheerTick = ValueNotifier<int>(0);
 
-  /// شمارنده‌ای که با هر جشن زیاد می‌شود
   ValueNotifier<int> get cheerTick => _cheerTick;
 
-  /// تشویقِ کوتاهِ فندقی
   void cheer() => _cheerTick.value++;
 
   void dispose() => _cheerTick.dispose();
 }
 
-/// ═══════════════════════════════════════════════════════════════
-/// 🐿️ فندقی — مرکزِ احساسیِ صفحهٔ اصلی
-///
-/// رفتارها (همه کوتاه، نرم و هدفمند):
-///   * ورود: از پشتِ برگِ بالای کادر می‌لغزد، می‌چرخد و محو می‌شود؛
-///   * تنفس: دم‌وبازدمِ خیلی ملایم (۱٫۸٪) — هرگز حواس‌پرت‌کن نیست؛
-///   * پلک: مکثِ ۱۵۰ میلی‌ثانیه‌ایِ چهره با فاصله‌های نامنظم؛
-///   * لمس: پرشِ کوتاه + لباسِ جشن + درخشش + لرزشِ ملایم؛
-///   * جشنِ بیرونی: با [FandoqiHeroController] از هر صفحه‌ای.
-///
-/// نکتهٔ صادقانهٔ فنی: دارایی‌های فعلیِ فندقی دو تصویرِ تخت‌اند
-/// (`fandoghi_wave_v2` و `fandoghi_celebrate_v2`) و هیچ لایهٔ
-/// جداگانه‌ای برای پلک ندارند. «پلک» اینجا به‌شکلِ یک مکثِ کوتاهِ
-/// چهره اجرا شده است، نه بازوبستنِ واقعیِ پلک؛ پیاده‌سازیِ پلکِ
-/// واقعی نیازمند داراییِ لایه‌بندی‌شده یا ریگِ انیمیشن است.
-/// ═══════════════════════════════════════════════════════════════
+/// 🐿️ فندقی — قهرمانِ سه‌بعدیِ صفحهٔ اصلی
 class FandoqiHero extends StatefulWidget {
   const FandoqiHero({
     super.key,
@@ -46,23 +28,21 @@ class FandoqiHero extends StatefulWidget {
     this.onTap,
     this.reduceMotion = false,
     this.semanticLabel = 'فندقی',
+    this.imageOpacity = 1.0,
   });
 
-  /// قطرِ ناحیهٔ لمسی و تصویر
   final double size;
-
-  /// برای جشن‌گرفتن از بیرون (اختیاری)
   final FandoqiHeroController? controller;
-
-  /// لمسِ کودک
   final VoidCallback? onTap;
-
-  /// حالتِ کاهشِ حرکت: همهٔ حرکت‌ها ثابت می‌شوند
   final bool reduceMotion;
-
   final String semanticLabel;
 
-  static const String waveAsset = 'assets/mascot/fandoghi_wave_v2.webp';
+  /// در صفحهٔ اصلی که تصویرِ سه‌بعدیِ فندقی در `home_scene.webp` حضور دارد،
+  /// با `imageOpacity: 0.0` از هم‌پوشانیِ دو تصویر جلوگیری می‌شود و در عینِ حال
+  /// لمس، صدا و ذراتِ جشنِ طلایی روی کاراکتر فعال می‌مانند.
+  final double imageOpacity;
+
+  static const String waveAsset = 'assets/theme_v2/squirrel_hero.webp';
   static const String celebrateAsset =
       'assets/mascot/fandoghi_celebrate_v2.webp';
 
@@ -81,14 +61,9 @@ class _FandoqiHeroState extends State<FandoqiHero>
   bool _cheering = false;
   int _blinkIndex = 0;
 
-  /// زمان‌سنج‌های پلک و جشن نگه داشته و در dispose لغو می‌شوند.
-  /// با Future.delayed امکانِ لغو وجود نداشت: زنجیرهٔ پلک پس از نابودیِ
-  /// ویجت هم زنده می‌ماند (نشتِ واقعی در تولید و خطای "A Timer is still
-  /// pending" در تست).
   Timer? _blinkTimer;
   Timer? _cheerTimer;
 
-  /// فاصله‌های نامنظمِ پلک (میلی‌ثانیه) — تکرارِ ماشینی ندارد
   static const List<int> _blinkDelays = <int>[4200, 5400, 3600, 6100, 4800];
   static const Duration _blinkDuration = IslandCinemaMotion.heroBlink;
 
@@ -178,7 +153,6 @@ class _FandoqiHeroState extends State<FandoqiHero>
 
   void _playCheer({required bool silent}) {
     if (widget.reduceMotion) {
-      // حتی در کاهشِ حرکت، یک بازخوردِ کوتاه و بی‌خطر بده
       HapticFeedback.selectionClick();
       if (!silent) AudioService.select();
       return;
@@ -247,20 +221,16 @@ class _FandoqiHeroState extends State<FandoqiHero>
 
   Widget _buildTransformed(BuildContext context) {
     final enter = Curves.easeOutCubic.transform(_entrance.value);
-    // ورود از پشتِ برگ (بالا-چپ) همراه با یک چرخشِ کوچک
     final entryDx = (1 - enter) * -widget.size * 0.55;
     final entryDy = (1 - enter) * -widget.size * 0.28;
     final entryRotation = (1 - enter) * -0.28;
 
-    // تنفس
     final breathWave = math.sin(_breath.value * 2 * math.pi);
     final breathScale = 1 + breathWave * 0.018;
     final breathDy = breathWave * widget.size * 0.008;
 
-    // پلک: مکثِ کوتاهِ چهره
     final blinkSquash = _blinking ? 0.965 : 1.0;
 
-    // جشن: پرشِ نرم با فرودِ کنترل‌شده
     final cheerValue = _cheer.value;
     final bounce = cheerValue <= 0.0
         ? 0.0
@@ -287,49 +257,52 @@ class _FandoqiHeroState extends State<FandoqiHero>
               child: Stack(
                 alignment: Alignment.center,
                 children: <Widget>[
-                  // سایهٔ زیرِ پا
-                  Positioned(
-                    bottom: widget.size * 0.02,
-                    child: Container(
-                      width: widget.size * 0.52,
-                      height: widget.size * 0.075,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(
-                          widget.size * 0.04,
-                        ),
-                        gradient: RadialGradient(
-                          colors: <Color>[
-                            IslandCinemaPalette.forestDeep.withOpacity(0.34),
-                            Colors.transparent,
-                          ],
+                  if (widget.imageOpacity > 0.0)
+                    Positioned(
+                      bottom: widget.size * 0.02,
+                      child: Container(
+                        width: widget.size * 0.52,
+                        height: widget.size * 0.075,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(
+                            widget.size * 0.04,
+                          ),
+                          gradient: RadialGradient(
+                            colors: <Color>[
+                              IslandCinemaPalette.forestDeep.withOpacity(
+                                0.34 * widget.imageOpacity,
+                              ),
+                              Colors.transparent,
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  Image.asset(
-                    // فقط پرچمِ _cheering تصویر را عوض می‌کند، نه مقدارِ
-                    // کنترلر: مقدارِ کنترلر بعد از پایان روی ۱ می‌ماند و
-                    // اگر مبنا قرار بگیرد فندقی تا ابد لباسِ جشن می‌پوشد.
-                    _cheering
-                        ? FandoqiHero.celebrateAsset
-                        : FandoqiHero.waveAsset,
-                    width: widget.size,
-                    height: widget.size,
-                    fit: BoxFit.contain,
-                    filterQuality: FilterQuality.medium,
-                    cacheWidth: cacheWidth,
-                    excludeFromSemantics: true,
-                    errorBuilder: (BuildContext context, Object error,
-                        StackTrace? stack) {
-                      // هرگز جای خالی نمایش نده: اگر تصویر در دسترس نبود،
-                      // نشانِ فندقی با ایموجی رسم می‌شود.
-                      return Center(
-                        child: Text(
-                          '🌰',
-                          style: TextStyle(fontSize: widget.size * 0.58),
-                        ),
-                      );
-                    },
+                  Opacity(
+                    opacity: widget.imageOpacity.clamp(0.0, 1.0),
+                    child: Image.asset(
+                      _cheering
+                          ? FandoqiHero.celebrateAsset
+                          : FandoqiHero.waveAsset,
+                      width: widget.size,
+                      height: widget.size,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.medium,
+                      cacheWidth: cacheWidth,
+                      excludeFromSemantics: true,
+                      errorBuilder: (
+                        BuildContext context,
+                        Object error,
+                        StackTrace? stack,
+                      ) {
+                        return Center(
+                          child: Text(
+                            '🌰',
+                            style: TextStyle(fontSize: widget.size * 0.58),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                   if (_cheering)
                     Positioned.fill(

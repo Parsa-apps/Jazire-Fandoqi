@@ -31,6 +31,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // تب خانه (مرکزی) تب پیش‌فرض شروع برنامه است
   int _currentTab = 2;
   late double _musicVolume;
+  bool _showMusicControl = false;
   final List<Widget?> _tabWidgets = List<Widget?>.filled(5, null);
 
   @override
@@ -101,7 +102,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           Positioned(
-            top: 0,
+            top: 4,
             left: 10,
             child: SafeArea(child: _buildSoundToggle()),
           ),
@@ -109,10 +110,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           if (_currentTab == 2)
             Positioned(
               left: 10,
-              bottom: 10,
+              top: 52,
               child: SafeArea(
-                top: false,
-                child: _buildMusicVolumeControl(),
+                child: IgnorePointer(
+                  ignoring: !_showMusicControl,
+                  child: Opacity(
+                    opacity: _showMusicControl ? 1.0 : 0.0,
+                    child: _buildMusicVolumeControl(),
+                  ),
+                ),
               ),
             ),
         ],
@@ -124,13 +130,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildSoundToggle() {
     final enabled = GameData.soundEnabled;
     final toggleColor = enabled
-        ? IslandWorldPalette.deepOcean
-        : IslandWorldPalette.coral;
+        ? const Color(0xFF80DEEA)
+        : const Color(0xFFFF8A80);
     return Semantics(
       button: true,
       label: enabled ? 'قطع همه صداها' : 'روشن کردن صداها',
       child: Tooltip(
-        message: enabled ? 'بی‌صدا' : 'با صدا',
+        message: enabled ? 'بی‌صدا (نگه دارید: تنظیم موسیقی)' : 'با صدا',
         child: Material(
           color: Colors.transparent,
           child: InkWell(
@@ -141,28 +147,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               await AudioService.syncSoundSetting();
               if (mounted) setState(() {});
             },
+            onLongPress: () {
+              HapticFeedback.mediumImpact();
+              setState(() => _showMusicControl = !_showMusicControl);
+            },
             child: Container(
-              width: 52,
-              height: 52,
+              width: 35,
+              height: 35,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: IslandWorldPalette.paper.withOpacity(0.96),
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: <Color>[
+                    Color(0xD8124B5A),
+                    Color(0xEC082933),
+                  ],
+                ),
                 border: Border.all(
-                  color: IslandWorldPalette.softOutline,
-                  width: 2,
+                  color: const Color(0x8880DEEA),
+                  width: 1.4,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: IslandWorldPalette.ink.withOpacity(0.16),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
+                    color: Colors.black.withOpacity(0.26),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
               child: Icon(
                 enabled ? Icons.volume_up_rounded : Icons.volume_off_rounded,
                 color: toggleColor,
-                size: 29,
+                size: 19,
               ),
             ),
           ),
@@ -358,23 +375,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return widget;
   }
 
-  // ─── نوار ناوبری هماهنگ با هویت بصری جزیره ───────────────────────
+  // ─── نوار ناوبری شیشه‌ای سه‌بعدی هماهنگ با طرح مرجع جزیره ───────────────────────
   Widget _buildBottomNav() {
     final animationsDisabled =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
     return Container(
       decoration: BoxDecoration(
-        color: IslandWorldPalette.paper.withOpacity(0.98),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[
+            Color(0xF2155A68),
+            Color(0xF80B3540),
+            Color(0xFF062128),
+          ],
+        ),
         borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(IslandWorldMetrics.cardRadius),
+          top: Radius.circular(26),
         ),
         border: const Border(
-          top: BorderSide(color: IslandWorldPalette.softOutline, width: 1),
+          top: BorderSide(color: Color(0x9980DEEA), width: 1.6),
         ),
         boxShadow: [
           BoxShadow(
-            color: IslandWorldPalette.deepOcean.withOpacity(0.11),
+            color: Colors.black.withOpacity(0.38),
             blurRadius: 18,
             offset: const Offset(0, -4),
           ),
@@ -383,8 +408,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          // سهم برابر خانه‌ها، متن فارسی را روی گوشی باریک هم خوانا نگه می‌دارد.
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -393,7 +417,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: _navItem(
                   index: 0,
                   emoji: '🏆',
-                  iconColor: IslandWorldPalette.honey,
+                  iconColor: const Color(0xFFFFD54F),
                   label: 'دستاوردها',
                   animationsDisabled: animationsDisabled,
                 ),
@@ -402,7 +426,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: _navItem(
                   index: 1,
                   emoji: '🎒',
-                  iconColor: IslandWorldPalette.sky,
+                  iconColor: const Color(0xFF4FC3F7),
                   label: 'کوله‌پشتی',
                   animationsDisabled: animationsDisabled,
                 ),
@@ -412,7 +436,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: _navItem(
                   index: 3,
                   emoji: '📘',
-                  iconColor: IslandWorldPalette.foliage,
+                  iconColor: const Color(0xFF81C784),
                   label: 'کارنامه',
                   animationsDisabled: animationsDisabled,
                 ),
@@ -421,7 +445,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: _navItem(
                   index: 4,
                   emoji: '👤',
-                  iconColor: IslandWorldPalette.lavender,
+                  iconColor: const Color(0xFFFFB74D),
                   label: 'پروفایل',
                   animationsDisabled: animationsDisabled,
                 ),
@@ -433,7 +457,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  // ─── دکمه مرکزی خانه (برجسته و دایره‌ای) ──────────────────────
+  // ─── دکمه مرکزی خانه (برجسته و دایره‌ای سه‌بعدی) ──────────────────────
   Widget _buildCenterHomeNav({required bool animationsDisabled}) {
     final selected = _currentTab == 2;
 
@@ -444,23 +468,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     final homeCircle = Container(
-      width: 58,
-      height: 58,
+      width: 52,
+      height: 52,
       margin: const EdgeInsets.only(bottom: 2),
       decoration: BoxDecoration(
-        color: IslandWorldPalette.paper,
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: selected
+              ? const <Color>[Color(0xFFFFF176), Color(0xFFFF9800)]
+              : const <Color>[Color(0xFF26A69A), Color(0xFF00695C)],
+        ),
         shape: BoxShape.circle,
         border: Border.all(
-          color: selected
-              ? IslandWorldPalette.deepOcean
-              : IslandWorldPalette.softOutline,
-          width: selected ? 3.5 : 2,
+          color: selected ? const Color(0xFFFFF9C4) : const Color(0x9980DEEA),
+          width: selected ? 2.8 : 1.8,
         ),
         boxShadow: [
           BoxShadow(
-            color: IslandWorldPalette.deepOcean.withOpacity(
-              selected ? 0.22 : 0.1,
-            ),
+            color: (selected
+                    ? const Color(0xFFFFB300)
+                    : const Color(0xFF004D40))
+                .withOpacity(selected ? 0.45 : 0.25),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -486,22 +515,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: ExcludeSemantics(
         child: GestureDetector(
           onTap: activate,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              circleWithMotion,
-              Text(
-                'خانه',
-                style: AppFonts.kids(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w800,
-                  height: 1.2,
-                  color: selected
-                      ? IslandWorldPalette.deepOcean
-                      : IslandWorldPalette.mutedInk,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                circleWithMotion,
+                Text(
+                  'خانه',
+                  style: AppFonts.kids(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                    height: 1.15,
+                    color: selected
+                        ? const Color(0xFFFFF59D)
+                        : const Color(0xFFB2EBF2),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -510,15 +542,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildHomeHouseIcon(bool selected) {
     final iconColor = selected
-        ? IslandWorldPalette.deepOcean
-        : IslandWorldPalette.wood;
+        ? const Color(0xFF4E2600)
+        : Colors.white;
     final discColor = selected
-        ? IslandWorldPalette.honey.withOpacity(0.3)
-        : IslandWorldPalette.skyMist;
+        ? Colors.white.withOpacity(0.32)
+        : Colors.white.withOpacity(0.14);
 
     return Container(
-      width: 36,
-      height: 36,
+      width: 34,
+      height: 34,
       decoration: BoxDecoration(
         color: discColor,
         shape: BoxShape.circle,
@@ -526,14 +558,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Icon(Icons.home_rounded, size: 32, color: iconColor),
+          Icon(Icons.home_rounded, size: 28, color: iconColor),
           Positioned(
             bottom: 6,
             child: Container(
-              width: 10,
-              height: 10,
+              width: 8,
+              height: 8,
               decoration: BoxDecoration(
-                color: IslandWorldPalette.paper,
+                color: selected
+                    ? const Color(0xFFFFF9C4)
+                    : const Color(0xFF004D40),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(3),
                 ),
@@ -554,7 +588,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     required bool animationsDisabled,
   }) {
     final selected = _currentTab == index;
-    final inactiveColor = IslandWorldPalette.mutedInk;
+    const inactiveColor = Color(0xFFB2EBF2);
 
     void activate() {
       HapticFeedback.lightImpact();
@@ -575,61 +609,69 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ? Duration.zero
                 : IslandWorldMetrics.pressOut,
             curve: Curves.easeOutCubic,
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
             decoration: BoxDecoration(
               color: selected
-                  ? iconColor.withOpacity(0.12)
+                  ? iconColor.withOpacity(0.18)
                   : Colors.transparent,
-              borderRadius:
-                  BorderRadius.circular(IslandWorldMetrics.buttonRadius),
+              borderRadius: BorderRadius.circular(18),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 AnimatedScale(
-                  scale: selected ? 1.12 : 1.0,
+                  scale: selected ? 1.10 : 1.0,
                   duration: animationsDisabled
                       ? Duration.zero
                       : IslandWorldMetrics.pressOut,
                   child: Container(
-                    width: 38,
-                    height: 38,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
-                      color: selected
-                          ? iconColor.withOpacity(0.18)
-                          : IslandWorldPalette.skyMist.withOpacity(0.62),
-                      borderRadius: BorderRadius.circular(14),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: selected
+                            ? <Color>[
+                                iconColor.withOpacity(0.45),
+                                iconColor.withOpacity(0.20),
+                              ]
+                            : const <Color>[
+                                Color(0x55186A7A),
+                                Color(0x550A3540),
+                              ],
+                      ),
+                      borderRadius: BorderRadius.circular(13),
                       border: Border.all(
                         color: selected
-                            ? iconColor.withOpacity(0.5)
-                            : Colors.transparent,
-                        width: 1.5,
+                            ? iconColor.withOpacity(0.85)
+                            : const Color(0x4480DEEA),
+                        width: 1.4,
                       ),
                     ),
                     child: Center(
                       child: Text(
                         emoji,
                         style: TextStyle(
-                          fontSize: selected ? 22 : 20,
-                          color: selected ? null : inactiveColor,
+                          fontSize: selected ? 20 : 18,
                         ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
                     label,
                     maxLines: 1,
                     style: AppFonts.kids(
-                      fontSize: 13.5,
+                      fontSize: 12.5,
                       fontWeight:
                           selected ? FontWeight.w800 : FontWeight.w700,
-                      height: 1.2,
+                      height: 1.15,
                       color: selected
-                          ? IslandWorldPalette.deepOcean
+                          ? const Color(0xFFFFF59D)
                           : inactiveColor,
                     ),
                   ),

@@ -7,15 +7,10 @@ import '../painters/island_land_painter.dart';
 import '../painters/island_sea_painter.dart';
 import '../painters/island_sky_painter.dart';
 
-/// 🎬 صحنهٔ زندهٔ جزیره — ترکیبِ چهار لایهٔ نقاشیِ برداری.
+/// 🎬 صحنهٔ زنده و سه‌بعدیِ جزیره فندقی.
 ///
-/// مسئولیت‌های این ویجت (و فقط این ویجت):
-///   * نگه‌داریِ یک کنترلرِ واحد برای کل محیط؛
-///   * توقفِ کاملِ انیمیشن وقتی برنامه در پس‌زمینه است
-///     (مصرفِ CPU/GPU روی گوشیِ ضعیف)؛
-///   * احترام به «کاهش حرکت»ِ سیستم و تنظیمِ خانواده.
-///
-/// هیچ منطقِ ناوبری یا کسب‌وکاری اینجا نیست.
+/// تصویرِ سه‌بعدیِ اصلیِ جزیره و فندقی (`assets/theme_v2/home_scene.webp`)
+/// را به‌همراهِ لایه‌های پشتیبان و ذراتِ درخشانِ محیطی نمایش می‌دهد.
 class IslandScene extends StatefulWidget {
   const IslandScene({
     super.key,
@@ -23,11 +18,10 @@ class IslandScene extends StatefulWidget {
     this.sparkleCount = IslandCinemaMetrics.sparkleBudget,
   });
 
-  /// محتوایی که روی صحنه می‌نشیند (لوگو، فندقی، دکمه‌ها)
   final Widget? child;
-
-  /// بودجهٔ ذراتِ درخشان؛ روی دستگاهِ ضعیف کمتر می‌شود
   final int sparkleCount;
+
+  static const String homeSceneAsset = 'assets/theme_v2/home_scene.webp';
 
   @override
   State<IslandScene> createState() => _IslandSceneState();
@@ -85,7 +79,6 @@ class _IslandSceneState extends State<IslandScene>
     super.dispose();
   }
 
-  /// اندازهٔ ذرات بر اساسِ کلاسِ حافظهٔ دستگاه سبک‌تر می‌شود.
   int get _effectiveSparkles {
     final budget = widget.sparkleCount;
     if (_reduceMotion) return (budget / 2).floor();
@@ -101,14 +94,13 @@ class _IslandSceneState extends State<IslandScene>
         return Stack(
           fit: StackFit.expand,
           children: <Widget>[
-            // لایهٔ ۱ — آسمان (ایستا: یک‌بار رسم می‌شود)
+            // لایه‌های پشتیبانِ برداری
             const RepaintBoundary(
               child: CustomPaint(
                 painter: IslandSkyPainter(),
                 size: Size.infinite,
               ),
             ),
-            // لایهٔ ۲ — دریا
             RepaintBoundary(
               child: CustomPaint(
                 painter: IslandSeaPainter(
@@ -118,7 +110,6 @@ class _IslandSceneState extends State<IslandScene>
                 size: Size.infinite,
               ),
             ),
-            // لایهٔ ۳ — خشکی
             RepaintBoundary(
               child: CustomPaint(
                 painter: IslandLandPainter(
@@ -128,7 +119,26 @@ class _IslandSceneState extends State<IslandScene>
                 size: Size.infinite,
               ),
             ),
-            // لایهٔ ۴ — اتمسفر
+            // تصویرِ سه‌بعدیِ اصلیِ جزیره و سنجابِ ماجراجو (مطابقِ طرحِ مرجع)
+            Positioned.fill(
+              child: RepaintBoundary(
+                child: Image.asset(
+                  IslandScene.homeSceneAsset,
+                  fit: BoxFit.cover,
+                  alignment: Alignment.center,
+                  filterQuality: FilterQuality.medium,
+                  excludeFromSemantics: true,
+                  errorBuilder: (
+                    BuildContext context,
+                    Object error,
+                    StackTrace? stack,
+                  ) {
+                    return const SizedBox.expand();
+                  },
+                ),
+              ),
+            ),
+            // لایهٔ اتمسفر و ذراتِ نورِ طلایی
             RepaintBoundary(
               child: CustomPaint(
                 painter: IslandAtmospherePainter(

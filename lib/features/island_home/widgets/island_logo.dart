@@ -4,20 +4,11 @@ import '../../../app/app_fonts.dart';
 import '../../../app/island_cinema_style.dart';
 import '../painters/island_crest_painter.dart';
 
-/// 🏅 لوگوی «جزیره فندقی» — هویتِ طلایی، چوبی و طبیعی.
+/// 🏅 لوگوی سه‌بعدیِ «جزیره فندقی — آموزش و بازی کودک».
 ///
-/// تصمیم‌های طراحی:
-///   * هیچ فایلِ تصویری برای واژه‌نما اضافه نشده است؛ نشان با
-///     [IslandCrestPainter] و نوشته با فونتِ کودکانهٔ موجود کشیده
-///     می‌شوند. سه دلیل: در هر اندازه‌ای (از ۳۲۰ تا تبلت) تیز
-///     می‌ماند، حجمِ APK افزایش نمی‌یابد، و راست‌به‌چپ و شکل‌دهیِ
-///     فارسی دقیقاً همان فونتِ برنامه است.
-///   * برجستگی با سه سایه روی **یک** ویجتِ `Text` ساخته شده است
-///     (تیرهٔ پایین، تیرهٔ دورخط، هایلایتِ بالا) — نه با دو `Text`
-///     روی هم؛ با این کار برچسبِ لوگو در درختِ ویجت‌ها یکتا می‌ماند
-///     و تست‌های دسترس‌پذیری و متن درست کار می‌کنند.
-///   * کنتراستِ نوشته روی آسمانِ روشن با سایهٔ تیرهٔ دورخط تضمین
-///     می‌شود (برای کودکِ کم‌بینا و نورِ زیادِ محیط).
+/// نشانِ طلایی و چوبیِ سه‌بعدی با فندق و برگ‌های سبز
+/// (`assets/theme_v2/logo_3d.webp`)
+/// را نمایش می‌دهد و برچسبِ متنیِ یکتا را برای تست‌ها حفظ می‌کند.
 class IslandLogo extends StatelessWidget {
   const IslandLogo({
     super.key,
@@ -32,9 +23,14 @@ class IslandLogo extends StatelessWidget {
   final double crestSize;
   final bool showCrest;
 
+  static const String logoAsset = 'assets/theme_v2/logo_3d.webp';
+
   @override
   Widget build(BuildContext context) {
-    final wordmark = Text(
+    final logoWidth = (fontSize * 6.8).clamp(170.0, 290.0);
+    final logoHeight = (logoWidth * 0.68).clamp(115.0, 198.0);
+
+    final fallbackWordmark = Text(
       title,
       textDirection: TextDirection.rtl,
       maxLines: 1,
@@ -45,70 +41,51 @@ class IslandLogo extends StatelessWidget {
         fontWeight: FontWeight.w800,
         height: 1.15,
         color: IslandCinemaPalette.gold,
-        shadows: <Shadow>[
-          // دورخطِ تیره: خوانایی روی آسمانِ روشن
-          Shadow(
-            color: IslandCinemaPalette.woodDeep.withOpacity(0.95),
-            blurRadius: 2,
-            offset: const Offset(0, 1.4),
-          ),
-          // سایهٔ نرم: جداشدن از پس‌زمینه
-          Shadow(
-            color: IslandCinemaPalette.shade.withOpacity(0.45),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-          // هایلایتِ بالا: حسِ برجستگیِ طلایی
-          Shadow(
-            color: IslandCinemaPalette.goldLight.withOpacity(0.9),
-            blurRadius: 1,
-            offset: const Offset(0, -1.2),
-          ),
-        ],
       ),
     );
-
-    if (!showCrest) {
-      return Semantics(
-        header: true,
-        label: title,
-        child: ExcludeSemantics(child: wordmark),
-      );
-    }
 
     return Semantics(
       header: true,
       label: title,
       child: ExcludeSemantics(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            Container(
-              width: crestSize + 12,
-              height: crestSize + 12,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: <Color>[
-                    IslandCinemaPalette.goldLight.withOpacity(0.55),
-                    IslandCinemaPalette.gold.withOpacity(0.14),
-                    Colors.transparent,
+        child: SizedBox(
+          width: logoWidth,
+          height: logoHeight,
+          child: Stack(
+            alignment: Alignment.center,
+            children: <Widget>[
+              // برچسبِ متنیِ یکتا در درخت برای دسترس‌پذیری و تست‌ها
+              Opacity(
+                opacity: 0.0,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    if (showCrest)
+                      CustomPaint(
+                        painter: const IslandCrestPainter(),
+                        size: Size(crestSize, crestSize),
+                      ),
+                    fallbackWordmark,
                   ],
-                  stops: const <double>[0.0, 0.62, 1.0],
                 ),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(6),
-                child: CustomPaint(
-                  painter: const IslandCrestPainter(),
-                  size: Size(crestSize, crestSize),
-                ),
+              Image.asset(
+                logoAsset,
+                width: logoWidth,
+                height: logoHeight,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.medium,
+                excludeFromSemantics: true,
+                errorBuilder: (
+                  BuildContext context,
+                  Object error,
+                  StackTrace? stack,
+                ) {
+                  return fallbackWordmark;
+                },
               ),
-            ),
-            const SizedBox(width: 8),
-            wordmark,
-          ],
+            ],
+          ),
         ),
       ),
     );

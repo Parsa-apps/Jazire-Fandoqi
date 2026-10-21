@@ -254,18 +254,19 @@ class _SplashScreenState extends State<SplashScreen>
     // باریک یا صفحهٔ کوتاه نه بریده شود و نه نوار پیشرفت را هل بدهد.
     final availableWidth = math.max(120.0, width - horizontal * 2);
     final logoSize = math
-        .min(availableWidth * 0.78, math.max(96.0, height - 150.0))
+        .min(availableWidth * 0.78, math.max(96.0, height - 170.0))
         .clamp(96.0, 400.0)
         .toDouble();
-    final barWidth = math.min(logoSize * 0.95, 320.0);
+    final barWidth = math.min(availableWidth * 0.88, 330.0);
     final cacheWidth = (logoSize * dpr).round().clamp(256, 1024).toInt();
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(horizontal, 6, horizontal, 16),
+      padding: EdgeInsets.fromLTRB(horizontal, 6, horizontal, 12),
       child: Column(
         children: <Widget>[
           Expanded(
-            child: Center(
+            child: Align(
+              alignment: const Alignment(0, -0.78),
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: SplashBrand(
@@ -279,7 +280,7 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           ConstrainedBox(
             constraints: BoxConstraints(maxWidth: barWidth),
             child: ListenableBuilder(
@@ -320,6 +321,27 @@ class _SplashScreenState extends State<SplashScreen>
           key: const ValueKey<String>('parsa_splash_progress'),
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'در حال آماده‌سازی دنیای شگفت‌انگیز...',
+                maxLines: 1,
+                textDirection: TextDirection.rtl,
+                style: AppFonts.vazirmatn(
+                  fontSize: 13.5,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  shadows: const <Shadow>[
+                    Shadow(
+                      color: Color(0xCC000000),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 7),
             TweenAnimationBuilder<double>(
               tween: Tween<double>(end: progress),
               duration: const Duration(milliseconds: 380),
@@ -333,7 +355,7 @@ class _SplashScreenState extends State<SplashScreen>
                 );
               },
             ),
-            const SizedBox(height: 9),
+            const SizedBox(height: 5),
             Row(
               children: <Widget>[
                 Expanded(
@@ -343,16 +365,18 @@ class _SplashScreenState extends State<SplashScreen>
                       caption,
                       key: ValueKey<String>(caption),
                       textAlign: TextAlign.start,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: AppFonts.vazirmatn(
-                        fontSize: 12.5,
-                        color: Colors.white.withOpacity(0.74),
+                        fontSize: 11.0,
+                        color: Colors.white.withOpacity(0.72),
                         fontWeight: FontWeight.w600,
-                        height: 1.4,
+                        height: 1.2,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 if (indeterminate)
                   _PulsingDot(ambient: _ambient)
                 else
@@ -360,15 +384,15 @@ class _SplashScreenState extends State<SplashScreen>
                     '${PersianDigits.toFa(percent)}٪',
                     textDirection: TextDirection.rtl,
                     style: AppFonts.vazirmatn(
-                      fontSize: 11.5,
-                      color: ParsaBrand.gold.withOpacity(0.82),
-                      fontWeight: FontWeight.w700,
+                      fontSize: 11.0,
+                      color: ParsaBrand.gold.withOpacity(0.90),
+                      fontWeight: FontWeight.w800,
                       letterSpacing: 0.4,
                     ),
                   ),
               ],
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 6),
             const _PoweredBy(),
           ],
         ),

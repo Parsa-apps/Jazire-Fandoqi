@@ -76,6 +76,7 @@ flutter:
     - assets/explore_world.webp
     - assets/gateway/
     - assets/theme_map/
+    - assets/theme_v2/
     - assets/illustrations/memory_cards.webp
     - assets/illustrations/fruits_cards.webp
     - assets/illustrations/animals_cards.webp

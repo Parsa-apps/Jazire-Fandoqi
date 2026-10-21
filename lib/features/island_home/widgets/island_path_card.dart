@@ -1,18 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../app/app_fonts.dart';
 import '../../../app/island_cinema_style.dart';
+import '../../../core/audio_service.dart';
 import '../painters/path_icon_painter.dart';
-import 'island_3d_surface.dart';
 
-/// 🧭 یکی از سه مسیرِ اصلیِ خانه: بازی، آموزش یا داستان.
-///
-/// کودکِ ۵ساله‌ای که هنوز نمی‌خواند باید فقط با نگاه‌کردن تشخیص
-/// بدهد کجا می‌رود؛ برای همین:
-///   * نشان، بزرگ و برداری است (دستهٔ بازی / کتابِ باز / کتابِ ستاره)؛
-///   * هر مسیر رنگِ اختصاصیِ خودش را دارد (بنفش / آبی / صورتی)؛
-///   * برچسبِ فارسی هست اما شرطِ استفاده نیست: نشان به‌تنهایی کافی است؛
-///   * با لمسِ طولانی یا از طریقِ راهنمای صوتی نامِ مسیر خوانده می‌شود.
+/// 🧭 دکمهٔ کپسولیِ شیشه‌ایِ مسیرهای اصلیِ خانه (بازی، آموزش، داستان).
 class IslandPathCard extends StatelessWidget {
   const IslandPathCard({
     super.key,
@@ -37,55 +31,89 @@ class IslandPathCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Island3DSurface(
-      height: height,
-      radius: IslandCinemaMetrics.radius,
-      extrusion: IslandCinemaMetrics.extrusion,
-      baseColor: baseColor,
-      deepColor: deepColor,
+    final pillHeight = height.clamp(36.0, 56.0);
+    return Semantics(
+      button: true,
       enabled: enabled,
-      onTap: onTap,
-      semanticLabel: label,
-      semanticHint: semanticHint,
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          SizedBox(
-            width: height * 0.46,
-            height: height * 0.46,
-            child: CustomPaint(
-              painter: PathIconPainter(
-                icon: icon,
-                baseColor: baseColor,
-                deepColor: deepColor,
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              label,
-              maxLines: 1,
-              textDirection: TextDirection.rtl,
-              style: AppFonts.kids(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                height: 1.1,
-                color: Colors.white,
-                shadows: <Shadow>[
-                  Shadow(
-                    color: deepColor.withOpacity(0.9),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1.5),
-                  ),
+      label: label,
+      hint: semanticHint,
+      onTap: enabled
+          ? () {
+              HapticFeedback.selectionClick();
+              AudioService.select();
+              onTap();
+            }
+          : null,
+      child: ExcludeSemantics(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: enabled
+              ? () {
+                  HapticFeedback.selectionClick();
+                  AudioService.select();
+                  onTap();
+                }
+              : null,
+          child: Container(
+            height: pillHeight,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: <Color>[
+                  Color(0xD8134E5E),
+                  Color(0xEB092C36),
                 ],
               ),
+              border: Border.all(
+                color: baseColor.withOpacity(0.90),
+                width: 1.6,
+              ),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.30),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CustomPaint(
+                    painter: PathIconPainter(
+                      icon: icon,
+                      baseColor: baseColor,
+                      deepColor: deepColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      textDirection: TextDirection.rtl,
+                      style: AppFonts.kids(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

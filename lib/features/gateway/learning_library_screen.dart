@@ -1,241 +1,612 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../app/app_fonts.dart';
-import '../../app/island_world_style.dart';
-import '../../core/fandoghi_coach.dart';
-import '../../core/fandoghi_models.dart';
-import '../../shared/widgets/child_touch_target.dart';
-import '../../shared/widgets/fandoghi_premium.dart';
+import '../../core/audio_service.dart';
+import '../../shared/widgets/fandoghi_character_v2.dart';
+import '../shop/full_version_purchase_entry.dart';
 
-import '../../core/monetization.dart';
-import '../shop/content_lock.dart';
-
-/// Entry point for the premium content hubs delivered in PR80.
-///
-/// These screens used to exist as orphaned Dart files: no route or visible
-/// gateway action opened them. Keeping the links in one small library makes
-/// every content promise discoverable without adding network dependencies.
-class LearningLibraryScreen extends StatefulWidget {
+/// 📚 صفحهٔ «دسته‌بندی‌ها» (کتابخانه و کوله‌پشتی یادگیری — مطابقِ طرحِ مرجع).
+class LearningLibraryScreen extends StatelessWidget {
   final bool embedded;
+
   const LearningLibraryScreen({super.key, this.embedded = false});
 
-  @override
-  State<LearningLibraryScreen> createState() => _LearningLibraryScreenState();
-}
-
-class _LearningLibraryScreenState extends State<LearningLibraryScreen> {
-  bool _hasFullVersion = false;
-  static const _entries = <_LibraryEntry>[
-    _LibraryEntry(
-      title: 'دانشنامه حیوانات ایران',
-      subtitle: '۳۰ حیوان، زیستگاه و نکته‌های جالب',
-      emoji: '🦁',
-      route: '/animals',
-      color: IslandWorldPalette.foliage,
+  static const List<_LibraryItem> _items = <_LibraryItem>[
+    _LibraryItem(
+      title: 'حروف الفبا',
+      subtitle: 'آشنایی با الفبا و صدای حروف',
+      emoji: '🔤',
+      assetPath: 'assets/theme_v2/cat_alphabet.webp',
+      route: '/alphabet',
+      cardTop: Color(0xFFD9F2FF),
+      cardBottom: Color(0xFFA6DCFC),
+      extrusionColor: Color(0xFF4F9FD1),
+      textColor: Color(0xFF0D3B5E),
     ),
-    _LibraryEntry(
+    _LibraryItem(
       title: 'دنیای اعداد',
-      subtitle: 'شمارش با سیب و گردو از ۱ تا ۲۰',
+      subtitle: 'اعداد ۱ تا ۲۰ و شمارش شاد',
       emoji: '🔢',
+      badgeLabel: 'اعداد',
+      assetPath: 'assets/theme_v2/cat_numbers.webp',
       route: '/numbers',
-      color: IslandWorldPalette.deepOcean,
+      cardTop: Color(0xFFFFF4CC),
+      cardBottom: Color(0xFFFFDE82),
+      extrusionColor: Color(0xFFD19926),
+      textColor: Color(0xFF4E3000),
     ),
-    _LibraryEntry(
-      title: 'شغل‌های قهرمانانه',
-      subtitle: 'با ۲۰ شغل و آدم‌های مفید آشنا شو',
-      emoji: '👷',
-      route: '/jobs',
-      color: IslandWorldPalette.wood,
+    _LibraryItem(
+      title: 'دانشنامه حیوانات ایران',
+      subtitle: 'حیوانات بومی با صدای واقعی',
+      emoji: '🦁',
+      badgeLabel: 'حیوانات',
+      assetPath: 'assets/theme_v2/cat_animals.webp',
+      route: '/wildlife',
+      cardTop: Color(0xFFDCF9E4),
+      cardBottom: Color(0xFFA3E9B8),
+      extrusionColor: Color(0xFF459E62),
+      textColor: Color(0xFF104523),
     ),
-    _LibraryEntry(
+    _LibraryItem(
       title: 'مفاهیم اولیه',
-      subtitle: 'فصل‌ها، هوا، شب و روز و اندازه‌ها',
-      emoji: '🌈',
-      route: '/concepts',
-      color: IslandWorldPalette.coral,
+      subtitle: 'شکل‌ها، رنگ‌ها، بزرگ و کوچک',
+      emoji: '🔺',
+      badgeLabel: 'شکل‌ها',
+      assetPath: 'assets/theme_v2/cat_shapes.webp',
+      route: '/basics',
+      cardTop: Color(0xFFF5DFFF),
+      cardBottom: Color(0xFFE0B3FA),
+      extrusionColor: Color(0xFF9155B8),
+      textColor: Color(0xFF3A1457),
     ),
-    _LibraryEntry(
+    _LibraryItem(
+      title: 'پازل',
+      subtitle: 'پازل و بازی‌های فکری کودکانه',
+      emoji: '🧩',
+      assetPath: 'assets/theme_v2/cat_puzzle.webp',
+      route: '/games-carnival',
+      cardTop: Color(0xFFFFE5D4),
+      cardBottom: Color(0xFFFFBF96),
+      extrusionColor: Color(0xFFD6753E),
+      textColor: Color(0xFF542308),
+    ),
+    _LibraryItem(
+      title: 'موسیقی',
+      subtitle: 'آشنایی با سازها و ریتم کودکانه',
+      emoji: '🎵',
+      assetPath: 'assets/theme_v2/cat_music.webp',
+      route: '/art-studio',
+      cardTop: Color(0xFFD4F8F8),
+      cardBottom: Color(0xFF95E6E6),
+      extrusionColor: Color(0xFF349CA1),
+      textColor: Color(0xFF0A4245),
+    ),
+    _LibraryItem(
+      title: 'شغل‌های قهرمانانه',
+      subtitle: 'آتش‌نشان، پزشک، خلبان و معلم',
+      emoji: '🚒',
+      route: '/jobs',
+      cardTop: Color(0xFFFFE0E6),
+      cardBottom: Color(0xFFFFB3C1),
+      extrusionColor: Color(0xFFC95B72),
+      textColor: Color(0xFF521220),
+    ),
+    _LibraryItem(
       title: 'دنیای احساسات',
-      subtitle: 'شناخت احساس و تمرین نفس آرام',
+      subtitle: 'شادی، خشم، آرامش و همدلی',
       emoji: '💛',
-      route: '/sel',
-      color: IslandWorldPalette.rose,
+      route: '/emotions',
+      cardTop: Color(0xFFFFF6D6),
+      cardBottom: Color(0xFFFFE08A),
+      extrusionColor: Color(0xFFC99826),
+      textColor: Color(0xFF4A3200),
     ),
-    _LibraryEntry(
+    _LibraryItem(
       title: 'مهارت زندگی',
-      subtitle: 'ترافیک، بهداشت، پول تومان و ایران',
-      emoji: '🧭',
+      subtitle: 'مسواک، نظم، سلام و تشکر',
+      emoji: '🌱',
       route: '/life-skills',
-      color: IslandWorldPalette.ocean,
+      cardTop: Color(0xFFE0F7E9),
+      cardBottom: Color(0xFFADE8C4),
+      extrusionColor: Color(0xFF479968),
+      textColor: Color(0xFF104224),
+    ),
+    _LibraryItem(
+      title: 'قصه‌ها',
+      subtitle: 'قصه‌های صوتی و آموزنده شب',
+      emoji: '📖',
+      route: '/stories',
+      cardTop: Color(0xFFE8E2FF),
+      cardBottom: Color(0xFFC5B8FA),
+      extrusionColor: Color(0xFF6F5CC2),
+      textColor: Color(0xFF23165C),
+    ),
+    _LibraryItem(
+      title: 'رنگ‌آمیزی',
+      subtitle: 'بوم نقاشی و رنگ‌های شاد',
+      emoji: '🎨',
+      route: '/coloring',
+      cardTop: Color(0xFFFFE6F2),
+      cardBottom: Color(0xFFFFB8DA),
+      extrusionColor: Color(0xFFC7588E),
+      textColor: Color(0xFF4F1130),
+    ),
+    _LibraryItem(
+      title: 'شعرها',
+      subtitle: 'شعرهای کودکانه و ریتمیک',
+      emoji: '🎶',
+      route: '/poems',
+      cardTop: Color(0xFFDDF4FF),
+      cardBottom: Color(0xFFA8E0FA),
+      extrusionColor: Color(0xFF4395BD),
+      textColor: Color(0xFF0A3952),
+    ),
+    _LibraryItem(
+      title: 'قرآن کودک',
+      subtitle: 'سوره‌های کوتاه با صوت دلنشین',
+      emoji: '🕌',
+      route: '/quran',
+      cardTop: Color(0xFFD9F7EE),
+      cardBottom: Color(0xFF9EE8D2),
+      extrusionColor: Color(0xFF33967A),
+      textColor: Color(0xFF0A3D2E),
+    ),
+    _LibraryItem(
+      title: 'کارتون‌کده فندقی',
+      subtitle: 'انیمیشن‌های آموزنده و شاد',
+      emoji: '🎬',
+      route: '/cartoons',
+      cardTop: Color(0xFFFFEAD6),
+      cardBottom: Color(0xFFFFC896),
+      extrusionColor: Color(0xFFC97B36),
+      textColor: Color(0xFF4D2400),
+    ),
+    _LibraryItem(
+      title: 'آزمایشگاه علوم',
+      subtitle: 'کشف شگفتی‌های طبیعت و فضا',
+      emoji: '🔬',
+      route: '/science-lab',
+      cardTop: Color(0xFFE0F2FE),
+      cardBottom: Color(0xFFBAE6FD),
+      extrusionColor: Color(0xFF3B82F6),
+      textColor: Color(0xFF1E3A8A),
+    ),
+    _LibraryItem(
+      title: 'مراحل بازی',
+      subtitle: 'نقشهٔ مراحل و ماجراجویی در جزیره',
+      emoji: '🗺️',
+      route: '/stage-map',
+      cardTop: Color(0xFFFEF3C7),
+      cardBottom: Color(0xFFFDE68A),
+      extrusionColor: Color(0xFFD97706),
+      textColor: Color(0xFF451A03),
     ),
   ];
-
-  void _syncFullVersionAccess() {
-    if (!mounted) return;
-    final has = Monetization.accessStatus.value.isVerified;
-    if (has != _hasFullVersion) setState(() => _hasFullVersion = has);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    Monetization.accessStatus.addListener(_syncFullVersionAccess);
-    FandoghiCoach.enablePersistentPresence();
-    _refreshEntitlement();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        FandoghiCoach.instruction(
-          'هر دنیا یک چیز تازه برای یاد گرفتن دارد؛ یکی را انتخاب کن 🌟',
-        );
-      }
-    });
-  }
-
-  Future<void> _refreshEntitlement() async {
-    final owned = await Monetization.hasFullVersion();
-    if (mounted) setState(() => _hasFullVersion = owned);
-  }
-
-  @override
-  void dispose() {
-    Monetization.accessStatus.removeListener(_syncFullVersionAccess);
-    FandoghiCoach.clear();
-    super.dispose();
-  }
-
-  void _open(String route) {
-    HapticFeedback.selectionClick();
-    Navigator.pushNamed(context, route).then((_) {
-      if (mounted) setState(() {});
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     final animationsDisabled =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-    const gridCardAspectRatio = 0.88;
-    final cardWidth = (MediaQuery.of(context).size.width - 44) / 2;
-    final aspectRatioExtent = cardWidth / gridCardAspectRatio;
-    final cardMainAxisExtent =
-        aspectRatioExtent < 190 ? 190.0 : aspectRatioExtent;
 
-    return Scaffold(
-      backgroundColor: IslandWorldPalette.paper,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                decoration: BoxDecoration(
-                  gradient: IslandWorldGradients.sky,
-                  borderRadius:
-                      BorderRadius.circular(IslandWorldMetrics.cardRadius),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.84),
-                    width: 1.5,
+    final content = Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[
+            Color(0xFF145C6B),
+            Color(0xFF0B3B46),
+            Color(0xFF06232B),
+          ],
+        ),
+      ),
+      child: SafeArea(
+        child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            final width = constraints.maxWidth;
+            final compact = width < 360 || constraints.maxHeight < 600;
+            final crossAxisCount = width >= 900
+                ? 4
+                : width >= 620
+                    ? 3
+                    : 2;
+            final cardExtent = compact ? 132.0 : 152.0;
+
+            return CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: <Widget>[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      12,
+                      compact ? 6 : 10,
+                      12,
+                      compact ? 6 : 10,
+                    ),
+                    child: _buildHeader(
+                      context,
+                      compact: compact,
+                      animationsDisabled: animationsDisabled,
+                    ),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: IslandWorldPalette.deepOcean.withOpacity(0.12),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(12, 2, 12, 14),
+                  sliver: SliverGrid(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      mainAxisSpacing: compact ? 10 : 12,
+                      crossAxisSpacing: compact ? 10 : 12,
+                      mainAxisExtent: cardExtent,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (BuildContext context, int index) {
+                        return _Category3DCard(
+                          item: _items[index],
+                          compact: compact,
+                          onTap: () => _openItem(context, _items[index]),
+                        );
+                      },
+                      childCount: _items.length,
+                    ),
+                  ),
+                ),
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(12, 0, 12, 24),
+                    child: FullVersionPurchaseEntry(),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+
+    if (embedded) {
+      return Directionality(
+        textDirection: TextDirection.rtl,
+        child: content,
+      );
+    }
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: const Color(0xFF06232B),
+        body: content,
+      ),
+    );
+  }
+
+  Widget _buildHeader(
+    BuildContext context, {
+    required bool compact,
+    required bool animationsDisabled,
+  }) {
+    final legacyTitle =
+        embedded ? 'کوله‌پشتی یادگیری 🎒' : 'کتابخانه یادگیری 📚';
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 10 : 14,
+        vertical: compact ? 6 : 8,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[
+            Color(0xD8176778),
+            Color(0xEB0B3640),
+          ],
+        ),
+        border: Border.all(
+          color: const Color(0x9980DEEA),
+          width: 1.5,
+        ),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Colors.black.withOpacity(0.28),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: <Widget>[
+          if (!embedded) ...<Widget>[
+            _Green3DBackButton(
+              size: compact ? 36 : 40,
+              onTap: () {
+                HapticFeedback.lightImpact();
+                AudioService.tap();
+                Navigator.of(context).maybePop();
+              },
+            ),
+            const SizedBox(width: 8),
+          ],
+          SizedBox(
+            width: compact ? 36 : 44,
+            height: compact ? 36 : 44,
+            child: FandoghiCharacterV2.premium(
+              size: compact ? 34 : 40,
+              animated: !animationsDisabled,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Text(
+                      'دسته‌بندی‌ها',
+                      style: AppFonts.kids(
+                        fontSize: compact ? 18 : 21,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        legacyTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppFonts.vazirmatn(
+                          fontSize: compact ? 10.5 : 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFFB2EBF2),
+                        ),
+                      ),
                     ),
                   ],
                 ),
+                Text(
+                  'هر کارت یک ماجراجویی شاد با فندقی است!',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.vazirmatn(
+                    fontSize: compact ? 10.5 : 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFFE0F7FA),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openItem(BuildContext context, _LibraryItem item) {
+    HapticFeedback.lightImpact();
+    AudioService.tap();
+    Navigator.of(context).pushNamed(item.route);
+  }
+}
+
+class _Green3DBackButton extends StatelessWidget {
+  const _Green3DBackButton({
+    required this.size,
+    required this.onTap,
+  });
+
+  final double size;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'بازگشت',
+      onTap: onTap,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: <Color>[
+                Color(0xFF81C784),
+                Color(0xFF2E7D32),
+              ],
+            ),
+            border: Border.all(color: const Color(0xFFC8E6C9), width: 2),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: const Color(0xFF1B5E20).withOpacity(0.55),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 18,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Category3DCard extends StatelessWidget {
+  const _Category3DCard({
+    required this.item,
+    required this.compact,
+    required this.onTap,
+  });
+
+  final _LibraryItem item;
+  final bool compact;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = compact ? 20.0 : 24.0;
+    final iconSize = compact ? 58.0 : 72.0;
+
+    return Semantics(
+      button: true,
+      label: '${item.title} — ${item.subtitle}',
+      onTap: onTap,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Stack(
+          children: <Widget>[
+            // لایهٔ زیرینِ سه‌بعدی
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 5,
+              bottom: 0,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: item.extrusionColor,
+                  borderRadius: BorderRadius.circular(radius),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.32),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // رویهٔ کارتِ پاستلیِ سه‌بعدی
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              bottom: 5,
+              child: Container(
+                padding: EdgeInsets.fromLTRB(
+                  8,
+                  compact ? 6 : 8,
+                  8,
+                  compact ? 6 : 8,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(radius),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: <Color>[item.cardTop, item.cardBottom],
+                  ),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.92),
+                    width: 2,
+                  ),
+                ),
                 child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        if (widget.embedded)
-                          const SizedBox(width: 64)
-                        else
-                          ChildTouchTarget(
-                            onTap: () => Navigator.pop(context),
-                            child: const Icon(
-                              Icons.arrow_back_rounded,
-                              color: IslandWorldPalette.deepOcean,
-                              size: 28,
-                            ),
-                          ),
-                        Expanded(
-                          child: Text(
-                            widget.embedded
-                                ? 'کوله‌پشتی یادگیری 🎒'
-                                : 'کتابخانه یادگیری 📚',
-                            textAlign: TextAlign.center,
-                            style: AppFonts.kids(
-                              color: IslandWorldPalette.ink,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900,
-                              height: 1.2,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 64),
-                      ],
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Expanded(
+                      child: Center(
+                        child: item.assetPath != null
+                            ? Image.asset(
+                                item.assetPath!,
+                                width: iconSize,
+                                height: iconSize,
+                                fit: BoxFit.contain,
+                                filterQuality: FilterQuality.medium,
+                                errorBuilder: (_, __, ___) => Text(
+                                  item.emoji,
+                                  style: TextStyle(
+                                    fontSize: compact ? 34 : 42,
+                                  ),
+                                ),
+                              )
+                            : Container(
+                                width: iconSize * 0.85,
+                                height: iconSize * 0.85,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white.withOpacity(0.62),
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 1.8,
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    item.emoji,
+                                    style: TextStyle(
+                                      fontSize: compact ? 30 : 36,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                      ),
                     ),
                     const SizedBox(height: 4),
-                    FandoghiPremium(
-                      size: 64,
-                      mood: FandoghiMood.excited,
-                      showParticles: false,
-                      animated: !animationsDisabled,
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        item.title,
+                        maxLines: 1,
+                        textAlign: TextAlign.center,
+                        style: AppFonts.kids(
+                          fontSize: compact ? 14.5 : 16.5,
+                          fontWeight: FontWeight.w900,
+                          color: item.textColor,
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 1),
                     Text(
-                      'یادگیری پریمیوم، آفلاین و کودکانه',
+                      item.subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                       style: AppFonts.vazirmatn(
-                        color: IslandWorldPalette.deepOcean,
-                        fontSize: 13,
+                        fontSize: compact ? 10 : 11,
                         fontWeight: FontWeight.w700,
+                        color: item.textColor.withOpacity(0.82),
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-            ContentAccessNotice(
-              featureName: 'کتابخانه یادگیری',
-              hasFullVersion: _hasFullVersion,
-              onUnlocked: _refreshEntitlement,
-            ),
-            Expanded(
-              child: GridView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                physics: const BouncingScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  mainAxisExtent: cardMainAxisExtent,
+            if (item.badgeLabel != null)
+              Positioned(
+                top: 6,
+                left: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.86),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    item.badgeLabel!,
+                    style: AppFonts.kids(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                      color: item.textColor,
+                    ),
+                  ),
                 ),
-                itemCount: _entries.length,
-                itemBuilder: (context, index) {
-                  final entry = _entries[index];
-                  final card = _LibraryCard(
-                    entry: entry,
-                    onTap: () => _open(entry.route),
-                  );
-                  if (animationsDisabled) return card;
-
-                  return card
-                      .animate(delay: (index * 70).ms)
-                      .fadeIn(duration: IslandWorldMetrics.routeTransition)
-                      .scale(
-                        begin: const Offset(0.9, 0.9),
-                        duration: IslandWorldMetrics.routeTransition,
-                        curve: Curves.easeOutBack,
-                      );
-                },
               ),
-            ),
           ],
         ),
       ),
@@ -243,101 +614,28 @@ class _LearningLibraryScreenState extends State<LearningLibraryScreen> {
   }
 }
 
-class _LibraryEntry {
+class _LibraryItem {
   final String title;
   final String subtitle;
   final String emoji;
+  final String? badgeLabel;
+  final String? assetPath;
   final String route;
-  final Color color;
+  final Color cardTop;
+  final Color cardBottom;
+  final Color extrusionColor;
+  final Color textColor;
 
-  const _LibraryEntry({
+  const _LibraryItem({
     required this.title,
     required this.subtitle,
     required this.emoji,
     required this.route,
-    required this.color,
+    required this.cardTop,
+    required this.cardBottom,
+    required this.extrusionColor,
+    required this.textColor,
+    this.badgeLabel,
+    this.assetPath,
   });
-}
-
-class _LibraryCard extends StatelessWidget {
-  final _LibraryEntry entry;
-  final VoidCallback onTap;
-
-  const _LibraryCard({required this.entry, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: entry.title,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: IslandWorldPalette.paper,
-            borderRadius: BorderRadius.circular(IslandWorldMetrics.cardRadius),
-            border: Border.all(
-              color: entry.color.withOpacity(0.36),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: entry.color.withOpacity(0.13),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: entry.color.withOpacity(0.14),
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: Text(entry.emoji, style: const TextStyle(fontSize: 34)),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                entry.title,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppFonts.kids(
-                  color: IslandWorldPalette.ink,
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w800,
-                  height: 1.2,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                entry.subtitle,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppFonts.vazirmatn(
-                  color: IslandWorldPalette.mutedInk,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  height: 1.3,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Icon(
-                Icons.arrow_back_rounded,
-                color: entry.color,
-                size: 18,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
