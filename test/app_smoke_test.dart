@@ -131,19 +131,37 @@ void main() {
     final chip = find.byKey(const ValueKey('living_island_map_chip'));
     await tester.ensureVisible(chip);
     await tester.pump();
-    final dbg = 'rect=${tester.getRect(chip)} center=${tester.getCenter(chip)} '
-        'size=${tester.getSize(chip)} view=${tester.view.physicalSize} '
-        'chips=${chip.evaluate().length} '
-        'inkwells=${find.byType(InkWell).evaluate().length}';
-    await tester.tap(chip);
-    await tester.pump(const Duration(milliseconds: 400));
-
     // ── تشخیصیِ موقت (بعد از پیداکردنِ علت حذف می‌شود) ──
-    expect(
-      'DIAG $dbg AFTER_islandMapTab=${find.byType(IslandMapTab).evaluate().length} '
-      'exc=${tester.takeException()}',
-      equals('__DIAG__'),
-    );
+    final r = <String>[];
+    int tabs() => find.byType(IslandMapTab).evaluate().length;
+
+    await tester.ensureVisible(chip);
+    await tester.pump();
+    await tester.tap(chip);
+    await tester.pump(const Duration(milliseconds: 600));
+    r.add('default=${tabs()} exc=${tester.takeException()}');
+
+    if (tabs() == 0) {
+      await tester.pump(const Duration(seconds: 1));
+      await tester.tap(chip);
+      await tester.pump(const Duration(milliseconds: 600));
+      r.add('settled=${tabs()} exc=${tester.takeException()}');
+    }
+    if (tabs() == 0) {
+      final g = await tester.startGesture(tester.getCenter(chip), pointer: 7);
+      await tester.pump(const Duration(milliseconds: 80));
+      await g.up();
+      await tester.pump(const Duration(milliseconds: 600));
+      r.add('manual=${tabs()} exc=${tester.takeException()}');
+    }
+    if (tabs() == 0) {
+      final ink = find.ancestor(of: chip, matching: find.byType(InkWell));
+      await tester.tap(ink, warnIfMissed: false);
+      await tester.pump(const Duration(milliseconds: 600));
+      r.add('inkwell=${tabs()} n=${ink.evaluate().length} '
+          'exc=${tester.takeException()}');
+    }
+    expect('STRATEGIES ${r.join(" || ")}', equals('__DIAG__'));
 
     // ابتدا ثابت می‌کنیم ناوبری واقعاً انجام شده و خطایی رخ نداده است؛
     // اگر فقط برچسب‌ها بررسی شوند، علتِ واقعیِ شکست پنهان می‌ماند.
