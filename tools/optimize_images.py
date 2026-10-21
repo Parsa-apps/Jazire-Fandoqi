@@ -16,7 +16,7 @@ from PIL import Image
 # شفاف و آیکون‌ها از همین فایل مشتق می‌شوند.
 KEEP_PNG = {
     "assets/icons/app_icon.png",
-    "assets/icons/app_icon_foreground.png",
+    "assets/icons/fandoghi_app_icon.png",
     "assets/branding/parsa_apps_logo.png",
 }
 

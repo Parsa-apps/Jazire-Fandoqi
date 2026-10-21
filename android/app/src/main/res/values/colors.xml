@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- آیکون تطبیقی روی مشکیِ برند؛ حلقه و تاج طلایی خود می‌درخشند. -->
-    <color name="ic_launcher_background">#000000</color>
+    <color name="ic_launcher_background">#008589</color>
     <!-- اسپلش سیستمی دقیقاً هم‌رنگ اولین فریم اسپلش فلاتر است تا هیچ
          پرش یا فلاش روشنی بین بوت اندروید و انیمیشن آغازین دیده نشود. -->
     <color name="splash_background">#000000</color>

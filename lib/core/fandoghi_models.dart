@@ -38,21 +38,7 @@ extension FandoghiMoodVisuals on FandoghiMood {
         _ => const Duration(seconds: 2),
       };
 
-  /// تصویر اختصاصی این حالت از مسکات «فندقی کوچولو».
-  ///
-  /// هر ۱۰ حالت احساسی تصویر مخصوص خودش را دارد. مقدار `null` فقط
-  /// به‌عنوان شبکهٔ اطمینان برای حالت‌های آیندهٔ بدون تصویر باقی مانده
-  /// تا رابط کاربری به تصویر پیش‌فرض + ایموجی احساس برگردد.
-  String? get portraitAsset => switch (this) {
-        FandoghiMood.happy => 'assets/mascot/fandoghi_baby.webp',
-        FandoghiMood.excited => 'assets/mascot/fandoghi_baby_cheer.webp',
-        FandoghiMood.celebrating => 'assets/mascot/fandoghi_baby_party.webp',
-        FandoghiMood.proud => 'assets/mascot/fandoghi_baby_proud.webp',
-        FandoghiMood.thinking => 'assets/mascot/fandoghi_baby_think.webp',
-        FandoghiMood.surprised => 'assets/mascot/fandoghi_baby_wow.webp',
-        FandoghiMood.wink => 'assets/mascot/fandoghi_baby_wink.webp',
-        FandoghiMood.sleeping => 'assets/mascot/fandoghi_baby_sleep.webp',
-        FandoghiMood.shy => 'assets/mascot/fandoghi_baby_shy.webp',
-        FandoghiMood.sad => 'assets/mascot/fandoghi_baby_sad.webp',
-      };
+  /// پرترهٔ ثابتِ مسکات اصلی؛ حال‌وهوای هر حالت با نشان احساسی جداگانه
+  /// نمایش داده می‌شود تا هویت تصویری فندقی در کل برنامه یک‌دست بماند.
+  String? get portraitAsset => 'assets/theme_v2/squirrel_hero.webp';
 }

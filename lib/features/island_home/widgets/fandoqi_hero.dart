@@ -43,8 +43,7 @@ class FandoqiHero extends StatefulWidget {
   final double imageOpacity;
 
   static const String waveAsset = 'assets/theme_v2/squirrel_hero.webp';
-  static const String celebrateAsset =
-      'assets/mascot/fandoghi_celebrate_v2.webp';
+  static const String celebrateAsset = waveAsset;
 
   @override
   State<FandoqiHero> createState() => _FandoqiHeroState();

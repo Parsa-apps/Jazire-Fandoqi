@@ -105,7 +105,7 @@ class _AppGatewayScreenState extends State<AppGatewayScreen> {
                               .clamp(120, 360)
                               .toInt(),
                       errorBuilder: (_, __, ___) => Image.asset(
-                        'assets/mascot/fandoghi_baby_shy.webp',
+                        IslandWorldAssets.fandoghiMain,
                         width: 120,
                         height: 120,
                         fit: BoxFit.contain,

@@ -18,10 +18,8 @@ import '../home/widgets/island_map/island_map_tab.dart';
 import '../profile/profile_editor.dart';
 import '../shop/full_version_paywall.dart';
 import '../shop/full_version_purchase_entry.dart';
-import 'painters/path_icon_painter.dart';
 import 'widgets/fandoqi_hero.dart';
 import 'widgets/island_logo.dart';
-import 'widgets/island_path_card.dart';
 import 'widgets/island_scene.dart';
 import 'widgets/primary_start_button.dart';
 
@@ -255,7 +253,8 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
               final heroSize =
                   (h * (compact ? 0.24 : 0.28)).clamp(112.0, 220.0);
               final startHeight = compact ? 52.0 : 58.0;
-              final pathHeight = compact ? 38.0 : 42.0;
+              final quickLinksHeight = compact ? 52.0 : 58.0;
+              final mapChipHeight = compact ? 44.0 : 48.0;
 
               return Stack(
                 fit: StackFit.expand,
@@ -316,9 +315,13 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
                           ),
                         ),
                         SizedBox(height: compact ? 6 : 8),
-                        _buildBottomQuickStrip(
-                          pathHeight: pathHeight,
-                          maxWidth: w - sidePad * 2,
+                        _buildBottomQuickStrip(height: quickLinksHeight),
+                        SizedBox(height: compact ? 4 : 6),
+                        Center(
+                          child: _buildMapChip(
+                            height: mapChipHeight,
+                            maxWidth: w - sidePad * 2,
+                          ),
                         ),
                       ],
                     ),
@@ -591,72 +594,151 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
     );
   }
 
-  /// نوارِ کپسولیِ شیشه‌ایِ مسیرهای اصلی و نقشهٔ جزیره در پایینِ صحنه
-  Widget _buildBottomQuickStrip({
-    required double pathHeight,
-    required double maxWidth,
-  }) {
+  /// میان‌برهای مستقیمِ کارتون، قصه، لالایی و بازی زیرِ دکمهٔ اصلی.
+  Widget _buildBottomQuickStrip({required double height}) {
     return Row(
       children: <Widget>[
         Expanded(
-          child: IslandPathCard(
-            label: IslandHomeStrings.play,
-            icon: IslandPathIcon.play,
-            baseColor: IslandCinemaPalette.pathPlay,
-            deepColor: IslandCinemaPalette.pathPlayDeep,
-            height: pathHeight,
-            semanticHint: IslandHomeStrings.playHint,
-            onTap: () => _openPath('/games-carnival', IslandHomeStrings.play),
+          child: _buildFeatureShortcut(
+            keyName: 'home_shortcut_cartoons',
+            label: IslandHomeStrings.cartoons,
+            icon: Icons.live_tv_rounded,
+            tint: const Color(0xFFFFA65A),
+            height: height,
+            onTap: () => _openPath('/cartoons', IslandHomeStrings.cartoons),
           ),
         ),
         const SizedBox(width: 6),
         Expanded(
-          child: IslandPathCard(
-            label: IslandHomeStrings.learn,
-            icon: IslandPathIcon.learn,
-            baseColor: IslandCinemaPalette.pathLearn,
-            deepColor: IslandCinemaPalette.pathLearnDeep,
-            height: pathHeight,
-            semanticHint: IslandHomeStrings.learnHint,
-            onTap: () =>
-                _openPath('/learning-library', IslandHomeStrings.learn),
+          child: _buildFeatureShortcut(
+            keyName: 'home_shortcut_stories',
+            label: IslandHomeStrings.stories,
+            icon: Icons.auto_stories_rounded,
+            tint: const Color(0xFFFFD166),
+            height: height,
+            onTap: () => _openPath('/stories', IslandHomeStrings.stories),
           ),
         ),
         const SizedBox(width: 6),
         Expanded(
-          child: IslandPathCard(
-            label: IslandHomeStrings.story,
-            icon: IslandPathIcon.story,
-            baseColor: IslandCinemaPalette.pathStory,
-            deepColor: IslandCinemaPalette.pathStoryDeep,
-            height: pathHeight,
-            semanticHint: IslandHomeStrings.storyHint,
-            onTap: () => _openPath('/stories', IslandHomeStrings.story),
+          child: _buildFeatureShortcut(
+            keyName: 'home_shortcut_lullabies',
+            label: IslandHomeStrings.lullabies,
+            icon: Icons.nightlight_round,
+            tint: const Color(0xFFB9A4FF),
+            height: height,
+            onTap: () => _openPath('/lullabies', IslandHomeStrings.lullabies),
           ),
         ),
         const SizedBox(width: 6),
-        _buildMapChip(height: pathHeight, maxWidth: maxWidth),
+        Expanded(
+          child: _buildFeatureShortcut(
+            keyName: 'home_shortcut_games',
+            label: IslandHomeStrings.games,
+            icon: Icons.sports_esports_rounded,
+            tint: const Color(0xFF74E3B3),
+            height: height,
+            onTap: () => _openPath('/games-carnival', IslandHomeStrings.games),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildMapChip({required double height, required double maxWidth}) {
-    final pillHeight = height.clamp(36.0, 56.0);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(999),
-        onTap: _openIslandMap,
-        child: Listener(
-          behavior: HitTestBehavior.translucent,
-          child: Semantics(
-            button: true,
-            label: IslandHomeStrings.islandMap,
-            hint: IslandHomeStrings.islandMapHint,
+  Widget _buildFeatureShortcut({
+    required String keyName,
+    required String label,
+    required IconData icon,
+    required Color tint,
+    required double height,
+    required VoidCallback onTap,
+  }) {
+    void handleTap() {
+      HapticFeedback.selectionClick();
+      AudioService.select();
+      onTap();
+    }
+
+    return Semantics(
+      button: true,
+      label: label,
+      onTap: handleTap,
+      child: ExcludeSemantics(
+        child: Tooltip(
+          message: label,
+          child: GestureDetector(
+            key: ValueKey<String>(keyName),
+            behavior: HitTestBehavior.opaque,
+            onTap: handleTap,
             child: Container(
-              key: const ValueKey<String>('living_island_map_chip'),
+              height: height.clamp(48.0, 64.0).toDouble(),
+              padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: <Color>[
+                    Color(0xE6175261),
+                    Color(0xF00A303B),
+                  ],
+                ),
+                border: Border.all(color: tint.withOpacity(0.86), width: 1.5),
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.25),
+                    blurRadius: 7,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Icon(icon, size: 20, color: tint),
+                  const SizedBox(height: 2),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      textDirection: TextDirection.rtl,
+                      style: AppFonts.kids(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// ورودیِ مستقل و واضح برای بازکردن نقشهٔ کاملِ جزیره.
+  Widget _buildMapChip({required double height, required double maxWidth}) {
+    final pillHeight = height.clamp(44.0, 52.0).toDouble();
+    final pillWidth = maxWidth.clamp(190.0, 260.0).toDouble();
+    return Semantics(
+      button: true,
+      label: IslandHomeStrings.adventureMap,
+      hint: IslandHomeStrings.adventureMapHint,
+      onTap: _openIslandMap,
+      child: ExcludeSemantics(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            key: const ValueKey<String>('living_island_map_chip'),
+            borderRadius: BorderRadius.circular(999),
+            onTap: _openIslandMap,
+            child: Container(
+              width: pillWidth,
               height: pillHeight,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(999),
                 gradient: const LinearGradient(
@@ -680,27 +762,21 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
                 ],
               ),
               child: Row(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   const Icon(
                     Icons.explore_rounded,
-                    size: 18,
+                    size: 19,
                     color: Color(0xFF80DEEA),
                   ),
-                  const SizedBox(width: 4),
-                  ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: maxWidth * 0.24),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        IslandHomeStrings.islandMap,
-                        textDirection: TextDirection.rtl,
-                        style: AppFonts.kids(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
+                  const SizedBox(width: 7),
+                  Text(
+                    IslandHomeStrings.adventureMap,
+                    textDirection: TextDirection.rtl,
+                    style: AppFonts.kids(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
                     ),
                   ),
                 ],

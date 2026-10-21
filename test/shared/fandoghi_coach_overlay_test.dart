@@ -37,7 +37,7 @@ void main() {
     await tester.pump(const Duration(seconds: 6));
   });
 
-  testWidgets('non-success feedback keeps the animated character widget',
+  testWidgets('non-success feedback keeps the primary mascot character',
       (tester) async {
     FandoghiCoach.say('سلام!', tone: FandoghiCoachTone.neutral);
 
@@ -49,7 +49,11 @@ void main() {
     await tester.pump();
 
     expect(find.byType(FandoghiHazelnutCharacter), findsOneWidget);
-    expect(find.byType(Image), findsNothing);
+    final image = tester.widget<Image>(find.byType(Image));
+    expect(
+      _assetImageFrom(image.image).assetName,
+      IslandWorldAssets.fandoghiMain,
+    );
 
     await tester.pumpWidget(const SizedBox.shrink());
     FandoghiCoach.clear();
