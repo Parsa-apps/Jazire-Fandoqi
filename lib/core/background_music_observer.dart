@@ -39,7 +39,7 @@ class BackgroundMusicObserver extends NavigatorObserver {
           '/alphabet', '/memory_match', '/bubble_pop', '/star_catch',
           '/colors_lab', '/puzzle', '/math_race', '/pattern',
           '/sound_match', '/body_parts', '/island_builder',
-          '/games-carnival',
+          '/games-carnival', '/stage-map',
         }.contains(name)) {
       return 'games';
     }
@@ -49,7 +49,12 @@ class BackgroundMusicObserver extends NavigatorObserver {
         const <String>{
           '/learning-library', '/animals', '/numbers', '/jobs',
           '/concepts', '/sel', '/vocabulary',
-        }.contains(name)) {
+          // نام‌های کتابخانه و هاب‌های تازهٔ «دسته‌بندی‌ها».
+          '/wildlife', '/basics', '/emotions',
+        }.contains(name) ||
+        name.startsWith('/coloring') ||
+        name.startsWith('/science-lab') ||
+        name.startsWith('/poems')) {
       return 'learning';
     }
     return null;

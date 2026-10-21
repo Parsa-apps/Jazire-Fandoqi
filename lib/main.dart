@@ -14,6 +14,7 @@ import 'core/content_access_policy.dart';
 import 'core/fandoghi_coach.dart';
 import 'core/game_data.dart';
 import 'core/game_launch.dart';
+import 'core/licenses/font_licenses.dart';
 import 'core/island_level_watcher.dart';
 import 'core/growth/growth.dart';
 import 'core/logger_service.dart';
@@ -94,6 +95,12 @@ import 'features/growth/vocabulary_screen.dart';
 import 'features/growth/weekly_report_screen.dart';
 import 'features/growth/whats_new_screen.dart';
 import 'features/security/tamper_block_screen.dart';
+import 'features/stage_map/stage_map_screen.dart';
+import 'features/music/music_studio_screen.dart';
+import 'features/coloring/coloring_book_screen.dart';
+import 'features/poems/poems_hub_screen.dart';
+import 'features/quran/quran_kids_screen.dart';
+import 'features/science/science_lab_screen.dart';
 import 'shared/widgets/fandoghi_coach.dart';
 
 /// جزیره فندقی - Jazireh Fandoghi
@@ -124,6 +131,10 @@ Future<void> main() async {
   // ✅ فیکس عمیق فاز ۲: تنظیم امن فونت‌ها برای آفلاین — دیگر کرش سفید نمی‌دهد
   // اگر فونت کش نشده باشد، AppFonts به fallback می‌رود
   AppFonts.configure();
+
+  // ⚖️ متنِ پروانهٔ فونتِ قرآن (SIL OFL) را به صفحهٔ مجوزهای Flutter معرفی
+  // می‌کنیم؛ توزیعِ فونت بدونِ پروانه‌اش مجاز نیست.
+  FontLicenses.register();
 
   // ⏱️ همهٔ کارهای سنگینِ راه‌اندازی (Hive، پروفایل بازیکن، تنظیمات
   // خانواده و بررسی امنیتی) به StartupCoordinator منتقل شده‌اند و
@@ -481,6 +492,50 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
                       : null,
             ),
         '/parent-booklet': (context) => const ParentBookletScreen(),
+        // ── دسته‌بندی‌های کتابخانهٔ یادگیری ──────────────────────────────
+        // مسیرهای /wildlife و /basics و /emotions معادلِ کارت‌های قدیمی‌ترند؛
+        // هاب‌هایی که نیمهٔ رایگان/کامل دارند خودشان قفلِ آیتم‌ها را اعمال
+        // می‌کنند و درِ ورودشان باز است. مسیرهای تازه (/art-studio، /coloring،
+        // /poems، /quran، /science-lab) دقیقاً همان مقصدِ کارت‌های بخش
+        // «دسته‌بندی‌ها» هستند.
+        '/wildlife': (context) => GameAccessGate(
+              gameName: 'حیوانات',
+              child: const AnimalEncyclopediaScreen(),
+            ),
+        '/basics': (context) => GameAccessGate(
+              gameName: 'مفاهیم',
+              child: const ConceptsHubScreen(),
+            ),
+        '/emotions': (context) => GameAccessGate(
+              gameName: 'احساسات',
+              child: const SelHubScreen(),
+            ),
+        '/stage-map': (context) => const StageMapScreen(),
+        '/art-studio': (context) => GameAccessGate(
+              gameName: 'موسیقی',
+              isFree: true,
+              child: const MusicStudioScreen(),
+            ),
+        '/coloring': (context) => GameAccessGate(
+              gameName: 'رنگ‌آمیزی',
+              isFree: true,
+              child: const ColoringBookScreen(),
+            ),
+        '/poems': (context) => GameAccessGate(
+              gameName: 'شعرها',
+              isFree: true,
+              child: const PoemsHubScreen(),
+            ),
+        '/quran': (context) => GameAccessGate(
+              gameName: 'قرآن',
+              isFree: true,
+              child: const QuranKidsScreen(),
+            ),
+        '/science-lab': (context) => GameAccessGate(
+              gameName: 'آزمایشگاه علوم',
+              isFree: true,
+              child: const ScienceLabScreen(),
+            ),
       },
       onGenerateRoute: (settings) {
         final name = settings.name ?? '';
@@ -566,25 +621,31 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
                   ),
           );
         }
-        // 🌙 لالایی‌ها (/lullaby/<id>)
+        // 🧭 دنیاهای مهارت زندگی (/life-skills/<id>)
         if (name.startsWith('/life-skills/')) {
           final topicId = name.substring('/life-skills/'.length);
           final topic = LifeSkillsData.byId(topicId);
-          if (topic != null) {
-            // نیمهٔ اول دنیاهای مهارت زندگی با `id` سنجیده می‌شود، نه با
-            // عنوان؛ عنوان قابل ویرایش است و نباید قفل محتوا را جابه‌جا کند.
+          if (topic == null) {
+            // دنیای ناشناخته → هابِ مهارت‌های زندگی، نه صفحهٔ خطا.
             return MaterialPageRoute(
               settings: settings,
-              builder: (_) => ContentAccessPolicy.isLifeSkillFree(topic.id)
-                  ? LifeSkillsGame(topic: topic)
-                  : GameAccessGate(
-                      gameName: topic.title,
-                      isFree: false,
-                      child: LifeSkillsGame(topic: topic),
-                    ),
+              builder: (_) => const LifeSkillsHubScreen(),
             );
           }
+          // نیمهٔ اول دنیاهای مهارت زندگی با `id` سنجیده می‌شود، نه با
+          // عنوان؛ عنوان قابل ویرایش است و نباید قفل محتوا را جابه‌جا کند.
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (_) => ContentAccessPolicy.isLifeSkillFree(topic.id)
+                ? LifeSkillsGame(topic: topic)
+                : GameAccessGate(
+                    gameName: topic.title,
+                    isFree: false,
+                    child: LifeSkillsGame(topic: topic),
+                  ),
+          );
         }
+        // 🌙 لالایی‌ها (/lullaby/<id>)
         if (name.startsWith('/lullaby/')) {
           final lullabyId = name.substring('/lullaby/'.length);
           final lullaby = LullabiesData.byId(lullabyId);
@@ -600,6 +661,12 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
                     ),
             );
           }
+          // شناسهٔ ناشناخته (لینکِ قدیمی یا مقدارِ ذخیره‌شده از نسخهٔ قبل)
+          // نباید به صفحهٔ «مسیر پیدا نشد» برسد؛ هابِ لالایی‌ها مقصدِ امن است.
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (_) => const LullabyHubScreen(),
+          );
         }
         // فاز ۲۲-۲۸: آکادمی‌های محتوایی (/academy/numbers, /academy/colors ...)
         if (name.startsWith('/academy/')) {

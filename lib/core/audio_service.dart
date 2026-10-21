@@ -290,6 +290,18 @@ class AudioService {
     await _playFromPool('$_sfxPath$name.wav', volume: volume);
   }
 
+  /// پخشِ صدای نت یا سازِ استودیوی موسیقی از استخرِ افکت‌ها.
+  ///
+  /// چرا از `playVoiceAsset` استفاده نمی‌کنیم؟ آن پخش‌کننده تک‌صدایی است و
+  /// لمسِ سریعِ چند کلید، نتِ قبلی را قطع می‌کند. استخرِ افکت هشت پخش‌کننده
+  /// دارد و اجازه می‌دهد چند نت/ضربه روی هم بنشینند — همان چیزی که یک
+  /// استودیوی موسیقی برای کودک باید داشته باشد.
+  static Future<void> playStudioAsset(
+    String assetPath, {
+    double volume = 0.68,
+  }) =>
+      _playFromPool(assetPath, volume: volume);
+
   static Future<void> tap() => playSfx('tap');
   static Future<void> click() => playSfx('click');
   static Future<void> select() => playSfx('select');

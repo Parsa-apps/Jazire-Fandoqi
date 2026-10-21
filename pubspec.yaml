@@ -103,6 +103,10 @@ flutter:
     - assets/audio/words/
     - assets/audio/learning/colors/
     - assets/audio/learning/shapes/
+    - assets/audio/studio/notes/
+    - assets/audio/studio/perc/
+    # پروانهٔ OFL فونت Amiri همراهِ خودِ فونت در بسته توزیع می‌شود.
+    - assets/fonts/OFL-Amiri.txt
     - assets/web/
 
   # فاز ۷ (تکمیل): فونت محلی آفلاین — fallback واقعی برای GoogleFonts
@@ -115,6 +119,11 @@ flutter:
           weight: 700
         - asset: assets/fonts/BalooBhaijaan2-ExtraBold.ttf
           weight: 800
+    # فونت نسخ برای متنِ عربیِ سوره‌ها؛ با مجوز OFL بسته شده است.
+    - family: Amiri
+      fonts:
+        - asset: assets/fonts/Amiri-Regular.ttf
+          weight: 400
     - family: Vazirmatn
       fonts:
         - asset: assets/fonts/Vazirmatn-Regular.ttf

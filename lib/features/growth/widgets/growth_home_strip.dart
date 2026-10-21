@@ -5,6 +5,7 @@ import '../../../app/app_fonts.dart';
 import '../../../app/design_tokens.dart';
 import '../../../core/audio_service.dart';
 import '../../../core/growth/growth.dart';
+import '../../../core/routing/app_routes.dart';
 
 /// نوار رشد روی داشبورد: ادامه بازی، چالش هفته، رویداد فصلی، اخیراً.
 class GrowthHomeStrip extends StatelessWidget {
@@ -14,19 +15,26 @@ class GrowthHomeStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final event = SeasonalEvents.current();
     final challenge = WeeklyEngine.currentChallenge();
-    final recents = ActivityTracker.recent.take(4).toList();
+    // فقط مسیرهایی نمایش داده می‌شوند که همین نسخه واقعاً می‌شناسد؛
+    // چیپِ مربوط به بخشِ حذف/تغییرنام‌یافته نباید به صفحهٔ «مسیر پیدا نشد»
+    // ببرد.
+    final recents = ActivityTracker.recent
+        .where((item) => AppRoutes.isKnown(item.$1))
+        .take(4)
+        .toList();
     final decay = ActivityTracker.skillDecayMessage();
+    final resumeRoute = AppRoutes.sanitize(GrowthStore.lastRoute) ?? '';
 
     return Column(
       children: [
-        if (GrowthStore.lastRoute.isNotEmpty) ...[
+        if (resumeRoute.isNotEmpty) ...[
           _card(
             context,
             emoji: '▶️',
             title: 'ادامه با فندقی',
             subtitle: GrowthStore.lastTitle.isEmpty ? 'آخرین بازی' : GrowthStore.lastTitle,
             color: const Color(0xFF6C5CE7),
-            onTap: () => Navigator.pushNamed(context, GrowthStore.lastRoute),
+            onTap: () => Navigator.pushNamed(context, resumeRoute),
           ),
           const SizedBox(height: 10),
         ],
