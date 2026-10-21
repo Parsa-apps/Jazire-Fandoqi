@@ -131,8 +131,19 @@ void main() {
     final chip = find.byKey(const ValueKey('living_island_map_chip'));
     await tester.ensureVisible(chip);
     await tester.pump();
+    final dbg = 'rect=${tester.getRect(chip)} center=${tester.getCenter(chip)} '
+        'size=${tester.getSize(chip)} view=${tester.view.physicalSize} '
+        'chips=${chip.evaluate().length} '
+        'inkwells=${find.byType(InkWell).evaluate().length}';
     await tester.tap(chip);
     await tester.pump(const Duration(milliseconds: 400));
+
+    // ── تشخیصیِ موقت (بعد از پیداکردنِ علت حذف می‌شود) ──
+    expect(
+      'DIAG $dbg AFTER_islandMapTab=${find.byType(IslandMapTab).evaluate().length} '
+      'exc=${tester.takeException()}',
+      equals('__DIAG__'),
+    );
 
     // ابتدا ثابت می‌کنیم ناوبری واقعاً انجام شده و خطایی رخ نداده است؛
     // اگر فقط برچسب‌ها بررسی شوند، علتِ واقعیِ شکست پنهان می‌ماند.
