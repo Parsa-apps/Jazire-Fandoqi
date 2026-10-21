@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/app_fonts.dart';
 import '../../core/growth/growth.dart';
 import '../../core/growth/whats_new.dart';
+import '../../core/routing/app_routes.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// 🎁 صفحه تازه‌های نسخه — طراحی پرمیوم، کارتی، انیمیشندار
@@ -59,7 +60,12 @@ class WhatsNewScreen extends StatelessWidget {
                         onPressed: () {
                           GrowthStore.markWhatsNewSeen();
                           if (nextRoute != null) {
-                            Navigator.pushReplacementNamed(context, nextRoute!);
+                            // مسیرِ نامعتبر (آرگومانِ خراب) نباید به صفحهٔ
+                            // «مسیر پیدا نشد» برسد؛ خانه مقصدِ امن است.
+                            Navigator.pushReplacementNamed(
+                              context,
+                              AppRoutes.resolveOrHome(nextRoute),
+                            );
                           } else {
                             Navigator.pop(context);
                           }
@@ -125,7 +131,10 @@ class WhatsNewScreen extends StatelessWidget {
                           onPressed: () {
                             GrowthStore.markWhatsNewSeen();
                             if (nextRoute != null) {
-                              Navigator.pushReplacementNamed(context, nextRoute!);
+                              Navigator.pushReplacementNamed(
+                                context,
+                                AppRoutes.resolveOrHome(nextRoute),
+                              );
                             } else {
                               Navigator.pop(context);
                             }

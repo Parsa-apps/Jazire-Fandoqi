@@ -258,6 +258,36 @@ class AboutScreen extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: 12),
+          // ⚖️ مجوز فونتِ قرآن (SIL OFL 1.1) و بسته‌های متن‌باز باید از داخل
+          // خودِ برنامه قابلِ خواندن باشند، نه فقط داخل فایلِ بسته.
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.gavel_rounded, color: AppColors.primary),
+              title: Text(
+                'حقوق و مجوزهای متن‌باز',
+                style: AppFonts.vazirmatn(fontWeight: FontWeight.w800),
+              ),
+              subtitle: const Text('فونت قرآن (Amiri) و کتابخانه‌های استفاده‌شده'),
+              trailing: const Icon(Icons.chevron_left_rounded),
+              onTap: () => showLicensePage(
+                context: context,
+                applicationName: AppLegal.productName,
+                applicationVersion:
+                    'نسخهٔ ${PersianDigits.toFa(GrowthStore.appVersion)}',
+                applicationLegalese:
+                    'ساختهٔ ${AppLegal.developerName}',
+                applicationIcon: const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Icon(
+                    Icons.auto_awesome_rounded,
+                    size: 40,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ),
+          ),
           const SizedBox(height: 16),
           // فاز ۷۶: ریتینگ هوشمند (فقط برای والدین — داخل پنل اطلاعات)
           Card(

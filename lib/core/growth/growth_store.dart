@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../data/datasources/hive_player_store.dart';
 import '../game_data.dart';
 import '../jalali_calendar.dart';
+import '../routing/app_routes.dart';
 
 /// وضعیت بسته رشد ۶.۲ — مستقل از GameData تا تست‌های قدیمی نشکنند.
 ///
@@ -213,11 +214,17 @@ class GrowthStore {
     colorBlindMode = asBool('colorBlindMode', false);
     focusMode = asBool('focusMode', false);
     dataSaver = asBool('dataSaver', false);
-    lastRoute = asStr('lastRoute', '');
+    // 🧭 مسیرهای ذخیره‌شده از نسخهٔ قبلی ممکن است دیگر وجود نداشته باشند
+    // (تغییر نام یا حذفِ یک بخش در آپدیت). اگر همان رشتهٔ قدیمی به
+    // Navigator داده شود، کودک به صفحهٔ «این مسیر در دسترس نیست» می‌رسد؛
+    // پس همان‌جا در هنگام خواندن، ناشناخته‌ها کنار گذاشته می‌شوند.
+    lastRoute = AppRoutes.sanitize(asStr('lastRoute', '')) ?? '';
     lastTitle = asStr('lastTitle', '');
     lastKind = asStr('lastKind', 'learning');
     lastCartoonId = asStr('lastCartoonId', '');
-    recentRoutes = asList('recentRoutes');
+    recentRoutes = asList('recentRoutes')
+        .where((raw) => AppRoutes.isKnown(raw.split('|').first))
+        .toList(growable: false);
     favoriteGames = asList('favoriteGames');
     dailyMinutes = asIntMap('dailyMinutes');
     learningMinutes = asIntMap('learningMinutes');

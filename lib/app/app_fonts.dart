@@ -81,6 +81,26 @@ class AppFonts {
     );
   }
 
+  /// 📖 فونتِ نسخِ قرآن (Amiri) — محلی و آفلاین.
+  ///
+  /// متنِ عربیِ سوره‌ها با این فونت رندر می‌شود؛ چون فایل داخل بسته است،
+  /// حتی بدون اینترنت هم شکلِ درستِ حروف حفظ می‌شود. خطِ بلندتر (height)
+  /// لازم است تا اعرابِ بالای حروف بریده نشود.
+  static TextStyle quran({
+    Color? color,
+    double fontSize = 22,
+    double height = 2.0,
+    FontWeight fontWeight = FontWeight.w400,
+  }) {
+    return TextStyle(
+      fontFamily: 'Amiri',
+      fontSize: fontSize,
+      height: height,
+      fontWeight: fontWeight,
+      color: color,
+    );
+  }
+
   static TextStyle balooBhaijaan2({
     TextStyle? textStyle,
     Color? color,
