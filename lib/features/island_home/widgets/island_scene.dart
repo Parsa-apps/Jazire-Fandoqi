@@ -4,6 +4,7 @@ import '../../../app/island_cinema_style.dart';
 import '../../../core/growth/growth_store.dart';
 import '../painters/island_atmosphere_painter.dart';
 import '../painters/island_land_painter.dart';
+import '../painters/island_living_overlay_painter.dart';
 import '../painters/island_sea_painter.dart';
 import '../painters/island_sky_painter.dart';
 
@@ -50,7 +51,6 @@ class _IslandSceneState extends State<IslandScene>
     final systemReduce =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     final next = systemReduce || GrowthStore.reduceMotion;
-    if (next == _reduceMotion) return;
     _reduceMotion = next;
     _syncAmbient();
   }
@@ -135,6 +135,20 @@ class _IslandSceneState extends State<IslandScene>
                   ) {
                     return const SizedBox.expand();
                   },
+                ),
+              ),
+            ),
+            // Above the opaque artwork, not hidden behind it. This painter
+            // listens directly to the clock without rebuilding its widget.
+            Positioned.fill(
+              child: IgnorePointer(
+                child: RepaintBoundary(
+                  child: CustomPaint(
+                    painter: IslandLivingOverlayPainter(
+                      animation: _ambient,
+                      reduceMotion: _reduceMotion,
+                    ),
+                  ),
                 ),
               ),
             ),
