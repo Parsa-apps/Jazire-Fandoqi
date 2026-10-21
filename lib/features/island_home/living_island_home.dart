@@ -9,14 +9,14 @@ import '../../core/game_data.dart';
 import '../../core/growth/growth_store.dart';
 import '../../core/growth/persian_digits.dart';
 import '../../core/learning/today_path.dart';
+import '../../core/monetization.dart';
 import '../../presentation/providers/game_state_provider.dart';
 import '../../shared/widgets/parent_pin_gate.dart';
 import '../../shared/widgets/today_complete_sheet.dart';
 import '../home/widgets/daily_gifts_dialog.dart';
 import '../home/widgets/island_map/island_map_tab.dart';
 import '../profile/profile_editor.dart';
-import '../shop/full_version_access_service.dart';
-import '../shop/full_version_paywall_sheet.dart';
+import '../shop/full_version_paywall.dart';
 import '../shop/full_version_purchase_entry.dart';
 import 'painters/path_icon_painter.dart';
 import 'widgets/fandoqi_hero.dart';
@@ -341,8 +341,7 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
   }) {
     final rawName = GameData.childName.trim();
     final displayName = rawName.isNotEmpty ? rawName : 'پارسا';
-    final isFullVerified =
-        FullVersionAccessService.instance.currentStatus.isVerified;
+    final isFullVerified = Monetization.accessStatus.value.isVerified;
     final btnSize = compact ? 32.0 : 35.0;
 
     return Padding(
@@ -494,7 +493,7 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
 
   /// کپسولِ شیشه‌ایِ شمارندهٔ ستاره‌ها (مطابقِ طرحِ مرجع `۲۵۰ ⭐`)
   Widget _buildStarCounterPill({required bool compact}) {
-    final stars = GameData.totalStars > 0 ? GameData.totalStars : 250;
+    final stars = GameData.stars > 0 ? GameData.stars : 250;
     return Container(
       height: compact ? 34 : 38,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
@@ -526,7 +525,7 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
           const Text('⭐', style: TextStyle(fontSize: 15)),
           const SizedBox(width: 4),
           Text(
-            stars.toFa(),
+            PersianDigits.toFa(stars),
             style: AppFonts.kids(
               fontSize: compact ? 13.5 : 15,
               fontWeight: FontWeight.w900,

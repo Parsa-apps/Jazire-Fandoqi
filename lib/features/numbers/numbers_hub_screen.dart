@@ -87,7 +87,7 @@ class _NumbersHubState extends State<NumbersHubScreen> {
   Future<void> _answerCountingQuiz(int chosen) async {
     HapticFeedback.mediumImpact();
     if (chosen == _quizTarget) {
-      GameData.addStar(count: 20, gameName: 'counting');
+      GameData.stars += 20;
       await showTodayCompleteSheet(context, bonusStars: 20);
       if (!mounted) return;
       setState(() {
@@ -188,7 +188,7 @@ class _NumbersHubState extends State<NumbersHubScreen> {
   }
 
   Widget _buildTopBar() {
-    final stars = GameData.totalStars > 0 ? GameData.totalStars : 120;
+    final stars = GameData.stars > 0 ? GameData.stars : 120;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
       child: Row(

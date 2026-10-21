@@ -175,7 +175,7 @@ class _RewardCelebrationCard extends StatelessWidget {
                       const Text('⭐', style: TextStyle(fontSize: 22)),
                       const SizedBox(width: 8),
                       Text(
-                        '+${bonusStars.toFa()}',
+                        '+${PersianDigits.toFa(bonusStars)}',
                         style: AppFonts.kids(
                           fontSize: 22,
                           fontWeight: FontWeight.w900,

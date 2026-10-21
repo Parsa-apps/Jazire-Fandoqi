@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../app/app_fonts.dart';
 import '../../core/audio_service.dart';
-import '../../shared/widgets/fandoghi_character_v2.dart';
+import '../../shared/widgets/fandoghi_premium.dart';
 import '../shop/full_version_purchase_entry.dart';
 
 /// 📚 صفحهٔ «دسته‌بندی‌ها» (کتابخانه و کوله‌پشتی یادگیری — مطابقِ طرحِ مرجع).
@@ -332,9 +332,10 @@ class LearningLibraryScreen extends StatelessWidget {
           SizedBox(
             width: compact ? 36 : 44,
             height: compact ? 36 : 44,
-            child: FandoghiCharacterV2.premium(
+            child: FandoghiPremium(
               size: compact ? 34 : 40,
               animated: !animationsDisabled,
+              showParticles: false,
             ),
           ),
           const SizedBox(width: 8),

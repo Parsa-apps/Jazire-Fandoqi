@@ -144,7 +144,7 @@ class SplashIslandPainter extends CustomPainter {
     canvas.drawRect(
       seaRect,
       Paint()
-        ..shader = LinearGradient(
+        ..shader = const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: <Color>[

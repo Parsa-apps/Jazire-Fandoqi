@@ -66,7 +66,7 @@ class _SplashBarPainter extends CustomPainter {
     if (w <= 0 || size.height <= 0) return;
     final top = (size.height - _trackHeight) / 2;
     final track = Rect.fromLTWH(0, top, w, _trackHeight);
-    final radius = const Radius.circular(_trackHeight / 2);
+    const radius = Radius.circular(_trackHeight / 2);
     final trackRRect = RRect.fromRectAndRadius(track, radius);
 
     // سایهٔ زیرِ کپسول
