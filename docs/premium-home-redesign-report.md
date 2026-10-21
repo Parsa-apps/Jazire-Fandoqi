@@ -243,7 +243,7 @@
 |---|---|
 | `5c52619` | `feat(island): living cinematic island home for non-reading children` — پیاده‌سازیِ صفحهٔ اصلی، نشانه‌های طراحی، اسپلشِ سینمایی، تست‌ها و ابزارِ دروازهٔ نحو |
 | `3a0aed3` | `fix(island): layout, lifecycle and motion bugs found in review` — رفعِ شش باگِ بازبینی (بخش ۵) |
-| (بعدی) | `docs:` به‌روزرسانیِ این گزارش با نتیجهٔ نهایی |
+| `3247ee2` | `docs:` ثبتِ هش‌های واقعی و نتیجهٔ نهاییِ بررسی‌ها |
 
 Push: انجام شد (`git push origin arena/0db08bb6-jazire-fandoqi`).
 هیچ `reset --hard`، force-push یا بازنویسیِ تاریخچه‌ای انجام نشد.
