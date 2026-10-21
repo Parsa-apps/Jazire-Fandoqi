@@ -181,9 +181,13 @@ void main() {
       await pumpHome(tester, size: viewport, padding: inset);
 
       final expected = IslandScene.bakedSquirrelRect(viewport);
+      final goalRect = tester.getRect(find.byType(DailyGoalCard));
+      final bubbleRect = tester.getRect(find.byType(FandoqiSpeechBubble));
       final actual = tester.getRect(find.byType(FandoqiHero));
       final startRect = tester.getRect(find.byType(PrimaryStartButton));
 
+      expect(goalRect.bottom, lessThan(bubbleRect.top));
+      expect(bubbleRect.bottom, lessThanOrEqualTo(actual.top));
       expect(actual.left, closeTo(expected.left.clamp(0.0, viewport.width), 1));
       expect(
         actual.right,
