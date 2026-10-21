@@ -237,16 +237,17 @@ void main() {
         );
         for (final region in page.regions) {
           expect(region.label.trim(), isNotEmpty, reason: page.id);
+          // Rect فقط isEmpty دارد؛ isNotEmpty روی آن وجود ندارد.
           expect(
-            region.buildPath(size).getBounds().isNotEmpty,
-            isTrue,
+            region.buildPath(size).getBounds().isEmpty,
+            isFalse,
             reason: '${page.id}/${region.id}: مسیرِ خالی',
           );
         }
         for (final detail in page.details) {
           expect(
-            detail.buildPath(size).getBounds().isNotEmpty,
-            isTrue,
+            detail.buildPath(size).getBounds().isEmpty,
+            isFalse,
             reason: '${page.id}: جزئیاتِ خالی',
           );
         }
