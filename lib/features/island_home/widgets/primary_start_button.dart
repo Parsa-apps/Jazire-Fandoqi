@@ -4,6 +4,13 @@ import '../../../app/app_fonts.dart';
 import '../../../app/island_cinema_style.dart';
 import 'island_3d_surface.dart';
 
+/// فاصله‌ها و اندازهٔ نشانِ پخش. ویجت و State هر دو از آن‌ها استفاده
+/// می‌کنند (برای چیدمان و برای محاسبهٔ عرضِ در-دسترسِ برچسب)، پس در سطحِ
+/// کتابخانه تعریف شده‌اند تا هرگز از هم جدا نیفتند.
+const double _hPad = 22;
+const double _iconBox = 46;
+const double _iconGap = 12;
+
 /// ▶️ بزرگ‌ترین و واضح‌ترین کنترلِ صفحهٔ اصلی.
 ///
 /// الزام‌هایی که این دکمه برآورده می‌کند:
@@ -22,12 +29,6 @@ class PrimaryStartButton extends StatefulWidget {
     this.enabled = true,
     this.maxWidth = double.infinity,
   });
-
-  /// فاصله‌ها و اندازهٔ نشان؛ برای محاسبهٔ عرضِ در-دسترسِ برچسب هم به کار
-  /// می‌روند، پس اینجا یک‌جا تعریف شده‌اند تا با هم ناهمخوان نشوند.
-  static const double _hPad = 22;
-  static const double _iconBox = 46;
-  static const double _iconGap = 12;
 
   final VoidCallback onTap;
   final String label;
