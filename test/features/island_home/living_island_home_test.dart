@@ -143,6 +143,8 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.byType(IslandMapTab), findsOneWidget);
+
+    await _disposeAnimatedTree(tester);
   });
 
   testWidgets('renders without overflow on a narrow 320x568 phone',
@@ -187,4 +189,14 @@ void main() {
     expect(find.bySemanticsLabel('تنظیمات والدین'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+}
+
+/// درخت‌های متحرک و تایمرِ مربیِ فندقی باید پیش از پایانِ تست جمع شوند؛
+/// در غیر این صورت flutter_test با «A Timer is still pending» شکست می‌خورد.
+/// (همان الگویِ app_smoke_test.dart)
+Future<void> _disposeAnimatedTree(WidgetTester tester) async {
+  await tester.pumpWidget(const SizedBox.shrink());
+  FandoghiCoach.cancelSmartHint();
+  FandoghiCoach.disablePersistentPresence();
+  await tester.pump(const Duration(seconds: 6));
 }
