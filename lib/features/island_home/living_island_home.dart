@@ -521,23 +521,35 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
     required bool compact,
   }) {
     final isFullVerified = Monetization.accessStatus.value.isVerified;
-    final btnSize = compact ? 32.0 : 35.0;
+    final tight = compact || width < 400;
+    final btnSize = tight ? 31.0 : 35.0;
 
     return Padding(
       // فاصلهٔ چپ برای تداخل‌نکردن با دکمهٔ صدایِ HomeScreen در گوشهٔ بالا-چپ
       padding: const EdgeInsetsDirectional.only(end: 42),
       child: Row(
         children: <Widget>[
-          Flexible(
-            child: _buildAvatarChip(
-              avatar: GameData.avatar,
-              displayName: displayName,
-              compact: compact,
+          Expanded(
+            child: Row(
+              children: <Widget>[
+                Flexible(
+                  child: _buildAvatarChip(
+                    avatar: GameData.avatar,
+                    displayName: displayName,
+                    compact: tight,
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: _buildStarCounterPill(compact: tight),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 6),
-          _buildStarCounterPill(compact: compact),
-          const Spacer(),
           if (!isFullVerified) ...<Widget>[
             _buildGlassCircleIcon(
               size: btnSize,
@@ -621,48 +633,54 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
                 ),
               ],
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Container(
-                  width: avatarSize,
-                  height: avatarSize,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: <Color>[Color(0xFFFFEE58), Color(0xFFFF8F00)],
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Container(
+                    width: avatarSize,
+                    height: avatarSize,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const LinearGradient(
+                        colors: <Color>[Color(0xFFFFEE58), Color(0xFFFF8F00)],
+                      ),
+                      border: Border.all(color: Colors.white, width: 1.5),
                     ),
-                    border: Border.all(color: Colors.white, width: 1.5),
-                  ),
-                  child: ClipOval(
-                    child: Image.asset(
-                      isAssetPath
-                          ? trimmed
-                          : 'assets/theme_v2/squirrel_hero.webp',
-                      fit: BoxFit.cover,
-                      excludeFromSemantics: true,
-                      errorBuilder: (_, __, ___) => Image.asset(
-                        'assets/theme_v2/squirrel_hero.webp',
+                    child: ClipOval(
+                      child: Image.asset(
+                        isAssetPath
+                            ? trimmed
+                            : 'assets/theme_v2/squirrel_hero.webp',
                         fit: BoxFit.cover,
                         excludeFromSemantics: true,
+                        errorBuilder: (_, __, ___) => Image.asset(
+                          'assets/theme_v2/squirrel_hero.webp',
+                          fit: BoxFit.cover,
+                          excludeFromSemantics: true,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    displayName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppFonts.kids(
-                      fontSize: compact ? 13 : 14.5,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                  const SizedBox(width: 6),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: compact ? 76 : 104,
+                    ),
+                    child: Text(
+                      displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppFonts.kids(
+                        fontSize: compact ? 13 : 14.5,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

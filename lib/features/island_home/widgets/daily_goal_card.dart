@@ -123,14 +123,17 @@ class DailyGoalCard extends StatelessWidget {
                     children: <Widget>[
                       Row(
                         children: <Widget>[
-                          Text(
-                            'هدف امروز:',
-                            maxLines: 1,
-                            style: AppFonts.kids(
-                              fontSize: compact ? 11.5 : 12.5,
-                              fontWeight: FontWeight.w800,
-                              color: const Color(0xFFFFF59D),
-                              height: 1.1,
+                          Flexible(
+                            child: Text(
+                              'هدف امروز:',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppFonts.kids(
+                                fontSize: compact ? 11.5 : 12.5,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFFFFF59D),
+                                height: 1.1,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 5),

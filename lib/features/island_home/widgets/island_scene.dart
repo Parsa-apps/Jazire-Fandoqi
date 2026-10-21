@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../../app/island_cinema_style.dart';
@@ -38,6 +40,22 @@ class IslandScene extends StatefulWidget {
   /// مختصاتِ افقیِ نرمال‌شدهٔ مرکزِ سرِ سنجاب در `home_scene.webp` (بینِ دو گوش).
   static const double bakedSquirrelHeadNormalizedX = 0.492;
 
+  static Rect _coverDestinationRect(
+    Size sceneSize, {
+    Alignment alignment = Alignment.center,
+  }) {
+    final scale = math.max(
+      sceneSize.width / homeSceneImageSize.width,
+      sceneSize.height / homeSceneImageSize.height,
+    );
+    final renderedWidth = homeSceneImageSize.width * scale;
+    final renderedHeight = homeSceneImageSize.height * scale;
+    final left = (sceneSize.width - renderedWidth) * (alignment.x + 1.0) * 0.5;
+    final top =
+        (sceneSize.height - renderedHeight) * (alignment.y + 1.0) * 0.5;
+    return Rect.fromLTWH(left, top, renderedWidth, renderedHeight);
+  }
+
   /// نگاشتِ یک مستطیلِ نرمال‌شده در فضایِ `home_scene.webp` به مختصاتِ واقعیِ صحنه
   /// دقیقاً مطابقِ `BoxFit.cover` و `Alignment.center`.
   static Rect projectNormalizedRect(
@@ -46,11 +64,7 @@ class IslandScene extends StatefulWidget {
     Alignment alignment = Alignment.center,
   }) {
     if (sceneSize.isEmpty) return Rect.zero;
-    final fitted = applyBoxFit(BoxFit.cover, homeSceneImageSize, sceneSize);
-    final dest = alignment.inscribe(
-      fitted.destination,
-      Offset.zero & sceneSize,
-    );
+    final dest = _coverDestinationRect(sceneSize, alignment: alignment);
     return Rect.fromLTRB(
       dest.left + dest.width * normalizedRect.left,
       dest.top + dest.height * normalizedRect.top,
@@ -66,11 +80,7 @@ class IslandScene extends StatefulWidget {
   /// مختصاتِ افقیِ مرکزِ سرِ سنجاب روی صحنه در ابعادِ فعلیِ نما.
   static double bakedSquirrelHeadX(Size sceneSize) {
     if (sceneSize.isEmpty) return 0;
-    final fitted = applyBoxFit(BoxFit.cover, homeSceneImageSize, sceneSize);
-    final dest = Alignment.center.inscribe(
-      fitted.destination,
-      Offset.zero & sceneSize,
-    );
+    final dest = _coverDestinationRect(sceneSize);
     return dest.left + dest.width * bakedSquirrelHeadNormalizedX;
   }
 

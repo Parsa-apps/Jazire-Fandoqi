@@ -64,6 +64,7 @@ void main() {
               const Text('library route'),
           '/stories': (BuildContext context) => const Text('stories route'),
           '/alphabet': (BuildContext context) => const Text('alphabet route'),
+          '/math/add': (BuildContext context) => const Text('math route'),
           '/parent': (BuildContext context) => const Text('parent route'),
         },
       ),
@@ -155,6 +156,12 @@ void main() {
     await pumpHome(tester);
 
     expect(find.text('۱ از ۴'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('living_island_daily_goal_card')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('math route'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -310,15 +317,6 @@ void main() {
 
   testWidgets('renders without overflow on a narrow 320x568 phone',
       (WidgetTester tester) async {
-    final originalOnError = FlutterError.onError;
-    FlutterError.onError = (FlutterErrorDetails details) {
-      final text = details.toString();
-      final isRenderFlexOverflow = text.contains('RenderFlex overflowed') ||
-          (text.contains('overflowed by') && text.contains('pixels'));
-      if (!isRenderFlexOverflow) originalOnError?.call(details);
-    };
-    addTearDown(() => FlutterError.onError = originalOnError);
-
     await pumpHome(tester, size: const Size(320, 568));
 
     expect(find.text('شروع بازی'), findsOneWidget);
