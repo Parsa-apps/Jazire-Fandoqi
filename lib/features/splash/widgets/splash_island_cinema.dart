@@ -5,17 +5,11 @@ import 'package:flutter/material.dart';
 import '../../../app/island_cinema_style.dart';
 
 /// ═══════════════════════════════════════════════════════════════
-/// 🌅 لایهٔ سینماییِ اسپلش — بیدارشدنِ جزیره
+/// 🌅 لایهٔ سینماییِ اسپلش — دنیای سه‌بعدیِ جزیره فندقی
 ///
-/// ترتیبِ نمایش (هم‌زمان و نه پشتِ‌سرِهم، تا اسپلش کش نیاید):
-///   ۱. تاریکیِ آرام و نورِ کنترل‌شده؛
-///   ۲. خورشید از پشتِ خط‌الرأس بالا می‌آید و آب جان می‌گیرد؛
-///   ۳. فندقی از پشتِ برگِ گوشهٔ راست وارد می‌شود؛
-///   ۴. همه‌چیز در انتقالِ بعدی نرم محو می‌شود.
-///
-/// این لایه هیچ تصمیمی دربارهٔ آماده‌بودنِ برنامه نمی‌گیرد: نوارِ
-/// پیشرفت و منطقِ خروج همان [StartupCoordinator] است و دست‌نخورده
-/// مانده. فقط «صحنه» اینجا اضافه شده است.
+/// تصویرِ سه‌بعدیِ جزیره و سنجابِ فندقی روی صخرهٔ خزه‌دار را به‌همراه
+/// ذراتِ نورِ طلایی و سایه‌روشنِ پایینِ قاب (برای خواناییِ نوارِ پیشرفت)
+/// نمایش می‌دهد.
 /// ═══════════════════════════════════════════════════════════════
 class SplashIslandCinema extends StatelessWidget {
   const SplashIslandCinema({
@@ -25,13 +19,11 @@ class SplashIslandCinema extends StatelessWidget {
     required this.reduceMotion,
   });
 
-  /// پیشرفتِ ورودِ اسپلش (۰ تا ۱)
   final Animation<double> master;
-
-  /// چرخهٔ آرامِ محیط (برای موج و برگ)
   final Animation<double> ambient;
-
   final bool reduceMotion;
+
+  static const String splashSceneAsset = 'assets/theme_v2/splash_scene.webp';
 
   @override
   Widget build(BuildContext context) {
@@ -40,32 +32,62 @@ class SplashIslandCinema extends StatelessWidget {
         animation: Listenable.merge(<Listenable>[master, ambient]),
         builder: (BuildContext context, Widget? _) {
           final wake = Curves.easeOutCubic.transform(
-            ((master.value - 0.12) / 0.62).clamp(0.0, 1.0),
+            master.value.clamp(0.0, 1.0),
           );
-          final heroIn = Curves.easeOutBack.transform(
-            ((master.value - 0.30) / 0.55).clamp(0.0, 1.0),
-          ).clamp(0.0, 1.0);
+          final phase = reduceMotion ? 0.25 : ambient.value;
+          final scale = reduceMotion ? 1.0 : (1.03 - 0.03 * wake);
 
           return Stack(
             fit: StackFit.expand,
             children: <Widget>[
+              // لایهٔ پشتیبانِ برداری در صورتِ عدمِ بارگذاریِ تصویر در محیطِ تست
               CustomPaint(
-                painter: SplashIslandPainter(
-                  wake: wake,
-                  ambient: reduceMotion ? 0.25 : ambient.value,
-                ),
+                painter: SplashIslandPainter(wake: wake, ambient: phase),
                 size: Size.infinite,
               ),
-              _PeekingFandoqi(
-                progress: heroIn,
-                ambient: reduceMotion ? 0.25 : ambient.value,
-              ),
-              CustomPaint(
-                painter: SplashLeafPainter(
-                  reveal: heroIn,
-                  ambient: reduceMotion ? 0.25 : ambient.value,
+              // تصویرِ سه‌بعدیِ اصلیِ اسپلش (جزیره + آبشار + سنجابِ فندقی روی صخره)
+              Transform.scale(
+                scale: scale,
+                child: Image.asset(
+                  splashSceneAsset,
+                  fit: BoxFit.cover,
+                  alignment: Alignment.center,
+                  filterQuality: FilterQuality.medium,
+                  excludeFromSemantics: true,
+                  errorBuilder: (
+                    BuildContext context,
+                    Object error,
+                    StackTrace? stack,
+                  ) {
+                    return const SizedBox.expand();
+                  },
                 ),
+              ),
+              // ذراتِ درخشانِ جادویی روی منظرهٔ جزیره
+              CustomPaint(
+                painter: SplashLeafPainter(reveal: wake, ambient: phase),
                 size: Size.infinite,
+              ),
+              // سایه‌روشنِ نرمِ پایینِ صفحه برای خواناییِ کاملِ نوارِ پیشرفتِ سبز
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: 190,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: <Color>[
+                        Colors.transparent,
+                        const Color(0xFF041A18).withOpacity(0.55),
+                        const Color(0xFF031314).withOpacity(0.82),
+                      ],
+                      stops: const <double>[0.0, 0.55, 1.0],
+                    ),
+                  ),
+                ),
               ),
             ],
           );
@@ -75,73 +97,11 @@ class SplashIslandCinema extends StatelessWidget {
   }
 }
 
-/// 🐿️ فندقی که از پشتِ برگِ گوشهٔ راست بیرون می‌آید.
-class _PeekingFandoqi extends StatelessWidget {
-  const _PeekingFandoqi({required this.progress, required this.ambient});
-
-  final double progress;
-  final double ambient;
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.maybeOf(context)?.size;
-    final heroSize = math
-        .min((size?.width ?? 360) * 0.42, (size?.height ?? 720) * 0.24)
-        .clamp(96.0, 210.0);
-    final dpr = MediaQuery.maybeOf(context)?.devicePixelRatio ?? 1.0;
-
-    // از پایین-راست می‌آید و کمی می‌چرخد
-    final dx = (1 - progress) * heroSize * 1.05;
-    final dy = (1 - progress) * heroSize * 0.30;
-    final bob = math.sin(ambient * 2 * math.pi) * heroSize * 0.012;
-
-    return PositionedDirectional(
-      end: -heroSize * 0.10,
-      bottom: heroSize * 0.10,
-      child: IgnorePointer(
-        child: Opacity(
-          opacity: progress.clamp(0.0, 1.0),
-          child: Transform.translate(
-            offset: Offset(dx, dy + bob),
-            child: Transform.rotate(
-              angle: (1 - progress) * 0.35,
-              child: Image.asset(
-                'assets/mascot/fandoghi_wave_v2.webp',
-                width: heroSize,
-                height: heroSize,
-                fit: BoxFit.contain,
-                filterQuality: FilterQuality.medium,
-                cacheWidth: (heroSize * dpr).round().clamp(96, 512),
-                excludeFromSemantics: true,
-                errorBuilder: (BuildContext context, Object error,
-                    StackTrace? stack) {
-                  return SizedBox(
-                    width: heroSize,
-                    height: heroSize,
-                    child: Center(
-                      child: Text(
-                        '🌰',
-                        style: TextStyle(fontSize: heroSize * 0.55),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// 🏝️ سپیده‌دمِ جزیره: آب، خط‌الرأس و خورشیدِ در حالِ طلوع
+/// 🏝️ نقاشِ پشتیبانِ سپیده‌دمِ جزیره
 class SplashIslandPainter extends CustomPainter {
   const SplashIslandPainter({required this.wake, required this.ambient});
 
-  /// ۰ = شبِ آرام، ۱ = روزِ کامل
   final double wake;
-
   final double ambient;
 
   @override
@@ -152,7 +112,6 @@ class SplashIslandPainter extends CustomPainter {
     final h = size.height;
     final horizon = h * 0.60;
 
-    // ── آسمان: از شب به سپیده ──
     final skyRect = Rect.fromLTWH(0, 0, w, horizon + 1);
     canvas.drawRect(
       skyRect,
@@ -162,17 +121,17 @@ class SplashIslandPainter extends CustomPainter {
           end: Alignment.bottomCenter,
           colors: <Color>[
             Color.lerp(
-              const Color(0xFF0A1B33),
+              const Color(0xFF0D47A1),
               IslandCinemaPalette.skyHigh,
               wake,
             )!,
             Color.lerp(
-              const Color(0xFF123A5C),
+              const Color(0xFF1976D2),
               IslandCinemaPalette.skyMid,
               wake,
             )!,
             Color.lerp(
-              const Color(0xFF2A5A78),
+              const Color(0xFF4FC3F7),
               IslandCinemaPalette.skyLow,
               wake,
             )!,
@@ -181,131 +140,18 @@ class SplashIslandPainter extends CustomPainter {
         ).createShader(skyRect),
     );
 
-    // ── خورشیدِ در حالِ طلوع ──
-    final sunY = horizon - h * (0.02 + 0.13 * wake);
-    final sunX = w * 0.66;
-    final sunR = math.min(w, h) * 0.058;
-    canvas.drawCircle(
-      Offset(sunX, sunY),
-      sunR * (3.0 + wake * 1.4),
-      Paint()
-        ..shader = RadialGradient(
-          colors: <Color>[
-            IslandCinemaPalette.sunGlow.withOpacity(0.10 + 0.24 * wake),
-            Colors.transparent,
-          ],
-        ).createShader(
-          Rect.fromCircle(
-            center: Offset(sunX, sunY),
-            radius: sunR * (3.0 + wake * 1.4),
-          ),
-        ),
-    );
-    canvas.drawCircle(
-      Offset(sunX, sunY),
-      sunR,
-      Paint()
-        ..color = Color.lerp(
-          IslandCinemaPalette.sunCore.withOpacity(0.55),
-          IslandCinemaPalette.sunCore,
-          wake,
-        )!,
-    );
-
-    // ── دریا ──
     final seaRect = Rect.fromLTWH(0, horizon, w, h - horizon);
     canvas.drawRect(
       seaRect,
       Paint()
-        ..shader = LinearGradient(
+        ..shader = const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: <Color>[
-            Color.lerp(
-              const Color(0xFF0B2A44),
-              IslandCinemaPalette.seaMid,
-              wake,
-            )!,
-            Color.lerp(
-              const Color(0xFF04172A),
-              IslandCinemaPalette.seaDeep,
-              wake,
-            )!,
+            IslandCinemaPalette.seaMid,
+            IslandCinemaPalette.seaDeep,
           ],
         ).createShader(seaRect),
-    );
-
-    // موج‌های بیدارشونده
-    final wavePaint = Paint()
-      ..color = IslandCinemaPalette.foam.withOpacity(0.06 + 0.16 * wake)
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = math.max(1.0, h * 0.0022);
-    for (var i = 0; i < 5; i++) {
-      final t = i / 4;
-      final y = horizon + (h - horizon) * (0.06 + t * 0.5);
-      final amp = h * 0.004 * (1 + t);
-      final drift = ambient * w * 0.5;
-      final path = Path();
-      path.moveTo(-w * 0.1, y);
-      for (var x = -w * 0.1; x <= w * 1.1; x += w / 14) {
-        path.lineTo(x, y + math.sin((x + drift) / (w * 0.42) * 2 * math.pi) * amp);
-      }
-      canvas.drawPath(path, wavePaint);
-    }
-
-    // ── خط‌الرأسِ جزیره (سیلوئت) ──
-    final ridge = Path()
-      ..moveTo(-w * 0.05, horizon)
-      ..quadraticBezierTo(w * 0.10, horizon - h * 0.115, w * 0.26, horizon - h * 0.045)
-      ..quadraticBezierTo(w * 0.38, horizon - h * 0.008, w * 0.50, horizon - h * 0.095)
-      ..quadraticBezierTo(w * 0.66, horizon - h * 0.180, w * 0.80, horizon - h * 0.055)
-      ..quadraticBezierTo(w * 0.92, horizon - h * 0.012, w * 1.05, horizon - h * 0.075)
-      ..lineTo(w * 1.05, horizon)
-      ..close();
-    canvas.drawPath(
-      ridge,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: <Color>[
-            Color.lerp(
-              const Color(0xFF04121F),
-              IslandCinemaPalette.forestDeep,
-              wake,
-            )!,
-            Color.lerp(
-              const Color(0xFF020A12),
-              const Color(0xFF0B3A2C),
-              wake,
-            )!,
-          ],
-        ).createShader(
-          Rect.fromLTWH(0, horizon - h * 0.19, w, h * 0.20),
-        ),
-    );
-
-    // هالهٔ گرمِ پشتِ خط‌الرأس (طلوع)
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(sunX, horizon - h * 0.02),
-        width: w * 0.55,
-        height: h * 0.09,
-      ),
-      Paint()
-        ..shader = RadialGradient(
-          colors: <Color>[
-            IslandCinemaPalette.sunHalo.withOpacity(0.30 * wake),
-            Colors.transparent,
-          ],
-        ).createShader(
-          Rect.fromCenter(
-            center: Offset(sunX, horizon - h * 0.02),
-            width: w * 0.55,
-            height: h * 0.09,
-          ),
-        ),
     );
   }
 
@@ -315,7 +161,7 @@ class SplashIslandPainter extends CustomPainter {
   }
 }
 
-/// 🍃 خوشهٔ برگِ گوشهٔ راست که فندقی از پشتش بیرون می‌آید
+/// ✨ ذراتِ طلاییِ نرم در فضایِ اسپلش
 class SplashLeafPainter extends CustomPainter {
   const SplashLeafPainter({required this.reveal, required this.ambient});
 
@@ -326,43 +172,22 @@ class SplashLeafPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (size.width <= 0 || size.height <= 0) return;
 
-    final unit = math.min(size.width, size.height) * 0.30;
-    final sway = math.sin(ambient * 2 * math.pi) * 0.022;
-    // با ورودِ فندقی، برگ کمی عقب می‌رود تا راه باز شود
-    final shift = reveal * unit * 0.10;
+    final paint = Paint()..style = PaintingStyle.fill;
+    for (var i = 0; i < 10; i++) {
+      final seed = i * 1.37;
+      final x = size.width * (0.12 + 0.76 * ((math.sin(seed * 2.1) + 1) * 0.5));
+      final baseY =
+          size.height * (0.18 + 0.52 * ((math.cos(seed * 1.7) + 1) * 0.5));
+      final driftY = math.sin(ambient * 2 * math.pi + seed) * 8.0;
+      final pulse =
+          0.35 + 0.65 * (0.5 + 0.5 * math.sin(ambient * 2 * math.pi + i));
+      final radius = (1.8 + (i % 3) * 1.1) * reveal;
 
-    canvas.save();
-    canvas.translate(size.width + unit * 0.10 + shift, size.height + unit * 0.06);
-    canvas.rotate(math.pi * 0.78 + sway);
-
-    final paint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: <Color>[
-          IslandCinemaPalette.forestDeep.withOpacity(0.92),
-          const Color(0xFF04121B).withOpacity(0.96),
-        ],
-      ).createShader(Rect.fromLTWH(0, -unit * 0.6, unit, unit * 1.2));
-
-    canvas.drawPath(
-      Path()
-        ..moveTo(0, 0)
-        ..quadraticBezierTo(unit * 0.55, -unit * 0.42, unit, -unit * 0.10)
-        ..quadraticBezierTo(unit * 0.52, unit * 0.42, 0, 0)
-        ..close(),
-      paint,
-    );
-    // یک برگِ کوچک‌تر برای پُریِ خوشه
-    canvas.drawPath(
-      Path()
-        ..moveTo(0, 0)
-        ..quadraticBezierTo(unit * 0.40, -unit * 0.62, unit * 0.72, -unit * 0.36)
-        ..quadraticBezierTo(unit * 0.38, unit * 0.10, 0, 0)
-        ..close(),
-      paint,
-    );
-    canvas.restore();
+      paint.color = const Color(0xFFFFF59D).withOpacity(0.22 * pulse * reveal);
+      canvas.drawCircle(Offset(x, baseY + driftY), radius * 2.4, paint);
+      paint.color = Colors.white.withOpacity(0.65 * pulse * reveal);
+      canvas.drawCircle(Offset(x, baseY + driftY), radius * 0.9, paint);
+    }
   }
 
   @override

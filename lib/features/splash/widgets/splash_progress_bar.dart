@@ -2,15 +2,11 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
-import '../../../app/parsa_brand.dart';
-
 /// ─────────────────────────────────────────────────────────────
-/// ▰ نوار پیشرفت اسپلش
+/// ▰ نوار پیشرفت سه‌بعدیِ سبز (طرحِ اصلی جزیره فندقی)
 ///
-/// ریلِ تیرهٔ شفاف، خطِ آبی نئونی با درخشش کنترل‌شده، عبور نور روی
-/// خط، گوشه‌های کاملِ گرد و نوکِ طلایی وقتی کار تمام شده است.
-/// درصدِ نمایش‌داده‌شده همان پیشرفتِ واقعیِ [progress] است؛ تا وقتی
-/// هیچ مرحله‌ای تمام نشده، به‌جای عددِ الکی حالت نامعین نشان می‌دهد.
+/// ریلِ کپسولیِ تیره با کادرِ سفیدِ براق و پرشدگیِ سبزِ زمردی-فسفریِ
+/// سه‌بعدی به همراهِ بازتابِ نورِ بالایی.
 /// ─────────────────────────────────────────────────────────────
 class SplashProgressBar extends StatelessWidget {
   const SplashProgressBar({
@@ -21,12 +17,9 @@ class SplashProgressBar extends StatelessWidget {
     required this.shimmer,
   });
 
-  /// پیشرفت واقعی، ۰ تا ۱.
   final double progress;
   final bool indeterminate;
   final bool ready;
-
-  /// انیمیشن آرامِ عبور نور روی خط؛ بوم با آن دوباره رنگ می‌شود.
   final Animation<double> shimmer;
 
   @override
@@ -34,7 +27,7 @@ class SplashProgressBar extends StatelessWidget {
     final rtl = Directionality.of(context) == TextDirection.rtl;
     return RepaintBoundary(
       child: SizedBox(
-        height: 14,
+        height: 22,
         child: CustomPaint(
           size: Size.infinite,
           painter: _SplashBarPainter(
@@ -65,178 +58,144 @@ class _SplashBarPainter extends CustomPainter {
   final bool rtl;
   final Animation<double> shimmer;
 
-  static const double _trackHeight = 4.0;
+  static const double _trackHeight = 18.0;
 
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width;
-    if (w <= 0) return;
+    if (w <= 0 || size.height <= 0) return;
     final top = (size.height - _trackHeight) / 2;
     final track = Rect.fromLTWH(0, top, w, _trackHeight);
-    final trackRRect = RRect.fromRectAndRadius(
-      track,
-      const Radius.circular(_trackHeight / 2),
+    const radius = Radius.circular(_trackHeight / 2);
+    final trackRRect = RRect.fromRectAndRadius(track, radius);
+
+    // سایهٔ زیرِ کپسول
+    canvas.drawRRect(
+      trackRRect.shift(const Offset(0, 2)),
+      Paint()..color = Colors.black.withOpacity(0.42),
     );
 
-    // ── ریل تیره و شفاف ──
+    // ریلِ تیرهٔ نیمه‌شفاف
     canvas.drawRRect(
       trackRRect,
-      Paint()..color = Colors.white.withOpacity(0.065),
+      Paint()..color = const Color(0xAA08261E),
     );
+
+    final phase = (shimmer.value * 2) % 1.0;
+    final inner = track.deflate(2.0);
+    final fill = _fillRect(inner, phase);
+
+    if (fill != null) {
+      _paintFill(canvas, inner, fill, phase);
+    } else {
+      _paintIndeterminate(canvas, inner, phase);
+    }
+
+    // کادرِ سفیدِ براقِ دورِ ریل (مطابق طرحِ مرجع)
     canvas.drawRRect(
       trackRRect,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.8
-        ..color = Colors.white.withOpacity(0.055),
+        ..strokeWidth = 1.8
+        ..color = Colors.white.withOpacity(0.92),
     );
-    // خط تیرهٔ نازک زیر ریل، برای حس فرورفتگی.
-    canvas.drawLine(
-      Offset(4, track.bottom - 0.4),
-      Offset(w - 4, track.bottom - 0.4),
-      Paint()..color = Colors.black.withOpacity(0.5),
-    );
-
-    final phase = (shimmer.value * 2) % 1.0;
-    final fill = _fillRect(w, top);
-
-    if (fill != null) {
-      _paintFill(canvas, fill, phase);
-    } else {
-      _paintIndeterminate(canvas, w, top, phase);
-    }
   }
 
-  Rect? _fillRect(double w, double top) {
+  Rect? _fillRect(Rect inner, double phase) {
     if (indeterminate) return null;
-    final width = (w * progress).clamp(0.0, w).toDouble();
+    final width = (inner.width * progress).clamp(0.0, inner.width).toDouble();
     if (width <= 0) return null;
     return rtl
-        ? Rect.fromLTWH(w - width, top, width, _trackHeight)
-        : Rect.fromLTWH(0, top, width, _trackHeight);
+        ? Rect.fromLTWH(inner.right - width, inner.top, width, inner.height)
+        : Rect.fromLTWH(inner.left, inner.top, width, inner.height);
   }
 
-  void _paintFill(Canvas canvas, Rect fill, double phase) {
+  void _paintFill(Canvas canvas, Rect inner, Rect fill, double phase) {
     final rrect = RRect.fromRectAndRadius(
       fill,
-      const Radius.circular(_trackHeight / 2),
+      Radius.circular(inner.height / 2),
     );
 
-    // درخشش نئونی کنترل‌شده دور خط (بدون blur سنگین؛ چند لایهٔ محو).
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        fill.inflate(1.6),
-        const Radius.circular(_trackHeight),
-      ),
-      Paint()..color = ParsaBrand.neonBlue.withOpacity(0.10),
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        fill.inflate(0.8),
-        const Radius.circular(_trackHeight),
-      ),
-      Paint()..color = ParsaBrand.iceBlue.withOpacity(0.18),
+    canvas.save();
+    canvas.clipRRect(
+      RRect.fromRectAndRadius(inner, Radius.circular(inner.height / 2)),
     );
 
+    // گرادیانِ سه‌بعدیِ سبزِ درخشان
     final gradient = ui.Gradient.linear(
-      rtl ? Offset(fill.right, 0) : Offset(fill.left, 0),
-      rtl ? Offset(fill.left, 0) : Offset(fill.right, 0),
-      <Color>[
-        ParsaBrand.electricBlue,
-        ParsaBrand.neonBlue,
-        ParsaBrand.iceBlue,
+      Offset(fill.left, fill.top),
+      Offset(fill.left, fill.bottom),
+      const <Color>[
+        Color(0xFFB4FF4A),
+        Color(0xFF3AE360),
+        Color(0xFF14A847),
       ],
-      const <double>[0.0, 0.55, 1.0],
+      const <double>[0.0, 0.52, 1.0],
     );
     canvas.drawRRect(rrect, Paint()..shader = gradient);
 
-    // عبور نورِ محو روی خط، فقط داخل خط.
-    canvas.save();
-    canvas.clipRRect(rrect);
-    final bandWidth = fill.width.clamp(28.0, 72.0).toDouble();
+    // نوارِ هایلایتِ شیشه‌ایِ بالا
+    final highlightRect = Rect.fromLTWH(
+      fill.left + 3,
+      fill.top + 1.5,
+      (fill.width - 6).clamp(0.0, fill.width),
+      fill.height * 0.36,
+    );
+    if (highlightRect.width > 0) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          highlightRect,
+          Radius.circular(highlightRect.height / 2),
+        ),
+        Paint()..color = Colors.white.withOpacity(0.42),
+      );
+    }
+
+    // عبورِ موجِ نور روی نوارِ سبز
+    final bandWidth = fill.width.clamp(24.0, 64.0).toDouble();
     final travel = fill.width + bandWidth * 2;
     final x = rtl
         ? fill.right - (travel * phase)
         : fill.left - bandWidth + travel * phase;
-    final band = Rect.fromLTWH(x, fill.top - 1, bandWidth, fill.height + 2);
+    final band = Rect.fromLTWH(x, fill.top, bandWidth, fill.height);
     canvas.drawRect(
       band,
       Paint()
         ..shader = LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
           colors: <Color>[
             Colors.transparent,
-            Colors.white.withOpacity(0.5),
+            Colors.white.withOpacity(0.38),
             Colors.transparent,
           ],
           stops: const <double>[0.0, 0.5, 1.0],
         ).createShader(band),
     );
+
     canvas.restore();
-
-    // نوکِ روشن — نشانهٔ لحظهٔ فعلی.
-    final headX = rtl ? fill.left : fill.right;
-    final head = Offset(headX, fill.center.dy);
-    canvas.drawCircle(
-      head,
-      9,
-      Paint()
-        ..shader = ui.Gradient.radial(
-          head,
-          9,
-          <Color>[
-            ParsaBrand.iceBlue.withOpacity(0.45),
-            ParsaBrand.neonBlue.withOpacity(0.12),
-            Colors.transparent,
-          ],
-          const <double>[0.0, 0.45, 1.0],
-        ),
-    );
-    canvas.drawCircle(
-      head,
-      1.6,
-      Paint()..color = ParsaBrand.silver.withOpacity(0.95),
-    );
-
-    // پایانِ کار: نوک طلایی، هم‌رنگ تاجِ لوگو.
-    if (ready) {
-      final cap = RRect.fromRectAndRadius(
-        Rect.fromCenter(center: head, width: 2.4, height: 9),
-        const Radius.circular(2),
-      );
-      canvas.drawRRect(
-        cap.inflate(1.2),
-        Paint()..color = ParsaBrand.gold.withOpacity(0.20),
-      );
-      canvas.drawRRect(cap, Paint()..color = ParsaBrand.brightGold);
-    }
   }
 
-  void _paintIndeterminate(Canvas canvas, double w, double top, double phase) {
-    final bandWidth = w * 0.34;
-    final travel = w + bandWidth;
-    final x = rtl ? w - travel * phase : -bandWidth + travel * phase;
-    final rect = Rect.fromLTWH(x, top, bandWidth, _trackHeight);
+  void _paintIndeterminate(Canvas canvas, Rect inner, double phase) {
+    final bandWidth = inner.width * 0.38;
+    final travel = inner.width + bandWidth;
+    final x = rtl
+        ? inner.right - travel * phase
+        : inner.left - bandWidth + travel * phase;
+    final rect = Rect.fromLTWH(x, inner.top, bandWidth, inner.height);
     canvas.save();
     canvas.clipRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(0, top, w, _trackHeight),
-        const Radius.circular(_trackHeight / 2),
-      ),
+      RRect.fromRectAndRadius(inner, Radius.circular(inner.height / 2)),
     );
-    canvas.drawRect(
-      rect,
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, Radius.circular(inner.height / 2)),
       Paint()
-        ..shader = LinearGradient(
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
           colors: <Color>[
-            Colors.transparent,
-            ParsaBrand.neonBlue.withOpacity(0.35),
-            ParsaBrand.iceBlue.withOpacity(0.85),
-            ParsaBrand.neonBlue.withOpacity(0.35),
-            Colors.transparent,
+            Color(0xFFB4FF4A),
+            Color(0xFF3AE360),
+            Color(0xFF14A847),
           ],
-          stops: const <double>[0.0, 0.3, 0.5, 0.7, 1.0],
         ).createShader(rect),
     );
     canvas.restore();

@@ -341,102 +341,203 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE65100),
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFBF360C), Color(0xFFE65100), Color(0xFFFFB74D)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _topBar(),
-              _modeSwitchBar(),
-              ContentAccessNotice(
-                featureName: 'آکادمی الفبا',
-                freeCount: _mode == _AlphabetMode.grade1
-                    ? ContentAccessPolicy.freeAlphabetBundleCount
-                    : ContentAccessPolicy.freeAlphabetTopRowCount,
-                totalCount: _mode == _AlphabetMode.grade1
-                    ? _grade1Bundles.length
-                    : _alphabeticalLessons.length,
-                hasFullVersion: _hasFullVersion,
-                onUnlocked: () async { await _refreshEntitlement(); },
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                  child: Column(
-                    children: [
-                      _academyHero(),
-                      if (GameData.dueAlphabetReviewKeys().isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        _reviewBanner(),
-                      ],
-                      const SizedBox(height: 12),
-                      if (_mode == _AlphabetMode.grade1) ...[
-                        _bundleSelectorRow(),
-                        const SizedBox(height: 12),
-                        _wordMakingWorkshopCard(),
-                        if (_isCurrentBundleMastered()) ...[
-                          const SizedBox(height: 12),
-                          _bundleReadingCard(),
-                        ],
-                        const SizedBox(height: 12),
-                      ] else ...[
-                        _searchBar(),
-                        const SizedBox(height: 12),
-                      ],
-                      _lessonCard(),
-                      const SizedBox(height: 14),
-                      _allographsCard(),
-                      const SizedBox(height: 14),
-                      _letterPicker(),
-                    ],
-                  ),
+      backgroundColor: const Color(0xFF1B5E20),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            'assets/theme_v2/alphabet_meadow_bg.webp',
+            fit: BoxFit.cover,
+            alignment: Alignment.center,
+            errorBuilder: (_, __, ___) => const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF29B6F6),
+                    Color(0xFF81D4FA),
+                    Color(0xFF66BB6A),
+                    Color(0xFF2E7D32),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF072B36).withOpacity(0.18),
+                  const Color(0xFF0A3822).withOpacity(0.52),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Column(
+              children: [
+                _topBar(),
+                _modeSwitchBar(),
+                ContentAccessNotice(
+                  featureName: 'آکادمی الفبا',
+                  freeCount: _mode == _AlphabetMode.grade1
+                      ? ContentAccessPolicy.freeAlphabetBundleCount
+                      : ContentAccessPolicy.freeAlphabetTopRowCount,
+                  totalCount: _mode == _AlphabetMode.grade1
+                      ? _grade1Bundles.length
+                      : _alphabeticalLessons.length,
+                  hasFullVersion: _hasFullVersion,
+                  onUnlocked: () async {
+                    await _refreshEntitlement();
+                  },
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                    child: Column(
+                      children: [
+                        _academyHero(),
+                        if (GameData.dueAlphabetReviewKeys().isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          _reviewBanner(),
+                        ],
+                        const SizedBox(height: 12),
+                        if (_mode == _AlphabetMode.grade1) ...[
+                          _bundleSelectorRow(),
+                          const SizedBox(height: 12),
+                          _wordMakingWorkshopCard(),
+                          if (_isCurrentBundleMastered()) ...[
+                            const SizedBox(height: 12),
+                            _bundleReadingCard(),
+                          ],
+                          const SizedBox(height: 12),
+                        ] else ...[
+                          _searchBar(),
+                          const SizedBox(height: 12),
+                        ],
+                        _lessonCard(),
+                        const SizedBox(height: 14),
+                        _allographsCard(),
+                        const SizedBox(height: 14),
+                        _letterPicker(),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _topBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       child: Row(
         children: [
-          IconButton(
-            tooltip: 'برگشت',
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                'آکادمی الفبا و اول دبستان 🔤',
-                style: AppFonts.balooBhaijaan2(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF81C784), Color(0xFF2E7D32)],
                 ),
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.28),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+                size: 22,
               ),
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            '${_lessonIndex + 1}/${_currentLessons.length}',
-            style: AppFonts.balooBhaijaan2(
-              color: Colors.white70,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFDF7),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: const Color(0xFFFFD54F), width: 2.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.22),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'حروف الفبا',
+                    style: AppFonts.balooBhaijaan2(
+                      color: const Color(0xFF1B5E20),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      height: 1.1,
+                    ),
+                  ),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'آکادمی الفبا و اول دبستان 🔤',
+                      style: AppFonts.balooBhaijaan2(
+                        color: const Color(0xFF4E342E),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () => _playLiteracyStep(LiteracyLadder.sound),
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF81C784), Color(0xFF2E7D32)],
+                ),
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.28),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.volume_up_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
             ),
           ),
         ],
@@ -508,45 +609,174 @@ class _AlphabetAcademyState extends State<AlphabetAcademyGame> {
   }
 
   Widget _academyHero() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: SizedBox(
-        height: 130,
-        width: double.infinity,
+    final lesson = _lesson;
+    return Container(
+      height: 176,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: Colors.white.withOpacity(0.85), width: 2.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.28),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
         child: Stack(
           fit: StackFit.expand,
           children: [
             Image.asset(
-              'assets/illustrations/alphabet_world.webp',
+              'assets/theme_v2/alphabet_meadow_bg.webp',
               fit: BoxFit.cover,
               alignment: Alignment.center,
+              errorBuilder: (_, __, ___) => Image.asset(
+                'assets/illustrations/alphabet_world.webp',
+                fit: BoxFit.cover,
+              ),
             ),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.black.withOpacity(0.05),
-                    Colors.black.withOpacity(0.60)
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+            // دایرهٔ سه‌بعدیِ سفیدِ حرف در بالا-چپ (مطابقِ `03_alphabet_phone.png`)
+            Positioned(
+              top: 12,
+              left: 16,
+              child: GestureDetector(
+                onTap: () => _playLiteracyStep(LiteracyLadder.sound),
+                child: Container(
+                  width: 78,
+                  height: 78,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFFFFFFFF), Color(0xFFFFF8E1)],
+                    ),
+                    border: Border.all(
+                      color: const Color(0xFF66BB6A),
+                      width: 3,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.25),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: Text(
+                          lesson.letter,
+                          style: AppFonts.balooBhaijaan2(
+                            color: const Color(0xFF2E7D32),
+                            fontSize: 42,
+                            fontWeight: FontWeight.w900,
+                            height: 1.0,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
+            // تصویرِ سه‌بعدیِ زنبور و نمادِ کلمه در مرکز-راست
             Positioned(
-              right: 16,
-              bottom: 12,
-              left: 16,
-              child: Text(
-                _mode == _AlphabetMode.grade1
-                    ? 'زنجیره نشانه‌های ۱ و ۲ • کتاب بخوانیم اول دبستان'
-                    : 'جستجوی آزاد و تمرین ۳۳ نشانه الفبا',
-                textAlign: TextAlign.center,
-                style: AppFonts.balooBhaijaan2(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  shadows: const [Shadow(color: Colors.black54, blurRadius: 8)],
+              top: 10,
+              right: 18,
+              bottom: 52,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/theme_v2/bee_3d.webp',
+                    width: 88,
+                    height: 88,
+                    fit: BoxFit.contain,
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.86),
+                      border: Border.all(
+                        color: const Color(0xFFFFD54F),
+                        width: 2,
+                      ),
+                    ),
+                    child: Text(
+                      lesson.emoji,
+                      style: const TextStyle(fontSize: 32),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // پلاکِ سه‌بعدیِ طلاییِ پایین: «حرف - کلمه» (مطابقِ `03_alphabet_phone.png`)
+            Positioned(
+              right: 24,
+              left: 24,
+              bottom: 10,
+              child: GestureDetector(
+                onTap: () => _readWord(lesson.word),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(999),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0xFFFFF59D),
+                        Color(0xFFFFCA28),
+                        Color(0xFFFF8F00),
+                      ],
+                    ),
+                    border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF5D4037).withOpacity(0.45),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.volume_up_rounded,
+                        color: Color(0xFF4E2600),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            '${lesson.letter} - ${lesson.word}',
+                            textAlign: TextAlign.center,
+                            style: AppFonts.balooBhaijaan2(
+                              color: const Color(0xFF4E2600),
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                              height: 1.1,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

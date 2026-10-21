@@ -162,6 +162,10 @@ class _SplashLogo extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: <Widget>[
+        Opacity(
+          opacity: 0.0,
+          child: _parsaBrandImage(),
+        ),
         _brandImage(),
 
         // عبور نور آبی از روی نماد P (و کل طرح، مثل نور روی فلز).
@@ -209,10 +213,25 @@ class _SplashLogo extends StatelessWidget {
     );
   }
 
-  Widget _brandImage() {
+  Widget _parsaBrandImage() {
     return Image.asset(
       ParsaBrand.logoAsset,
       fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
+      cacheWidth: cacheWidth,
+      gaplessPlayback: true,
+      excludeFromSemantics: true,
+      errorBuilder: (BuildContext context, Object error, StackTrace? stack) {
+        return const _BrandFallback();
+      },
+    );
+  }
+
+  Widget _brandImage() {
+    return Image.asset(
+      'assets/theme_v2/logo_3d.webp',
+      fit: BoxFit.contain,
+      alignment: const Alignment(0, -0.65),
       filterQuality: FilterQuality.high,
       cacheWidth: cacheWidth,
       gaplessPlayback: true,

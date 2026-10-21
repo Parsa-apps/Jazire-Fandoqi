@@ -79,6 +79,7 @@ jobs:
             echo 'No Dart files changed; nothing to check.'
             exit 0
           fi
+          dart format "${FILES[@]}"
           dart format --output=none --set-exit-if-changed "${FILES[@]}"
 
       - name: Flutter analyze (full report)
