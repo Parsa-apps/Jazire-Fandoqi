@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,7 +21,9 @@ import '../profile/profile_editor.dart';
 import '../shop/full_version_paywall.dart';
 import '../shop/full_version_purchase_entry.dart';
 import 'painters/path_icon_painter.dart';
+import 'widgets/daily_goal_card.dart';
 import 'widgets/fandoqi_hero.dart';
+import 'widgets/fandoqi_speech_bubble.dart';
 import 'widgets/island_logo.dart';
 import 'widgets/island_path_card.dart';
 import 'widgets/island_scene.dart';
@@ -49,11 +53,20 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
 
   bool _voiceGuide = false;
   bool _greeted = false;
+  int _tapSpeechIndex = -1;
+
+  static const List<String> _heroTapQuotes = <String>[
+    'آفرین قهرمان! بریم با هم کشف کنیم 🌟',
+    'تو خیلی باهوشی! آمادهٔ ماجراجویی هستی؟ 🌰',
+    'دکمهٔ طلایی رو بزن تا مرحلهٔ امروز باز بشه ✨',
+    'من همیشه کنارتم دوست خوبم! 💛',
+  ];
 
   @override
   void initState() {
     super.initState();
     _voiceGuide = GrowthStore.voiceGuide;
+    GrowthStore.changes.addListener(_onGrowthStoreChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _greeted) return;
       _greeted = true;
@@ -61,10 +74,52 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
     });
   }
 
+  void _onGrowthStoreChanged() {
+    if (!mounted) return;
+    setState(() {
+      _voiceGuide = GrowthStore.voiceGuide;
+    });
+  }
+
   @override
   void dispose() {
+    GrowthStore.changes.removeListener(_onGrowthStoreChanged);
     _hero.dispose();
     super.dispose();
+  }
+
+  String _currentSpeechMessage({
+    required String displayName,
+    required TodayTask task,
+    required bool isLimitReached,
+  }) {
+    if (_tapSpeechIndex >= 0) {
+      return _heroTapQuotes[_tapSpeechIndex % _heroTapQuotes.length];
+    }
+    if (isLimitReached) {
+      return 'امروز عالی پیش رفتی $displayName! وقتِ استراحته 🌙';
+    }
+    if (task.allDone) {
+      return 'هورا $displayName! همهٔ هدف‌های امروز رو کامل کردی 🌟';
+    }
+    return 'سلام $displayName! بریم سراغ «${task.title}»؟ ✨';
+  }
+
+  void _onHeroTapped() {
+    setState(() {
+      _tapSpeechIndex++;
+    });
+    if (_voiceGuide) {
+      final line = _heroTapQuotes[_tapSpeechIndex % _heroTapQuotes.length];
+      AudioService.speakWord(line);
+    }
+  }
+
+  void _onSpeechBubbleTapped() {
+    HapticFeedback.lightImpact();
+    AudioService.select();
+    _hero.cheer();
+    _onHeroTapped();
   }
 
   Future<void> _startToday() async {
@@ -91,6 +146,7 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
 
     final after = TodayPath.countDone();
     if (after > before) {
+      setState(() => _tapSpeechIndex = -1);
       _hero.cheer();
       AudioService.success();
       if (_voiceGuide) AudioService.speakWord(IslandHomeStrings.cheer);
@@ -237,96 +293,220 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
   @override
   Widget build(BuildContext context) {
     ref.watch(gameStateProvider);
+    final safeTop = MediaQuery.paddingOf(context).top;
+    final reduceMotion = _reduceMotionOf(context);
+    final rawName = GameData.childName.trim();
+    final displayName = rawName.isNotEmpty ? rawName : 'پارسا';
+    final isLimitReached = GameData.isDailyLimitReached;
+    final todayTask = TodayPath.forChild();
 
     return Directionality(
       textDirection: TextDirection.rtl,
       child: IslandScene(
-        child: SafeArea(
-          bottom: false,
-          child: LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints constraints) {
-              final w = constraints.maxWidth;
-              final h = constraints.maxHeight;
-              final compact = h < 600 || w < 360;
+        child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            final w = constraints.maxWidth;
+            final h = constraints.maxHeight;
+            final sceneSize = Size(w, h);
+            final availH = (h - safeTop).clamp(0.0, double.infinity);
+            final compact = availH < 600 || w < 360;
 
-              final sidePad = (w * 0.035).clamp(8.0, 18.0);
-              final logoFont = compact ? 22.0 : 28.0;
-              final crestSize = compact ? 34.0 : 42.0;
-              final heroSize =
-                  (h * (compact ? 0.24 : 0.28)).clamp(112.0, 220.0);
-              final startHeight = compact ? 52.0 : 58.0;
-              final pathHeight = compact ? 38.0 : 42.0;
+            final sidePad = (w * 0.035).clamp(8.0, 18.0);
+            final topPad = compact ? 4.0 : 8.0;
+            final botPad = compact ? 10.0 : 14.0;
+            final topBarHeight = compact ? 34.0 : 38.0;
+            final topGap1 = compact ? 2.0 : 4.0;
+            final logoFont = compact ? 22.0 : 28.0;
+            final crestSize = compact ? 34.0 : 42.0;
+            final logoHeight = crestSize * 2.15;
+            final topGap2 = compact ? 4.0 : 6.0;
+            final goalHeight = compact ? 46.0 : 52.0;
 
-              return Stack(
-                fit: StackFit.expand,
-                children: <Widget>[
-                  // نگه‌داشتِ ویجتِ خرید در درخت برای تست‌ها بدونِ پوشاندنِ جزیره
-                  const Positioned(
-                    top: 0,
-                    left: 0,
-                    child: IgnorePointer(
-                      child: Opacity(
-                        opacity: 0.0,
-                        child: FullVersionPurchaseEntry(compact: true),
+            final topUiBottom = safeTop +
+                topPad +
+                topBarHeight +
+                topGap1 +
+                logoHeight +
+                topGap2 +
+                goalHeight;
+
+            final startHeight = compact ? 52.0 : 58.0;
+            final botGap = compact ? 6.0 : 8.0;
+            final pathHeight = compact ? 38.0 : 42.0;
+            final bottomUiTop =
+                h - (botPad + pathHeight + botGap + startHeight);
+
+            // نگاشتِ دقیقِ سنجابِ پخته‌شده در home_scene.webp به مختصاتِ صحنه
+            // (همان تبدیلِ BoxFit.cover + Alignment.center بدونِ انحراف در نسبت‌های مختلف)
+            final rawSquirrelRect = IslandScene.bakedSquirrelRect(sceneSize);
+            final squirrelHeadX = IslandScene.bakedSquirrelHeadX(sceneSize);
+
+            final bubbleHeight = compact ? 44.0 : 50.0;
+            final minBubbleTop = topUiBottom + 4.0;
+            final maxBubbleTop = math.max(
+              minBubbleTop,
+              bottomUiTop - bubbleHeight - 52.0,
+            );
+            final bubbleTop = (rawSquirrelRect.top - bubbleHeight - 4.0)
+                .clamp(minBubbleTop, maxBubbleTop);
+            final bubbleBottom = bubbleTop + bubbleHeight;
+            final tailAlignmentX =
+                ((squirrelHeadX - w * 0.5) / 70.0).clamp(-0.65, 0.65);
+
+            final maxLeft = math.max(0.0, w - 48.0);
+            final heroLeft = rawSquirrelRect.left.clamp(0.0, maxLeft);
+            final minRight = math.min(w, heroLeft + 48.0);
+            final heroRight = rawSquirrelRect.right.clamp(minRight, w);
+            final heroTop = math.max(rawSquirrelRect.top, bubbleBottom + 2.0);
+            final heroBottom = math.max(
+              heroTop + 48.0,
+              math.min(rawSquirrelRect.bottom, bottomUiTop - 2.0),
+            );
+            final heroTapRect = Rect.fromLTRB(
+              heroLeft,
+              heroTop,
+              heroRight,
+              heroBottom,
+            );
+            final heroVisualSize = math
+                .min(heroTapRect.width, heroTapRect.height)
+                .clamp(48.0, 320.0);
+
+            return Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                // نگه‌داشتِ ویجتِ خرید در درخت برای تست‌ها بدونِ پوشاندنِ جزیره
+                const Positioned(
+                  top: 0,
+                  left: 0,
+                  child: IgnorePointer(
+                    child: Opacity(
+                      opacity: 0.0,
+                      child: FullVersionPurchaseEntry(compact: true),
+                    ),
+                  ),
+                ),
+
+                // لایهٔ لمسِ نامرئی و ذراتِ طلاییِ فندقی دقیقاً روی سنجابِ پخته‌شده
+                Positioned.fromRect(
+                  rect: heroTapRect,
+                  child: FandoqiHero(
+                    size: heroVisualSize,
+                    controller: _hero,
+                    onTap: _onHeroTapped,
+                    reduceMotion: reduceMotion,
+                    imageOpacity: 0.0,
+                  ),
+                ),
+
+                // حبابِ گفتگویِ فندقی بالای سرِ سنجاب با فلشِ اشاره‌گر
+                Positioned(
+                  top: bubbleTop,
+                  left: sidePad,
+                  right: sidePad,
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: math.max(140.0, w - sidePad * 2),
+                      ),
+                      child: FandoqiSpeechBubble(
+                        message: _currentSpeechMessage(
+                          displayName: displayName,
+                          task: todayTask,
+                          isLimitReached: isLimitReached,
+                        ),
+                        compact: compact,
+                        reduceMotion: reduceMotion,
+                        tailAlignmentX: tailAlignmentX,
+                        onTap: _onSpeechBubbleTapped,
                       ),
                     ),
                   ),
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      sidePad,
-                      compact ? 4 : 8,
-                      sidePad,
-                      compact ? 10 : 14,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        _buildTopBar(context, w, compact: compact),
-                        SizedBox(height: compact ? 2 : 4),
-                        Center(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxWidth: (w - sidePad * 2).clamp(160.0, 310.0),
-                            ),
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: IslandLogo(
-                                fontSize: logoFont,
-                                crestSize: crestSize,
-                              ),
+                ),
+
+                // بلوکِ بالای صحنه: نوارِ وضعیتِ شیشه‌ای + لوگو + کارتِ هدفِ روزانه
+                Positioned(
+                  top: safeTop + topPad,
+                  left: sidePad,
+                  right: sidePad,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      _buildTopBar(
+                        context,
+                        w,
+                        displayName: displayName,
+                        compact: compact,
+                      ),
+                      SizedBox(height: topGap1),
+                      Center(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: (w - sidePad * 2).clamp(160.0, 310.0),
+                            maxHeight: logoHeight,
+                          ),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: IslandLogo(
+                              fontSize: logoFont,
+                              crestSize: crestSize,
                             ),
                           ),
                         ),
-                        // فضای میانی برای نمایشِ کاراکترِ سه‌بعدیِ فندقی در صحنهٔ جزیره
-                        Expanded(
-                          child: Center(
-                            child: FandoqiHero(
-                              size: heroSize,
-                              controller: _hero,
-                              reduceMotion: _reduceMotionOf(context),
-                              imageOpacity: 0.0,
+                      ),
+                      SizedBox(height: topGap2),
+                      Center(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: math.min(
+                              420.0,
+                              math.max(160.0, w - sidePad * 2),
                             ),
                           ),
-                        ),
-                        Center(
-                          child: PrimaryStartButton(
-                            height: startHeight,
-                            maxWidth: (w - sidePad * 2).clamp(180.0, 280.0),
+                          child: DailyGoalCard(
+                            taskTitle: todayTask.title,
+                            doneCount: todayTask.doneCount,
+                            totalCount: todayTask.totalCount,
+                            allDone: todayTask.allDone,
+                            isRestLimit: isLimitReached,
+                            compact: compact,
+                            height: goalHeight,
                             onTap: _startToday,
                           ),
                         ),
-                        SizedBox(height: compact ? 6 : 8),
-                        _buildBottomQuickStrip(
-                          pathHeight: pathHeight,
-                          maxWidth: w - sidePad * 2,
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              );
-            },
-          ),
+                ),
+
+                // بلوکِ پایینِ صحنه: دکمهٔ طلاییِ شروع ماجراجویی + نوارِ سریعِ مسیرها
+                Positioned(
+                  bottom: botPad,
+                  left: sidePad,
+                  right: sidePad,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Center(
+                        child: PrimaryStartButton(
+                          height: startHeight,
+                          maxWidth: (w - sidePad * 2).clamp(180.0, 280.0),
+                          onTap: _startToday,
+                        ),
+                      ),
+                      SizedBox(height: botGap),
+                      _buildBottomQuickStrip(
+                        pathHeight: pathHeight,
+                        maxWidth: w - sidePad * 2,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -337,10 +517,9 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
   Widget _buildTopBar(
     BuildContext context,
     double width, {
+    required String displayName,
     required bool compact,
   }) {
-    final rawName = GameData.childName.trim();
-    final displayName = rawName.isNotEmpty ? rawName : 'پارسا';
     final isFullVerified = Monetization.accessStatus.value.isVerified;
     final btnSize = compact ? 32.0 : 35.0;
 

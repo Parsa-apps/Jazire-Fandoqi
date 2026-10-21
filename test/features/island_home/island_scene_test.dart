@@ -65,13 +65,53 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets(
+      'omits occluded vector painters behind opaque home_scene.webp '
+      'while keeping atmosphere sparkles', (WidgetTester tester) async {
+    await pumpScene(tester);
+
+    final paints = tester
+        .widgetList<CustomPaint>(
+          find.descendant(
+            of: find.byType(IslandScene),
+            matching: find.byType(CustomPaint),
+          ),
+        )
+        .map((CustomPaint p) => p.painter)
+        .toList();
+
+    expect(paints.whereType<IslandAtmospherePainter>(), hasLength(1));
+    expect(paints.whereType<IslandSkyPainter>(), isEmpty);
+    expect(paints.whereType<IslandSeaPainter>(), isEmpty);
+    expect(paints.whereType<IslandLandPainter>(), isEmpty);
+  });
+
+  test('bakedSquirrelRect tracks BoxFit.cover across aspect ratios', () {
+    const phone = Size(390, 844);
+    const tablet = Size(1024, 1366);
+    const narrowTall = Size(320, 680);
+
+    final phoneRect = IslandScene.bakedSquirrelRect(phone);
+    final tabletRect = IslandScene.bakedSquirrelRect(tablet);
+    final tallRect = IslandScene.bakedSquirrelRect(narrowTall);
+
+    // روی تبلتِ پهن‌تر (۴:۳)، BoxFit.cover بالا و پایینِ تصویر را برش می‌دهد،
+    // بنابراین سنجاب نسبت به ارتفاعِ صفحه پایین‌تر از مرکزِ صفحه قرار می‌گیرد.
+    expect(tabletRect.center.dy / tablet.height, greaterThan(0.70));
+    expect(
+      tabletRect.center.dy / tablet.height,
+      greaterThan(phoneRect.center.dy / phone.height),
+    );
+    // روی گوشیِ کشیده‌تر از نسبتِ ۱۰۷۲×۱۹۲۰، ارتفاعِ تصویر کامل جا می‌شود و
+    // نسبتِ عمودیِ سنجاب دقیقاً برابرِ میانگینِ نرمال‌شده باقی می‌ماند.
+    expect(
+      tallRect.center.dy / narrowTall.height,
+      closeTo(IslandScene.bakedSquirrelNormalizedRect.center.dy, 0.001),
+    );
+  });
+
   testWidgets('all scene painters render every icon and crest',
       (WidgetTester tester) async {
-    // نکته: عنصرِ `for` در یک لیترالِ const مجاز نیست (const_eval_for_element)،
-    // بنابراین فقط بخشِ ثابت const می‌ماند و گالریِ آیکون‌ها خارج از آن ساخته
-    // می‌شود — هر دو حالتِ صحنه همچنان رسم می‌شوند.
-    // روی سطحِ ۸۰۰×۶۰۰ تست، ستونِ همهٔ نقاش‌ها بلندتر از صفحه است؛
-    // بدون اسکرول یک سرریزِ عمودی (و نه نقصِ طراحی) گزارش می‌شد.
     await tester.pumpWidget(
       MaterialApp(
         home: SingleChildScrollView(
@@ -126,23 +166,15 @@ void main() {
   });
 
   // ─── هندسهٔ صحنه ───
-  //
-  // این بررسی‌ها داخل testWidgets اجرا می‌شوند تا اتصالِ موتورِ رسم
-  // حتماً برقرار باشد (مسیرِ Path روی برخی نسخه‌های تست بدون binding
-  // مقداردهی نمی‌شود).
   testWidgets('island geometry keeps every layer in a sane vertical order',
       (WidgetTester tester) async {
     final geo = IslandSceneGeometry(const Size(390, 844));
 
-    // قله بالاتر از خطِ افق است (مقدارِ y کوچک‌تر) و ساحل پایین‌تر از هر دو.
     expect(geo.islandPeak, lessThan(geo.horizon));
     expect(geo.horizon, lessThan(geo.islandShore));
-    // فندقی روی چمن می‌ایستد، نه روی آب.
     expect(geo.mascotAnchor.dy, lessThan(geo.islandShore));
     expect(geo.mascotAnchor.dy, greaterThan(geo.islandPeak));
-    // آبشار از بالای صخره تا پایینِ ساحل می‌ریزد.
     expect(geo.fallTop, lessThan(geo.fallBottom));
-    // برجستگیِ صخره از نوارِ ماسه قطورتر است.
     expect(geo.cliffThickness, greaterThan(geo.sandThickness));
   });
 
@@ -158,7 +190,6 @@ void main() {
       a.islandPeak / small.height,
       closeTo(b.islandPeak / large.height, 0.001),
     );
-    // فندقی همیشه وسطِ سکو می‌ایستد.
     expect(a.mascotAnchor.dx / small.width, closeTo(0.5, 0.001));
     expect(b.mascotAnchor.dx / large.width, closeTo(0.5, 0.001));
   });
@@ -171,7 +202,6 @@ void main() {
 
     expect(bounds.width, greaterThan(0));
     expect(bounds.height, greaterThan(0));
-    // سیلوئت عمداً از دو طرف از کادر بیرون می‌زند تا لبهٔ بریده دیده نشود.
     expect(bounds.left, lessThanOrEqualTo(0));
     expect(bounds.right, greaterThanOrEqualTo(390));
 
