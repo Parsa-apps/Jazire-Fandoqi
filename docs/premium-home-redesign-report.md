@@ -234,7 +234,7 @@
 * مسیر خروجی: `build/app/outputs/flutter-apk/app-myket-release.apk`
 * نامِ آرتیفکت: `jazire_fandoqi_v7.5.7_myket_production_apk`
 * فایل: `jazire-fandoqi-v7.5.7-myket-release.apk` — **۱۰۱٬۰۹۶٬۵۳۴ بایت**
-* SHA-256: `c6d496bded267a1f0bcd18369ae91b7db51cfa03bce61ae7768489bf34327768`
+* SHA-256 (ساختِ تأییدشده در [اجرای 39592025911](https://github.com/Parsa-apps/Jazire-Fandoqi/actions/runs/39592025911)): `c6d496bded267a1f0bcd18369ae91b7db51cfa03bce61ae7768489bf34327768`
 * نوعِ ساخت: **release / myket**
 * AAB همراهش: `jazire-fandoqi-v7.5.7-myket-release.aab` — ۱۰۰٬۹۴۴٬۸۱۹ بایت، SHA-256 `a7b58e88bbad5951fbc3bb3717587795b5073c57e1a04804ab933384f0cef9a8`
 
@@ -248,6 +248,9 @@ Native production / Myket RSA tests: 26 passed
 
 * نسخه `7.5.7+30` و `applicationId` (`com.parsaapps.amoozesh_fandoghi`) **بدون تغییر**.
 * امضا با کلید انتشارِ رسمی انجام می‌شود؛ **هیچ کلید خصوصی یا گذرواژه‌ای در مخزن عمومی نیست** (فقط از `secrets.KEYSTORE_B64` / `secrets.KEYSTORE_PASSWORD` خوانده می‌شود و نبودشان کار را با خطای صریح متوقف می‌کند).
+
+**دربارهٔ هش:** ساخت‌های releaseـِ اندروید بازتولیدپذیرِ بایتی نیستند، بنابراین هر اجرای CI هشِ متفاوتی با **اندازهٔ یکسان** تولید می‌کند (مثلاً `e70f8acd…` در اجرای 39595649757 در برابر `c6d496bd…` در اجرای 39592025911). مرجعِ قطعی برای فایلی که هم‌اکنون منتشر شده، فایلِ `.sha256` کنارِ خودِ APK در همان release است:
+https://github.com/Parsa-apps/Jazire-Fandoqi/releases/download/v7.5.7/jazire-fandoqi-v7.5.7-myket-release.apk.sha256
 
 **لینکِ دانلود:**
 https://github.com/Parsa-apps/Jazire-Fandoqi/releases/download/v7.5.7/jazire-fandoqi-v7.5.7-myket-release.apk
