@@ -571,7 +571,6 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
             ),
           ),
         ),
-      ),
     );
   }
 }
