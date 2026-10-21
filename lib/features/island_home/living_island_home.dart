@@ -523,7 +523,7 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Icon(
+                  const Icon(
                     Icons.explore_rounded,
                     size: 22,
                     color: IslandCinemaPalette.forestDeep,
@@ -596,7 +596,7 @@ class _ProfileChip extends StatelessWidget {
                 width: 38,
                 height: 38,
                 alignment: Alignment.center,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: IslandCinemaGradients.meadow,
                 ),
@@ -670,7 +670,7 @@ class _LevelBadge extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Icon(
+                  const Icon(
                     Icons.eco_rounded,
                     size: 15,
                     color: IslandCinemaPalette.forest,
@@ -700,7 +700,7 @@ class _LevelBadge extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: clampedProgress,
                     backgroundColor: IslandCinemaPalette.mint.withOpacity(0.40),
-                    valueColor: AlwaysStoppedAnimation<Color>(
+                    valueColor: const AlwaysStoppedAnimation<Color>(
                       IslandCinemaPalette.gold,
                     ),
                   ),

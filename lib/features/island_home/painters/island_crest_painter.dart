@@ -93,7 +93,7 @@ class IslandCrestPainter extends CustomPainter {
     canvas.drawPath(
       cap,
       Paint()
-        ..shader = LinearGradient(
+        ..shader = const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: <Color>[
@@ -154,7 +154,7 @@ class IslandCrestPainter extends CustomPainter {
       canvas.drawPath(
         leaf,
         Paint()
-          ..shader = LinearGradient(
+          ..shader = const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: <Color>[
@@ -168,7 +168,7 @@ class IslandCrestPainter extends CustomPainter {
 
       // رگبرگ
       canvas.drawLine(
-        Offset(0, 0),
+        const Offset(0, 0),
         Offset(leafW * 0.92, -leafH * 0.14),
         Paint()
           ..color = IslandCinemaPalette.forestDeep.withOpacity(0.45)

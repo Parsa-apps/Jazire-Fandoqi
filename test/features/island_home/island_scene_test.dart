@@ -67,37 +67,36 @@ void main() {
 
   testWidgets('all scene painters render every icon and crest',
       (WidgetTester tester) async {
+    // نکته: عنصرِ `for` در یک لیترالِ const مجاز نیست (const_eval_for_element)،
+    // بنابراین فقط بخشِ ثابت const می‌ماند و گالریِ آیکون‌ها خارج از آن ساخته
+    // می‌شود — هر دو حالتِ صحنه همچنان رسم می‌شوند.
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: Column(
           children: <Widget>[
-            SizedBox(
+            const SizedBox(
               width: 120,
               height: 120,
               child: CustomPaint(painter: IslandSkyPainter()),
             ),
-            SizedBox(
+            const SizedBox(
               width: 120,
               height: 120,
-              child: CustomPaint(
-                painter: IslandSeaPainter(phase: 0.35),
-              ),
+              child: CustomPaint(painter: IslandSeaPainter(phase: 0.35)),
             ),
-            SizedBox(
+            const SizedBox(
               width: 120,
               height: 120,
-              child: CustomPaint(
-                painter: IslandLandPainter(phase: 0.6),
-              ),
+              child: CustomPaint(painter: IslandLandPainter(phase: 0.6)),
             ),
-            SizedBox(
+            const SizedBox(
               width: 120,
               height: 120,
               child: CustomPaint(
                 painter: IslandAtmospherePainter(phase: 0.2),
               ),
             ),
-            SizedBox(
+            const SizedBox(
               width: 80,
               height: 80,
               child: CustomPaint(painter: IslandCrestPainter()),

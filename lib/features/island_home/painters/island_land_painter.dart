@@ -58,7 +58,7 @@ class IslandLandPainter extends CustomPainter {
     canvas.drawPath(
       shifted,
       Paint()
-        ..shader = LinearGradient(
+        ..shader = const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: <Color>[
