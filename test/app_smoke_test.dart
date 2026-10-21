@@ -112,6 +112,15 @@ void main() {
     GameData.resetForTesting();
     GameData.onboardingSeen = true;
 
+    // سطحِ بلندترِ آگاهانه: چیپِ نقشه در انتهای یک ستونِ اسکرول‌شونده است و
+    // روی سطحِ پیش‌فرضِ ۸۰۰×۶۰۰ باید ابتدا اسکرول شود. اسکرول‌کردن و سپس
+    // لمس‌کردن به مختصاتی وابسته می‌ماند که در هر اجرا کمی فرق می‌کند؛ با
+    // این اندازه چیپ از ابتدا در دید است و لمس پایدار می‌ماند.
+    tester.view.physicalSize = const Size(800, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     await tester.pumpWidget(
       const ProviderScope(
         child: MaterialApp(home: HomeScreen()),
@@ -119,8 +128,6 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 250));
 
-    // چیپِ نقشه پایینِ ستون است و روی سطحِ ۸۰۰×۶۰۰ تست بیرون از دید قرار
-    // می‌گیرد؛ tester.tap خودکار اسکرول نمی‌کند، پس ابتدا در دید می‌آید.
     final chip = find.byKey(const ValueKey('living_island_map_chip'));
     await tester.ensureVisible(chip);
     await tester.pump();
