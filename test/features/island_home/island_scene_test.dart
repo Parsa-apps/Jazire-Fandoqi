@@ -5,6 +5,7 @@ import 'package:jazireh_fandoghi/core/growth/growth_store.dart';
 import 'package:jazireh_fandoghi/features/island_home/painters/island_atmosphere_painter.dart';
 import 'package:jazireh_fandoghi/features/island_home/painters/island_crest_painter.dart';
 import 'package:jazireh_fandoghi/features/island_home/painters/island_land_painter.dart';
+import 'package:jazireh_fandoghi/features/island_home/painters/island_living_overlay_painter.dart';
 import 'package:jazireh_fandoghi/features/island_home/painters/island_scene_geometry.dart';
 import 'package:jazireh_fandoghi/features/island_home/painters/island_sea_painter.dart';
 import 'package:jazireh_fandoghi/features/island_home/painters/island_sky_painter.dart';
@@ -40,6 +41,57 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
     }
   }
+
+  IslandLivingOverlayPainter overlay(WidgetTester tester) {
+    return tester.widgetList<CustomPaint>(find.byType(CustomPaint))
+        .map((widget) => widget.painter)
+        .whereType<IslandLivingOverlayPainter>()
+        .single;
+  }
+
+  testWidgets('ambient clock starts by default and stops in background',
+      (WidgetTester tester) async {
+    await pumpScene(tester);
+    final clock = overlay(tester).animation;
+    final before = clock.value;
+    await tester.pump(const Duration(seconds: 1));
+    expect(clock.value, isNot(before));
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    final paused = clock.value;
+    await tester.pump(const Duration(seconds: 1));
+    expect(clock.value, paused);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(clock.value, isNot(paused));
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('reduced motion freezes the living overlay',
+      (WidgetTester tester) async {
+    await pumpScene(tester, reduceMotion: true);
+    final painter = overlay(tester);
+    expect(painter.reduceMotion, isTrue);
+    final before = painter.animation.value;
+    await tester.pump(const Duration(seconds: 2));
+    expect(painter.animation.value, before);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('system reduced motion also freezes the ambient clock',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: MediaQuery(
+        data: MediaQueryData(disableAnimations: true),
+        child: IslandScene(),
+      ),
+    ));
+    await tester.pump(const Duration(seconds: 1));
+    expect(overlay(tester).reduceMotion, isTrue);
+    expect(overlay(tester).animation.value, 0);
+  });
 
   testWidgets('paints on a normal phone without errors',
       (WidgetTester tester) async {
