@@ -72,9 +72,10 @@ void main() {
     // لوگو و هویتِ بصری
     expect(find.text('جزیره فندقی'), findsOneWidget);
 
-    // ورودیِ نقشهٔ کاملِ جزیره (هیچ هابی حذف نشده است)
-    expect(find.byKey(const ValueKey('living_island_map_chip')), findsOneWidget);
-    expect(find.text('نقشه ماجراجویی'), findsOneWidget);
+    // دکمهٔ جداگانهٔ «نقشه ماجراجویی» حذف شده است؛ نقشهٔ کاملِ جزیره با
+    // همان دکمهٔ اصلیِ «شروع ماجراجویی» باز می‌شود (هیچ هابی حذف نشده است).
+    expect(find.byKey(const ValueKey('living_island_map_chip')), findsNothing);
+    expect(find.text('نقشه ماجراجویی'), findsNothing);
 
     // نوار ناوبری پایینی
     expect(find.text('خانه'), findsOneWidget);
@@ -113,10 +114,8 @@ void main() {
     GameData.resetForTesting();
     GameData.onboardingSeen = true;
 
-    // سطحِ بلندترِ آگاهانه: چیپِ نقشه در انتهای یک ستونِ اسکرول‌شونده است و
-    // روی سطحِ پیش‌فرضِ ۸۰۰×۶۰۰ باید ابتدا اسکرول شود. اسکرول‌کردن و سپس
-    // لمس‌کردن به مختصاتی وابسته می‌ماند که در هر اجرا کمی فرق می‌کند؛ با
-    // این اندازه چیپ از ابتدا در دید است و لمس پایدار می‌ماند.
+    // سطحِ بلندترِ آگاهانه: با این اندازه دکمهٔ اصلیِ «شروع ماجراجویی»
+    // از ابتدا در دید است و لمسِ آن پایدار می‌ماند.
     tester.view.physicalSize = const Size(800, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -129,12 +128,12 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 250));
 
-    final chip = find.byKey(const ValueKey('living_island_map_chip'));
-    await tester.ensureVisible(chip);
+    final startButton = find.text('شروع بازی');
+    await tester.ensureVisible(startButton);
     await tester.pump();
-    // لمس درست در مرکزِ چیپ انجام می‌شود: اگر فقط یک نقطهٔ خاص از دکمه
-    // پاسخ بدهد، کودک در عمل بخشِ بزرگی از آن را لمس‌ناپذیر می‌یابد.
-    await tester.tap(chip);
+    // لمس درست در مرکزِ دکمهٔ شروع انجام می‌شود: اگر فقط یک نقطهٔ خاص از
+    // دکمه پاسخ بدهد، کودک در عمل بخشِ بزرگی از آن را لمس‌ناپذیر می‌یابد.
+    await tester.tap(startButton);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
@@ -159,7 +158,8 @@ void main() {
     // برگشت به خانهٔ جدید
     await tester.binding.handlePopRoute();
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.byKey(const ValueKey('living_island_map_chip')), findsOneWidget);
+    expect(find.text('شروع بازی'), findsOneWidget);
+    expect(find.byKey(const ValueKey('living_island_map_chip')), findsNothing);
 
     await _disposeAnimatedTree(tester);
   });

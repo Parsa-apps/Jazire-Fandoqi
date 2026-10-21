@@ -349,7 +349,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// 🏝️ تبِ خانه: دنیای زندهٔ جزیره.
   ///
   /// نقشهٔ کامل ([IslandMapTab]) حذف نشده است؛ از درونِ همین صفحه با
-  /// «نقشه جزیره» باز می‌شود، بنابراین همهٔ هاب‌ها سرِ جای خود مانده‌اند.
+  /// دکمهٔ اصلیِ «شروع ماجراجویی» باز می‌شود، بنابراین همهٔ هاب‌ها سرِ جای
+  /// خود مانده‌اند.
   Widget _buildIslandHome() {
     return LivingIslandHome(
       onOpenStageMap: _openStageMapScreen,
