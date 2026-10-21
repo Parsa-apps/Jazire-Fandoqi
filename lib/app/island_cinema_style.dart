@@ -153,6 +153,26 @@ abstract final class IslandCinemaMetrics {
   static const int sparkleBudget = 12;
 }
 
+// ───────────────────── لوگوهای تصویریِ دکمه‌های خانه ─────────────────────
+/// مسیرِ لوگوهای سه‌بعدیِ کودک‌پسندِ دکمه‌های صفحهٔ اصلی تا کودکانِ پیش‌دبستانی
+/// حتی پیش از خواندنِ متن، مقصدِ هر دکمه را در یک نگاه بشناسند.
+abstract final class IslandHomeLogos {
+  /// 🧭🏝️ شروع ماجراجویی — جزیرهٔ گنج، قطب‌نما و نقشهٔ ماجراجویی
+  static const String adventure = 'assets/theme_v2/btn_adventure_logo.webp';
+
+  /// 📺🍿 کارتون‌ها — تلویزیونِ خندانِ کارتون و پاپ‌کورن
+  static const String cartoons = 'assets/theme_v2/btn_cartoons_logo.webp';
+
+  /// 📖🏰 قصه‌ها — کتابِ بازِ قصه با قلعه و ستارهٔ جادویی
+  static const String stories = 'assets/theme_v2/btn_stories_logo.webp';
+
+  /// 🌙🧸 لالایی — هلالِ ماهِ مهربان، خرسِ خواب‌آلود و نت‌های موسیقی
+  static const String lullabies = 'assets/theme_v2/btn_lullabies_logo.webp';
+
+  /// 🎮🧩 بازی‌ها — دستهٔ بازیِ رنگارنگ، پازل و ستاره
+  static const String games = 'assets/theme_v2/btn_games_logo.webp';
+}
+
 // ─────────────────────── زمان‌بندی حرکت ───────────────────────
 abstract final class IslandCinemaMotion {
   /// چرخهٔ کاملِ محیط (آب، آبشار، ذرات)

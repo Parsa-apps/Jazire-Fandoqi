@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -150,8 +152,8 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
               final crestSize = compact ? 34.0 : 42.0;
               final heroSize =
                   (h * (compact ? 0.24 : 0.28)).clamp(112.0, 220.0);
-              final startHeight = compact ? 52.0 : 58.0;
-              final quickLinksHeight = compact ? 52.0 : 58.0;
+              final startHeight = compact ? 80.0 : 102.0;
+              final quickLinksHeight = compact ? 78.0 : 96.0;
 
               return Stack(
                 fit: StackFit.expand,
@@ -172,7 +174,7 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
                       sidePad,
                       compact ? 4 : 8,
                       sidePad,
-                      compact ? 10 : 14,
+                      compact ? 8 : 12,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -195,23 +197,33 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
                         ),
                         // فضای میانی برای نمایشِ کاراکترِ سه‌بعدیِ فندقی در صحنهٔ جزیره
                         Expanded(
-                          child: Center(
-                            child: FandoqiHero(
-                              size: heroSize,
-                              controller: _hero,
-                              reduceMotion: _reduceMotionOf(context),
-                              imageOpacity: 0.0,
-                            ),
+                          child: LayoutBuilder(
+                            builder: (
+                              BuildContext context,
+                              BoxConstraints heroBox,
+                            ) {
+                              final effectiveHero = math
+                                  .min(heroSize, heroBox.maxHeight)
+                                  .clamp(48.0, 220.0);
+                              return Center(
+                                child: FandoqiHero(
+                                  size: effectiveHero,
+                                  controller: _hero,
+                                  reduceMotion: _reduceMotionOf(context),
+                                  imageOpacity: 0.0,
+                                ),
+                              );
+                            },
                           ),
                         ),
                         Center(
                           child: PrimaryStartButton(
                             height: startHeight,
-                            maxWidth: (w - sidePad * 2).clamp(180.0, 280.0),
+                            maxWidth: (w - sidePad * 2).clamp(180.0, 286.0),
                             onTap: _openIslandMap,
                           ),
                         ),
-                        SizedBox(height: compact ? 6 : 8),
+                        SizedBox(height: compact ? 5 : 8),
                         _buildBottomQuickStrip(height: quickLinksHeight),
                       ],
                     ),
@@ -484,15 +496,18 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
     );
   }
 
-  /// میان‌برهای مستقیمِ کارتون، قصه، لالایی و بازی زیرِ دکمهٔ اصلی.
+  /// میان‌برهای مستقیمِ کارتون، قصه، لالایی و بازی زیرِ دکمهٔ اصلی،
+  /// هر کدام با لوگوی سه‌بعدیِ اختصاصی در بالای متن برای درکِ فوریِ کودک.
   Widget _buildBottomQuickStrip({required double height}) {
     return Row(
       children: <Widget>[
         Expanded(
-          child: _buildFeatureShortcut(
-            keyName: 'home_shortcut_cartoons',
+          child: _HomeShortcutButton(
+            key: const ValueKey<String>('home_shortcut_cartoons'),
+            logoKey: const ValueKey<String>('home_logo_cartoons'),
             label: IslandHomeStrings.cartoons,
-            icon: Icons.live_tv_rounded,
+            logoAsset: IslandHomeLogos.cartoons,
+            fallbackIcon: Icons.live_tv_rounded,
             tint: const Color(0xFFFFA65A),
             height: height,
             onTap: () => _openPath('/cartoons', IslandHomeStrings.cartoons),
@@ -500,10 +515,12 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
         ),
         const SizedBox(width: 6),
         Expanded(
-          child: _buildFeatureShortcut(
-            keyName: 'home_shortcut_stories',
+          child: _HomeShortcutButton(
+            key: const ValueKey<String>('home_shortcut_stories'),
+            logoKey: const ValueKey<String>('home_logo_stories'),
             label: IslandHomeStrings.stories,
-            icon: Icons.auto_stories_rounded,
+            logoAsset: IslandHomeLogos.stories,
+            fallbackIcon: Icons.auto_stories_rounded,
             tint: const Color(0xFFFFD166),
             height: height,
             onTap: () => _openPath('/stories', IslandHomeStrings.stories),
@@ -511,10 +528,12 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
         ),
         const SizedBox(width: 6),
         Expanded(
-          child: _buildFeatureShortcut(
-            keyName: 'home_shortcut_lullabies',
+          child: _HomeShortcutButton(
+            key: const ValueKey<String>('home_shortcut_lullabies'),
+            logoKey: const ValueKey<String>('home_logo_lullabies'),
             label: IslandHomeStrings.lullabies,
-            icon: Icons.nightlight_round,
+            logoAsset: IslandHomeLogos.lullabies,
+            fallbackIcon: Icons.nightlight_round,
             tint: const Color(0xFFB9A4FF),
             height: height,
             onTap: () => _openPath('/lullabies', IslandHomeStrings.lullabies),
@@ -522,10 +541,12 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
         ),
         const SizedBox(width: 6),
         Expanded(
-          child: _buildFeatureShortcut(
-            keyName: 'home_shortcut_games',
+          child: _HomeShortcutButton(
+            key: const ValueKey<String>('home_shortcut_games'),
+            logoKey: const ValueKey<String>('home_logo_games'),
             label: IslandHomeStrings.games,
-            icon: Icons.sports_esports_rounded,
+            logoAsset: IslandHomeLogos.games,
+            fallbackIcon: Icons.sports_esports_rounded,
             tint: const Color(0xFF74E3B3),
             height: height,
             onTap: () => _openPath('/games-carnival', IslandHomeStrings.games),
@@ -534,73 +555,194 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
       ],
     );
   }
+}
 
-  Widget _buildFeatureShortcut({
-    required String keyName,
-    required String label,
-    required IconData icon,
-    required Color tint,
-    required double height,
-    required VoidCallback onTap,
-  }) {
-    void handleTap() {
-      HapticFeedback.selectionClick();
-      AudioService.select();
-      onTap();
-    }
+class _HomeShortcutButton extends StatefulWidget {
+  const _HomeShortcutButton({
+    super.key,
+    required this.logoKey,
+    required this.label,
+    required this.logoAsset,
+    required this.fallbackIcon,
+    required this.tint,
+    required this.height,
+    required this.onTap,
+  });
+
+  final Key logoKey;
+  final String label;
+  final String logoAsset;
+  final IconData fallbackIcon;
+  final Color tint;
+  final double height;
+  final VoidCallback onTap;
+
+  @override
+  State<_HomeShortcutButton> createState() => _HomeShortcutButtonState();
+}
+
+class _HomeShortcutButtonState extends State<_HomeShortcutButton> {
+  bool _pressed = false;
+
+  void _handleTap() {
+    HapticFeedback.selectionClick();
+    AudioService.select();
+    widget.onTap();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final totalHeight = widget.height.clamp(72.0, 106.0).toDouble();
+    final logoSize = totalHeight * 0.65;
+    final cardTop = totalHeight * 0.22;
+    final dpr = MediaQuery.maybeOf(context)?.devicePixelRatio ?? 2.0;
+    final cacheWidth = (logoSize * dpr).round().clamp(112, 360);
 
     return Semantics(
       button: true,
-      label: label,
-      onTap: handleTap,
+      label: widget.label,
+      onTap: _handleTap,
       child: ExcludeSemantics(
         child: Tooltip(
-          message: label,
-          child: GestureDetector(
-            key: ValueKey<String>(keyName),
-            behavior: HitTestBehavior.opaque,
-            onTap: handleTap,
-            child: Container(
-              height: height.clamp(48.0, 64.0).toDouble(),
-              padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                gradient: const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: <Color>[
-                    Color(0xE6175261),
-                    Color(0xF00A303B),
-                  ],
-                ),
-                border: Border.all(color: tint.withOpacity(0.86), width: 1.5),
-                boxShadow: <BoxShadow>[
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.25),
-                    blurRadius: 7,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Icon(icon, size: 20, color: tint),
-                  const SizedBox(height: 2),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      textDirection: TextDirection.rtl,
-                      style: AppFonts.kids(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
+          message: widget.label,
+          child: Transform.scale(
+            scale: _pressed ? 0.95 : 1.0,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapDown: (_) => setState(() => _pressed = true),
+              onTapUp: (_) => setState(() => _pressed = false),
+              onTapCancel: () => setState(() => _pressed = false),
+              onTap: _handleTap,
+              child: SizedBox(
+                height: totalHeight,
+                child: Stack(
+                  alignment: Alignment.center,
+                  clipBehavior: Clip.none,
+                  children: <Widget>[
+                    // کارتِ شیشه‌ایِ سه‌بعدی در زیرِ لوگوی برجسته
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: cardTop,
+                      bottom: 0,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: <Color>[
+                              Color(0xEE185A6A),
+                              Color(0xF5092D38),
+                            ],
+                          ),
+                          border: Border.all(
+                            color: widget.tint.withOpacity(0.90),
+                            width: 1.7,
+                          ),
+                          boxShadow: <BoxShadow>[
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.32),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                            BoxShadow(
+                              color: widget.tint.withOpacity(0.20),
+                              blurRadius: 10,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                    // هالهٔ رنگیِ لطیف پشتِ لوگوی سه‌بعدی
+                    Positioned(
+                      top: 0,
+                      width: logoSize * 1.18,
+                      height: logoSize,
+                      child: IgnorePointer(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: <Color>[
+                                widget.tint.withOpacity(0.34),
+                                widget.tint.withOpacity(0.0),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // لوگوی سه‌بعدیِ کودک‌پسند در بالای متن
+                    Positioned(
+                      top: 0,
+                      width: logoSize,
+                      height: logoSize,
+                      child: IgnorePointer(
+                        child: DecoratedBox(
+                          key: widget.logoKey,
+                          decoration: BoxDecoration(
+                            boxShadow: <BoxShadow>[
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.28),
+                                blurRadius: 6,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Image.asset(
+                            widget.logoAsset,
+                            width: logoSize,
+                            height: logoSize,
+                            fit: BoxFit.contain,
+                            filterQuality: FilterQuality.medium,
+                            cacheWidth: cacheWidth,
+                            excludeFromSemantics: true,
+                            errorBuilder: (
+                              BuildContext context,
+                              Object error,
+                              StackTrace? stack,
+                            ) {
+                              return Icon(
+                                widget.fallbackIcon,
+                                size: logoSize * 0.56,
+                                color: widget.tint,
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                    // عنوانِ خوانای فارسی در پایینِ لوگو
+                    Positioned(
+                      left: 4,
+                      right: 4,
+                      top: totalHeight * 0.65,
+                      bottom: 4,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          widget.label,
+                          maxLines: 1,
+                          textDirection: TextDirection.rtl,
+                          style: AppFonts.kids(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            height: 1.12,
+                            color: Colors.white,
+                            shadows: <Shadow>[
+                              Shadow(
+                                color: Colors.black.withOpacity(0.55),
+                                blurRadius: 2,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
