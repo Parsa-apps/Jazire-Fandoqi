@@ -162,8 +162,12 @@ class _LivingIslandHomeState extends ConsumerState<LivingIslandHome> {
     setState(() {});
   }
 
-  Future<void> _openGifts() async {
-    await showDailyGiftsDialog(context, onRewardClaimed: () {
+  /// [showDailyGiftsDialog] هم‌زمان نیست: دیالوگ را می‌سازد و بلافاصله
+  /// برمی‌گردد، بنابراین اینجا await معنا ندارد (و روی void خطای
+  /// کامپایل می‌دهد). پاداش از طریقِ onRewardClaimed برمی‌گردد.
+  void _openGifts() {
+    HapticFeedback.lightImpact();
+    showDailyGiftsDialog(context, onRewardClaimed: () {
       if (mounted) setState(() {});
     });
   }

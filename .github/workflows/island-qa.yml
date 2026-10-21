@@ -42,6 +42,45 @@ jobs:
       - name: Flutter pub get
         run: flutter pub get
 
+      - name: Record toolchain versions
+        run: |
+          flutter --version
+          dart --version
+
+      # Report only: the repository carries pre-existing formatting drift in
+      # files this branch never touched. Reformatting them would be unrelated
+      # churn, so the whole-repo check is published, not enforced. The hard
+      # gate below enforces formatting for every Dart file this branch adds
+      # or modifies.
+      - name: Dart format (report, whole repository)
+        run: |
+          set +e
+          dart format --output=none --set-exit-if-changed . > format-report.txt 2>&1
+          status=$?
+          echo "::notice::dart format (whole repo) exit=$status"
+          changed=$(grep -c '^Changed ' format-report.txt || true)
+          echo "::notice::dart format: $changed file(s) would be reformatted"
+          grep '^Changed ' format-report.txt | head -40 > format-changed.txt || true
+          if [ -s format-changed.txt ]; then
+            python3 tool/ci_annotate.py 'dart format: files needing reformatting (report only)' format-changed.txt || true
+          fi
+          true
+
+      # Hard gate: every Dart file this branch adds or modifies must already
+      # be dart-format clean. No `|| true`, no continue-on-error.
+      - name: Dart format (hard gate, branch files)
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin main
+          mapfile -t FILES < <(git diff --name-only --diff-filter=ACM origin/main...HEAD -- '*.dart')
+          printf 'Branch touches %d Dart file(s):\n' "${#FILES[@]}"
+          printf '  %s\n' "${FILES[@]}"
+          if [ "${#FILES[@]}" -eq 0 ]; then
+            echo 'No Dart files changed; nothing to check.'
+            exit 0
+          fi
+          dart format --output=none --set-exit-if-changed "${FILES[@]}"
+
       - name: Flutter analyze (full report)
         run: |
           set +e
@@ -82,10 +121,16 @@ jobs:
       # Hard gate: the redesigned island code must be analyzer-clean.
       # Mission 2 extends the scope with the shared design kit, the hub
       # sheet (honest lock state) and their tests.
+      # Mission: premium island home. The redesign adds a new feature folder
+      # and a new design-token file; they are held to the same zero-finding
+      # standard as the rest of the island code.
       - name: Flutter analyze (island scope gate)
         run: |
           set +e
           flutter analyze \
+            lib/features/island_home \
+            lib/app/island_cinema_style.dart \
+            lib/features/splash/widgets/splash_island_cinema.dart \
             lib/features/home/widgets/island_map \
             lib/features/home/widgets/fandoqi_hub_sheet.dart \
             lib/features/games/mini_games/games_carnival_screen.dart \
@@ -113,6 +158,10 @@ jobs:
             lib/shared/widgets/parsa_gold_aura.dart \
             lib/features/growth/growth_app_shell.dart \
             test/features/splash \
+            test/features/splash/splash_skip_test.dart \
+            test/features/island_home/living_island_home_test.dart \
+            test/features/island_home/fandoqi_hero_test.dart \
+            test/features/island_home/island_scene_test.dart \
             test/features/home/island_node_test.dart \
             test/features/home/hub_island_node_test.dart \
             test/features/home/hero_fandoq_test.dart \
@@ -160,6 +209,10 @@ jobs:
       - name: Flutter test (island gate)
         run: >-
           flutter test
+          test/features/island_home/living_island_home_test.dart
+          test/features/island_home/fandoqi_hero_test.dart
+          test/features/island_home/island_scene_test.dart
+          test/features/splash/splash_skip_test.dart
           test/features/home/island_node_test.dart
           test/features/home/island_hero_character_test.dart
           test/features/home/hub_access_policy_test.dart
@@ -212,6 +265,8 @@ jobs:
             analyze.txt
             gate-analyze.txt
             test-output.txt
+            format-report.txt
+            format-changed.txt
             qa-gate-log/
             build/app/test-results/testMyketReleaseUnitTest/
           if-no-files-found: ignore

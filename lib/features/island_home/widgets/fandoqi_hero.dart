@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -80,6 +81,13 @@ class _FandoqiHeroState extends State<FandoqiHero>
   bool _cheering = false;
   int _blinkIndex = 0;
 
+  /// زمان‌سنج‌های پلک و جشن نگه داشته و در dispose لغو می‌شوند.
+  /// با Future.delayed امکانِ لغو وجود نداشت: زنجیرهٔ پلک پس از نابودیِ
+  /// ویجت هم زنده می‌ماند (نشتِ واقعی در تولید و خطای "A Timer is still
+  /// pending" در تست).
+  Timer? _blinkTimer;
+  Timer? _cheerTimer;
+
   /// فاصله‌های نامنظمِ پلک (میلی‌ثانیه) — تکرارِ ماشینی ندارد
   static const List<int> _blinkDelays = <int>[4200, 5400, 3600, 6100, 4800];
   static const Duration _blinkDuration = IslandCinemaMotion.heroBlink;
@@ -128,6 +136,10 @@ class _FandoqiHeroState extends State<FandoqiHero>
         _breath.value = 0.25;
         _cheer.stop();
         _cheer.value = 0;
+        _blinkTimer?.cancel();
+        _blinkTimer = null;
+        _cheerTimer?.cancel();
+        _cheerTimer = null;
         _blinking = false;
         _cheering = false;
       } else {
@@ -146,14 +158,16 @@ class _FandoqiHeroState extends State<FandoqiHero>
   }
 
   void _scheduleBlink() {
+    _blinkTimer?.cancel();
+    _blinkTimer = null;
     if (!mounted || widget.reduceMotion) return;
     final delay = _blinkDelays[_blinkIndex % _blinkDelays.length];
     _blinkIndex++;
-    Future<void>.delayed(Duration(milliseconds: delay), () {
+    _blinkTimer = Timer(Duration(milliseconds: delay), () {
       if (!mounted || widget.reduceMotion) return;
       _blinking = true;
       _bumpTick();
-      Future<void>.delayed(_blinkDuration, () {
+      _blinkTimer = Timer(_blinkDuration, () {
         if (!mounted) return;
         _blinking = false;
         _bumpTick();
@@ -172,7 +186,8 @@ class _FandoqiHeroState extends State<FandoqiHero>
     _cheering = true;
     _cheer.forward(from: 0);
     _bumpTick();
-    Future<void>.delayed(IslandCinemaMotion.heroCheer, () {
+    _cheerTimer?.cancel();
+    _cheerTimer = Timer(IslandCinemaMotion.heroCheer, () {
       if (!mounted) return;
       _cheering = false;
       _bumpTick();
@@ -188,6 +203,10 @@ class _FandoqiHeroState extends State<FandoqiHero>
 
   @override
   void dispose() {
+    _blinkTimer?.cancel();
+    _cheerTimer?.cancel();
+    _blinkTimer = null;
+    _cheerTimer = null;
     widget.controller?.cheerTick.removeListener(_onExternalCheer);
     _entrance.dispose();
     _breath.dispose();
