@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-"""Build Cafe Bazaar/Myket marketing screenshots from real app captures.
+"""Build Cafe Bazaar/Myket store screenshots (1080x1920) for v8.
 
-The output is intentionally 1080x1920 and palette-optimised so every file is
-small enough to upload from the developer panels without sacrificing the real
-in-app UI. Both stores can use the same ordered image set.
+Phone content comes from the app's own current in-app artwork (the scenes
+and cards the shipped app actually renders), framed with a Persian headline
+per slide. The output is palette-optimised so every file stays small enough
+for the developer panels. Both stores use the same ordered image set; the
+primary output lands in store/myket/upload and is mirrored to
+store/bazaar/upload.
 
 Install the small design-time dependency set in a virtual environment:
     python3 -m venv .venv
@@ -32,9 +35,13 @@ except ImportError as exc:  # pragma: no cover - friendly local tooling failure
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE_DIR = ROOT / "assets" / "screeen"
-OUTPUT_DIR = ROOT / "store" / "bazaar" / "upload"
-PREVIEW = ROOT / "store" / "bazaar" / "screenshots_preview.jpg"
+# مجموعهٔ ۸.۰ از آرت‌ورکِ واقعی و فعلیِ داخل خود اپ ساخته می‌شود (همان
+# صحنه‌ها و کارت‌هایی که نسخهٔ منتشرشده رندر می‌کند)، نه از برداشت‌های
+# قدیمی ۶.۲.۶ در assets/screeen که دیگر شبیه اپ نیستند.
+SOURCE_DIR = ROOT / "assets"
+OUTPUT_DIR = ROOT / "store" / "myket" / "upload"
+MIRROR_DIR = ROOT / "store" / "bazaar" / "upload"
+PREVIEW = ROOT / "store" / "myket" / "screenshots_preview.jpg"
 ICON = ROOT / "assets" / "icon" / "jazireh-fandoghi-app-icon-512.png"
 FONT_BOLD = ROOT / "assets" / "fonts" / "Vazirmatn-Bold.ttf"
 FONT_REGULAR = ROOT / "assets" / "fonts" / "Vazirmatn-Regular.ttf"
@@ -45,7 +52,7 @@ WIDTH, HEIGHT = 1080, 1920
 @dataclass(frozen=True)
 class Slide:
     output: str
-    capture: str
+    capture: str  # مسیر نسبت به assets/ — آرت‌ورک واقعی داخل اپ
     title: str
     subtitle: str
     top: str
@@ -54,86 +61,88 @@ class Slide:
     rotation: float
 
 
+# اسلایدهای نسخهٔ ۸.۰ — هر اسلاید یک پیام، با تیترِ هماهنگ با قابلیت‌های
+# فعلی اپ (کتابخانهٔ ۱۶ دسته، دانشنامهٔ حیوانات، نقشهٔ ۵۰ مرحله و…).
 SLIDES = (
     Slide(
         "1_home.png",
-        "Screenshot_20260816_100515_com.parsaapps.amoozesh_fandoghi.jpg",
-        "یادگیری فارسی با بازی و قصه",
-        "ویژه کودکان ۳ تا ۸ سال",
+        "theme_v2/home_scene.webp",
+        "جزیره‌ای برای بازی و یادگیری",
+        "ویژه کودکان ۳ تا ۸ سال؛ رایگان و بدون تبلیغ",
         "#0875D1",
         "#24C7D9",
         "#FFCD58",
-        -1.2,
+        -0.5,
     ),
     Slide(
-        "2_learning.png",
-        "Screenshot_20260816_114013_com.parsaapps.amoozesh_fandoghi.jpg",
-        "آموزش فارسی، قدم‌به‌قدم",
-        "تمرین شنیداری، املا، واژگان و صدا",
+        "2_alphabet.png",
+        "theme_v2/alphabet_meadow_bg.webp",
+        "آموزش الفبای فارسی با فندقی",
+        "حروف، صدا، نوشتن با انگشت و املا",
         "#F06A3C",
         "#FFB84E",
         "#FFF0A7",
-        1.15,
+        0.5,
     ),
     Slide(
-        "3_games.png",
-        "Screenshot_20260816_101541_com.parsaapps.amoozesh_fandoghi.jpg",
-        "بازی کن، فکر کن، جایزه بگیر",
-        "بازی‌های هدفمند برای یادگیری شیرین",
+        "3_animals.png",
+        "illustrations/animals_cards.webp",
+        "دانشنامه حیوانات ایران",
+        "۳۰ حیوان با صدا، زیستگاه و نکته‌های جالب",
+        "#1E9E62",
+        "#5FC98B",
+        "#FFE066",
+        -0.5,
+    ),
+    Slide(
+        "4_games.png",
+        "illustrations/memory_cards.webp",
+        "بازی‌های فکری، حافظه و پازل",
+        "شهر بازی‌های تازه و ده‌ها بازی هدفمند",
         "#654BD8",
         "#A56AF1",
         "#66E6D4",
-        -1.05,
+        0.5,
     ),
     Slide(
-        "4_stories.png",
-        "Screenshot_20260816_114047_com.parsaapps.amoozesh_fandoghi.jpg",
-        "قصه‌های تعاملی و شنیدنی",
-        "با صدا، واژه‌های طلایی و جایزه",
+        "5_stories.png",
+        "theme_v2/splash_scene.webp",
+        "قصه، شعر و لالایی",
+        "قصه‌های تعاملی، ۸ شعر و ۱۰ لالایی برای خواب",
         "#E84E82",
         "#FF8A76",
         "#FFD46C",
-        1.05,
+        -0.5,
     ),
     Slide(
-        "5_progress.png",
-        "Screenshot_20260816_114150_com.parsaapps.amoozesh_fandoghi.jpg",
-        "رشد کودک را دنبال کنید",
-        "کارنامه روشن از یادگیری و پیشرفت",
-        "#078B87",
-        "#35C7B1",
-        "#C9F76F",
-        -1.0,
-    ),
-    Slide(
-        "6_missions.png",
-        "Screenshot_20260816_100558_com.parsaapps.amoozesh_fandoghi.jpg",
-        "هر روز یک مأموریت تازه",
-        "هدف‌های کوچک، جایزه‌های شیرین",
+        "6_stages.png",
+        "theme_v2/squirrel_reward.webp",
+        "نقشه ۵۰ مرحله جزیره",
+        "هر مرحله یک ماجراجویی تازه و یک جایزه",
         "#EA8214",
         "#F8C437",
         "#FFF2A8",
-        1.0,
+        0.5,
     ),
     Slide(
-        "7_profile.png",
-        "Screenshot_20260816_101636_com.parsaapps.amoozesh_fandoghi.jpg",
-        "دنیای مخصوص هر کودک",
-        "پروفایل، آواتار و تجربه شخصی‌سازی‌شده",
-        "#3F49BE",
-        "#7778E9",
-        "#92F0EA",
-        -1.0,
+        "7_parents.png",
+        "mascot/fandoghi_welcome_hero.png",
+        "رشد کودک را دنبال کنید",
+        "کارنامه، گزارش هفتگی و پنل امن والدین",
+        "#078B87",
+        "#35C7B1",
+        "#C9F76F",
+        -0.5,
     ),
     Slide(
         "8_safe.png",
-        "Screenshot_20260816_100456_com.parsaapps.amoozesh_fandoghi.jpg",
+        "illustrations/colors_cards.webp",
         "شاد، امن و بدون تبلیغ",
-        "یک تجربه کودکانه برای خیال راحت والدین",
+        "نیمه‌اول هر بخش رایگان؛ نسخه کامل با یک خرید دائمی",
         "#15245C",
         "#246DB4",
         "#FFD15E",
-        1.0,
+        0.5,
     ),
 )
 
@@ -305,14 +314,19 @@ def build_phone(capture_path: Path, rotation: float) -> Image.Image:
     frame = 18
     screenshot = Image.open(capture_path).convert("RGB")
 
-    # Device captures include an Android status bar. It is system chrome rather
-    # than part of the product story, and its clock/icons become visual noise in
-    # a marketing frame. All current captures share the same 1080 px baseline.
-    status_bar_h = round(96 * screenshot.width / 1080)
-    screenshot = screenshot.crop((0, status_bar_h, screenshot.width, screenshot.height))
-
-    screen_h = round(screenshot.height * screen_w / screenshot.width)
-    screenshot = screenshot.resize((screen_w, screen_h), Image.Resampling.LANCZOS).convert("RGBA")
+    # محتوای قاب از آرت‌ورکِ داخل اپ پر می‌شود (cover-fill با برش مرکزی)
+    # تا با هر نسبتی — صحنهٔ عمودی خانه، کارت افقی حیوانات و… — قاب همیشه
+    # کامل و بدون نوار خالی دیده شود. برش نوار وضعیت لازم نیست چون این‌ها
+    # برداشت دستگاهی نیستند.
+    screen_h = 1280
+    scale = max(screen_w / screenshot.width, screen_h / screenshot.height)
+    resized = screenshot.resize(
+        (round(screenshot.width * scale), round(screenshot.height * scale)),
+        Image.Resampling.LANCZOS,
+    )
+    left = (resized.width - screen_w) // 2
+    top = (resized.height - screen_h) // 2
+    screenshot = resized.crop((left, top, left + screen_w, top + screen_h)).convert("RGBA")
 
     phone_w, phone_h = screen_w + frame * 2, screen_h + frame * 2
     phone = Image.new("RGBA", (phone_w + 70, phone_h + 70), (0, 0, 0, 0))
@@ -426,8 +440,18 @@ def main() -> None:
         size_kib = output.stat().st_size / 1024
         print(f"  {index}. {output.relative_to(ROOT)} ({size_kib:.0f} KiB)")
     build_preview(outputs)
+
+    # همان مجموعه برای کافه‌بازار هم استفاده می‌شود (مایکت سرصفحهٔ ۵×۲
+    # ندارد و همین تصاویر عمودی کافی است).
+    import shutil
+
+    MIRROR_DIR.mkdir(parents=True, exist_ok=True)
+    for output in outputs:
+        shutil.copyfile(output, MIRROR_DIR / output.name)
+    shutil.copyfile(PREVIEW, ROOT / "store" / "bazaar" / "screenshots_preview.jpg")
+
     print(f"  Preview: {PREVIEW.relative_to(ROOT)}")
-    print("Done. Use this same ordered set for Cafe Bazaar and Myket.")
+    print("Done. Same ordered set mirrored to store/bazaar/upload.")
 
 
 if __name__ == "__main__":
