@@ -121,14 +121,19 @@ void main() {
           scrollable: find.byType(Scrollable).last,
         );
         await tester.tap(find.text(entry.key));
-        await tester.pumpAndSettle();
+        // پمپ محدود به‌جای pumpAndSettle: هدرِ کتابخانه انیمیشنِ
+        // تکرارشونده دارد و pumpAndSettle روی این صفحه هرگز آرام
+        // نمی‌شود (علت قرمزی CI). برای ترنزیشنِ مسیر ۵۰۰ms کافی است.
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
         expect(
           find.text('dest:${entry.value}'),
           findsOneWidget,
           reason: 'کارت «${entry.key}» باید به ${entry.value} برسد',
         );
         tester.state<NavigatorState>(find.byType(Navigator)).pop();
-        await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
       }
 
       await _disposeAnimatedTree(tester);
