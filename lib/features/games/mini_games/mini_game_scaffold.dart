@@ -665,19 +665,24 @@ class _MiniGameScaffoldState extends State<MiniGameScaffold>
           .scale(end: const Offset(1, 1), duration: 180.ms);
     }
 
-    // قابِ نبض از همان فریم اول سوار است و فقط مقیاسش با فعال‌شدن Hint عوض
-    // می‌شود؛ این‌طور فعال‌شدن راهنما هیچ ویجتی را سوار/پیاده نمی‌کند.
     // فقط وقتی راهنما روشن است قاب نبض سوار می‌شود؛ بقیهٔ کارت‌ها بدون آن ساخته می‌شوند.
     if (!showHintPulse) return interactive;
-    interactive = AnimatedBuilder(
+    // ⚠️ کارت باید پیش از انتساب به interactive در یک متغیر نهایی ثبت شود:
+    // closure در دارت متغیر را «با مرجع» می‌گیرد؛ اگر داخل builder مستقیماً
+    // از interactive خوانده شود، آن متغیر در زمان اجرای builder این‌بار به
+    // خودِ AnimatedBuilder منتسب شده است و builder خروجیِ خودش را می‌پیچد.
+    // نتیجه: هر rebuild دو سطح (Transform >> AnimatedBuilder) به درخت اضافه
+    // می‌کند و عمق درخت بی‌نهایت رشد می‌کند — در تست، ساعتِ fake-async در
+    // همان pump فریز می‌شود و flutter test بدون خلاصهٔ پایانی گیر می‌کند؛
+    // در اپ واقعی، نشت عمق/حافظه و کندیِ فزاینده تا وقتی Hint فعال است.
+    final Widget card = interactive;
+    return AnimatedBuilder(
       animation: _pulseCtrl,
       builder: (context, _) {
         final t = showHintPulse ? 1 + _pulseCtrl.value * 0.07 : 1.0;
-        return Transform.scale(scale: t, child: interactive);
+        return Transform.scale(scale: t, child: card);
       },
     );
-
-    return interactive;
   }
 
   Widget _buildResult() {

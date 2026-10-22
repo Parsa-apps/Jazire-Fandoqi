@@ -81,6 +81,18 @@ Future<void> _pump(WidgetTester tester) async {
 /// و تایمرهای پیام فندقی باید پیش از پایان تست اجرا شوند؛ ۵۰۰ میلی‌ثانیه کافی است.
 Future<void> _drainTimers(WidgetTester tester) async {
   await tester.pump(const Duration(milliseconds: 500));
+  // کانال‌های سراسری فندقی (پیام و تایمر پنهان‌شدنش) را می‌بندیم تا پس از
+  // پیاده‌شدن درخت، «تایمر معلق» گزارش نشود — همان الگوی app_flow_test.
+  FandoghiCoach.clear();
+  FandoghiCoach.cancelSmartHint();
+  // درخت را کامل پیاده می‌کنیم (جایگزینی با ویجت خالی) تا هر کنترلرِ
+  // انیمیشنِ هنوز-فعال — نبضِ راهنمای اسکافولد (repeat)، کانفتیِ صفحهٔ
+  // نتیجه و افکت‌های flutter_animate — dispose شود. بدون این کار،
+  // فریم‌های زمان‌بندی‌شدهٔ این کنترلرها پس از آخرین تستِ فایل، ایزولیتِ
+  // flutter test را باز نگه می‌دارند و اجرا «بدون خلاصهٔ پایانی» برای
+  // همیشه می‌ماند (همان علتِ غیرفعال‌شدنِ موقتِ این تست‌ها).
+  await tester.pumpWidget(const SizedBox.shrink());
+  await tester.pump();
 }
 
 /// لمس ایمن: گزینه‌ها داخل ویوپورتِ اسکرول‌شدنی‌اند و در قابِ کوتاهِ تست،
@@ -92,14 +104,21 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
   await tester.tap(finder);
 }
 
-/// TEMPORARY: این تست‌های ویجتیِ بازی در دروازهٔ CI موقتاً غیرفعال‌اند تا بیلد
-/// سبز شود؛ اجرای flutter test پس از این فایل بدون خلاصه پایان می‌یافت و علت
-/// هنوز از لاگ ابزار پیدا نشده. نبض راهنمای اسکافولد در کد اصلاح شده است.
-/// پس از پیدا کردن علت، این پرچم را برداشته و تست‌ها را دوباره فعال کنید.
-const bool _scaffoldWidgetTestsEnabled = false;
-
 void _scaffoldTest(String name, Future<void> Function(WidgetTester) body) {
-  testWidgets(name, body, skip: !_scaffoldWidgetTestsEnabled);
+  testWidgets(name, (tester) async {
+    // تور ایمنی: حتی اگر تست وسطِ کار خطا بدهد و به _drainTimers نرسد،
+    // درختِ ویجت در پایان پیاده شود تا انیمیشنِ فعالی ایزولیت تست را قفل
+    // نکند و اجرای flutter test «بدون خلاصهٔ پایانی» گیر نکند.
+    addTearDown(() async {
+      try {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+      } catch (_) {
+        // اگر درخت به‌هم‌ریخته باشد، فقط می‌خواهیم ایزولیت قفل نماند.
+      }
+    });
+    await body(tester);
+  });
 }
 
 void main() {
@@ -160,7 +179,9 @@ void main() {
     // صفحهٔ نتیجه
     await tester.pump(const Duration(milliseconds: 1500));
     expect(find.text('بازی آزمایشی 🧪'), findsOneWidget);
-    expect(find.text('دور جدید 🔄'), findsOneWidget);
+    // دکمهٔ نتیجه در طراحی v8.0.0 (IslandKidButton) برچسب سادهٔ «دور جدید»
+    // دارد؛ آیکون replay جدا رندر می‌شود و بخشی از متن نیست.
+    expect(find.text('دور جدید'), findsOneWidget);
 
     await _drainTimers(tester);
   });
@@ -229,7 +250,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1200));
     await tester.pump(const Duration(milliseconds: 1200));
 
-    await _tap(tester, find.text('دور جدید 🔄'));
+    await _tap(tester, find.text('دور جدید'));
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('۱ + ۱ چند می‌شود؟'), findsOneWidget);
 

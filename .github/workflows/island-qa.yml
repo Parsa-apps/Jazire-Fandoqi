@@ -181,7 +181,15 @@ jobs:
       - name: Flutter test (full suite report)
         run: |
           set +e
-          timeout 180s flutter test --reporter expanded > test-output.txt 2>&1
+          # 180s was never enough: the full suite (465+ tests, many widget
+          # suites with animation pumping) needs ~3.5–4 minutes of wall time
+          # on the 2-core runner. The canonical gate (tool/ci_quality_gate.sh)
+          # already allows 12m; QA gets 10m so a real hang still fails loudly
+          # instead of silently truncating green runs.
+          # --timeout 2m (per test, like the canonical gate): a hung test
+          # is then failed loudly with its stack trace instead of freezing
+          # the whole suite without a summary.
+          timeout 10m flutter test --reporter expanded --timeout 2m > test-output.txt 2>&1
           status=$?
           echo "::notice::flutter test (full suite) exit=$status"
           if [ "$status" -ne 0 ]; then
