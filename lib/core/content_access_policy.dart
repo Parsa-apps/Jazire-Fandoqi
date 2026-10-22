@@ -3,6 +3,8 @@ import 'growth/life_skills_data.dart';
 import 'learning_content/children_stories_data.dart';
 import 'learning_content/learning_topics.dart';
 import 'learning_content/lullabies_data.dart';
+import 'learning_content/poems_data.dart';
+import 'learning_content/quran_data.dart';
 import 'literacy/decodable_stories.dart';
 
 /// The single source of truth for partially-free content collections.
@@ -40,6 +42,14 @@ abstract final class ContentAccessPolicy {
 
   /// ۱۰ لالایی → ۵ لالایی رایگان.
   static const int freeLullabyCount = 5;
+
+  /// ۸ شعر کودکانه → نیمهٔ اول (۴ شعر) رایگان.
+  static const int freePoemCount = 4;
+
+  // ── قرآن کودک ─────────────────────────────────────────────────────────
+  // سوره‌های جزء ۳۰ محتوای آموزشیِ دینیِ پایه هستند و عمداً کاملاً رایگان
+  // عرضه می‌شوند؛ نه در ورودی هاب و نه روی تک‌آیه‌ها قفلی وجود ندارد.
+  static bool isSurahFree(String id) => QuranData.byId(id) != null;
 
   /// ۱۰ دنیای مهارت زندگی → ۵ دنیا رایگان.
   static const int freeLifeSkillCount = 5;
@@ -150,6 +160,13 @@ abstract final class ContentAccessPolicy {
         id,
         LullabiesData.all.map((item) => item.id),
         freeLullabyCount,
+      );
+
+  /// نیمهٔ اول شعرها (به ترتیب کتاب) رایگان است.
+  static bool isPoemFree(String id) => _isAmongFirst(
+        id,
+        PoemsData.all.map((item) => item.id),
+        freePoemCount,
       );
 
   /// نیمهٔ اول دنیاهای مهارت زندگی (به ترتیب کتاب) رایگان است.

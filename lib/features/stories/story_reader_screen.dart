@@ -14,7 +14,6 @@ import '../../core/fandoghi_models.dart';
 import '../../core/game_data.dart';
 import '../../core/growth/persian_digits.dart';
 import '../../core/learning_content/children_stories_data.dart';
-import '../../core/literacy/story_read_along.dart';
 import '../../core/logger_service.dart';
 import '../../shared/widgets/child_touch_target.dart';
 import '../../shared/widgets/particle_celebration.dart';
@@ -24,7 +23,8 @@ import 'widgets/story_quiz_modal.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// 📖 STORY READER SCREEN — کتابخوان مصور و تعاملی کودکان (نسخه پیشرفته)
-/// با هایلایت هماهنگ خط‌به‌خط با صدای گوینده، حالت قصه شب، پخش خودکار و مسابقه
+/// متن صفحه ساکن و یکدست است (بدون هایلایت متحرک/انتخاب کلمه‌به‌کلمه) تا
+/// تمرکز کودک روی شنیدن روایت بماند؛ حالت قصه شب، پخش خودکار و مسابقه پابرجاست.
 /// ═══════════════════════════════════════════════════════════════
 class StoryReaderScreen extends StatefulWidget {
   final ChildrenStory story;
@@ -44,13 +44,9 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
   bool _celebrating = false;
 
   Timer? _autoPlayTimer;
-  StreamSubscription<Duration>? _positionSub;
   StreamSubscription<PlayerState>? _playerStateSub;
 
-  int _highlightedLineIndex = 0;
-  int _highlightedWordIndex = 0;
-  double _audioProgress = 0.0;
-  Duration _pageDuration = Duration.zero;
+  /// کلمات طلایی‌ای که در این نشست جایزه‌شان گرفته شده (جلوگیری از سکه تکراری).
   final Set<String> _awardedWords = <String>{};
 
   @override
@@ -85,8 +81,6 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
   void _cleanupAudio() {
     _autoPlayTimer?.cancel();
     _autoPlayTimer = null;
-    _positionSub?.cancel();
-    _positionSub = null;
     _playerStateSub?.cancel();
     _playerStateSub = null;
   }
@@ -98,58 +92,25 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
     if (pageIndex < 0 || pageIndex >= widget.story.pages.length) return;
 
     final page = widget.story.pages[pageIndex];
-    final lines = StoryReadAlong.sentences(page.text);
 
-    setState(() {
-      _highlightedLineIndex = 0;
-      _highlightedWordIndex = 0;
-      _audioProgress = 0.0;
-      _isSpeaking = true;
-    });
+    setState(() => _isSpeaking = true);
 
-    // ۱. پخش فایل صوتی اختصاصی و باکیفیت داستان
+    // ۱. پخش فایل صوتی اختصاصی و باکیفیت داستان.
+    // متن صفحه به‌صورت ساکن و یکدست نمایش داده می‌شود؛ دیگر هیچ هایلایت
+    // خط‌به‌خط یا کلمه‌به‌کلمه‌ای هماهنگ با صدا روی متن حرکت نمی‌کند تا
+    // تمرکز کودک روی شنیدن روایت بماند.
     final loadedDuration = await StoryAudioService.playPreRecordedOnly(
       widget.story.id,
       page.pageNumber,
     );
 
     if (loadedDuration != null && loadedDuration > Duration.zero) {
-      _pageDuration = loadedDuration;
-
-      // دریافت موقعیت زنده پخش و تغییر خط فعال بر اساس پیشرفت صدا
-      _positionSub = StoryAudioService.positionStream.listen((pos) {
-        if (!mounted) return;
-        final totalMs = _pageDuration.inMilliseconds;
-        if (totalMs > 0) {
-          final progress =
-              (pos.inMilliseconds / totalMs).clamp(0.0, 1.0);
-          final activeIndex = StoryReadAlong.activeIndex(lines, progress);
-          final local = StoryReadAlong.localProgress(lines, progress, activeIndex);
-          final words = activeIndex < lines.length
-              ? StoryReadAlong.words(lines[activeIndex])
-              : const <String>[];
-          final wordIndex = StoryReadAlong.activeIndex(words, local);
-          if (activeIndex != _highlightedLineIndex ||
-              wordIndex != _highlightedWordIndex ||
-              (progress - _audioProgress).abs() > 0.02) {
-            setState(() {
-              _audioProgress = progress;
-              _highlightedLineIndex = activeIndex;
-              _highlightedWordIndex = wordIndex;
-            });
-          }
-        }
-      });
-
-      // گوش دادن به اتمام پخش فایل
+      // فقط برای اطلاع از اتمام پخش (پخش خودکار صفحه بعد) مشترک می‌شویم؛
+      // موقعیت لحظه‌ای صدا دیگر روی متن بازتاب داده نمی‌شود.
       _playerStateSub = StoryAudioService.playerStateStream.listen((state) {
         if (!mounted) return;
         if (state.processingState == ProcessingState.completed) {
-          setState(() {
-            _isSpeaking = false;
-            _audioProgress = 1.0;
-            _highlightedLineIndex = lines.isEmpty ? 0 : lines.length - 1;
-          });
+          setState(() => _isSpeaking = false);
           if (_isAutoPlaying && !_isLastPage) {
             _autoPlayTimer?.cancel();
             _autoPlayTimer = Timer(const Duration(milliseconds: 1400), () {
@@ -159,33 +120,22 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
         }
       });
     } else {
-      // ۲. در صورت عدم وجود فایل صوتی -> پخش با موتور صوتی TTS به‌صورت خط به خط
+      // ۲. در صورت نبود فایل صوتی -> خوانش یک‌جای متن کامل صفحه با TTS،
+      // بدون حلقهٔ خط/کلمه و بدون هیچ تغییر رنگ متحرکی روی متن.
       try {
-        for (int i = 0; i < lines.length; i++) {
-          if (!mounted || !_isSpeaking) break;
-          final words = StoryReadAlong.words(lines[i]);
-          setState(() {
-            _highlightedLineIndex = i;
-            _highlightedWordIndex = 0;
-            _audioProgress = lines.isEmpty ? 1.0 : (i / lines.length);
-          });
-          unawaited(AudioService.speak(lines[i]));
-          for (var w = 0; w < words.length; w++) {
-            if (!mounted || !_isSpeaking) break;
-            setState(() => _highlightedWordIndex = w);
-            await Future<void>.delayed(
-              Duration(milliseconds: (320 + words[w].length * 80).clamp(280, 900)),
-            );
-          }
-        }
+        unawaited(AudioService.speak(page.text));
+        final wordCount = page.text
+            .split(RegExp(r'\s+'))
+            .where((w) => w.isNotEmpty)
+            .length;
+        final estimatedSeconds = (wordCount / 2.2).ceil() + 1;
+        await Future<void>.delayed(
+          Duration(seconds: estimatedSeconds),
+        );
       } catch (_) {}
 
-      if (mounted) {
-        setState(() {
-          _isSpeaking = false;
-          _audioProgress = 1.0;
-          _highlightedLineIndex = lines.isEmpty ? 0 : lines.length - 1;
-        });
+      if (mounted && _isSpeaking) {
+        setState(() => _isSpeaking = false);
         if (_isAutoPlaying && !_isLastPage) {
           _autoPlayTimer?.cancel();
           _autoPlayTimer = Timer(const Duration(seconds: 2), () {
@@ -620,8 +570,6 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
   }
 
   Widget _buildPageCard(ChildrenStoryPage page) {
-    final lines = StoryReadAlong.sentences(page.text);
-
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(
         parent: AlwaysScrollableScrollPhysics(),
@@ -820,11 +768,10 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
                   ],
                 ),
                 const SizedBox(height: 14),
-                _ReadingTextHighlight(
-                  lines: lines,
-                  activeIndex: _highlightedLineIndex,
-                  activeWordIndex: _highlightedWordIndex,
-                  isSpeaking: _isSpeaking,
+                // متن ساکن و یکدست؛ بدون هایلایت متحرک یا انتخاب کلمه‌به‌کلمه.
+                _StaticStoryText(
+                  text: page.text,
+                  bedtimeMode: _isBedtimeMode,
                 ),
               ],
             ),
@@ -1025,143 +972,37 @@ class _StoryReaderScreenState extends State<StoryReaderScreen> {
 }
 
 /// ════════════════════════════════════════════════════════════
-/// 🌈 متن داستان با هایلایت خط‌به‌خط هماهنگ با صدای گوینده
+/// 📝 متن ساکن داستان
+///
+/// متن صفحه بدون هیچ هایلایت متحرک، انتخاب کلمه‌به‌کلمه یا ضربه‌پذیری
+/// نمایش داده می‌شود تا ذهن کودک درگیر حرکت روی کلمات نشود و تمرکزش
+/// روی شنیدن روایت باشد. مقیاس متن دسترس‌پذیری کاربر همچنان رعایت
+/// می‌شود و در حالت قصه شب رنگ گرم‌تری به خود می‌گیرد.
 /// ════════════════════════════════════════════════════════════
-class _ReadingTextHighlight extends StatelessWidget {
-  final List<String> lines;
-  final int activeIndex;
-  final int activeWordIndex;
-  final bool isSpeaking;
+class _StaticStoryText extends StatelessWidget {
+  final String text;
+  final bool bedtimeMode;
 
-  const _ReadingTextHighlight({
-    required this.lines,
-    required this.activeIndex,
-    this.activeWordIndex = 0,
-    required this.isSpeaking,
+  const _StaticStoryText({
+    required this.text,
+    required this.bedtimeMode,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (lines.isEmpty) return const SizedBox.shrink();
-
     final textScale = GameData.textScale.clamp(0.9, 1.4);
     final fontSize = 17.0 * textScale;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: List.generate(lines.length, (index) {
-        final line = lines[index];
-        final isCurrent = isSpeaking && index == activeIndex;
-        final isPast = isSpeaking && index < activeIndex;
-
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 3),
-          child: GestureDetector(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              AudioService.speak(line);
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 280),
-              curve: Curves.easeOutCubic,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                color: isCurrent
-                    ? const Color(0xFFFFB300).withOpacity(0.28)
-                    : isPast
-                        ? Colors.white.withOpacity(0.05)
-                        : Colors.transparent,
-                border: Border.all(
-                  color: isCurrent
-                      ? const Color(0xFFFFD54F)
-                      : isPast
-                          ? Colors.white.withOpacity(0.1)
-                          : Colors.transparent,
-                  width: isCurrent ? 1.8 : 1.0,
-                ),
-                boxShadow: isCurrent
-                    ? [
-                        BoxShadow(
-                          color: const Color(0xFFFFB300).withOpacity(0.35),
-                          blurRadius: 12,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                    : [],
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (isCurrent)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 6, top: 4),
-                      child: const Icon(
-                        Icons.play_arrow_rounded,
-                        color: Color(0xFFFFD54F),
-                        size: 18,
-                      )
-                          .animate(onPlay: (c) => c.repeat(reverse: true))
-                          .scale(
-                            begin: const Offset(0.85, 0.85),
-                            end: const Offset(1.15, 1.15),
-                            duration: 500.ms,
-                          ),
-                    ),
-                  Expanded(
-                    child: isCurrent
-                        ? Wrap(
-                            spacing: 6,
-                            runSpacing: 4,
-                            children: [
-                              for (final entry
-                                  in StoryReadAlong.words(line).asMap().entries)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                    vertical: 1,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: entry.key == activeWordIndex
-                                        ? const Color(0xFFFF8F00)
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    entry.value,
-                                    style: AppFonts.vazirmatn(
-                                      color: entry.key == activeWordIndex
-                                          ? const Color(0xFFFFFDE7)
-                                          : const Color(0xFFFFF9C4),
-                                      fontSize: fontSize,
-                                      fontWeight: entry.key == activeWordIndex
-                                          ? FontWeight.w900
-                                          : FontWeight.w700,
-                                      height: 1.85,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          )
-                        : Text(
-                            line,
-                            style: AppFonts.vazirmatn(
-                              color: isPast
-                                  ? Colors.white.withOpacity(0.85)
-                                  : Colors.white,
-                              fontSize: fontSize,
-                              fontWeight: FontWeight.w700,
-                              height: 1.85,
-                            ),
-                          ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      }),
+    return Text(
+      text,
+      textAlign: TextAlign.start,
+      textDirection: TextDirection.rtl,
+      style: AppFonts.vazirmatn(
+        color: bedtimeMode ? const Color(0xFFFFF8E1) : Colors.white,
+        fontSize: fontSize,
+        fontWeight: FontWeight.w700,
+        height: 1.9,
+      ),
     );
   }
 }

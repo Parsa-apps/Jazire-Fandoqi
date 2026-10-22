@@ -30,6 +30,36 @@ void main() {
     expect(CatalogSearch.query('املا'), isNotEmpty);
   });
 
+  test('poems and quran sections are searchable', () {
+    final items = CatalogSearch.allItems();
+    expect(
+      items.where((e) => e.route == '/poems'),
+      hasLength(1),
+      reason: 'هاب شعر باید یک ورودی داشته باشد',
+    );
+    expect(
+      items.where((e) => e.route == '/quran'),
+      hasLength(1),
+      reason: 'هاب قرآن باید یک ورودی داشته باشد',
+    );
+    // تک‌شعرها و تک‌سوره‌ها هم قابل جست‌وجو هستند.
+    expect(CatalogSearch.query('شعر'), isNotEmpty);
+    expect(CatalogSearch.query('سوره'), isNotEmpty);
+    expect(CatalogSearch.query('اخلاص'), isNotEmpty);
+    expect(CatalogSearch.query('تلاوت'), isNotEmpty);
+    // مسیرها به روت‌های ثبت‌شده ختم می‌شوند.
+    final poemRoutes = items
+        .where((e) => e.route.startsWith('/poem/'))
+        .map((e) => e.route)
+        .toSet();
+    final surahRoutes = items
+        .where((e) => e.route.startsWith('/surah/'))
+        .map((e) => e.route)
+        .toSet();
+    expect(poemRoutes.length, greaterThanOrEqualTo(8));
+    expect(surahRoutes.length, 8);
+  });
+
   test('adaptive coach scales options and difficulty by age', () {
     expect(AdaptiveCoach.optionCountForAge(3), 2);
     expect(AdaptiveCoach.optionCountForAge(6), 3);

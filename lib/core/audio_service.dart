@@ -50,31 +50,38 @@ class AudioService {
     'countdown',
     'go',
     'sleep',
+    'poem_chime',
+    'quran_chime',
   ];
 
-  /// بلندی هر دسته — UI آرام، جشن بلندتر، غلط هرگز بلند/ترسناک.
+  /// بلندی هر دسته — UI آرام و لطیف، جشن بلندتر، غلط هرگز بلند/ترسناک.
+  /// نسخهٔ نرم‌تر: ضربه‌های UI و صداهای «نه/خطا» عمداً پایین‌تر شده‌اند
+  /// تا برای کودک خوشایند و اسباب‌بازی‌گونه بمانند.
   static const Map<String, double> sfxVolumes = <String, double>{
-    'tap': 0.40,
-    'click': 0.36,
-    'tick': 0.26,
-    'back': 0.42,
-    'page': 0.40,
-    'swoosh': 0.46,
-    'select': 0.50,
-    'bubble': 0.56,
-    'coin': 0.66,
-    'star': 0.68,
-    'correct': 0.70,
-    'success': 0.68,
-    'wrong': 0.44,
-    'error': 0.38,
-    'win': 0.78,
-    'lose': 0.44,
-    'levelup': 0.80,
-    'unlock': 0.74,
-    'countdown': 0.52,
-    'go': 0.66,
-    'sleep': 0.48,
+    'tap': 0.36,
+    'click': 0.32,
+    'tick': 0.24,
+    'back': 0.40,
+    'page': 0.36,
+    'swoosh': 0.42,
+    'select': 0.48,
+    'bubble': 0.52,
+    'coin': 0.62,
+    'star': 0.64,
+    'correct': 0.68,
+    'success': 0.66,
+    'wrong': 0.40,
+    'error': 0.34,
+    'win': 0.76,
+    'lose': 0.40,
+    'levelup': 0.78,
+    'unlock': 0.72,
+    'countdown': 0.48,
+    'go': 0.62,
+    'sleep': 0.46,
+    // زنگ‌های هویتی بخش‌های جدید: شعر کمی شادتر، قرآن آرام‌تر و سنگین‌تر.
+    'poem_chime': 0.50,
+    'quran_chime': 0.42,
   };
 
   static const double voiceVolume = 0.88;
@@ -311,6 +318,12 @@ class AudioService {
   static Future<void> countdown() => playSfx('countdown');
   static Future<void> go() => playSfx('go');
   static Future<void> sleepChime() => playSfx('sleep');
+
+  /// زنگ کوتاه جعبه‌موسیقی برای ورود به شعرها.
+  static Future<void> poemChime() => playSfx('poem_chime');
+
+  /// زنگ آرام و بدون جرنگ برای ورود به قرآن کودک.
+  static Future<void> quranChime() => playSfx('quran_chime');
 
   /// بازخورد لمسی + صوتی برای دکمه‌ها.
   static Future<void> buttonTap() async {
@@ -736,13 +749,18 @@ class AudioService {
   }
 
   // ─────────────────────────── موسیقی پس‌زمینه ───────────────────────────
+  //
+  // از این نسخه به بعد اپ فقط یک موسیقی پس‌زمینه دارد: قطعهٔ آرام و
+  // کودک‌پسندِ صفحهٔ اصلی (فایل MP3 انتخابی تیم محصول). بازی‌ها،
+  // کارتون‌ها، داستان‌ها و بخش‌های یادگیری هیچ موسیقی پس‌زمینه‌ای
+  // ندارند تا تمرکز کودک روی صدای همان بخش بماند.
+  // [BackgroundMusicObserver] و تب‌های صفحه اصلی طوری این متد را صدا
+  // می‌زنند که قطعه فقط روی خانه بنوازد و جاهای دیگر ساکت شود.
+  static const String homeThemeAsset =
+      '${_bgmPath}jazire-backgroungmusic.mp3';
 
   static const Map<String, String> backgroundTracks = <String, String>{
-    'home': '${_bgmPath}home_island.wav',
-    'games': '${_bgmPath}games_adventure.wav',
-    'cartoons': '${_bgmPath}cartoon_cinema.wav',
-    'stories': '${_bgmPath}story_dreams.wav',
-    'learning': '${_bgmPath}learning_garden.wav',
+    'home': homeThemeAsset,
   };
 
   static bool get canPlayAudio => !_muted;

@@ -357,7 +357,7 @@ void main() {
 
   group('premium sfx mix', () {
     test('every named effect has a volume under celebration ceiling', () {
-      expect(AudioService.sfxNames, hasLength(21));
+      expect(AudioService.sfxNames, hasLength(23));
       for (final name in AudioService.sfxNames) {
         expect(AudioService.sfxVolumes.containsKey(name), isTrue, reason: name);
         final volume = AudioService.sfxVolumes[name]!;

@@ -1,9 +1,22 @@
 #!/usr/bin/env python3
-"""Generate gentle, loopable, child-safe background music for Jazire Fandoqi.
+"""Legacy procedural home-music generator (KEPT FOR REFERENCE ONLY).
 
-The score is intentionally instrumental and speech-friendly: pentatonic melodies,
-soft toy percussion, no vocals, alarms, abrupt transients, or heavy bass. Output is
-22.05 kHz/16-bit/mono WAV to keep the offline APK compact.
+History: until the audio refresh, this script synthesized five per-section
+background tracks (home / games / cartoons / stories / learning). The app now
+ships a SINGLE background track that plays only on the home screen, and that
+track is an externally produced, product-approved MP3:
+
+    assets/audio/bgm/jazire-backgroungmusic.mp3   ← AudioService.homeThemeAsset
+
+Running this script no longer writes anything: it must not recreate the
+removed WAV tracks, because nothing in the app references them anymore. The
+synthesis helpers below are retained purely as documentation of how the old
+procedural fallback was made, in case a future offline fallback is ever needed
+(in that case point the output at a new, explicitly referenced filename).
+
+The original score design: instrumental and speech-friendly pentatonic
+melodies, soft toy percussion, no vocals, alarms, abrupt transients, or heavy
+bass; 22.05 kHz/16-bit/mono WAV to keep the offline APK compact.
 """
 from __future__ import annotations
 import math, os, random, struct, wave
@@ -153,8 +166,9 @@ def compose(name,bpm,bars,root,progression,scale,style):
 
 
 if __name__=='__main__':
-    compose('home_island.wav',84,12,60,[(0,4,7),(5,9,12),(7,11,14),(0,4,9)],[0,2,4,7,9], 'home')
-    compose('games_adventure.wav',108,16,62,[(0,4,7),(5,9,12),(7,11,14),(0,4,7)],[0,2,4,7,9], 'games')
-    compose('cartoon_cinema.wav',96,14,65,[(0,4,7),(2,5,9),(5,9,12),(7,11,14)],[0,2,4,7,9], 'cartoons')
-    compose('story_dreams.wav',72,10,60,[(0,4,7),(5,9,12),(2,7,9),(0,4,9)],[0,2,4,7,9], 'stories')
-    compose('learning_garden.wav',88,12,60,[(0,4,7),(2,5,9),(5,9,12),(7,11,14)],[0,2,4,7,9], 'learning')
+    raise SystemExit(
+        'This generator is retired: the production home track is the bundled '
+        'MP3 assets/audio/bgm/jazire-backgroungmusic.mp3 (see '
+        'AudioService.homeThemeAsset). Running the synthesizer would only '
+        'recreate WAV files that the app no longer references.'
+    )

@@ -4,8 +4,12 @@ import 'package:flutter/material.dart';
 
 import 'audio_service.dart';
 
-/// انتخاب موسیقی هر دنیا از یک نقطهٔ مرکزی؛ با push/pop موسیقی صفحهٔ زیرین
+/// انتخاب موسیقی هر صفحه از یک نقطهٔ مرکزی؛ با push/pop موسیقی صفحهٔ زیرین
 /// نیز درست برمی‌گردد و صفحه‌ها مجبور نیستند پلیر مستقل بسازند.
+///
+/// از نسخهٔ جدید، موسیقی پس‌زمینه فقط روی صفحهٔ اصلی (دروازه/خانه) پخش
+/// می‌شود. هر صفحهٔ دیگری که باز شود موسیقی می‌ایستد و با بازگشت به
+/// صفحهٔ اصلی دوباره از سر گرفته می‌شود.
 class BackgroundMusicObserver extends NavigatorObserver {
   void _sync(Route<dynamic>? route) {
     if (route == null) {
@@ -25,33 +29,8 @@ class BackgroundMusicObserver extends NavigatorObserver {
 
   @visibleForTesting
   static String? sectionForRoute(String name) {
+    // تنها صفحهٔ اصلی موسیقی دارد؛ هر مسیر دیگری = سکوت.
     if (name == '/gateway' || name == '/home') return 'home';
-    if (name == '/cartoons') return 'cartoons';
-    // خود ویدیو موسیقی جدا نمی‌خواهد تا با دیالوگ کارتون تداخل نکند.
-    if (name == '/cartoon_player' || name.startsWith('/cartoon/')) return null;
-    if (name == '/stories' || name.startsWith('/story/')) return 'stories';
-    // فایل لالایی خودش موسیقی اصلی صفحه است.
-    if (name == '/lullabies' || name.startsWith('/lullaby/')) return null;
-
-    if (name.startsWith('/game/') ||
-        name.startsWith('/mini/') ||
-        const <String>{
-          '/alphabet', '/memory_match', '/bubble_pop', '/star_catch',
-          '/colors_lab', '/puzzle', '/math_race', '/pattern',
-          '/sound_match', '/body_parts', '/island_builder',
-          '/games-carnival',
-        }.contains(name)) {
-      return 'games';
-    }
-
-    if (name.startsWith('/academy/') ||
-        name.startsWith('/life-skills') ||
-        const <String>{
-          '/learning-library', '/animals', '/numbers', '/jobs',
-          '/concepts', '/sel', '/vocabulary',
-        }.contains(name)) {
-      return 'learning';
-    }
     return null;
   }
 
