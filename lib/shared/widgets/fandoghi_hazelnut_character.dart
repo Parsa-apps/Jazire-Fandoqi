@@ -6,13 +6,13 @@ import 'package:flutter/material.dart';
 import '../../core/fandoghi_models.dart';
 
 /// ═══════════════════════════════════════════════════════════════
-/// 🐿️ FANDOGHI CHARACTER — همراه کودکانهٔ فندقی
+/// 🌰 FANDOGHI CHARACTER — همراه کودکانهٔ فندقی
 /// نام قدیمی این ویجت برای حفظ سازگاری API نگه داشته شده؛ تصویر اصلیِ
 /// سنجابِ فندقی از اینجا در همهٔ پیام‌ها و فعالیت‌ها نمایش داده می‌شود.
 /// ═══════════════════════════════════════════════════════════════
 class FandoghiHazelnutCharacter extends StatefulWidget {
-  /// Shared transparent artwork for Fandoghi's primary squirrel design.
-  static const String mascotAsset = 'assets/theme_v2/squirrel_hero.webp';
+  /// تصویر شفاف و مشترکِ شخصیت اصلی فندقی.
+  static const String mascotAsset = 'assets/mascot/fandoghi_baby.webp';
 
   final double size;
   final FandoghiMood mood;
