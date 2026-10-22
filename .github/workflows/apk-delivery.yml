@@ -6,7 +6,9 @@ name: APK Delivery (chunked branch transport)
 # تا با git قابل دریافت باشد. پس از تحویل، برنچ و این ورک‌فلو حذف می‌شوند.
 
 on:
-  workflow_dispatch:
+  push:
+    tags:
+      - 'apk-delivery/**'
 
 jobs:
   deliver:
