@@ -65,30 +65,45 @@ void main() {
     });
   });
 
-  group('🎵 موسیقی زمینهٔ مسیرهای جدید', () {
-    test('شهر بازی و همهٔ بازی‌های تازه بخش games می‌گیرند', () {
+  group('🎵 موسیقی پس‌زمینه فقط روی صفحهٔ اصلی', () {
+    test('دروازه و خانه تنها مسیرهایی هستند که موسیقی home می‌گیرند', () {
+      expect(BackgroundMusicObserver.sectionForRoute('/gateway'), 'home');
+      expect(BackgroundMusicObserver.sectionForRoute('/home'), 'home');
+    });
+
+    test('بازی‌ها و همهٔ بخش‌های دیگر هیچ موسیقی پس‌زمینه‌ای نمی‌گیرند', () {
       expect(BackgroundMusicObserver.sectionForRoute('/games-carnival'),
-          'games');
+          isNull);
       expect(BackgroundMusicObserver.sectionForRoute('/mini/first-letter'),
-          'games');
+          isNull);
       expect(BackgroundMusicObserver.sectionForRoute('/mini/word-builder'),
-          'games');
+          isNull);
       expect(BackgroundMusicObserver.sectionForRoute('/mini/counting'),
-          'games');
+          isNull);
       expect(BackgroundMusicObserver.sectionForRoute('/mini/visual-math'),
-          'games');
+          isNull);
       expect(BackgroundMusicObserver.sectionForRoute('/mini/big-small'),
-          'games');
+          isNull);
       expect(BackgroundMusicObserver.sectionForRoute('/mini/shape-match'),
-          'games');
+          isNull);
       expect(BackgroundMusicObserver.sectionForRoute('/mini/color-mix'),
-          'games');
+          isNull);
       expect(BackgroundMusicObserver.sectionForRoute('/mini/number-order'),
-          'games');
+          isNull);
       expect(BackgroundMusicObserver.sectionForRoute('/mini/odd-one'),
-          'games');
+          isNull);
       expect(BackgroundMusicObserver.sectionForRoute('/mini/sort-basket'),
-          'games');
+          isNull);
+      expect(BackgroundMusicObserver.sectionForRoute('/cartoons'), isNull);
+      expect(BackgroundMusicObserver.sectionForRoute('/stories'), isNull);
+      expect(BackgroundMusicObserver.sectionForRoute('/learning-library'),
+          isNull);
+      expect(BackgroundMusicObserver.sectionForRoute('/lullabies'), isNull);
+      // بخش‌های جدید شعر و قرآن هم موسیقی پس‌زمینه ندارند (فقط صدای محتوا).
+      expect(BackgroundMusicObserver.sectionForRoute('/poems'), isNull);
+      expect(BackgroundMusicObserver.sectionForRoute('/poem/ball'), isNull);
+      expect(BackgroundMusicObserver.sectionForRoute('/quran'), isNull);
+      expect(BackgroundMusicObserver.sectionForRoute('/surah/ikhlas'), isNull);
     });
   });
 

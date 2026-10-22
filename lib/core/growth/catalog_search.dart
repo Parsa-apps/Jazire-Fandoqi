@@ -1,5 +1,7 @@
 import '../cartoons/cartoon_data.dart';
 import '../learning_content/children_stories_data.dart';
+import '../learning_content/poems_data.dart';
+import '../learning_content/quran_data.dart';
 import 'life_skills_data.dart';
 
 class CatalogItem {
@@ -41,6 +43,8 @@ class CatalogSearch {
       const CatalogItem(title: 'شغل‌ها', subtitle: '۲۰ شغل آشنا', route: '/jobs', emoji: '👷', category: 'آموزش'),
       const CatalogItem(title: 'احساسات', subtitle: 'هوش هیجانی', route: '/sel', emoji: '💛', category: 'آموزش', tags: ['sel']),
       const CatalogItem(title: 'داستان', subtitle: 'داستان تعاملی', route: '/stories', emoji: '📖', category: 'قصه'),
+      const CatalogItem(title: 'شعرها', subtitle: 'شعرهای کودکانه و ریتمیک', route: '/poems', emoji: '🎶', category: 'شعر', tags: ['شعر', 'آهنگ', 'خوانش']),
+      const CatalogItem(title: 'قرآن کودک', subtitle: 'سوره‌های کوتاه با تلاوت', route: '/quran', emoji: '🕌', category: 'قرآن', tags: ['سوره', 'آیه', 'تلاوت', 'دعا']),
       const CatalogItem(title: 'لالایی', subtitle: 'خواب آرام', route: '/lullabies', emoji: '🌙', category: 'آرامش'),
       const CatalogItem(title: 'کارتون', subtitle: 'کارتون دوبله', route: '/cartoons', emoji: '🎬', category: 'کارتون'),
       const CatalogItem(title: 'مهارت زندگی', subtitle: '۱۰ دنیای روزمره', route: '/life-skills', emoji: '🧭', category: 'آموزش', tags: ['ترافیک', 'بهداشت', 'پول']),
@@ -77,6 +81,26 @@ class CatalogSearch {
         emoji: topic.emoji,
         category: 'مهارت زندگی',
         tags: topic.tags,
+      ));
+    }
+    for (final poem in PoemsData.all) {
+      items.add(CatalogItem(
+        title: poem.title,
+        subtitle: poem.subtitle,
+        route: '/poem/${poem.id}',
+        emoji: poem.coverEmoji,
+        category: 'شعر',
+        tags: const ['شعر', 'خوانش', 'آهنگ'],
+      ));
+    }
+    for (final surah in QuranData.all) {
+      items.add(CatalogItem(
+        title: surah.persianName,
+        subtitle: surah.arabicName,
+        route: '/surah/${surah.id}',
+        emoji: surah.coverEmoji,
+        category: 'قرآن',
+        tags: [surah.revelation, 'سوره', 'تلاوت', 'آیه'],
       ));
     }
     return items;

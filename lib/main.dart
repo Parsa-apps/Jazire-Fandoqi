@@ -51,6 +51,12 @@ import 'core/literacy/decodable_stories.dart';
 import 'features/lullabies/lullaby_hub_screen.dart';
 import 'features/lullabies/lullaby_player_screen.dart';
 import 'core/learning_content/lullabies_data.dart';
+import 'core/learning_content/poems_data.dart';
+import 'core/learning_content/quran_data.dart';
+import 'features/poems/poems_hub_screen.dart';
+import 'features/poems/poem_reader_screen.dart';
+import 'features/quran/quran_hub_screen.dart';
+import 'features/quran/quran_reader_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/profile/sticker_album_screen.dart';
 import 'features/animals/animal_encyclopedia_screen.dart';
@@ -368,6 +374,8 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
           );
         },
         '/lullabies': (context) => const LullabyHubScreen(),
+        '/poems': (context) => const PoemsHubScreen(),
+        '/quran': (context) => const QuranHubScreen(),
         '/home': (context) => const HomeScreen(),
         '/drawing-album': (context) => GameAccessGate(
               gameName: 'آلبوم نقاشی',
@@ -598,6 +606,34 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
                       isFree: false,
                       child: LullabyPlayerScreen(lullaby: lullaby),
                     ),
+            );
+          }
+        }
+        // 🎶 شعر کودکانه (/poem/<id>) — نیمهٔ اول رایگان، نیمهٔ دوم با گیت.
+        if (name.startsWith('/poem/')) {
+          final poemId = name.substring('/poem/'.length);
+          final poem = PoemsData.byId(poemId);
+          if (poem != null) {
+            return MaterialPageRoute(
+              settings: settings,
+              builder: (_) => ContentAccessPolicy.isPoemFree(poem.id)
+                  ? PoemReaderScreen(poem: poem)
+                  : GameAccessGate(
+                      gameName: poem.title,
+                      isFree: false,
+                      child: PoemReaderScreen(poem: poem),
+                    ),
+            );
+          }
+        }
+        // 🕌 سوره قرآن (/surah/<id>) — محتوای دینی همیشه رایگان.
+        if (name.startsWith('/surah/')) {
+          final surahId = name.substring('/surah/'.length);
+          final surah = QuranData.byId(surahId);
+          if (surah != null) {
+            return MaterialPageRoute(
+              settings: settings,
+              builder: (_) => QuranReaderScreen(surah: surah),
             );
           }
         }

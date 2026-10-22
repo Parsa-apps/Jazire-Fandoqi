@@ -52,7 +52,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _selectTab(int index) {
     setState(() => _currentTab = index);
-    AudioService.playBgmSection(index == 1 ? 'learning' : 'home');
+    // موسیقی پس‌زمینه فقط روی تب جزیره (صفحهٔ اصلی، اندیس ۲) می‌نوازد؛
+    // با رفتن به هر تب دیگری (کوله‌پشتی، دستاوردها، کارنامه، …) سکوت است.
+    if (index == 2) {
+      AudioService.playBgmSection('home');
+    } else {
+      AudioService.stopBgm();
+    }
   }
 
   void _openStageMapScreen() {
