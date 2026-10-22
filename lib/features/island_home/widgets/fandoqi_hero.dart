@@ -19,7 +19,7 @@ class FandoqiHeroController {
   void dispose() => _cheerTick.dispose();
 }
 
-/// 🌰 فندقی — قهرمانِ سه‌بعدیِ صفحهٔ اصلی
+/// 🌰 فندقی — قهرمانِ صفحهٔ اصلی با تصویرهای اختصاصیِ فندقی و جشن.
 class FandoqiHero extends StatefulWidget {
   const FandoqiHero({
     super.key,
