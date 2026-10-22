@@ -79,12 +79,11 @@ abstract final class IslandWorldMetrics {
 abstract final class IslandWorldAssets {
   static const String mapHero = 'assets/gateway/island_world_hero_v2.webp';
 
-  /// Primary Fandoghi mascot, matching the supplied squirrel artwork. The
-  /// transparent, app-ready cutout is shared across the app so Fandoghi keeps
-  /// one recognizable design in greetings, rewards, and celebrations.
-  static const String fandoghiMain = 'assets/theme_v2/squirrel_hero.webp';
-  static const String fandoghiWave = fandoghiMain;
-  static const String fandoghiCelebrate = fandoghiMain;
+  /// Primary Fandoghi mascot assets, using the dedicated hazelnut artwork.
+  static const String fandoghiMain = 'assets/mascot/fandoghi_baby.webp';
+  static const String fandoghiWave = 'assets/mascot/fandoghi_wave_v2.webp';
+  static const String fandoghiCelebrate =
+      'assets/mascot/fandoghi_celebrate_v2.webp';
 
   /// تزئیناتِ اختصاصیِ دنیای جزیره (سبک خمیریِ هم‌خانواده با سکوها،
   /// با پس‌زمینهٔ واقعاً شفاف و بهینه‌شده برای حجم کمِ APK)
