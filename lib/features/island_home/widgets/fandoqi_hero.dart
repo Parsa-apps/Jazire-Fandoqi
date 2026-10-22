@@ -19,7 +19,7 @@ class FandoqiHeroController {
   void dispose() => _cheerTick.dispose();
 }
 
-/// 🐿️ فندقی — قهرمانِ سه‌بعدیِ صفحهٔ اصلی
+/// 🌰 فندقی — قهرمانِ سه‌بعدیِ صفحهٔ اصلی
 class FandoqiHero extends StatefulWidget {
   const FandoqiHero({
     super.key,
@@ -42,8 +42,8 @@ class FandoqiHero extends StatefulWidget {
   /// لمس، صدا و ذراتِ جشنِ طلایی روی کاراکتر فعال می‌مانند.
   final double imageOpacity;
 
-  static const String waveAsset = 'assets/theme_v2/squirrel_hero.webp';
-  static const String celebrateAsset = waveAsset;
+  static const String waveAsset = 'assets/mascot/fandoghi_wave_v2.webp';
+  static const String celebrateAsset = 'assets/mascot/fandoghi_celebrate_v2.webp';
 
   @override
   State<FandoqiHero> createState() => _FandoqiHeroState();
