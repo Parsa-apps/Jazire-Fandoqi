@@ -116,7 +116,14 @@ class _AnimalEncyclopediaState extends State<AnimalEncyclopediaScreen> {
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
                     final card = filtered[index];
-                    final isLearned = (GameData.skills['animals'] ?? 0) > index;
+                    // «شناخته‌شده» بر اساس جای کارت در ترتیبِ کانونی موضوع
+                    // سنجیده می‌شود، نه جایگاهش در فهرستِ فیلترشده؛ وگرنه با
+                    // عوض‌کردن فیلتر (مثلاً «پرنده») نشانِ یادگیری حیوان‌ها
+                    // جابه‌جا می‌شد.
+                    final canonicalIndex =
+                        topic.cards.indexWhere((c) => c.id == card.id);
+                    final isLearned =
+                        (GameData.skills['animals'] ?? 0) > canonicalIndex;
                     return _AnimalCard(
                       card: card,
                       index: index,

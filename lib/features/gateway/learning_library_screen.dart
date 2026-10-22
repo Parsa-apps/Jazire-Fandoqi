@@ -42,7 +42,9 @@ class LearningLibraryScreen extends StatelessWidget {
       emoji: '🦁',
       badgeLabel: 'حیوانات',
       assetPath: 'assets/theme_v2/cat_animals.webp',
-      route: '/wildlife',
+      // مسیر کانونی دانشنامه؛ مسیر قبلی هیچ‌جا تعریف نشده بود و لمسِ
+      // این کارت کاربر را به صفحهٔ «پیدا نشد» می‌برد.
+      route: '/animals',
       cardTop: Color(0xFFDCF9E4),
       cardBottom: Color(0xFFA3E9B8),
       extrusionColor: Color(0xFF459E62),
@@ -50,11 +52,12 @@ class LearningLibraryScreen extends StatelessWidget {
     ),
     _LibraryItem(
       title: 'مفاهیم اولیه',
-      subtitle: 'شکل‌ها، رنگ‌ها، بزرگ و کوچک',
+      subtitle: 'بزرگ و کوچک، شب و روز، فصل‌ها و هوا',
       emoji: '🔺',
       badgeLabel: 'شکل‌ها',
       assetPath: 'assets/theme_v2/cat_shapes.webp',
-      route: '/basics',
+      // هاب «مفاهیم اولیه» با همین عنوان؛ مسیر قبلی تعریف‌نشده بود.
+      route: '/concepts',
       cardTop: Color(0xFFF5DFFF),
       cardBottom: Color(0xFFE0B3FA),
       extrusionColor: Color(0xFF9155B8),
@@ -73,10 +76,12 @@ class LearningLibraryScreen extends StatelessWidget {
     ),
     _LibraryItem(
       title: 'موسیقی',
-      subtitle: 'آشنایی با سازها و ریتم کودکانه',
+      subtitle: 'لالایی‌ها و آهنگ‌های آرام کودکانه',
       emoji: '🎵',
       assetPath: 'assets/theme_v2/cat_music.webp',
-      route: '/art-studio',
+      // صفحهٔ ساز/ریتم در اپ وجود ندارد؛ نزدیک‌ترین مقصدِ موسیقاییِ واقعی
+      // هاب لالایی‌هاست. مسیر قبلی تعریف‌نشده بود.
+      route: '/lullabies',
       cardTop: Color(0xFFD4F8F8),
       cardBottom: Color(0xFF95E6E6),
       extrusionColor: Color(0xFF349CA1),
@@ -96,7 +101,7 @@ class LearningLibraryScreen extends StatelessWidget {
       title: 'دنیای احساسات',
       subtitle: 'شادی، خشم، آرامش و همدلی',
       emoji: '💛',
-      route: '/emotions',
+      route: '/sel',
       cardTop: Color(0xFFFFF6D6),
       cardBottom: Color(0xFFFFE08A),
       extrusionColor: Color(0xFFC99826),
@@ -126,7 +131,9 @@ class LearningLibraryScreen extends StatelessWidget {
       title: 'رنگ‌آمیزی',
       subtitle: 'بوم نقاشی و رنگ‌های شاد',
       emoji: '🎨',
-      route: '/coloring',
+      // بوم نقاشی (DrawingGame)؛ همان مقصدی که جست‌وجو و هاب هنر هم
+      // برای «نقاشی» استفاده می‌کنند. مسیر قبلی تعریف‌نشده بود.
+      route: '/game/نقاشی',
       cardTop: Color(0xFFFFE6F2),
       cardBottom: Color(0xFFFFB8DA),
       extrusionColor: Color(0xFFC7588E),
@@ -164,9 +171,12 @@ class LearningLibraryScreen extends StatelessWidget {
     ),
     _LibraryItem(
       title: 'آزمایشگاه علوم',
-      subtitle: 'کشف شگفتی‌های طبیعت و فضا',
+      subtitle: 'فصل‌ها، آب‌وهوا، شب و روز و طبیعت',
       emoji: '🔬',
-      route: '/science-lab',
+      // آزمایشگاه علومِ جدا در اپ نیست؛ هاب علومِ خودِ برنامه هم «مفاهیم
+      // علوم و دنیای اطراف» (فصل‌ها، آب‌وهوا، شب و روز) را به همین مقصد
+      // می‌فرستد. مسیر قبلی تعریف‌نشده بود.
+      route: '/concepts',
       cardTop: Color(0xFFE0F2FE),
       cardBottom: Color(0xFFBAE6FD),
       extrusionColor: Color(0xFF3B82F6),

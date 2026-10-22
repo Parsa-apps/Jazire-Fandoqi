@@ -65,6 +65,7 @@ import 'features/jobs/jobs_hub_screen.dart';
 import 'features/numbers/numbers_hub_screen.dart';
 import 'features/sel/sel_hub_screen.dart';
 import 'features/gateway/learning_library_screen.dart';
+import 'features/stage_map/stage_map_screen.dart';
 import 'features/parent/parent_hub.dart';
 import 'features/splash/splash_screen.dart';
 import 'features/tutorial/app_tutorial_screen.dart';
@@ -301,6 +302,10 @@ class _JazirehFandoghiAppState extends State<JazirehFandoghiApp>
         '/gateway-first-entry': (context) =>
             const AppGatewayScreen(offerProfileSetup: true),
         '/learning-library': (context) => const LearningLibraryScreen(),
+        // نقشهٔ مراحل پیش از این فقط با پوشِ مستقیم از خانه باز می‌شد و
+        // مسیر نام‌دار نداشت؛ کارت «مراحل بازی» در دسته‌بندی‌ها به همین
+        // مسیر می‌آید. خودِ صفحه قفل مراحل را مدیریت می‌کند، مثل پوشِ خانه.
+        '/stage-map': (context) => const StageMapScreen(),
         '/animals': (context) => GameAccessGate(
               gameName: 'حیوانات',
               child: const AnimalEncyclopediaScreen(),

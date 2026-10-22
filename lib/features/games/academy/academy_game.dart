@@ -139,8 +139,13 @@ class _AcademyGameState extends State<AcademyGame> {
     // گزینه‌های جواب: کارت درست + ۲ کارت تصادفی دیگر
     // گزینه‌های انحرافی هم فقط از poolِ مجاز می‌آیند: نمایشِ نام/تصویرِ یک
     // کارتِ پولی به‌عنوان گزینه، خودش بخشی از همان محتواست.
+    // گزینهٔ انحرافی با ایموجیِ یکسان با کارتِ درست هم نمی‌آید: در موضوع
+    // حیوانات چند جفت ایموجی مشترک دارند (یوزپلنگ/پلنگ 🐆، آهو/گوزن 🦌،
+    // عقاب/شاهین 🦅) و کنار هم آمدنشان سؤالِ تصویری را مبهم می‌کند.
+    // ایموجیِ تکراری میان خودِ گزینه‌های انحرافی هم فقط یک‌بار می‌آید.
+    final seenEmojis = <String>{_currentCard.emoji};
     final others = _pool
-        .where((c) => c.id != _currentCard.id)
+        .where((c) => c.id != _currentCard.id && seenEmojis.add(c.emoji))
         .toList()
       ..shuffle(Random());
     return <LearningCard>[_currentCard, ...others.take(2)]
