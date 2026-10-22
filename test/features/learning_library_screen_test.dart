@@ -55,6 +55,87 @@ void main() {
   });
 
   testWidgets(
+    'tapping the Iran animals category opens the animals encyclopedia route',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: const LearningLibraryScreen(),
+          routes: <String, WidgetBuilder>{
+            // همان مسیری که در main.dart به AnimalEncyclopediaScreen می‌رسد.
+            '/animals': (context) =>
+                const Scaffold(body: Text('animals-route-reached')),
+          },
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 250));
+
+      await tester.tap(find.text('دانشنامه حیوانات ایران'));
+      await tester.pumpAndSettle();
+
+      // قبلاً کارت به یک مسیر تعریف‌نشده می‌رفت و کاربر به
+      // صفحهٔ «پیدا نشد» می‌رسید؛ مقصد باید دانشنامهٔ حیوانات باشد.
+      expect(find.text('animals-route-reached'), findsOneWidget);
+
+      await _disposeAnimatedTree(tester);
+    },
+  );
+
+  testWidgets(
+    'every category card opens a defined route (no dead-end cards)',
+    (tester) async {
+      // عنوان کارت ← مسیری که باید به آن برسد. برای هر مسیر یک مقصدِ
+      // آزمایشی ثبت می‌شود؛ اگر کارتی به مسیر تعریف‌نشده‌ای اشاره کند
+      // (مثل قبل) ناوبری خطا می‌دهد و تست قرمز می‌شود.
+      const expected = <String, String>{
+        'حروف الفبا': '/alphabet',
+        'دنیای اعداد': '/numbers',
+        'دانشنامه حیوانات ایران': '/animals',
+        'مفاهیم اولیه': '/concepts',
+        'پازل': '/games-carnival',
+        'موسیقی': '/lullabies',
+        'شغل‌های قهرمانانه': '/jobs',
+        'دنیای احساسات': '/sel',
+        'مهارت زندگی': '/life-skills',
+        'قصه‌ها': '/stories',
+        'رنگ‌آمیزی': '/game/نقاشی',
+        'شعرها': '/poems',
+        'قرآن کودک': '/quran',
+        'کارتون‌کده فندقی': '/cartoons',
+        'آزمایشگاه علوم': '/concepts',
+        'مراحل بازی': '/stage-map',
+      };
+      final fakeRoutes = <String, WidgetBuilder>{
+        for (final route in expected.values.toSet())
+          route: (context) => Scaffold(body: Text('dest:$route')),
+      };
+
+      await tester.pumpWidget(
+        MaterialApp(home: const LearningLibraryScreen(), routes: fakeRoutes),
+      );
+      await tester.pump(const Duration(milliseconds: 250));
+
+      for (final entry in expected.entries) {
+        await tester.scrollUntilVisible(
+          find.text(entry.key),
+          180,
+          scrollable: find.byType(Scrollable).last,
+        );
+        await tester.tap(find.text(entry.key));
+        await tester.pumpAndSettle();
+        expect(
+          find.text('dest:${entry.value}'),
+          findsOneWidget,
+          reason: 'کارت «${entry.key}» باید به ${entry.value} برسد',
+        );
+        tester.state<NavigatorState>(find.byType(Navigator)).pop();
+        await tester.pumpAndSettle();
+      }
+
+      await _disposeAnimatedTree(tester);
+    },
+  );
+
+  testWidgets(
     'embedded backpack lays out on a narrow phone with reduced motion',
     (tester) async {
       tester.view.physicalSize = const Size(320, 568);
